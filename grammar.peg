@@ -1,10 +1,11 @@
-form := list | atom
+form := atom | list
 
 list := '\(' form '\)'
 
-atom := ignored | doubleQuoted | comment | '[^\s\[\]{}(\'"`,;)]*'
+atom := ignored | doubleQuoted | comment | other
 
 // tokens
 ignored := '[\s,]*'
 doubleQuoted := '"(?:\\.|[^\\"])*"?'
 comment := ';.*'
+other := '[^\s\[\]{}(\'"`,;)]*'
