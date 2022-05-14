@@ -5,7 +5,8 @@
   "description": "My programming language",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "vitest",
+    "test:detailed": "vitest --reporter verbose"
   },
   "repository": {
     "type": "git",
@@ -25,7 +26,7 @@
     "eslint": "^8.13.0",
     "prettier": "^2.6.2",
     "ts-node": "^10.7.0",
-    "tspeg": "^3.2.1",
-    "typescript": "^4.6.3"
+    "typescript": "^4.6.3",
+    "vitest": "^0.10.5"
   }
 }
