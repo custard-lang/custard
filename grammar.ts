@@ -1,5 +1,5 @@
 import type { Scanner } from "./scanner";
-import type { Value, List, Atom } from "./types";
+import type { Form, List, Atom } from "./types";
 
 // const tokenRegex = /[\s,]*(~@|[\[\]{}()'`~^@]|"(?:\\.|[^\\"])*"?|;.*|[^\s\[\]{}('"`,;)]*)/;
 
@@ -28,7 +28,7 @@ export const tokenRegex = new RegExp(
 
 export type ParseError = undefined;
 
-export function form(s: Scanner): Value | ParseError {
+export function form(s: Scanner): Form | ParseError {
   const token = s.next();
   if (token === "(") {
     return list(s);
@@ -37,9 +37,34 @@ export function form(s: Scanner): Value | ParseError {
 }
 
 function list(s: Scanner): List | ParseError {
-  throw new Error("Function not implemented.");
+  let token;
+  const result = [];
+  while ((token = s.next() === ")")) {
+    if (token === undefined) {
+      return undefined;
+    }
+    const f = form(s);
+    if (f === undefined) {
+      return undefined;
+    }
+    result.push(f);
+  }
+  return result;
 }
 
 function atom(s: Scanner): Atom | ParseError {
-  throw new Error("Function not implemented.");
+  const token = s.next();
+  if (token === undefined) {
+    return undefined;
+  }
+  if (/^-?[0-9]+$/.test(token)) {
+    return {
+      t: "Integer",
+      v: token,
+    };
+  }
+  return {
+    t: "Symbol",
+    v: token,
+  };
 }

@@ -14,10 +14,6 @@ export class Scanner {
   }
 
   private _next(): string | undefined {
-    const result = this._regex.exec(this._input);
-    if (result === undefined) {
-      return undefined;
-    }
-    return result[1];
+    return this._regex.exec(this._input)?.[1];
   }
 }

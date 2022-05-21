@@ -1,6 +1,6 @@
-export type Value = List | Atom;
+export type Form = List | Atom;
 
-export type List = [Value];
+export type List = Form[];
 
 export type Atom = Integer | Symbol;
 
