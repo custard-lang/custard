@@ -33,7 +33,7 @@ export function form(s: Scanner): Form | ParseError {
   if (token === "(") {
     return list(s);
   }
-  return atom(s);
+  return atom(token);
 }
 
 function list(s: Scanner): List | ParseError {
@@ -52,9 +52,8 @@ function list(s: Scanner): List | ParseError {
   return result;
 }
 
-function atom(s: Scanner): Atom | ParseError {
-  const token = s.next();
-  if (token === undefined) {
+function atom(token: string | undefined): Atom | ParseError {
+  if (!token) {
     return undefined;
   }
   if (/^-?[0-9]+$/.test(token)) {
