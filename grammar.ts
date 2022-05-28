@@ -15,16 +15,18 @@ const comment = ";.*";
 
 const nonSpecial = "[^\\s\\[\\]{}('\"`,;)]*";
 
-export const tokenRegex = new RegExp(
-  `${ignored}(${[
-    tildeAt,
-    specialSingle,
-    doubleQuoted,
-    comment,
-    nonSpecial,
-  ].join("|")})`,
-  "g"
-);
+export function buildTokenRegex(): RegExp {
+  return new RegExp(
+    `${ignored}(${[
+      tildeAt,
+      specialSingle,
+      doubleQuoted,
+      comment,
+      nonSpecial,
+    ].join("|")})`,
+    "g"
+  );
+}
 
 export type ParseError = undefined;
 
