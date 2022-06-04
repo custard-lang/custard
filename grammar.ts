@@ -31,19 +31,23 @@ export function buildTokenRegex(): RegExp {
 export type ParseError = undefined;
 
 export function form(s: Scanner): Form | ParseError {
-  const token = s.next();
+  const token = s.peek();
   if (token === "(") {
     return list(s);
   }
-  return atom(token);
+  return atom(s);
 }
 
 function list(s: Scanner): List | ParseError {
-  let token;
-  const result = [];
-  while ((token = s.next() === ")")) {
-    if (token === undefined) {
-      return undefined;
+  const token = s.next(); // drop open paren
+  if (token !== "(") {
+    return undefined;
+  }
+  const result: List = [];
+  while (true) {
+    const next = s.peek();
+    if (next === ")") {
+      break;
     }
     const f = form(s);
     if (f === undefined) {
@@ -51,10 +55,12 @@ function list(s: Scanner): List | ParseError {
     }
     result.push(f);
   }
+  s.next(); // drop close paren
   return result;
 }
 
-function atom(token: string | undefined): Atom | ParseError {
+function atom(s: Scanner): Atom | ParseError {
+  const token = s.next();
   if (!token) {
     return undefined;
   }

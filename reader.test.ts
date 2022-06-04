@@ -21,7 +21,7 @@ describe("parse", () => {
     ]);
   });
   test("`( 123 456 789 )` -> `(123 456 789)`", () => {
-    expect(readStr("(123 456)")).toEqual([
+    expect(readStr("(123 456 789)")).toEqual([
       { t: "Integer", v: "123" },
       { t: "Integer", v: "456" },
       { t: "Integer", v: "789" },
