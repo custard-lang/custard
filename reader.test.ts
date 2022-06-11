@@ -1,7 +1,7 @@
 import { readStr } from "./reader";
 import { describe, expect, test } from "vitest";
 
-describe("parse", () => {
+describe("readStr", () => {
   test("`123` -> `123`", () => {
     expect(readStr("123")).toEqual({ t: "Integer", v: "123" });
   });
