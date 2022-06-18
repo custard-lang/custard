@@ -1,5 +1,6 @@
+import { argv0 } from "node:process";
 import type { Scanner } from "./scanner";
-import type { Form, List, Atom } from "./types";
+import type { Form, CuArray, Atom } from "./types";
 
 // const tokenRegex = /[\s,]*(~@|[\[\]{}()'`~^@]|"(?:\\.|[^\\"])*"?|;.*|[^\s\[\]{}('"`,;)]*)/;
 
@@ -10,6 +11,7 @@ const tildeAt = "~@";
 const specialSingle = "[\\[\\]{}()'`~^@]";
 
 const doubleQuoted = '"(?:\\\\.|[^\\\\"])*"?';
+const doubleQuotedRe = new RegExp(doubleQuoted);
 
 const comment = ";.*";
 
@@ -28,7 +30,9 @@ export function buildTokenRegex(): RegExp {
   );
 }
 
-export type ParseError = undefined;
+export class ParseError extends Error {
+  override name = "ParseError";
+}
 
 export function form(s: Scanner): Form | ParseError {
   const token = s.peek();
@@ -38,20 +42,20 @@ export function form(s: Scanner): Form | ParseError {
   return atom(s);
 }
 
-function list(s: Scanner): List | ParseError {
+function list(s: Scanner): CuArray | ParseError {
   const token = s.next(); // drop open paren
   if (token !== "(") {
-    return undefined;
+    return new ParseError(`Expected an opening paren, but found ${JSON.stringify(token)}`);
   }
-  const result: List = [];
+  const result: CuArray = [];
   while (true) {
     const next = s.peek();
     if (next === ")") {
       break;
     }
     const f = form(s);
-    if (f === undefined) {
-      return undefined;
+    if (f instanceof ParseError) {
+      return f;
     }
     result.push(f);
   }
@@ -62,16 +66,34 @@ function list(s: Scanner): List | ParseError {
 function atom(s: Scanner): Atom | ParseError {
   const token = s.next();
   if (!token) {
-    return undefined;
+    return new ParseError("Unexpected end of input!");
   }
-  if (/^-?[0-9]+$/.test(token)) {
+  if (doubleQuotedRe.test(token)) {
+    return token
+      .slice(1, token.length - 1)
+      .replace(/\\(.)/g, (_, c: string) => (c == "n" ? "\n" : c));
+  }
+  const md = /^-?[0-9]+(\.[0-9]+)?$/.exec(token);
+  if (md) {
+    if (md[1]){
+      return Number(md[0]);
+    }
     return {
-      t: "Integer",
-      v: token,
+      t: "Integer32",
+      v: Number(md[0]) | 0,
     };
   }
-  return {
-    t: "Symbol",
-    v: token,
-  };
+  switch(token){
+    case "True":
+      return true;
+    case "False":
+      return false;
+    case "None":
+      return undefined;
+    default:
+      return {
+        t: "Symbol",
+        v: token,
+      };
+  }
 }

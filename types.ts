@@ -1,15 +1,24 @@
-export type Form = List | Atom;
+export type Form = CuArray | Atom;
 
-export type List = Form[];
+export type CuArray = Form[];
 
-export type Atom = Integer | Symbol;
+// The `Cu` prefix is only to avoid conflicts with TypeScript's builtin types.
+export type Atom = Integer32 | Float64 | CuString | Bool | None | CuSymbol;
 
-export type Integer = {
-  t: "Integer";
-  v: string;
+export type Integer32 = {
+  t: "Integer32";
+  v: number;
 };
 
-export type Symbol = {
+export type Float64 = number;
+
+export type CuString = string;
+
+export type Bool = boolean;
+
+export type None = undefined;
+
+export type CuSymbol = {
   t: "Symbol";
   v: string;
 };
