@@ -1,5 +1,6 @@
 import { readStr } from "./reader";
 import { describe, expect, test } from "vitest";
+import { ParseError } from "./grammar";
 
 describe("readStr", () => {
   describe("Integer32", () => {
@@ -76,6 +77,19 @@ describe("readStr", () => {
         undefined,
         "foo",
       ]);
+    });
+  });
+
+  describe("ParseError", () => {
+    test("when the input string contains unmatched parentheses", () => {
+      expect(readStr("(+ 45")).toEqual(
+        new ParseError("Unexpected end of input!")
+      );
+    });
+    test("when the input string contains unmatched double quotes", () => {
+      expect(readStr('(+ "hello)')).toEqual(
+        new ParseError("Unexpected end of input!")
+      );
     });
   });
 });
