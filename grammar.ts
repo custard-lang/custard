@@ -1,4 +1,3 @@
-import { argv0 } from "node:process";
 import type { Scanner } from "./scanner";
 import type { Form, CuArray, Atom } from "./types";
 
