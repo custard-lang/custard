@@ -22,3 +22,9 @@ export type CuSymbol = {
   t: "Symbol";
   v: string;
 };
+
+export type Env = Map<Id, Writer>;
+
+export type Id = string;
+
+export type Writer = (...forms: CuArray) => string;

@@ -3,9 +3,10 @@
 import * as readline from "node:readline";
 import { stdin as input, stdout as output } from "node:process";
 import { readStr } from "./reader";
-import { Form } from "./types";
+import { Env, Form } from "./types";
 import { ParseError } from "./grammar";
 import { prStr } from "./printer";
+import { evalAst, initialEnv } from "./eval";
 
 const rl = readline.createInterface({ input, output });
 
@@ -15,9 +16,8 @@ function read(str: string): Form | ParseError {
 }
 
 // EVAL
-function evalMal(ast: Form, _env?: any): any {
-  // TODO
-  return ast;
+function evalCustard(ast: Form, env: Env = initialEnv): any {
+  return evalAst(ast, env);
 }
 
 // PRINT
@@ -30,7 +30,7 @@ function repl(str: string): string | Error {
   if (r0 instanceof Error) {
     return r0;
   }
-  return print(evalMal(r0));
+  return print(evalCustard(r0));
 }
 
 function finalize() {
