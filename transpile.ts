@@ -1,6 +1,6 @@
 // import { pr } from "./util/debug";
 
-import { Env, Form, isCuSymbol, JsSrc, TranspileError } from "./types";
+import { Env, Form, isCuSymbol, JsSrc, TranspileError } from "./types.js";
 
 export const initialEnv: Env = new Map();
 

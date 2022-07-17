@@ -3,7 +3,7 @@
   "name": "custard",
   "version": "0.0.1",
   "description": "My programming language",
-  "main": "index.js",
+  "main": "dist/mal.js",
   "scripts": {
     "test": "vitest",
     "test:detailed": "vitest --reporter verbose"

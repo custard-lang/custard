@@ -1,5 +1,5 @@
-import type { Scanner } from "./scanner";
-import type { Form, CuArray, Atom } from "./types";
+import type { Scanner } from "./scanner.js";
+import type { Form, CuArray, Atom } from "./types.js";
 
 // const tokenRegex = /[\s,]*(~@|[\[\]{}()'`~^@]|"(?:\\.|[^\\"])*"?|;.*|[^\s\[\]{}('"`,;)]*)/;
 
