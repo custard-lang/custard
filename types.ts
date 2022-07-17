@@ -27,4 +27,14 @@ export type Env = Map<Id, Writer>;
 
 export type Id = string;
 
-export type Writer = (...forms: CuArray) => string;
+export type JsSrc = string;
+
+export type Writer = (env: Env, ...forms: CuArray) => JsSrc | TranspileError;
+
+export function isCuSymbol(v: Form): v is CuSymbol {
+  return (v as CuSymbol).t === "Symbol";
+}
+
+export class TranspileError extends Error {
+  override name = "TranspileError";
+}
