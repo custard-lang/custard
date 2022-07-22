@@ -23,7 +23,9 @@ export type CuSymbol = {
   v: string;
 };
 
-export type Env = Map<Id, Writer>;
+export type Env = Scope[];
+
+export type Scope = Map<Id, Writer>;
 
 export type Id = string;
 

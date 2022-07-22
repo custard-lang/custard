@@ -3,10 +3,11 @@
 import * as readline from "node:readline";
 import { stdin as input, stdout as output } from "node:process";
 import { readStr } from "./reader.js";
-import { Env, Form } from "./types.js";
+import { Form } from "./types.js";
 import { ParseError } from "./grammar.js";
 import { prStr } from "./printer.js";
-import { evalAst, initialEnv } from "./eval.js";
+import * as Env from "./env.js";
+import { builtin, evalAst } from "./eval.js";
 
 const rl = readline.createInterface({ input, output });
 
@@ -16,8 +17,8 @@ function read(str: string): Form | ParseError {
 }
 
 // EVAL
-function evalCustard(ast: Form, env: Env = initialEnv): any {
-  return evalAst(ast, env);
+function evalCustard(ast: Form): any {
+  return evalAst(ast, Env.init(builtin));
 }
 
 // PRINT
