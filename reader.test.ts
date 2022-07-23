@@ -86,6 +86,11 @@ describe("readStr", () => {
         new ParseError("Unexpected end of input!")
       );
     });
+    test("when the input string contains an extra closing parenthesis", () => {
+      expect(readStr("(+ 0 9))")).toEqual(
+        new ParseError('Unexpected token left!: ")"')
+      );
+    });
     test("when the input string contains unmatched double quotes", () => {
       expect(readStr('(+ "hello)')).toEqual(
         new ParseError("Unexpected end of input!")

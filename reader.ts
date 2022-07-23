@@ -4,5 +4,10 @@ import { Form } from "./types.js";
 
 export function readStr(input: string): Form | ParseError {
   const s = new Scanner(buildTokenRegex(), input);
-  return form(s);
+  const parsed = form(s);
+  const left = s.next();
+  if (left) {
+    return new ParseError(`Unexpected token left!: ${JSON.stringify(left)}`);
+  }
+  return parsed;
 }
