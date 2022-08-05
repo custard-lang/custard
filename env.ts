@@ -1,6 +1,6 @@
-import { Env, Id, Writer } from "./types.js";
+import { Env, Id, Scope, Writer } from "./types.js";
 
-export function init(initial: Map<Id, Writer>): Env {
+export function init(initial: Scope): Env {
   return [initial];
 }
 

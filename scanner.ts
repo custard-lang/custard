@@ -13,6 +13,10 @@ export class Scanner {
     return this._lastToken;
   }
 
+  isAtEof(): boolean {
+    return !this._lastToken;
+  }
+
   private _next(): string | undefined {
     return this._regex.exec(this._input)?.[1];
   }

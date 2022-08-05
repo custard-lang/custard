@@ -1,3 +1,5 @@
+export type Block = Form[];
+
 export type Form = CuArray | Atom;
 
 export type CuArray = Form[];
@@ -31,10 +33,10 @@ export type Id = string;
 
 export type JsSrc = string;
 
-export type Writer = (env: Env, ...forms: CuArray) => JsSrc | TranspileError;
+export type Writer = "Var" | ((env: Env, ...forms: CuArray) => JsSrc | TranspileError);
 
 export function isCuSymbol(v: Form): v is CuSymbol {
-  return (v as CuSymbol).t === "Symbol";
+  return v !== undefined && (v as CuSymbol).t === "Symbol";
 }
 
 export class TranspileError extends Error {
