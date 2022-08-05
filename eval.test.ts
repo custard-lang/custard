@@ -7,10 +7,10 @@ import { describe, expect, test } from "vitest";
 import { TranspileError } from "./types";
 
 describe("evalForm", () => {
-  test("`( addF 2.0 (mulF 3.0 4.0) )`", () => {
+  test("`( plusF 2.0 (timesF 3.0 4.0) )`", () => {
     expect(
       evalForm(
-        assertNonError(readStr("( addF 2.0 (mulF 3.0 4.0) )")),
+        assertNonError(readStr("( plusF 2.0 (timesF 3.0 4.0) )")),
         Env.init(builtin())
       )
     ).toEqual(14);
@@ -23,8 +23,8 @@ describe("evalForm", () => {
     );
   });
 
-  test("`(addF eval eval)`", () => {
-    const src = "(addF eval eval)";
+  test("`(plusF eval eval)`", () => {
+    const src = "(plusF eval eval)";
     expect(evalForm(assertNonError(readStr(src)), Env.init(builtin()))).toEqual(
       new TranspileError('No variable "eval" is defined!')
     );
@@ -32,8 +32,8 @@ describe("evalForm", () => {
 });
 
 describe("evalBlock", () => {
-  test("`(const x (mulF 3 3))(addF x 2)`", () => {
-    const src = "(const x (mulF 3 3))(addF x 2)";
+  test("`(const x (timesF 3 3))(plusF x 2)`", () => {
+    const src = "(const x (timesF 3 3))(plusF x 2)";
     expect(
       assertNonError(
         evalBlock(assertNonError(readBlock(src)), Env.init(builtin()))
@@ -41,8 +41,8 @@ describe("evalBlock", () => {
     ).toEqual(11);
   });
 
-  test("`(let y (divF 3 2))(assign y (addF y 2))(subF y 7)`", () => {
-    const src = "(let y (divF 3 2))(assign y (addF y 2))(subF y 6)";
+  test("`(let y (dividedByF 3 2))(assign y (plusF y 2))(minusF y 7)`", () => {
+    const src = "(let y (dividedByF 3 2))(assign y (plusF y 2))(minusF y 6)";
     expect(
       assertNonError(
         evalBlock(assertNonError(readBlock(src)), Env.init(builtin()))

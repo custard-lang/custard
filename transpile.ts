@@ -55,21 +55,20 @@ export function transpile(ast: Form, env: Env): JsSrc | TranspileError {
 export function builtin(): Scope {
   const b = new Map();
 
-  // TODO: Rename into plus, minus, times, and dividedBy.
   b.set(
-    "addF",
+    "plusF",
     transpiling2((a: JsSrc, b: JsSrc) => `(${a} + ${b})`)
   );
   b.set(
-    "subF",
+    "minusF",
     transpiling2((a: JsSrc, b: JsSrc) => `(${a} - ${b})`)
   );
   b.set(
-    "mulF",
+    "timesF",
     transpiling2((a: JsSrc, b: JsSrc) => `(${a} * ${b})`)
   );
   b.set(
-    "divF",
+    "dividedByF",
     transpiling2((a: JsSrc, b: JsSrc) => `(${a} / ${b})`)
   );
 
