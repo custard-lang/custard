@@ -6,7 +6,6 @@ import {
   Form,
   isCuSymbol,
   JsSrc,
-  Scope,
   TranspileError,
   Writer,
 } from "./types.js";
@@ -52,64 +51,6 @@ export function transpile(ast: Form, env: Env): JsSrc | TranspileError {
   }
 }
 
-export function builtin(): Scope {
-  const b = new Map();
-
-  b.set(
-    "plusF",
-    transpiling2((a: JsSrc, b: JsSrc) => `(${a} + ${b})`)
-  );
-  b.set(
-    "minusF",
-    transpiling2((a: JsSrc, b: JsSrc) => `(${a} - ${b})`)
-  );
-  b.set(
-    "timesF",
-    transpiling2((a: JsSrc, b: JsSrc) => `(${a} * ${b})`)
-  );
-  b.set(
-    "dividedByF",
-    transpiling2((a: JsSrc, b: JsSrc) => `(${a} / ${b})`)
-  );
-
-  b.set(
-    "const",
-    transpilingForAssignment((env: Env, id: CuSymbol, exp: JsSrc) => {
-      const alreadyDefined = !!EnvF.find(env, id.v);
-      if (alreadyDefined) {
-        return new TranspileError(
-          `Variable ${JSON.stringify(id.v)} is already defined!`
-        );
-      }
-      EnvF.set(env, id.v, "Var");
-      return `const ${id.v} = ${exp};\n`;
-    })
-  );
-
-  b.set(
-    "let",
-    transpilingForAssignment((env: Env, id: CuSymbol, exp: JsSrc) => {
-      const alreadyDefined = !!EnvF.find(env, id.v);
-      if (alreadyDefined) {
-        return new TranspileError(
-          `Variable ${JSON.stringify(id.v)} is already defined!`
-        );
-      }
-      EnvF.set(env, id.v, "Var");
-      return `let ${id.v} = ${exp};\n`;
-    })
-  );
-
-  b.set(
-    "assign",
-    transpilingForAssignment((_env: Env, id: CuSymbol, exp: JsSrc) => {
-      return `${id.v} = ${exp};\n`;
-    })
-  );
-
-  return b;
-}
-
 export function transpiling2(
   f: (a: JsSrc, b: JsSrc) => JsSrc
 ): (env: Env, a: Form, b: Form) => JsSrc | TranspileError {
@@ -129,7 +70,7 @@ export function transpiling2(
 }
 
 // TODO: Handle assignment to reserved words etc.
-function transpilingForAssignment(
+export function transpilingForAssignment(
   f: (env: Env, id: CuSymbol, exp: JsSrc) => JsSrc | TranspileError
 ): Writer {
   return (env: Env, id: Form, v: Form) => {

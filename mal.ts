@@ -7,7 +7,8 @@ import { Form } from "./types.js";
 import { ParseError } from "./grammar.js";
 import { prStr } from "./printer.js";
 import * as Env from "./env.js";
-import { builtin, evalForm } from "./eval.js";
+import { evalForm } from "./eval.js";
+import { base } from "./lib/base.js";
 
 const rl = readline.createInterface({ input, output });
 
@@ -18,7 +19,7 @@ function read(str: string): Form | ParseError {
 
 // EVAL
 function evalCustard(ast: Form): any {
-  return evalForm(ast, Env.init(builtin()));
+  return evalForm(ast, Env.init(base()));
 }
 
 // PRINT
