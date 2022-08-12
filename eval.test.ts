@@ -30,6 +30,130 @@ describe("evalForm", () => {
       new TranspileError('No variable "eval" is defined!')
     );
   });
+
+  describe("(equals x y)", () => {
+    test('`(scope (const x "123") (equals x "123"))`', () => {
+      const src = '(scope (const x "123") (equals x "123"))';
+      expect(evalForm(assertNonError(readStr(src)), Env.init(base()))).toEqual(
+        true
+      );
+    });
+
+    test('`(scope (const x "123") (equals x 123))`', () => {
+      const src = '(scope (const x "123") (equals x 123))';
+      expect(evalForm(assertNonError(readStr(src)), Env.init(base()))).toEqual(
+        false
+      );
+    });
+  });
+
+  describe("(notEquals x y)", () => {
+    test("`(scope (const x 123) (notEquals x 123))`", () => {
+      const src = "(scope (const x 123) (notEquals x 123))";
+      expect(evalForm(assertNonError(readStr(src)), Env.init(base()))).toEqual(
+        false
+      );
+    });
+
+    test('`(scope (const x 123) (notEquals x "123"))`', () => {
+      const src = '(scope (const x 123) (notEquals x "123"))';
+      expect(evalForm(assertNonError(readStr(src)), Env.init(base()))).toEqual(
+        true
+      );
+    });
+  });
+
+  describe("(isLessThan x y)", () => {
+    test("`(scope (const x 123) (isLessThan x 124))`", () => {
+      const src = "(scope (const x 123) (isLessThan x 124))";
+      expect(evalForm(assertNonError(readStr(src)), Env.init(base()))).toEqual(
+        true
+      );
+    });
+
+    test("`(scope (const x 123) (isLessThan x 123))`", () => {
+      const src = "(scope (const x 123) (isLessThan x 123))";
+      expect(evalForm(assertNonError(readStr(src)), Env.init(base()))).toEqual(
+        false
+      );
+    });
+
+    test("`(scope (const x 123) (isLessThan x 122))`", () => {
+      const src = "(scope (const x 123) (isLessThan x 122))";
+      expect(evalForm(assertNonError(readStr(src)), Env.init(base()))).toEqual(
+        false
+      );
+    });
+  });
+
+  describe("(isLessThanOrEquals x y)", () => {
+    test("`(scope (const x 123) (isLessThanOrEquals x 124))`", () => {
+      const src = "(scope (const x 123) (isLessThanOrEquals x 124))";
+      expect(evalForm(assertNonError(readStr(src)), Env.init(base()))).toEqual(
+        true
+      );
+    });
+
+    test("`(scope (const x 123) (isLessThanOrEquals x 123))`", () => {
+      const src = "(scope (const x 123) (isLessThanOrEquals x 123))";
+      expect(evalForm(assertNonError(readStr(src)), Env.init(base()))).toEqual(
+        true
+      );
+    });
+
+    test("`(scope (const x 123) (isLessThanOrEquals x 122))`", () => {
+      const src = "(scope (const x 123) (isLessThanOrEquals x 122))";
+      expect(evalForm(assertNonError(readStr(src)), Env.init(base()))).toEqual(
+        false
+      );
+    });
+  });
+
+  describe("(isGreaterThan x y)", () => {
+    test("`(scope (const x 123) (isGreaterThan x 124))`", () => {
+      const src = "(scope (const x 123) (isGreaterThan x 124))";
+      expect(evalForm(assertNonError(readStr(src)), Env.init(base()))).toEqual(
+        false
+      );
+    });
+
+    test("`(scope (const x 123) (isGreaterThan x 123))`", () => {
+      const src = "(scope (const x 123) (isGreaterThan x 123))";
+      expect(evalForm(assertNonError(readStr(src)), Env.init(base()))).toEqual(
+        false
+      );
+    });
+
+    test("`(scope (const x 123) (isGreaterThan x 122))`", () => {
+      const src = "(scope (const x 123) (isGreaterThan x 122))";
+      expect(evalForm(assertNonError(readStr(src)), Env.init(base()))).toEqual(
+        true
+      );
+    });
+  });
+
+  describe("(isGreaterThanOrEquals x y)", () => {
+    test("`(scope (const x 123) (isGreaterThanOrEquals x 124))`", () => {
+      const src = "(scope (const x 123) (isGreaterThanOrEquals x 124))";
+      expect(evalForm(assertNonError(readStr(src)), Env.init(base()))).toEqual(
+        false
+      );
+    });
+
+    test("`(scope (const x 123) (isGreaterThanOrEquals x 123))`", () => {
+      const src = "(scope (const x 123) (isGreaterThanOrEquals x 123))";
+      expect(evalForm(assertNonError(readStr(src)), Env.init(base()))).toEqual(
+        true
+      );
+    });
+
+    test("`(scope (const x 123) (isGreaterThanOrEquals x 122))`", () => {
+      const src = "(scope (const x 123) (isGreaterThanOrEquals x 122))";
+      expect(evalForm(assertNonError(readStr(src)), Env.init(base()))).toEqual(
+        true
+      );
+    });
+  });
 });
 
 describe("evalBlock", () => {

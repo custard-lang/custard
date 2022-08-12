@@ -75,6 +75,32 @@ export function base(): Scope {
     transpiling2((a: JsSrc, b: JsSrc) => `(${a} / ${b})`)
   );
 
+  b.set(
+    "equals",
+    transpiling2((a: JsSrc, b: JsSrc) => `(${a} === ${b})`)
+  );
+  b.set(
+    "notEquals",
+    transpiling2((a: JsSrc, b: JsSrc) => `(${a} !== ${b})`)
+  );
+
+  b.set(
+    "isLessThan",
+    transpiling2((a: JsSrc, b: JsSrc) => `(${a} < ${b})`)
+  );
+  b.set(
+    "isLessThanOrEquals",
+    transpiling2((a: JsSrc, b: JsSrc) => `(${a} <= ${b})`)
+  );
+  b.set(
+    "isGreaterThan",
+    transpiling2((a: JsSrc, b: JsSrc) => `(${a} > ${b})`)
+  );
+  b.set(
+    "isGreaterThanOrEquals",
+    transpiling2((a: JsSrc, b: JsSrc) => `(${a} >= ${b})`)
+  );
+
   b.set("const", Base.__const);
   b.set("let", Base.__let);
 
