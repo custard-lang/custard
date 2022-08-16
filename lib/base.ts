@@ -140,5 +140,24 @@ export function base(): Scope {
     return result;
   });
 
+  b.set("if", (env: Env, bool: Form, ifTrue: Form, ifFalse: Form):
+    | JsSrc
+    | TranspileError => {
+    const boolSrc = transpile(bool, env);
+    if (boolSrc instanceof TranspileError) {
+      return boolSrc;
+    }
+    const ifTrueSrc = transpile(ifTrue, env);
+    if (ifTrueSrc instanceof TranspileError) {
+      return ifTrueSrc;
+    }
+
+    const ifFalseSrc = transpile(ifFalse, env);
+    if (ifFalseSrc instanceof TranspileError) {
+      return ifFalseSrc;
+    }
+    return `(${boolSrc} ? ${ifTrueSrc} : ${ifFalseSrc});`;
+  });
+
   return b;
 }

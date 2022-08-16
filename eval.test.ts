@@ -31,6 +31,21 @@ describe("evalForm", () => {
     );
   });
 
+  describe("(if bool x y)", () => {
+    test("`(if True 1 2)`", () => {
+      const src = "(if True 1 2)";
+      expect(evalForm(assertNonError(readStr(src)), Env.init(base()))).toEqual(
+        1
+      );
+    });
+    test("`(if False 1 2)`", () => {
+      const src = "(if False 1 2)";
+      expect(evalForm(assertNonError(readStr(src)), Env.init(base()))).toEqual(
+        2
+      );
+    });
+  });
+
   describe("(equals x y)", () => {
     test('`(scope (const x "123") (equals x "123"))`', () => {
       const src = '(scope (const x "123") (equals x "123"))';
