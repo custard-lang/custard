@@ -46,6 +46,15 @@ describe("evalForm", () => {
     });
   });
 
+  describe("(fn (a r g s) (f) (o) (r) (m) (s))", () => {
+    test("`( (fn (x) (plusF x 3)) 2 )` => 5", () => {
+      const src = "( (fn (x) (plusF x 3)) 2 )";
+      expect(evalForm(assertNonError(readStr(src)), Env.init(base()))).toEqual(
+        5
+      );
+    });
+  });
+
   describe("(equals x y)", () => {
     test('`(scope (const x "123") (equals x "123"))`', () => {
       const src = '(scope (const x "123") (equals x "123"))';
@@ -248,5 +257,15 @@ describe("evalBlock", () => {
         "The last statement in a `scope` must be an expression!"
       )
     );
+  });
+
+  describe("(fn (a r g s) (f) (o) (r) (m) (s))", () => {
+    test("`(const a 2.5) (const f (fn (x) (const b 3) (minusF (timesF a x) b))) (f 9)` => 19.5", () => {
+      const src =
+        "(const a 2.5) (const f (fn (x) (const b 3) (minusF (timesF a x) b))) (f 9)";
+      expect(
+        evalBlock(assertNonError(readBlock(src)), Env.init(base()))
+      ).toEqual(19.5);
+    });
   });
 });

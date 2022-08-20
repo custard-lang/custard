@@ -11,10 +11,13 @@ import {
 } from "../types.js";
 import * as EnvF from "../env.js";
 import {
+  isCall,
   transpile,
   transpiling2,
   transpilingForAssignment,
 } from "../transpile.js";
+
+//import { pr } from "../util/debug.js";
 
 namespace Base {
   export const __const = transpilingForAssignment(
@@ -45,10 +48,7 @@ namespace Base {
 }
 
 function isNonExpressionCall(env: Env, form: Form): boolean {
-  if (!(form instanceof Array)) {
-    return false;
-  }
-  if (!isCuSymbol(form[0])) {
+  if (!isCall(form)) {
     return false;
   }
   const nonExpressions: (Writer | undefined)[] = [Base.__const, Base.__let];
@@ -113,29 +113,14 @@ export function base(): Scope {
 
   b.set("scope", (env: Env, ...block: Block): JsSrc | TranspileError => {
     EnvF.push(env);
-    let result = "(() => {\n";
+    let result = "(\n";
 
-    const lastI = block.length - 1;
-    for (let i = 0; i < lastI; ++i) {
-      const statement = block[i];
-      const src = transpile(statement, env);
-      if (src instanceof TranspileError) {
-        return src;
-      }
-      result = `${result}  ${src};\n`;
+    const funcSrc = buildFunction(env, [], block);
+    if (funcSrc instanceof TranspileError) {
+      return funcSrc;
     }
-    const lastStatement = block[lastI];
-    if (isNonExpressionCall(env, lastStatement)) {
-      return new TranspileError(
-        "The last statement in a `scope` must be an expression!"
-      );
-    }
-    const lastSrc = transpile(lastStatement, env);
-    if (lastSrc instanceof TranspileError) {
-      return lastSrc;
-    }
-    result = `${result}  return ${lastSrc};\n`;
-    result += "})()";
+    result = `${result}${funcSrc}`;
+    result = `${result})()`;
     EnvF.pop(env);
     return result;
   });
@@ -159,5 +144,68 @@ export function base(): Scope {
     return `(${boolSrc} ? ${ifTrueSrc} : ${ifFalseSrc});`;
   });
 
+  b.set("fn", (env: Env, args: Form, ...block: Form[]):
+    | JsSrc
+    | TranspileError => {
+    return buildFunction(env, args, block);
+  });
+
   return b;
+}
+
+function buildFunction(
+  env: Env,
+  args: Form,
+  block: Block
+): JsSrc | TranspileError {
+  if (!(args instanceof Array)) {
+    return new TranspileError(
+      `Arguments for a function must be an array of symbols! But actually ${JSON.stringify(
+        args
+      )}`
+    );
+  }
+
+  EnvF.push(env);
+
+  const argNames = [];
+  for (const arg of args) {
+    if (!isCuSymbol(arg)) {
+      return new TranspileError(
+        `Arguments for a function must be an array of symbols! But actually ${JSON.stringify(
+          args
+        )}`
+      );
+    }
+    EnvF.set(env, arg.v, "Var");
+    argNames.push(arg.v);
+  }
+
+  let result = `(${argNames.join(", ")}) => {\n`;
+
+  const lastI = block.length - 1;
+  for (let i = 0; i < lastI; ++i) {
+    const statement = block[i];
+    const src = transpile(statement, env);
+    if (src instanceof TranspileError) {
+      return src;
+    }
+    result = `${result}  ${src};\n`;
+  }
+  const lastStatement = block[lastI];
+  if (isNonExpressionCall(env, lastStatement)) {
+    return new TranspileError(
+      "The last statement in a `scope` must be an expression!"
+    );
+  }
+  const lastSrc = transpile(lastStatement, env);
+  if (lastSrc instanceof TranspileError) {
+    return lastSrc;
+  }
+  result = `${result}  return ${lastSrc};\n`;
+  result = `${result}}`;
+
+  EnvF.pop(env);
+
+  return result;
 }

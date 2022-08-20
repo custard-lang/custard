@@ -1,6 +1,8 @@
 // import { pr } from "./util/debug";
+import { mapE } from "./util/error";
 
 import {
+  Call,
   CuSymbol,
   Env,
   Form,
@@ -14,6 +16,21 @@ import * as EnvF from "./env.js";
 export function transpile(ast: Form, env: Env): JsSrc | TranspileError {
   if (ast instanceof Array) {
     const [sym, ...args] = ast;
+
+    if (isCall(sym)) {
+      const funcSrc = transpile(sym, env);
+      if (funcSrc instanceof TranspileError) {
+        return funcSrc;
+      }
+
+      const argSrcs = mapE(args, TranspileError, (arg) => transpile(arg, env));
+      if (argSrcs instanceof TranspileError) {
+        return argSrcs;
+      }
+
+      return `(${funcSrc})(${argSrcs.join(", ")})`;
+    }
+
     if (!isCuSymbol(sym)) {
       return new TranspileError(`${JSON.stringify(sym)} is not a symbol!`);
     }
@@ -24,7 +41,12 @@ export function transpile(ast: Form, env: Env): JsSrc | TranspileError {
       );
     }
     if (f === "Var") {
-      return `${sym.v}`; // TODO: Call function after transpiling args
+      const argSrcs = mapE(args, TranspileError, (arg) => transpile(arg, env));
+      if (argSrcs instanceof TranspileError) {
+        return argSrcs;
+      }
+
+      return `${sym.v}(${argSrcs.join(", ")})`;
     }
     return f(env, ...args);
   }
@@ -83,4 +105,8 @@ export function transpilingForAssignment(
     }
     return f(env, id, exp);
   };
+}
+
+export function isCall(form: Form): form is Call {
+  return form instanceof Array && isCuSymbol(form[0]);
 }

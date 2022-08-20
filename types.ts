@@ -42,3 +42,5 @@ export function isCuSymbol(v: Form): v is CuSymbol {
 export class TranspileError extends Error {
   override name = "TranspileError";
 }
+
+export type Call = [CuSymbol, ...Form[]];
