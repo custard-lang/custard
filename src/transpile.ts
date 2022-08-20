@@ -1,5 +1,5 @@
-// import { pr } from "./util/debug";
-import { mapE } from "./util/error";
+// import { pr } from "./util/debug.js";
+import { mapE } from "./util/error.js";
 
 import {
   Call,
