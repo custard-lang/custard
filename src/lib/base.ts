@@ -49,7 +49,7 @@ namespace Base {
     }
   );
 
-  export const __else = aContextualKeyword();
+  export const __else = aContextualKeyword("if");
 }
 
 function isNonExpressionCall(env: Env, form: Form): boolean {

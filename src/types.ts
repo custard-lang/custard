@@ -33,8 +33,8 @@ export type Id = string;
 
 export type JsSrc = string;
 
-export type ContextualKeyword = { readonly t: 0 };
-export function aContextualKeyword(): ContextualKeyword { return { t: 0 } };
+export type ContextualKeyword = { readonly t: 0; readonly companion: Id; };
+export function aContextualKeyword(companion: Id): ContextualKeyword { return { t: 0, companion } };
 export function isAContextualKeyword(x: Writer): x is ContextualKeyword {
   return (x as Record<string, unknown>).t === 0
 };

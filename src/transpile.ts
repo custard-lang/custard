@@ -52,7 +52,7 @@ export function transpile(ast: Form, env: Env): JsSrc | TranspileError {
     }
     if (isAContextualKeyword(f)) {
       return new TranspileError(
-        `\`${sym.v}\` must be used with the other symbol(s)!`
+        `\`${sym.v}\` must be used with \`${f.companion}\`!`
       );
     }
     return f(env, ...args);
