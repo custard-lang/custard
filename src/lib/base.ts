@@ -1,4 +1,9 @@
+// import { pr } from "../util/debug.js";
+import { mapE } from "../util/error.js";
+
 import {
+  aContextualKeyword,
+  aVar,
   Block,
   CuSymbol,
   Env,
@@ -17,8 +22,6 @@ import {
   transpilingForAssignment,
 } from "../transpile.js";
 
-//import { pr } from "../util/debug.js";
-
 namespace Base {
   export const __const = transpilingForAssignment(
     (env: Env, id: CuSymbol, exp: JsSrc) => {
@@ -28,7 +31,7 @@ namespace Base {
           `Variable ${JSON.stringify(id.v)} is already defined!`
         );
       }
-      EnvF.set(env, id.v, "Var");
+      EnvF.set(env, id.v, aVar());
       return `const ${id.v} = ${exp}`;
     }
   );
@@ -41,10 +44,12 @@ namespace Base {
           `Variable ${JSON.stringify(id.v)} is already defined!`
         );
       }
-      EnvF.set(env, id.v, "Var");
+      EnvF.set(env, id.v, aVar());
       return `let ${id.v} = ${exp}`;
     }
   );
+
+  export const __else = aContextualKeyword();
 }
 
 function isNonExpressionCall(env: Env, form: Form): boolean {
@@ -125,24 +130,67 @@ export function base(): Scope {
     return result;
   });
 
-  b.set("if", (env: Env, bool: Form, ifTrue: Form, ifFalse: Form):
+  b.set("if", (env: Env, bool: Form, ...rest: Form[]):
     | JsSrc
     | TranspileError => {
     const boolSrc = transpile(bool, env);
     if (boolSrc instanceof TranspileError) {
       return boolSrc;
     }
-    const ifTrueSrc = transpile(ifTrue, env);
-    if (ifTrueSrc instanceof TranspileError) {
-      return ifTrueSrc;
+
+    const trueForms: Form[] = [];
+    const falseForms: Form[] = [];
+    let elseIsFound = false;
+    for (const form of rest) {
+      if (isCuSymbol(form) && EnvF.find(env, form.v) === Base.__else) {
+        if (elseIsFound) {
+          return new TranspileError(
+            "`else` is specified more than once in an `if` expression!"
+          );
+        }
+        elseIsFound = true;
+        continue;
+      }
+      if (elseIsFound) {
+        falseForms.push(form);
+      } else {
+        trueForms.push(form);
+      }
+    }
+    if (trueForms.length < 1) {
+      if (elseIsFound) {
+        return new TranspileError("No expressions specified before `else`!");
+      }
+      return new TranspileError("No expressions given to `if`!");
+    }
+    if (falseForms.length < 1) {
+      if (elseIsFound) {
+        return new TranspileError("No expressions specified after `else`!");
+      }
+      return new TranspileError("``else`` not specified for an `if`!");
     }
 
-    const ifFalseSrc = transpile(ifFalse, env);
-    if (ifFalseSrc instanceof TranspileError) {
-      return ifFalseSrc;
+    const ifTrueSrcs = mapE(trueForms, TranspileError, (ifTrue) =>
+      transpile(ifTrue, env)
+    );
+    if (ifTrueSrcs instanceof TranspileError) {
+      return ifTrueSrcs;
     }
+    const ifTrueSrc =
+      ifTrueSrcs.length > 1 ? `(${ifTrueSrcs.join(", ")})` : ifTrueSrcs[0];
+
+    const ifFalseSrcs = mapE(falseForms, TranspileError, (ifFalse) =>
+      transpile(ifFalse, env)
+    );
+    if (ifFalseSrcs instanceof TranspileError) {
+      return ifFalseSrcs;
+    }
+    const ifFalseSrc = ifFalseSrcs.join(", ");
+
     return `(${boolSrc} ? ${ifTrueSrc} : ${ifFalseSrc});`;
   });
+
+  b.set("else", Base.__else);
 
   b.set("fn", (env: Env, args: Form, ...block: Form[]):
     | JsSrc
@@ -177,7 +225,7 @@ function buildFunction(
         )}`
       );
     }
-    EnvF.set(env, arg.v, "Var");
+    EnvF.set(env, arg.v, aVar());
     argNames.push(arg.v);
   }
 

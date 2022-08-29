@@ -6,6 +6,8 @@ import {
   CuSymbol,
   Env,
   Form,
+  isAContextualKeyword,
+  isAVar,
   isCuSymbol,
   JsSrc,
   TranspileError,
@@ -40,13 +42,18 @@ export function transpile(ast: Form, env: Env): JsSrc | TranspileError {
         `No function ${JSON.stringify(sym.v)} is defined!`
       );
     }
-    if (f === "Var") {
+    if (isAVar(f)) {
       const argSrcs = mapE(args, TranspileError, (arg) => transpile(arg, env));
       if (argSrcs instanceof TranspileError) {
         return argSrcs;
       }
 
       return `${sym.v}(${argSrcs.join(", ")})`;
+    }
+    if (isAContextualKeyword(f)) {
+      return new TranspileError(
+        `\`${sym.v}\` must be used with the other symbol(s)!`
+      );
     }
     return f(env, ...args);
   }

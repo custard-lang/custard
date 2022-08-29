@@ -33,7 +33,19 @@ export type Id = string;
 
 export type JsSrc = string;
 
-export type Writer = "Var" | ((env: Env, ...forms: CuArray) => JsSrc | TranspileError);
+export type ContextualKeyword = { readonly t: 0 };
+export function aContextualKeyword(): ContextualKeyword { return { t: 0 } };
+export function isAContextualKeyword(x: Writer): x is ContextualKeyword {
+  return (x as Record<string, unknown>).t === 0
+};
+
+export type Var = { readonly t: 1 };
+export function aVar(): Var { return { t: 1 } };
+export function isAVar(x: Writer): x is Var {
+  return (x as Record<string, unknown>).t === 1
+};
+
+export type Writer = ContextualKeyword | Var | ((env: Env, ...forms: CuArray) => JsSrc | TranspileError);
 
 export function isCuSymbol(v: Form): v is CuSymbol {
   return v !== undefined && (v as CuSymbol).t === "Symbol";
