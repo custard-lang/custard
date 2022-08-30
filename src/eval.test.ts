@@ -132,52 +132,57 @@ describe("evalBlock", () => {
     });
   }
 
-  testOf({
-    src: "(const x (timesF 3 3))(plusF x 2)",
-    expected: 11,
-  });
+  describe("(const|let|assign id expression)", () => {
+    testOf({
+      src: "(const x (timesF 3 3))(plusF x 2)",
+      expected: 11,
+    });
 
-  testOf({
-    src: "(let y (dividedByF 3 2))(assign y (plusF y 2))(minusF y 6)",
-    expected: -2.5,
-  });
+    testOf({
+      src: "(let y (dividedByF 3 2))(assign y (plusF y 2))(minusF y 6)",
+      expected: -2.5,
+    });
 
-  testOf({
-    src: "(const y 5)(const y 3)",
-    expected: new TranspileError('Variable "y" is already defined!'),
-  });
+    testOf({
+      src: "(const y 5)(const y 3)",
+      expected: new TranspileError('Variable "y" is already defined!'),
+    });
 
-  testOf({
-    src: "(let y 6)(let y 7)",
-    expected: new TranspileError('Variable "y" is already defined!'),
-  });
+    testOf({
+      src: "(let y 6)(let y 7)",
+      expected: new TranspileError('Variable "y" is already defined!'),
+    });
 
-  testOf({ src: "(const y 5)(scope (const y 3) (timesF y 2))", expected: 6 });
+    testOf({ src: "(const y 5)(scope (const y 3) (timesF y 2))", expected: 6 });
 
-  testOf({ src: "(let y 6)(scope (let y 7) (dividedByF y 2))", expected: 3.5 });
+    testOf({
+      src: "(let y 6)(scope (let y 7) (dividedByF y 2))",
+      expected: 3.5,
+    });
 
-  testOf({
-    src: "(const y 5)(scope (const y 3) (plusF y 0)) (timesF y 2)",
-    expected: 10,
-  });
+    testOf({
+      src: "(const y 5)(scope (const y 3) (plusF y 0)) (timesF y 2)",
+      expected: 10,
+    });
 
-  testOf({
-    src: "(let y 6)(scope (let y 7) (plusF y 0)) (dividedByF y 3)",
-    expected: 2,
-  });
+    testOf({
+      src: "(let y 6)(scope (let y 7) (plusF y 0)) (dividedByF y 3)",
+      expected: 2,
+    });
 
-  testOf({
-    src: "(scope (const y 3))",
-    expected: new TranspileError(
-      "The last statement in a `scope` must be an expression!"
-    ),
-  });
+    testOf({
+      src: "(scope (const y 3))",
+      expected: new TranspileError(
+        "The last statement in a `scope` must be an expression!"
+      ),
+    });
 
-  testOf({
-    src: "(scope (let x 7) (let y 7))",
-    expected: new TranspileError(
-      "The last statement in a `scope` must be an expression!"
-    ),
+    testOf({
+      src: "(scope (let x 7) (let y 7))",
+      expected: new TranspileError(
+        "The last statement in a `scope` must be an expression!"
+      ),
+    });
   });
 
   describe("(fn (a r g s) (f) (o) (r) (m) (s))", () => {
