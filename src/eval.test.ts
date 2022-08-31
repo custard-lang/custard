@@ -27,14 +27,14 @@ describe("evalForm", () => {
   });
 
   describe("(if bool x else y)", () => {
-    testOf({ src: "(if True 1 else 2)", expected: 1 });
-    testOf({ src: "(if False 1 else 2)", expected: 2 });
+    testOf({ src: "(if true 1 else 2)", expected: 1 });
+    testOf({ src: "(if false 1 else 2)", expected: 2 });
     testOf({
-      src: "(scope (let x 0) (if True (assign x 1) x else (assign x 2) x))",
+      src: "(scope (let x 0) (if true (assign x 1) x else (assign x 2) x))",
       expected: 1,
     });
     testOf({
-      src: "(scope (let x 0) (if False (assign x 1) x else (assign x 2) x))",
+      src: "(scope (let x 0) (if false (assign x 1) x else (assign x 2) x))",
       expected: 2,
     });
   });

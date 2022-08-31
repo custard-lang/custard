@@ -40,14 +40,14 @@ describe("readStr", () => {
   });
 
   describe("reserved symbols", () => {
-    test("`True` -> `True`", () => {
-      expect(readStr("True")).toEqual(true);
+    test("`true` -> `true`", () => {
+      expect(readStr("true")).toEqual(true);
     });
-    test("`False ` -> `False`", () => {
-      expect(readStr("False ")).toEqual(false);
+    test("`false ` -> `false`", () => {
+      expect(readStr("false ")).toEqual(false);
     });
-    test("` None ` -> `None`", () => {
-      expect(readStr("None ")).toEqual(undefined);
+    test("` undefined ` -> `undefined`", () => {
+      expect(readStr("undefined ")).toEqual(undefined);
     });
   });
 
@@ -65,8 +65,8 @@ describe("readStr", () => {
         { t: "Integer32", v: 789 },
       ]);
     });
-    test('`( + 2 (* 3 4) None  "foo" )` -> `(+ 2 (* 3 4) None "foo")`', () => {
-      expect(readStr('( + 2 (* 3 4) None  "foo" )')).toEqual([
+    test('`( + 2 (* 3 4) undefined  "foo" )` -> `(+ 2 (* 3 4) undefined "foo")`', () => {
+      expect(readStr('( + 2 (* 3 4) undefined  "foo" )')).toEqual([
         { t: "Symbol", v: "+" },
         { t: "Integer32", v: 2 },
         [

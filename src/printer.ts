@@ -6,11 +6,11 @@ export function prStr(form: Form): string {
   }
   switch (form) {
     case true:
-      return "True";
+      return "true";
     case false:
-      return "False";
+      return "false";
     case undefined:
-      return "None";
+      return "undefined";
   }
   switch (typeof form) {
     case "number":

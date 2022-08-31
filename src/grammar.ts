@@ -83,11 +83,11 @@ function atom(s: Scanner): Atom | ParseError {
     };
   }
   switch(token){
-    case "True":
+    case "true":
       return true;
-    case "False":
+    case "false":
       return false;
-    case "None":
+    case "undefined":
       return undefined;
     default:
       return {
