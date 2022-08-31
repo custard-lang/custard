@@ -41,6 +41,22 @@ describe("evalForm", () => {
 
   describe("(fn (a r g s) (f) (o) (r) (m) (s))", () => {
     testOf({ src: "( (fn (x) (plusF x 3)) 2 )", expected: 5 });
+    testOf({ src: "( (fn () 3) 2 )", expected: 3 });
+    testOf({
+      src: "((fn ()))",
+      expected: new TranspileError(
+        "`fn` must receive at least one expression!"
+      ),
+    });
+  });
+
+  describe("(scope e x p r s)", () => {
+    testOf({
+      src: "(scope)",
+      expected: new TranspileError(
+        "`scope` must receive at least one expression!"
+      ),
+    });
   });
 
   describe("(equals x y)", () => {

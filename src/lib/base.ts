@@ -8,6 +8,7 @@ import {
   CuSymbol,
   Env,
   Form,
+  Id,
   isCuSymbol,
   JsSrc,
   Scope,
@@ -125,7 +126,7 @@ export function base(): Scope {
     EnvF.push(env);
     let result = "(\n";
 
-    const funcSrc = buildFunction(env, [], block);
+    const funcSrc = buildFunction(env, "scope", [], block);
     if (funcSrc instanceof TranspileError) {
       return funcSrc;
     }
@@ -200,7 +201,7 @@ export function base(): Scope {
   b.set("fn", (env: Env, args: Form, ...block: Form[]):
     | JsSrc
     | TranspileError => {
-    return buildFunction(env, args, block);
+    return buildFunction(env, "fn", args, block);
   });
 
   return b;
@@ -208,6 +209,7 @@ export function base(): Scope {
 
 function buildFunction(
   env: Env,
+  formId: Id,
   args: Form,
   block: Block
 ): JsSrc | TranspileError {
@@ -216,6 +218,11 @@ function buildFunction(
       `Arguments for a function must be an array of symbols! But actually ${JSON.stringify(
         args
       )}`
+    );
+  }
+  if (block.length < 1) {
+    return new TranspileError(
+      `\`${formId}\` must receive at least one expression!`
     );
   }
 
