@@ -42,4 +42,9 @@
     - [x] `let`
     - [x] `const`
     - [x] `assign`
+- [x] 逆に引数が足りなかった場合のことを考えていない！
+    - やはり算術演算子や比較演算子は後回し
+    - [x] `let`,`const`, `assign`
+    - [x] `scope`, `fn`
 - [x] よくよく考えたら、`if`は三項演算子にしたから`if/else`じゃなくしたけど、カンマ演算子を使えば複数の式を仕込めるのでは？
+- [x] `True`, `False`, `None`から`true`, `false`, `undefined`に
