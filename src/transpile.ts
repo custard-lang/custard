@@ -6,6 +6,7 @@ import {
   CuSymbol,
   Env,
   Form,
+  Id,
   isAContextualKeyword,
   isAVar,
   isCuSymbol,
@@ -100,9 +101,15 @@ export function transpiling2(
 
 // TODO: Handle assignment to reserved words etc.
 export function transpilingForAssignment(
+  formId: Id,
   f: (env: Env, id: CuSymbol, exp: JsSrc) => JsSrc | TranspileError
 ): Writer {
-  return (env: Env, id: Form, v: Form) => {
+  return (env: Env, id: Form, v: Form, another?: Form) => {
+    if (another != null) {
+      return new TranspileError(
+        `The number of arguments to \`${formId}\` must be 2!`
+      );
+    }
     if (!isCuSymbol(id)) {
       return new TranspileError(`${JSON.stringify(id)} is not a symbol!`);
     }

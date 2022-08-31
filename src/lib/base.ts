@@ -24,6 +24,7 @@ import {
 
 namespace Base {
   export const __const = transpilingForAssignment(
+    "const",
     (env: Env, id: CuSymbol, exp: JsSrc) => {
       const alreadyDefined = EnvF.atWhichScope(env, id.v) === 0;
       if (alreadyDefined) {
@@ -37,6 +38,7 @@ namespace Base {
   );
 
   export const __let = transpilingForAssignment(
+    "let",
     (env: Env, id: CuSymbol, exp: JsSrc) => {
       const alreadyDefined = EnvF.atWhichScope(env, id.v) === 0;
       if (alreadyDefined) {
@@ -111,9 +113,12 @@ export function base(): Scope {
 
   b.set(
     "assign",
-    transpilingForAssignment((_env: Env, id: CuSymbol, exp: JsSrc) => {
-      return `${id.v} = ${exp}`;
-    })
+    transpilingForAssignment(
+      "assign",
+      (_env: Env, id: CuSymbol, exp: JsSrc) => {
+        return `${id.v} = ${exp}`;
+      }
+    )
   );
 
   b.set("scope", (env: Env, ...block: Block): JsSrc | TranspileError => {

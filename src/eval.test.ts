@@ -183,6 +183,27 @@ describe("evalBlock", () => {
         "The last statement in a `scope` must be an expression!"
       ),
     });
+
+    testOf({
+      src: "(const y 3 2)",
+      expected: new TranspileError(
+        "The number of arguments to `const` must be 2!"
+      ),
+    });
+
+    testOf({
+      src: "(let y 4 5)",
+      expected: new TranspileError(
+        "The number of arguments to `let` must be 2!"
+      ),
+    });
+
+    testOf({
+      src: "(let y 8)(assign y 9 10))",
+      expected: new TranspileError(
+        "The number of arguments to `assign` must be 2!"
+      ),
+    });
   });
 
   describe("(fn (a r g s) (f) (o) (r) (m) (s))", () => {
