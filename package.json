@@ -6,7 +6,8 @@
   "main": "dist/src/mal.js",
   "scripts": {
     "test": "vitest",
-    "test:detailed": "vitest --reporter verbose"
+    "test:detailed": "vitest --reporter verbose",
+    "test:coverage": "vitest run --coverage"
   },
   "repository": {
     "type": "git",
@@ -23,6 +24,7 @@
   "homepage": "https://github.com/igrep/custard#readme",
   "devDependencies": {
     "@types/node": "^17.0.25",
+    "@vitest/coverage-c8": "^0.22.1",
     "eslint": "^8.13.0",
     "prettier": "^2.6.2",
     "ts-node": "^10.7.0",
