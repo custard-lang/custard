@@ -167,13 +167,13 @@ export function base(): Scope {
       if (elseIsFound) {
         return new TranspileError("No expressions specified before `else`!");
       }
-      return new TranspileError("No expressions given to `if`!");
+      return new TranspileError("No expressions given to an `if` expression!");
     }
     if (falseForms.length < 1) {
       if (elseIsFound) {
         return new TranspileError("No expressions specified after `else`!");
       }
-      return new TranspileError("``else`` not specified for an `if`!");
+      return new TranspileError("`else` not specified for an `if` expression!");
     }
 
     const ifTrueSrcs = mapE(trueForms, TranspileError, (ifTrue) =>

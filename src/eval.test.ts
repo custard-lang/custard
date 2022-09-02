@@ -30,6 +30,44 @@ describe("evalForm", () => {
     testOf({ src: "(if true 1 else 2)", expected: 1 });
     testOf({ src: "(if false 1 else 2)", expected: 2 });
     testOf({
+      src: "(if)",
+      expected: new TranspileError(
+        "No expressions given to an `if` expression!"
+      ),
+    });
+    testOf({
+      src: "(if false)",
+      expected: new TranspileError(
+        "No expressions given to an `if` expression!"
+      ),
+    });
+    testOf({
+      src: "(if false else 2)",
+      expected: new TranspileError("No expressions specified before `else`!"),
+    });
+    testOf({
+      src: "(if false 1 2)",
+      expected: new TranspileError(
+        "`else` not specified for an `if` expression!"
+      ),
+    });
+    testOf({
+      src: "(if false 1 else)",
+      expected: new TranspileError("No expressions specified after `else`!"),
+    });
+    testOf({
+      src: "(if false 1 else else 2)",
+      expected: new TranspileError(
+        "`else` is specified more than once in an `if` expression!"
+      ),
+    });
+    testOf({
+      src: "(if false 1 else 2 else 2)",
+      expected: new TranspileError(
+        "`else` is specified more than once in an `if` expression!"
+      ),
+    });
+    testOf({
       src: "(scope (let x 0) (if true (assign x 1) x else (assign x 2) x))",
       expected: 1,
     });
@@ -46,6 +84,18 @@ describe("evalForm", () => {
       src: "((fn ()))",
       expected: new TranspileError(
         "`fn` must receive at least one expression!"
+      ),
+    });
+    testOf({
+      src: "( (fn x x) 1 )",
+      expected: new TranspileError(
+        'Arguments for a function must be an array of symbols! But actually {"t":"Symbol","v":"x"}'
+      ),
+    });
+    testOf({
+      src: "( (fn (x 1) x) 1 )",
+      expected: new TranspileError(
+        'Arguments for a function must be an array of symbols! But actually [{"t":"Symbol","v":"x"},{"t":"Integer32","v":1}]'
       ),
     });
   });
