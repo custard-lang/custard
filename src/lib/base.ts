@@ -53,13 +53,25 @@ namespace Base {
   );
 
   export const __else = aContextualKeyword("if");
+
+  export const __return = (env: Env, arg: Form): JsSrc | TranspileError => {
+    const argSrc = transpile(arg, env);
+    if (argSrc instanceof TranspileError) {
+      return argSrc;
+    }
+    return `return ${argSrc}`;
+  };
 }
 
 function isNonExpressionCall(env: Env, form: Form): boolean {
   if (!isCall(form)) {
     return false;
   }
-  const nonExpressions: (Writer | undefined)[] = [Base.__const, Base.__let];
+  const nonExpressions: (Writer | undefined)[] = [
+    Base.__const,
+    Base.__let,
+    Base.__return,
+  ];
   return nonExpressions.includes(EnvF.find(env, form[0].v));
 }
 
@@ -204,6 +216,8 @@ export function base(): Scope {
     return buildFunction(env, "fn", args, block);
   });
 
+  b.set("return", Base.__return);
+
   return b;
 }
 
@@ -255,7 +269,7 @@ function buildFunction(
   const lastStatement = block[lastI];
   if (isNonExpressionCall(env, lastStatement)) {
     return new TranspileError(
-      "The last statement in a `scope` must be an expression!"
+      `The last statement in a \`${formId}\` must be an expression!`
     );
   }
   const lastSrc = transpile(lastStatement, env);

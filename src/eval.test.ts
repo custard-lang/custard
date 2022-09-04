@@ -107,6 +107,32 @@ describe("evalForm", () => {
         "`scope` must receive at least one expression!"
       ),
     });
+
+    testOf({
+      src: "(scope (const y 3))",
+      expected: new TranspileError(
+        "The last statement in a `scope` must be an expression!"
+      ),
+    });
+
+    testOf({
+      src: "(scope (let x 7) (let y 7))",
+      expected: new TranspileError(
+        "The last statement in a `scope` must be an expression!"
+      ),
+    });
+
+    testOf({
+      src: "(scope (return 904) 22)",
+      expected: 904,
+    });
+
+    testOf({
+      src: "(scope (return 904))",
+      expected: new TranspileError(
+        "The last statement in a `scope` must be an expression!"
+      ),
+    });
   });
 
   describe("(equals x y)", () => {
@@ -237,20 +263,6 @@ describe("evalBlock", () => {
     });
 
     testOf({
-      src: "(scope (const y 3))",
-      expected: new TranspileError(
-        "The last statement in a `scope` must be an expression!"
-      ),
-    });
-
-    testOf({
-      src: "(scope (let x 7) (let y 7))",
-      expected: new TranspileError(
-        "The last statement in a `scope` must be an expression!"
-      ),
-    });
-
-    testOf({
       src: "(const y 3 2)",
       expected: new TranspileError(
         "The number of arguments to `const` must be 2!"
@@ -277,6 +289,18 @@ describe("evalBlock", () => {
       src:
         "(const a 2.5) (const f (fn (x) (const b 3) (minusF (timesF a x) b))) (f 9)",
       expected: 19.5,
+    });
+
+    testOf({
+      src: "(const f (fn (x) (return 904) x)) (f 9)",
+      expected: 904,
+    });
+
+    testOf({
+      src: "(const f (fn (x) (return 904))) (f 9)",
+      expected: new TranspileError(
+        "The last statement in a `fn` must be an expression!"
+      ),
     });
   });
 });
