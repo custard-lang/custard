@@ -25,7 +25,7 @@
                     - [x] `let`, `const`, `return`
                     - まだ実装しない: `break`, `continue`
                 - 文を受け取る文
-                    - [ ] `ifThen`
+                    - [x] `when`
                     - まだ実装しない: `for`, `while`
                 - 文を受け取る式（最後の文は式でないとならない）
                     - [x] `scope`, `fn`

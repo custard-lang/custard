@@ -2,6 +2,7 @@
 import { mapE } from "./util/error.js";
 
 import {
+  Block,
   Call,
   CuSymbol,
   Env,
@@ -79,6 +80,18 @@ export function transpile(ast: Form, env: Env): JsSrc | TranspileError {
           return `${ast.v}`;
       }
   }
+}
+
+export function transpileBlock(forms: Block, env: Env): JsSrc | TranspileError {
+  let jsSrc = "";
+  for (const form of forms) {
+    const s = transpile(form, env);
+    if (s instanceof Error) {
+      return s;
+    }
+    jsSrc = `${jsSrc}${s};\n`;
+  }
+  return jsSrc;
 }
 
 export function transpiling2(

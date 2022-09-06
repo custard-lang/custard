@@ -5,6 +5,7 @@ import {
   aContextualKeyword,
   aVar,
   Block,
+  Call,
   CuSymbol,
   Env,
   Form,
@@ -19,6 +20,7 @@ import * as EnvF from "../env.js";
 import {
   isCall,
   transpile,
+  transpileBlock,
   transpiling2,
   transpilingForAssignment,
 } from "../transpile.js";
@@ -54,16 +56,49 @@ namespace Base {
 
   export const __else = aContextualKeyword("if");
 
-  export const __return = (env: Env, arg: Form): JsSrc | TranspileError => {
+  export const __return = (
+    env: Env,
+    arg: Form,
+    moreArg: Form
+  ): JsSrc | TranspileError => {
+    if (arg === undefined || moreArg !== undefined) {
+      return new TranspileError(
+        "`return` must receive exactly one expression!"
+      );
+    }
     const argSrc = transpile(arg, env);
     if (argSrc instanceof TranspileError) {
       return argSrc;
     }
     return `return ${argSrc}`;
   };
+
+  export function when(
+    env: Env,
+    bool: Form,
+    ...rest: Form[]
+  ): JsSrc | TranspileError {
+    if (bool === undefined) {
+      return new TranspileError(
+        "No expressions given to an `when` expression!"
+      );
+    }
+    if (rest.length < 1) {
+      return new TranspileError("No statements given to an `when` expression!");
+    }
+    const boolSrc = transpile(bool, env);
+    if (boolSrc instanceof TranspileError) {
+      return boolSrc;
+    }
+    const statementsSrc = transpileBlock(rest, env);
+    if (statementsSrc instanceof TranspileError) {
+      return statementsSrc;
+    }
+    return `if(${boolSrc}){\n${statementsSrc}\n}`;
+  }
 }
 
-function isNonExpressionCall(env: Env, form: Form): boolean {
+function isNonExpressionCall(env: Env, form: Form): form is Call {
   if (!isCall(form)) {
     return false;
   }
@@ -71,6 +106,7 @@ function isNonExpressionCall(env: Env, form: Form): boolean {
     Base.__const,
     Base.__let,
     Base.__return,
+    Base.when,
   ];
   return nonExpressions.includes(EnvF.find(env, form[0].v));
 }
@@ -218,6 +254,8 @@ export function base(): Scope {
 
   b.set("return", Base.__return);
 
+  b.set("when", Base.when);
+
   return b;
 }
 
@@ -269,7 +307,7 @@ function buildFunction(
   const lastStatement = block[lastI];
   if (isNonExpressionCall(env, lastStatement)) {
     return new TranspileError(
-      `The last statement in a \`${formId}\` must be an expression!`
+      `The last statement in a \`${formId}\` must be an expression! But \`${lastStatement[0].v}\` is a statement!`
     );
   }
   const lastSrc = transpile(lastStatement, env);

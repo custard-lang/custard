@@ -111,14 +111,14 @@ describe("evalForm", () => {
     testOf({
       src: "(scope (const y 3))",
       expected: new TranspileError(
-        "The last statement in a `scope` must be an expression!"
+        "The last statement in a `scope` must be an expression! But `const` is a statement!"
       ),
     });
 
     testOf({
       src: "(scope (let x 7) (let y 7))",
       expected: new TranspileError(
-        "The last statement in a `scope` must be an expression!"
+        "The last statement in a `scope` must be an expression! But `let` is a statement!"
       ),
     });
 
@@ -130,7 +130,14 @@ describe("evalForm", () => {
     testOf({
       src: "(scope (return 904))",
       expected: new TranspileError(
-        "The last statement in a `scope` must be an expression!"
+        "The last statement in a `scope` must be an expression! But `return` is a statement!"
+      ),
+    });
+
+    testOf({
+      src: "(scope (return 904 905) 1)",
+      expected: new TranspileError(
+        "`return` must receive exactly one expression!"
       ),
     });
   });
@@ -299,7 +306,37 @@ describe("evalBlock", () => {
     testOf({
       src: "(const f (fn (x) (return 904))) (f 9)",
       expected: new TranspileError(
-        "The last statement in a `fn` must be an expression!"
+        "The last statement in a `fn` must be an expression! But `return` is a statement!"
+      ),
+    });
+
+    testOf({
+      src: "(const f (fn (x) (when x x))) (f 9)",
+      expected: new TranspileError(
+        "The last statement in a `fn` must be an expression! But `when` is a statement!"
+      ),
+    });
+  });
+
+  describe("(when bool f o r m s)", () => {
+    testOf({
+      src: "(let x -2) (when true (let y 905) (assign x (plusF x y))) x",
+      expected: 903,
+    });
+    testOf({
+      src: "(let x -2) (when false (let y 905) (assign x (plusF x y))) x",
+      expected: -2,
+    });
+    testOf({
+      src: "(when)",
+      expected: new TranspileError(
+        "No expressions given to an `when` expression!"
+      ),
+    });
+    testOf({
+      src: "(when true)",
+      expected: new TranspileError(
+        "No statements given to an `when` expression!"
       ),
     });
   });
