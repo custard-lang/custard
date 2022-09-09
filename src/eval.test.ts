@@ -328,6 +328,18 @@ describe("evalBlock", () => {
     });
   });
 
+  describe("(procedure (a r g s) (s) (t) (a) (t) (e) (m) (e) (n) (t) (s))", () => {
+    testOf({
+      src: "(const p (procedure () (let x 6) (when false (return 9))))(p)",
+      expected: undefined,
+    });
+    testOf({
+      src:
+        "(let n 0) (const p (procedure (x) (assign n (plusF 45 x)) (when true (return n)) -1)) (p 3)",
+      expected: 48,
+    });
+  });
+
   describe("(when bool f o r m s)", () => {
     testOf({
       src: "(let x -2) (when true (let y 905) (assign x (plusF x y))) x",

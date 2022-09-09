@@ -174,7 +174,7 @@ export function base(): Scope {
     EnvF.push(env);
     let result = "(\n";
 
-    const funcSrc = buildFunction(env, "scope", [], block);
+    const funcSrc = buildFn(env, "scope", [], block);
     if (funcSrc instanceof TranspileError) {
       return funcSrc;
     }
@@ -249,7 +249,13 @@ export function base(): Scope {
   b.set("fn", (env: Env, args: Form, ...block: Form[]):
     | JsSrc
     | TranspileError => {
-    return buildFunction(env, "fn", args, block);
+    return buildFn(env, "fn", args, block);
+  });
+
+  b.set("procedure", (env: Env, args: Form, ...block: Form[]):
+    | JsSrc
+    | TranspileError => {
+    return buildProcedure(env, "procedure", args, block);
   });
 
   b.set("return", Base.__return);
@@ -259,7 +265,7 @@ export function base(): Scope {
   return b;
 }
 
-function buildFunction(
+function functionPrelude(
   env: Env,
   formId: Id,
   args: Form,
@@ -293,17 +299,34 @@ function buildFunction(
     argNames.push(arg.v);
   }
 
-  let result = `(${argNames.join(", ")}) => {\n`;
+  return `(${argNames.join(", ")}) => {\n`;
+}
+
+function functionPostlude(env: Env, src: JsSrc): JsSrc {
+  EnvF.pop(env);
+  return `${src}}`;
+}
+
+function buildFn(
+  env: Env,
+  formId: Id,
+  args: Form,
+  block: Block
+): JsSrc | TranspileError {
+  let result = functionPrelude(env, formId, args, block);
+  if (result instanceof TranspileError) {
+    return result;
+  }
 
   const lastI = block.length - 1;
   for (let i = 0; i < lastI; ++i) {
-    const statement = block[i];
-    const src = transpile(statement, env);
+    const src = transpile(block[i], env);
     if (src instanceof TranspileError) {
       return src;
     }
     result = `${result}  ${src};\n`;
   }
+
   const lastStatement = block[lastI];
   if (isNonExpressionCall(env, lastStatement)) {
     return new TranspileError(
@@ -315,9 +338,28 @@ function buildFunction(
     return lastSrc;
   }
   result = `${result}  return ${lastSrc};\n`;
-  result = `${result}}`;
 
-  EnvF.pop(env);
+  return functionPostlude(env, result);
+}
 
-  return result;
+function buildProcedure(
+  env: Env,
+  formId: Id,
+  args: Form,
+  block: Block
+): JsSrc | TranspileError {
+  let result = functionPrelude(env, formId, args, block);
+  if (result instanceof TranspileError) {
+    return result;
+  }
+
+  for (let i = 0; i < block.length; ++i) {
+    const src = transpile(block[i], env);
+    if (src instanceof TranspileError) {
+      return src;
+    }
+    result = `${result}  ${src};\n`;
+  }
+
+  return functionPostlude(env, result);
 }
