@@ -65,8 +65,9 @@ export function transpile(ast: Form, env: Env): JsSrc | TranspileError {
     case "undefined":
       return "void 0";
     case "number":
-    case "boolean":
       return `${ast}`;
+    case "boolean":
+      return ast ? "!0" : "!1";
     case "object":
       switch (ast.t) {
         case "Symbol":
