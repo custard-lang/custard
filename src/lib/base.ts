@@ -56,22 +56,22 @@ namespace Base {
 
   export const __else = aContextualKeyword("if");
 
-  export const __return = (
-    env: Env,
-    arg: Form,
-    moreArg: Form
-  ): JsSrc | TranspileError => {
-    if (arg === undefined || moreArg !== undefined) {
-      return new TranspileError(
-        "`return` must receive exactly one expression!"
-      );
+  export function __return(env: Env, ...args: Form[]): JsSrc | TranspileError {
+    switch (args.length) {
+      case 0:
+        return "return";
+      case 1:
+        const argSrc = transpile(args[0], env);
+        if (argSrc instanceof TranspileError) {
+          return argSrc;
+        }
+        return `return ${argSrc}`;
+      default:
+        return new TranspileError(
+          "`return` must receive at most one expression!"
+        );
     }
-    const argSrc = transpile(arg, env);
-    if (argSrc instanceof TranspileError) {
-      return argSrc;
-    }
-    return `return ${argSrc}`;
-  };
+  }
 
   export function when(
     env: Env,

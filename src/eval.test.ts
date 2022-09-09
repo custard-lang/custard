@@ -135,9 +135,19 @@ describe("evalForm", () => {
     });
 
     testOf({
+      src: "(scope (return) 1)",
+      expected: undefined,
+    });
+
+    testOf({
+      src: "(scope (return undefined) 1)",
+      expected: undefined,
+    });
+
+    testOf({
       src: "(scope (return 904 905) 1)",
       expected: new TranspileError(
-        "`return` must receive exactly one expression!"
+        "`return` must receive at most one expression!"
       ),
     });
   });
