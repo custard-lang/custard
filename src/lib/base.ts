@@ -21,6 +21,7 @@ import {
   isCall,
   transpile,
   transpileBlock,
+  transpiling1,
   transpiling2,
   transpilingForAssignment,
 } from "../transpile.js";
@@ -155,6 +156,19 @@ export function base(): Scope {
   b.set(
     "isGreaterThanOrEquals",
     transpiling2((a: JsSrc, b: JsSrc) => `(${a} >= ${b})`)
+  );
+
+  b.set(
+    "and",
+    transpiling2((a: JsSrc, b: JsSrc) => `(${a} && ${b})`)
+  );
+  b.set(
+    "or",
+    transpiling2((a: JsSrc, b: JsSrc) => `(${a} || ${b})`)
+  );
+  b.set(
+    "not",
+    transpiling1("not", (a: JsSrc) => `!(${a})`)
   );
 
   b.set("const", Base.__const);

@@ -95,6 +95,26 @@ export function transpileBlock(forms: Block, env: Env): JsSrc | TranspileError {
   return jsSrc;
 }
 
+export function transpiling1(
+  formId: Id,
+  f: (a: JsSrc) => JsSrc
+): (env: Env, a: Form, ...unused: Form[]) => JsSrc | TranspileError {
+  return (env: Env, a: Form, ...unused: Form[]): JsSrc | TranspileError => {
+    const ra = transpile(a, env);
+    if (ra instanceof TranspileError) {
+      return ra;
+    }
+
+    if (unused.length > 0) {
+      return new TranspileError(
+        `\`${formId}\` must receive exactly one expression!`
+      );
+    }
+
+    return f(ra);
+  };
+}
+
 export function transpiling2(
   f: (a: JsSrc, b: JsSrc) => JsSrc
 ): (env: Env, a: Form, b: Form) => JsSrc | TranspileError {

@@ -230,6 +230,31 @@ describe("evalForm", () => {
       expected: true,
     });
   });
+
+  describe("(and x y)", () => {
+    testOf({ src: "(and true true)", expected: true });
+    testOf({ src: "(and false true)", expected: false });
+    testOf({ src: "(and true false)", expected: false });
+    testOf({ src: "(and false false)", expected: false });
+  });
+
+  describe("(or x y)", () => {
+    testOf({ src: "(or true true)", expected: true });
+    testOf({ src: "(or false true)", expected: true });
+    testOf({ src: "(or true false)", expected: true });
+    testOf({ src: "(or false false)", expected: false });
+  });
+
+  describe("(not x)", () => {
+    testOf({ src: "(not true)", expected: false });
+    testOf({ src: "(not false)", expected: true });
+    testOf({
+      src: "(not false false)",
+      expected: new TranspileError(
+        "`not` must receive exactly one expression!"
+      ),
+    });
+  });
 });
 
 describe("evalBlock", () => {
