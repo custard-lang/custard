@@ -353,7 +353,7 @@ describe("evalBlock", () => {
     });
   });
 
-  describe("(procedure (a r g s) (s) (t) (a) (t) (e) (m) (e) (n) (t) (s))", () => {
+  describe("(procedure (a r g s) f o r m s)", () => {
     testOf({
       src: "(const p (procedure () (let x 6) (when false (return 9))))(p)",
       expected: undefined,
@@ -377,13 +377,38 @@ describe("evalBlock", () => {
     testOf({
       src: "(when)",
       expected: new TranspileError(
-        "No expressions given to an `when` expression!"
+        "No expressions given to an `when` statement!"
       ),
     });
     testOf({
       src: "(when true)",
       expected: new TranspileError(
-        "No statements given to an `when` expression!"
+        "No statements given to an `when` statement!"
+      ),
+    });
+  });
+
+  describe("(while bool f o r m s)", () => {
+    testOf({
+      src:
+        "(let x 8)(while (isLessThan x 100) (assign x (minusF x 1)) (assign x (timesF x 2))) x",
+      expected: 194,
+    });
+    testOf({
+      src:
+        "(let x 8)(while (isLessThan x 100) (assign x (dividedByF x 2)) (break)) x",
+      expected: 4,
+    });
+    testOf({
+      src: "(while)",
+      expected: new TranspileError(
+        "No expression given to an `while` statement!"
+      ),
+    });
+    testOf({
+      src: "(while false)",
+      expected: new TranspileError(
+        "No statements given to an `while` statement!"
       ),
     });
   });
