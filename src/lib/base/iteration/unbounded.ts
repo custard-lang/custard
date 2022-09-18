@@ -1,7 +1,10 @@
 // import { writeDebugOut } from "../../../util/debug";
 
+import * as EnvF from "../../../env.js";
 import { transpile, transpileBlock } from "../../../transpile";
 import { Block, Env, Form, JsSrc, Scope, TranspileError } from "../../../types";
+
+import { iteration } from "../iteration.js";
 
 export namespace Unbounded {
   export function __while(
@@ -9,6 +12,8 @@ export namespace Unbounded {
     bool: Form,
     ...rest: Block
   ): JsSrc | TranspileError {
+    EnvF.push(env);
+
     if (bool === undefined) {
       return new TranspileError("No expression given to an `while` statement!");
     }
@@ -23,12 +28,14 @@ export namespace Unbounded {
     if (statementsSrc instanceof TranspileError) {
       return statementsSrc;
     }
+
+    EnvF.pop(env);
     return `while(${boolSrc}){\n${statementsSrc}\n}`;
   }
 }
 
 export function unbounded(): Scope {
-  const b = new Map();
+  const b = iteration();
 
   b.set("while", Unbounded.__while);
 

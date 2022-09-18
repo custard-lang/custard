@@ -396,8 +396,8 @@ describe("evalBlock", () => {
     });
     testOf({
       src:
-        "(let x 8)(while (isLessThan x 100) (assign x (dividedByF x 2)) (break)) x",
-      expected: 4,
+        "(let x 8)(while (isLessThan x 100) (let x 7) (assign x (dividedByF x 2)) (break)) x",
+      expected: 8,
     });
     testOf({
       src: "(while)",

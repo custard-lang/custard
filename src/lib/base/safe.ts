@@ -194,6 +194,7 @@ export function safe(): Scope {
     }
     result = `${result}${funcSrc}`;
     result = `${result})()`;
+
     EnvF.pop(env);
     return result;
   });
