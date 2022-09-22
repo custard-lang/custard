@@ -19,7 +19,6 @@ import {
 import * as EnvF from "../../env.js";
 import {
   isCall,
-  isNonExpressionCall,
   transpile,
   transpileBlock,
   transpiling1,
@@ -27,6 +26,7 @@ import {
   transpilingForAssignment,
 } from "../../transpile.js";
 import { Unbounded } from "./iteration/unbounded.js";
+import { isNonExpressionCall } from "./common.js";
 
 export namespace Safe {
   export const __const = transpilingForAssignment(

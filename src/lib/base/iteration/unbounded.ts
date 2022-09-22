@@ -2,13 +2,13 @@
 
 import * as EnvF from "../../../env.js";
 import {
-  isNonExpressionCall,
   transpile,
   transpileBlock,
 } from "../../../transpile";
 import { Block, Env, Form, JsSrc, Scope, TranspileError } from "../../../types";
 
 import { iteration } from "../iteration.js";
+import { isNonExpressionCall } from "./common.js";
 
 export namespace Unbounded {
   export function __while(
