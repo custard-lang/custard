@@ -351,6 +351,20 @@ describe("evalBlock", () => {
         "The last statement in a `fn` must be an expression! But `when` is a statement!"
       ),
     });
+
+    testOf({
+      src: "(const f (fn (x) (incF x))) (f 9)",
+      expected: new TranspileError(
+        "The last statement in a `fn` must be an expression! But `incF` is a statement!"
+      ),
+    });
+
+    testOf({
+      src: "(const f (fn (x) (decF x))) (f 9)",
+      expected: new TranspileError(
+        "The last statement in a `fn` must be an expression! But `decF` is a statement!"
+      ),
+    });
   });
 
   describe("(procedure (a r g s) f o r m s)", () => {
@@ -377,13 +391,13 @@ describe("evalBlock", () => {
     testOf({
       src: "(when)",
       expected: new TranspileError(
-        "No expressions given to an `when` statement!"
+        "No expressions given to a `when` statement!"
       ),
     });
     testOf({
       src: "(when true)",
       expected: new TranspileError(
-        "No statements given to an `when` statement!"
+        "No statements given to a `when` statement!"
       ),
     });
   });
@@ -402,14 +416,47 @@ describe("evalBlock", () => {
     testOf({
       src: "(while)",
       expected: new TranspileError(
-        "No expression given to an `while` statement!"
+        "No expression given to a `while` statement!"
       ),
     });
     testOf({
       src: "(while false)",
       expected: new TranspileError(
-        "No statements given to an `while` statement!"
+        "No statements given to a `while` statement!"
       ),
+    });
+  });
+
+  describe("(for init bool final f o r m s)", () => {
+    testOf({
+      src:
+        "(let y 0) (for (let x 8) (isLessThan x 100) (assign x (timesF x 2)) (assign x (minusF x 1)) (assign y x)) y",
+      expected: 194,
+    });
+    testOf({
+      src:
+        "(let y 0) (for (let x 8) (isLessThan x 100) (incF x) (assign x (minusF x 0.5)) (assign y x) (continue) (decF x)) y",
+      expected: 99,
+    });
+    testOf({
+      src: "(for)",
+      expected: new TranspileError(
+        "No initialization statement given to a `for` statement!"
+      ),
+    });
+    testOf({
+      src: "(for (let x 0))",
+      expected: new TranspileError("No expression given to a `for` statement!"),
+    });
+    testOf({
+      src: "(for (let x 0) false)",
+      expected: new TranspileError(
+        "No final statement given to a `for` statement!"
+      ),
+    });
+    testOf({
+      src: "(for (let x 0) false (addF x))",
+      expected: new TranspileError("No statements given to a `for` statement!"),
     });
   });
 });

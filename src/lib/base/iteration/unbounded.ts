@@ -1,7 +1,11 @@
 // import { writeDebugOut } from "../../../util/debug";
 
 import * as EnvF from "../../../env.js";
-import { transpile, transpileBlock } from "../../../transpile";
+import {
+  isNonExpressionCall,
+  transpile,
+  transpileBlock,
+} from "../../../transpile";
 import { Block, Env, Form, JsSrc, Scope, TranspileError } from "../../../types";
 
 import { iteration } from "../iteration.js";
@@ -15,11 +19,20 @@ export namespace Unbounded {
     EnvF.push(env);
 
     if (bool === undefined) {
-      return new TranspileError("No expression given to an `while` statement!");
+      return new TranspileError(
+        "No conditional expression given to a `while` statement!"
+      );
     }
     if (rest.length < 1) {
-      return new TranspileError("No statements given to an `while` statement!");
+      return new TranspileError("No statements given to a `while` statement!");
     }
+
+    if (isNonExpressionCall(env, bool)) {
+      return new TranspileError(
+        `The conditional expression in a \`for\` must be an expression! But \`${bool[0].v}\` is a statement!`
+      );
+    }
+
     const boolSrc = transpile(bool, env);
     if (boolSrc instanceof TranspileError) {
       return boolSrc;
@@ -31,6 +44,46 @@ export namespace Unbounded {
 
     EnvF.pop(env);
     return `while(${boolSrc}){\n${statementsSrc}\n}`;
+  }
+
+  export function __for(
+    env: Env,
+    statement: Form,
+    bool: Form,
+    final: Form,
+    ...rest: Block
+  ): JsSrc | TranspileError {
+    EnvF.push(env);
+
+    if (statement === undefined) {
+      return new TranspileError(
+        "No initial statement given to a `for` statement!"
+      );
+    }
+
+    if (bool === undefined) {
+      return new TranspileError(
+        "No conditional expression given to a `for` statement!"
+      );
+    }
+
+    if (final === undefined) {
+      return new TranspileError(
+        "No final expression given to a `for` statement!"
+      );
+    }
+
+    if (rest.length < 1) {
+      return new TranspileError("No statements given to a `for` statement!");
+    }
+
+    if (isNonExpressionCall(env, bool)) {
+      return new TranspileError(
+        `The conditional expression in a \`for\` must be an expression! But \`${bool[0].v}\` is a statement!`
+      );
+    }
+
+    EnvF.pop(env);
   }
 }
 
