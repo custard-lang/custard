@@ -48,14 +48,14 @@ export namespace Unbounded {
 
   export function __for(
     env: Env,
-    statement: Form,
+    initialStatement: Form,
     bool: Form,
     final: Form,
     ...rest: Block
   ): JsSrc | TranspileError {
     EnvF.push(env);
 
-    if (statement === undefined) {
+    if (iniitalStatement === undefined) {
       return new TranspileError(
         "No initial statement given to a `for` statement!"
       );
@@ -83,6 +83,15 @@ export namespace Unbounded {
       );
     }
 
+    const boolSrc = transpile(bool, env);
+    if (boolSrc instanceof TranspileError) {
+      return boolSrc;
+    }
+    const statementsSrc = transpileBlock(rest, env);
+    if (statementsSrc instanceof TranspileError) {
+      return statementsSrc;
+    }
+
     EnvF.pop(env);
   }
 }
@@ -91,6 +100,7 @@ export function unbounded(): Scope {
   const b = iteration();
 
   b.set("while", Unbounded.__while);
+  b.set("for", Unbounded.__for)
 
   return b;
 }
