@@ -1,14 +1,11 @@
 // import { writeDebugOut } from "../../../util/debug";
 
 import * as EnvF from "../../../env.js";
-import {
-  transpile,
-  transpileBlock,
-} from "../../../transpile";
+import { transpile, transpileBlock } from "../../../transpile";
 import { Block, Env, Form, JsSrc, Scope, TranspileError } from "../../../types";
 
 import { iteration } from "../iteration.js";
-import { isNonExpressionCall } from "./common.js";
+import { isNonExpressionCall } from "../common.js";
 
 export namespace Unbounded {
   export function __while(
@@ -55,9 +52,9 @@ export namespace Unbounded {
   ): JsSrc | TranspileError {
     EnvF.push(env);
 
-    if (iniitalStatement === undefined) {
+    if (initialStatement === undefined) {
       return new TranspileError(
-        "No initial statement given to a `for` statement!"
+        "No initialization statement given to a `for` statement!"
       );
     }
 
@@ -83,9 +80,17 @@ export namespace Unbounded {
       );
     }
 
+    const initialStatementSrc = transpile(initialStatement, env);
+    if (initialStatementSrc instanceof TranspileError) {
+      return initialStatementSrc;
+    }
     const boolSrc = transpile(bool, env);
     if (boolSrc instanceof TranspileError) {
       return boolSrc;
+    }
+    const finalSrc = transpile(final, env);
+    if (finalSrc instanceof TranspileError) {
+      return finalSrc;
     }
     const statementsSrc = transpileBlock(rest, env);
     if (statementsSrc instanceof TranspileError) {
@@ -93,6 +98,7 @@ export namespace Unbounded {
     }
 
     EnvF.pop(env);
+    return `for(${initialStatementSrc};${boolSrc};${finalSrc}){${statementsSrc}}`;
   }
 }
 
@@ -100,7 +106,7 @@ export function unbounded(): Scope {
   const b = iteration();
 
   b.set("while", Unbounded.__while);
-  b.set("for", Unbounded.__for)
+  b.set("for", Unbounded.__for);
 
   return b;
 }

@@ -41,11 +41,17 @@ export function isAContextualKeyword(x: Writer): x is ContextualKeyword {
 
 export type Var = { readonly t: 1 };
 export function aVar(): Var { return { t: 1 } };
-export function isAVar(x: Writer): x is Var {
+export function isVar(x: Writer): x is Var {
   return (x as Record<string, unknown>).t === 1
 };
 
-export type Writer = ContextualKeyword | Var | ((env: Env, ...forms: CuArray) => JsSrc | TranspileError);
+export type Const = { readonly t: 2 };
+export function aConst(): Const { return { t: 2 } };
+export function isConst(x: Writer): x is Const {
+  return (x as Record<string, unknown>).t === 2
+};
+
+export type Writer = ContextualKeyword | Var | Const | ((env: Env, ...forms: CuArray) => JsSrc | TranspileError);
 
 export function isCuSymbol(v: Form): v is CuSymbol {
   return v !== undefined && (v as CuSymbol).t === "Symbol";

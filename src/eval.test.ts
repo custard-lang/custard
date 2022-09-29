@@ -283,6 +283,11 @@ describe("evalBlock", () => {
     });
 
     testOf({
+      src: "(const y 5)(assign y 3)",
+      expected: new TranspileError('Variable "y" is NOT declared by `let`!'),
+    });
+
+    testOf({
       src: "(let y 6)(let y 7)",
       expected: new TranspileError('Variable "y" is already defined!'),
     });
@@ -353,16 +358,16 @@ describe("evalBlock", () => {
     });
 
     testOf({
-      src: "(const f (fn (x) (incF x))) (f 9)",
+      src: "(const f (fn (x) (incrementF x))) (f 9)",
       expected: new TranspileError(
-        "The last statement in a `fn` must be an expression! But `incF` is a statement!"
+        "The last statement in a `fn` must be an expression! But `incrementF` is a statement!"
       ),
     });
 
     testOf({
-      src: "(const f (fn (x) (decF x))) (f 9)",
+      src: "(const f (fn (x) (decrementF x))) (f 9)",
       expected: new TranspileError(
-        "The last statement in a `fn` must be an expression! But `decF` is a statement!"
+        "The last statement in a `fn` must be an expression! But `decrementF` is a statement!"
       ),
     });
   });
@@ -416,7 +421,7 @@ describe("evalBlock", () => {
     testOf({
       src: "(while)",
       expected: new TranspileError(
-        "No expression given to a `while` statement!"
+        "No conditional expression given to a `while` statement!"
       ),
     });
     testOf({
@@ -431,11 +436,11 @@ describe("evalBlock", () => {
     testOf({
       src:
         "(let y 0) (for (let x 8) (isLessThan x 100) (assign x (timesF x 2)) (assign x (minusF x 1)) (assign y x)) y",
-      expected: 194,
+      expected: 97,
     });
     testOf({
       src:
-        "(let y 0) (for (let x 8) (isLessThan x 100) (incF x) (assign x (minusF x 0.5)) (assign y x) (continue) (decF x)) y",
+        "(let y 0) (for (let x 8) (isLessThan x 100) (incrementF x) (assign x (minusF x 0.5)) (assign y x) (continue) (decrementF x)) y",
       expected: 99,
     });
     testOf({
@@ -446,17 +451,93 @@ describe("evalBlock", () => {
     });
     testOf({
       src: "(for (let x 0))",
-      expected: new TranspileError("No expression given to a `for` statement!"),
+      expected: new TranspileError(
+        "No conditional expression given to a `for` statement!"
+      ),
     });
     testOf({
       src: "(for (let x 0) false)",
       expected: new TranspileError(
-        "No final statement given to a `for` statement!"
+        "No final expression given to a `for` statement!"
       ),
     });
     testOf({
       src: "(for (let x 0) false (addF x))",
       expected: new TranspileError("No statements given to a `for` statement!"),
+    });
+  });
+
+  describe("incrementF", () => {
+    testOf({
+      src: "(let x 0)(incrementF x) x",
+      expected: 1,
+    });
+    testOf({
+      src: "(let x 0)(incrementF x 2) x",
+      expected: new TranspileError(
+        "`incrementF` must receive only one symbol!"
+      ),
+    });
+    testOf({
+      src: "(const x 0)(incrementF x) x",
+      expected: new TranspileError(
+        "The argument to `incrementF` must be a name of a variable declared by `let`!"
+      ),
+    });
+    testOf({
+      src: "(incrementF 0) 1",
+      expected: new TranspileError(
+        "The argument to `incrementF` must be a name of a variable!"
+      ),
+    });
+    testOf({
+      src: "(incrementF decrementF) 1",
+      expected: new TranspileError(
+        "The argument to `incrementF` must be a name of a variable declared by `let`!"
+      ),
+    });
+    testOf({
+      src: "(incrementF unknown) 1",
+      expected: new TranspileError(
+        "The argument to `incrementF` must be a name of a variable declared by `let`!"
+      ),
+    });
+  });
+
+  describe("decrementF", () => {
+    testOf({
+      src: "(let x 0)(decrementF x) x",
+      expected: -1,
+    });
+    testOf({
+      src: "(let x 0)(decrementF x 2) x",
+      expected: new TranspileError(
+        "`decrementF` must receive only one symbol!"
+      ),
+    });
+    testOf({
+      src: "(const x 0)(decrementF x) x",
+      expected: new TranspileError(
+        "The argument to `decrementF` must be a name of a variable declared by `let`!"
+      ),
+    });
+    testOf({
+      src: "(decrementF 0) 1",
+      expected: new TranspileError(
+        "The argument to `decrementF` must be a name of a variable!"
+      ),
+    });
+    testOf({
+      src: "(decrementF incrementF) 1",
+      expected: new TranspileError(
+        "The argument to `decrementF` must be a name of a variable declared by `let`!"
+      ),
+    });
+    testOf({
+      src: "(decrementF unknown) 1",
+      expected: new TranspileError(
+        "The argument to `decrementF` must be a name of a variable declared by `let`!"
+      ),
     });
   });
 });

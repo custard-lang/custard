@@ -10,11 +10,12 @@ import {
   Form,
   Id,
   isAContextualKeyword,
-  isAVar,
+  isVar,
   isCuSymbol,
   JsSrc,
   TranspileError,
   Writer,
+  isConst,
 } from "./types.js";
 import * as EnvF from "./env.js";
 
@@ -45,7 +46,7 @@ export function transpile(ast: Form, env: Env): JsSrc | TranspileError {
         `No function ${JSON.stringify(sym.v)} is defined!`
       );
     }
-    if (isAVar(f)) {
+    if (isVar(f) || isConst(f)) {
       const argSrcs = mapE(args, TranspileError, (arg) => transpile(arg, env));
       if (argSrcs instanceof TranspileError) {
         return argSrcs;
@@ -153,6 +154,32 @@ export function transpilingForAssignment(
       return exp;
     }
     return f(env, id, exp);
+  };
+}
+
+export function transpilingForVariableMutation(
+  formId: Id,
+  operator: JsSrc
+): Writer {
+  return (env: Env, id: Form, another?: Form) => {
+    if (another !== undefined) {
+      return new TranspileError(`\`${formId}\` must receive only one symbol!`);
+    }
+
+    if (!isCuSymbol(id)) {
+      return new TranspileError(
+        `The argument to \`${formId}\` must be a name of a variable!`
+      );
+    }
+
+    const val = EnvF.find(env, id.v);
+    if (val === undefined || !isVar(val)) {
+      return new TranspileError(
+        `The argument to \`${formId}\` must be a name of a variable declared by \`let\`!`
+      );
+    }
+
+    return `${id.v}${operator}`;
   };
 }
 

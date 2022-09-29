@@ -2,30 +2,29 @@
 import { mapE } from "../../util/error.js";
 
 import {
+  aConst,
   aContextualKeyword,
   aVar,
   Block,
-  Call,
   CuSymbol,
   Env,
   Form,
   Id,
+  isConst,
   isCuSymbol,
   JsSrc,
   Scope,
   TranspileError,
-  Writer,
 } from "../../types.js";
 import * as EnvF from "../../env.js";
 import {
-  isCall,
   transpile,
   transpileBlock,
   transpiling1,
   transpiling2,
   transpilingForAssignment,
+  transpilingForVariableMutation,
 } from "../../transpile.js";
-import { Unbounded } from "./iteration/unbounded.js";
 import { isNonExpressionCall } from "./common.js";
 
 export namespace Safe {
@@ -38,7 +37,7 @@ export namespace Safe {
           `Variable ${JSON.stringify(id.v)} is already defined!`
         );
       }
-      EnvF.set(env, id.v, aVar());
+      EnvF.set(env, id.v, aConst());
       return `const ${id.v} = ${exp}`;
     }
   );
@@ -82,10 +81,10 @@ export namespace Safe {
     ...rest: Block
   ): JsSrc | TranspileError {
     if (bool === undefined) {
-      return new TranspileError("No expressions given to an `when` statement!");
+      return new TranspileError("No expressions given to a `when` statement!");
     }
     if (rest.length < 1) {
-      return new TranspileError("No statements given to an `when` statement!");
+      return new TranspileError("No statements given to a `when` statement!");
     }
     const boolSrc = transpile(bool, env);
     if (boolSrc instanceof TranspileError) {
@@ -97,6 +96,9 @@ export namespace Safe {
     }
     return `if(${boolSrc}){\n${statementsSrc}\n}`;
   }
+
+  export const incrementF = transpilingForVariableMutation("incrementF", "++");
+  export const decrementF = transpilingForVariableMutation("decrementF", "--");
 }
 
 export function safe(): Scope {
@@ -163,12 +165,15 @@ export function safe(): Scope {
 
   b.set(
     "assign",
-    transpilingForAssignment(
-      "assign",
-      (_env: Env, id: CuSymbol, exp: JsSrc) => {
-        return `${id.v} = ${exp}`;
+    transpilingForAssignment("assign", (env: Env, id: CuSymbol, exp: JsSrc) => {
+      const w = EnvF.find(env, id.v);
+      if (w !== undefined && isConst(w)) {
+        return new TranspileError(
+          `Variable "${id.v}" is NOT declared by \`let\`!`
+        );
       }
-    )
+      return `${id.v} = ${exp}`;
+    })
   );
 
   b.set("scope", (env: Env, ...block: Block): JsSrc | TranspileError => {
@@ -263,6 +268,9 @@ export function safe(): Scope {
   b.set("return", Safe.__return);
 
   b.set("when", Safe.when);
+
+  b.set("incrementF", Safe.incrementF);
+  b.set("decrementF", Safe.decrementF);
 
   return b;
 }
