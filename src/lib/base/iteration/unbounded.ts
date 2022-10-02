@@ -1,8 +1,8 @@
-// import { writeDebugOut } from "../../../util/debug";
+rf// import { writeDebugOut } from "../../../util/debug";
 
 import * as EnvF from "../../../env.js";
 import { transpile, transpileBlock } from "../../../transpile";
-import { Block, Env, Form, JsSrc, Scope, TranspileError } from "../../../types";
+import { Block, Env, Form, JsSrc, Scope, TranspileError, isCuSymbol } from "../../../types";
 
 import { iteration } from "../iteration.js";
 import { isNonExpressionCall } from "../common.js";
@@ -99,6 +99,32 @@ export namespace Unbounded {
 
     EnvF.pop(env);
     return `for(${initialStatementSrc};${boolSrc};${finalSrc}){${statementsSrc}}`;
+  }
+  
+  export function forEach(env: Env, id: Form, iterable: Form, ...statements: Block): JsSrc | TranspileError {
+    EnvF.push(env);
+    if (id === undefined) {
+      return new TranspileError("No variable name given to a `for`!");
+    }
+    if (!isCuSymbol(id)) {
+      return new TranspileError("The first argument to `for` must be a symbol!");
+    }
+    if (iterable === undefined) {
+      return new TranspileError("No iterable expression given to a `for`!");
+    }
+    if (statements.length < 1) {
+      return new TranspileError("No statements given to a `for`!");
+    } 
+    const iterableSrc = transpile(iterable, env);
+    if (iterableSrc instanceof TranspileError) {
+      return iterableSrc;
+    } 
+    const statementsSrc =transpileBlock(statements, env);
+    if (statementsSrc instanceof TranspileError) {
+      return statementsSrc;
+    }
+    EnvF.pop(env);
+    return `for(const ${id.v} of ${itrableSrc}) {${statementsSrc}}`;
   }
 }
 

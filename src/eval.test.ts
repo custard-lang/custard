@@ -123,6 +123,13 @@ describe("evalForm", () => {
     });
 
     testOf({
+      src: "(scope (forEach x (array 1 2 3)))",
+      expected: new TranspileError(
+        "The last statement in a `scope` must be an expression! But `forEach` is a statement!"
+      ),
+    });
+
+    testOf({
       src: "(scope (return 904) 22)",
       expected: 904,
     });
@@ -467,7 +474,7 @@ describe("evalBlock", () => {
     });
   });
 
-  describe("incrementF", () => {
+  describe("(incrementF id)", () => {
     testOf({
       src: "(let x 0)(incrementF x) x",
       expected: 1,
@@ -504,7 +511,7 @@ describe("evalBlock", () => {
     });
   });
 
-  describe("decrementF", () => {
+  describe("(decrementF id)", () => {
     testOf({
       src: "(let x 0)(decrementF x) x",
       expected: -1,
@@ -537,6 +544,39 @@ describe("evalBlock", () => {
       src: "(decrementF unknown) 1",
       expected: new TranspileError(
         "The argument to `decrementF` must be a name of a variable declared by `let`!"
+      ),
+    });
+  });
+
+  describe("(forEach id iterable s t a t e m e n t s)", () => {
+    testOf({
+      src: "(let x 0)(forEach v (array 1 2 3) (assign x (plusF x v)))) x",
+      expected: 6,
+    });
+    testOf({
+      src: "(let v 0)(scope (let x 2) (forEach v (array 1 2 3) (assign x (plusF x v)))) x)",
+      expected: 8,
+    });
+    testOf({
+      src: "(let x 0)(forEach x (array 1 2 3) (assign x (plusF x v))))",
+      expected: new TranspileError('Variable "x" is already defined!'),
+    });
+    testOf({
+      src: "(forEach v (array 1 2 3))",
+      expected: new TranspileError(
+        "No statements given to a `forEach` statement!"
+      ),
+    });
+    testOf({
+      src: "(forEach v)",
+      expected: new TranspileError(
+        "No iterator expression given to a `forEach` statement!"
+      ),
+    });
+    testOf({
+      src: "(forEach)",
+      expected: new TranspileError(
+        "No variable name given to a `forEach` statement!"
       ),
     });
   });
