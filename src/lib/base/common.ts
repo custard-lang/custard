@@ -16,6 +16,8 @@ export function isNonExpressionCall(env: Env, form: Form): form is Call {
     Safe.decrementF,
     Safe.when,
     Unbounded.__while,
+    Unbounded.__for,
+    Unbounded.forEach,
   ];
   return nonExpressions.includes(EnvF.find(env, form[0].v));
 }

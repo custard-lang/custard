@@ -107,50 +107,42 @@ describe("evalForm", () => {
         "`scope` must receive at least one expression!"
       ),
     });
-
     testOf({
       src: "(scope (const y 3))",
       expected: new TranspileError(
         "The last statement in a `scope` must be an expression! But `const` is a statement!"
       ),
     });
-
     testOf({
       src: "(scope (let x 7) (let y 7))",
       expected: new TranspileError(
         "The last statement in a `scope` must be an expression! But `let` is a statement!"
       ),
     });
-
     testOf({
       src: "(scope (forEach x (array 1 2 3)))",
       expected: new TranspileError(
         "The last statement in a `scope` must be an expression! But `forEach` is a statement!"
       ),
     });
-
     testOf({
       src: "(scope (return 904) 22)",
       expected: 904,
     });
-
     testOf({
       src: "(scope (return 904))",
       expected: new TranspileError(
         "The last statement in a `scope` must be an expression! But `return` is a statement!"
       ),
     });
-
     testOf({
       src: "(scope (return) 1)",
       expected: undefined,
     });
-
     testOf({
       src: "(scope (return undefined) 1)",
       expected: undefined,
     });
-
     testOf({
       src: "(scope (return 904 905) 1)",
       expected: new TranspileError(
@@ -161,7 +153,6 @@ describe("evalForm", () => {
 
   describe("(equals x y)", () => {
     testOf({ src: '(scope (const x "123") (equals x "123"))', expected: true });
-
     testOf({ src: '(scope (const x "123") (equals x 123))', expected: false });
   });
 
@@ -175,12 +166,10 @@ describe("evalForm", () => {
 
   describe("(isLessThan x y)", () => {
     testOf({ src: "(scope (const x 123) (isLessThan x 124))", expected: true });
-
     testOf({
       src: "(scope (const x 123) (isLessThan x 123))",
       expected: false,
     });
-
     testOf({
       src: "(scope (const x 123) (isLessThan x 122))",
       expected: false,
@@ -192,12 +181,10 @@ describe("evalForm", () => {
       src: "(scope (const x 123) (isLessThanOrEquals x 124))",
       expected: true,
     });
-
     testOf({
       src: "(scope (const x 123) (isLessThanOrEquals x 123))",
       expected: true,
     });
-
     testOf({
       src: "(scope (const x 123) (isLessThanOrEquals x 122))",
       expected: false,
@@ -209,12 +196,10 @@ describe("evalForm", () => {
       src: "(scope (const x 123) (isGreaterThan x 124))",
       expected: false,
     });
-
     testOf({
       src: "(scope (const x 123) (isGreaterThan x 123))",
       expected: false,
     });
-
     testOf({
       src: "(scope (const x 123) (isGreaterThan x 122))",
       expected: true,
@@ -226,12 +211,10 @@ describe("evalForm", () => {
       src: "(scope (const x 123) (isGreaterThanOrEquals x 124))",
       expected: false,
     });
-
     testOf({
       src: "(scope (const x 123) (isGreaterThanOrEquals x 123))",
       expected: true,
     });
-
     testOf({
       src: "(scope (const x 123) (isGreaterThanOrEquals x 122))",
       expected: true,
@@ -260,6 +243,23 @@ describe("evalForm", () => {
       expected: new TranspileError(
         "`not` must receive exactly one expression!"
       ),
+    });
+  });
+
+  describe("(array f o r m s)", () => {
+    testOf({ src: "(array 1 2 3)", expected: [1, 2, 3] });
+    testOf({ src: "(array)", expected: [] });
+    testOf({
+      src: "(array 1 (if (isLessThan 2 3) 4 else 5) 6)",
+      expected: [1, 4, 6],
+    });
+    testOf({
+      src: "(array 1 6 (if (isLessThan 2 3) 4 else 5))",
+      expected: [1, 6, 4],
+    });
+    testOf({
+      src: "(array (if (isLessThan 2 3) 4 else 5) 1 6)",
+      expected: [4, 1, 6],
     });
   });
 });
@@ -550,16 +550,18 @@ describe("evalBlock", () => {
 
   describe("(forEach id iterable s t a t e m e n t s)", () => {
     testOf({
-      src: "(let x 0)(forEach v (array 1 2 3) (assign x (plusF x v)))) x",
+      src: "(let x 0)(forEach v (array 1 2 3) (assign x (plusF x v))) x",
       expected: 6,
     });
     testOf({
-      src: "(let v 0)(scope (let x 2) (forEach v (array 1 2 3) (assign x (plusF x v)))) x)",
+      src:
+        "(let v 0)(scope (let x 2) (forEach v (array 1 2 3) (assign x (plusF x v))) x)",
       expected: 8,
     });
     testOf({
-      src: "(let x 0)(forEach x (array 1 2 3) (assign x (plusF x v))))",
-      expected: new TranspileError('Variable "x" is already defined!'),
+      src:
+        "(let x 0)(let v 0)(forEach x (array 7 8 9) (assign v (plusF x v))) v",
+      expected: 24,
     });
     testOf({
       src: "(forEach v (array 1 2 3))",
@@ -570,7 +572,7 @@ describe("evalBlock", () => {
     testOf({
       src: "(forEach v)",
       expected: new TranspileError(
-        "No iterator expression given to a `forEach` statement!"
+        "No iterable expression given to a `forEach` statement!"
       ),
     });
     testOf({

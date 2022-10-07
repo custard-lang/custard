@@ -248,7 +248,7 @@ export function safe(): Scope {
     }
     const ifFalseSrc = ifFalseSrcs.join(", ");
 
-    return `(${boolSrc} ? ${ifTrueSrc} : ${ifFalseSrc});`;
+    return `(${boolSrc} ? ${ifTrueSrc} : ${ifFalseSrc})`;
   });
 
   b.set("else", Safe.__else);
@@ -271,6 +271,14 @@ export function safe(): Scope {
 
   b.set("incrementF", Safe.incrementF);
   b.set("decrementF", Safe.decrementF);
+
+  b.set("array", (env: Env, ...args: Form[]): JsSrc | TranspileError => {
+    const argsSrcs = mapE(args, TranspileError, (arg) => transpile(arg, env));
+    if (argsSrcs instanceof TranspileError) {
+      return argsSrcs;
+    }
+    return `[${argsSrcs.join(",")}]`;
+  });
 
   return b;
 }
