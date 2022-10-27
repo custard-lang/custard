@@ -34,8 +34,18 @@
                 - 式: それ以外（もろもろ。`if`など）
 - 二項演算子系マクロ:
     - `calcF`だけじゃなくて`cmp`もいるか
+- 再帰呼び出し
+    - 恐らくこうすればうまく行く解決策
+        - `recursive`外の場合、
+            1. 関数を参照したとき、その関数が外の関数であれば、その外の関数を参照したことをメモ
+                - 未定義であればエラー
+            2. 前のステップでメモした関数と同じidentifierを`const`で定義するとき、エラーにする
+        - `recursive`内の場合、内部の`const`を従来通り当該スコープにおける`RecursiveConst`として扱う？
 
 # TODO
 
+- [ ] `evalBlock`において、余分な閉じカッコがあっても構文エラーにならない
 - [ ] `debug`マクロも作ろう
 - [ ] `if`など、文を受け取らないformで`isNonExpressionCall`なformを使ったときのエラー
+    - `incrementF`とかが危ない
+- [ ] `break`, `continue`が使える箇所のvalidation, test

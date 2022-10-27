@@ -25,9 +25,14 @@ export type CuSymbol = {
   v: string;
 };
 
-export type Env = Scope[];
+export type Env = [Scope, ...Scope[]];
 
-export type Scope = Map<Id, Writer>;
+export type Definitions = Map<Id, Writer>;
+
+export type Scope = {
+  o: Set<Id>; // Referred Outer Functions
+  d: Definitions; // Definitions
+};
 
 export type Id = string;
 
@@ -51,7 +56,13 @@ export function isConst(x: Writer): x is Const {
   return (x as Record<string, unknown>).t === 2
 };
 
-export type Writer = ContextualKeyword | Var | Const | ((env: Env, ...forms: CuArray) => JsSrc | TranspileError);
+export type RecursiveConst = { readonly t: 3 };
+export function aRecursiveConst(): RecursiveConst { return { t: 3 } };
+export function isRecursiveConst(x: Writer): x is RecursiveConst {
+  return (x as Record<string, unknown>).t === 3
+};
+
+export type Writer = ContextualKeyword | Var | Const | RecursiveConst | ((env: Env, ...forms: CuArray) => JsSrc | TranspileError);
 
 export function isCuSymbol(v: Form): v is CuSymbol {
   return v !== undefined && (v as CuSymbol).t === "Symbol";

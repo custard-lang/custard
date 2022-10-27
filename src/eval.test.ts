@@ -19,11 +19,11 @@ describe("evalForm", () => {
   testOf({ src: "( plusF 2.0 (timesF 3.0 4.0) )", expected: 14 });
   testOf({
     src: '(eval "1")',
-    expected: new TranspileError('No function "eval" is defined!'),
+    expected: new TranspileError("No function `eval` is defined!"),
   });
   testOf({
     src: "(plusF eval eval)",
-    expected: new TranspileError('No variable "eval" is defined!'),
+    expected: new TranspileError("No variable `eval` is defined!"),
   });
 
   describe("(if bool x else y)", () => {
@@ -133,6 +133,12 @@ describe("evalForm", () => {
       src: "(scope (return 904))",
       expected: new TranspileError(
         "The last statement in a `scope` must be an expression! But `return` is a statement!"
+      ),
+    });
+    testOf({
+      src: "(scope (recursive const x = 1))",
+      expected: new TranspileError(
+        "The last statement in a `scope` must be an expression! But `recursive` is a statement!"
       ),
     });
     testOf({
@@ -579,6 +585,73 @@ describe("evalBlock", () => {
       src: "(forEach)",
       expected: new TranspileError(
         "No variable name given to a `forEach` statement!"
+      ),
+    });
+  });
+
+  describe("recursive calls", () => {
+    testOf({
+      src: "(const f (fn (x) (return 1) (f x)))",
+      expected: new TranspileError(
+        "No function `f` is defined! NOTE: If you want to define `f` recursively, wrap the declaration(s) with `recursive`."
+      ),
+    });
+    testOf({
+      src:
+        "(const f (fn (x) (return 1) (g x))) (const g (fn (x) (return 2) (f x)))",
+      expected: new TranspileError(
+        "No function `g` is defined! NOTE: If you want to define `g` recursively, wrap the declaration(s) with `recursive`."
+      ),
+    });
+
+    testOf({
+      src: "(recursive (const f (fn (x) (return 1) (f x)))) (f 0)",
+      expected: 1,
+    });
+    testOf({
+      src:
+        "(recursive (const f (fn (x) (return 1) (g x))) (const g (fn (x) (return 2) (f x)))) (g 0)",
+      expected: 2,
+    });
+
+    testOf({
+      src:
+        "(const f (fn (x) 1))(scope (const f (fn (x) (return 2) (f x))) (f 0))",
+      expected: new TranspileError(
+        "No function `f` is defined! NOTE: If you want to define `f` recursively, wrap the declaration(s) with `recursive`."
+      ),
+    });
+
+    testOf({
+      src:
+        "(const g (fn () 1))(scope (const f (fn (x) (return 2) (g))) (const g (fn () (return 3) (f 1))) (f 0))",
+      expected: new TranspileError(
+        "No function `g` is defined! NOTE: If you want to define `g` recursively, wrap the declaration(s) with `recursive`."
+      ),
+    });
+  });
+
+  describe("(recursive d e c l a r a t i o n s)", () => {
+    testOf({
+      src: "(recursive (let x 1))",
+      expected: new TranspileError(
+        "All declarations in `recursive` must be `const`!"
+      ),
+    });
+    testOf({
+      src: "(recursive (const))",
+      expected: new TranspileError("undefined is not a symbol!"),
+    });
+    testOf({
+      src: '(recursive "")',
+      expected: new TranspileError(
+        "All arguments in `recursive` must be `const` declarations!"
+      ),
+    });
+    testOf({
+      src: "(recursive)",
+      expected: new TranspileError(
+        "No `const` statements given to `recursive`!"
       ),
     });
   });

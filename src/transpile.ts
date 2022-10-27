@@ -16,6 +16,7 @@ import {
   TranspileError,
   Writer,
   isConst,
+  isRecursiveConst,
 } from "./types.js";
 import * as EnvF from "./env.js";
 
@@ -40,24 +41,28 @@ export function transpile(ast: Form, env: Env): JsSrc | TranspileError {
     if (!isCuSymbol(sym)) {
       return new TranspileError(`${JSON.stringify(sym)} is not a symbol!`);
     }
-    const f = EnvF.find(env, sym.v);
-    if (f === undefined) {
+    const fo = EnvF.findWithScopeOffset(env, sym.v);
+    if (fo === undefined) {
+      return new TranspileError(`No function \`${sym.v}\` is defined!`);
+    }
+    const [f, offset] = fo;
+    if (isAContextualKeyword(f)) {
       return new TranspileError(
-        `No function ${JSON.stringify(sym.v)} is defined!`
+        `\`${sym.v}\` must be used with \`${f.companion}\`!`
       );
     }
-    if (isVar(f) || isConst(f)) {
+
+    if (offset !== 0) {
+      EnvF.rememberOuterFunctionIsReferred(env, sym.v);
+    }
+
+    if (isVar(f) || isConst(f) || isRecursiveConst(f)) {
       const argSrcs = mapE(args, TranspileError, (arg) => transpile(arg, env));
       if (argSrcs instanceof TranspileError) {
         return argSrcs;
       }
 
       return `${sym.v}(${argSrcs.join(", ")})`;
-    }
-    if (isAContextualKeyword(f)) {
-      return new TranspileError(
-        `\`${sym.v}\` must be used with \`${f.companion}\`!`
-      );
     }
     return f(env, ...args);
   }
@@ -74,9 +79,7 @@ export function transpile(ast: Form, env: Env): JsSrc | TranspileError {
       switch (ast.t) {
         case "Symbol":
           if (EnvF.find(env, ast.v) === undefined) {
-            return new TranspileError(
-              `No variable ${JSON.stringify(ast.v)} is defined!`
-            );
+            return new TranspileError(`No variable \`${ast.v}\` is defined!`);
           }
           return ast.v;
         case "Integer32":

@@ -1,4 +1,4 @@
-import { Env, Form, Id, JsSrc, Scope, TranspileError } from "../../types";
+import { Definitions, Env, Form, Id, JsSrc, TranspileError } from "../../types";
 
 export namespace Iteration {
   export const __break = transpilingControlStatement("break");
@@ -16,7 +16,7 @@ function transpilingControlStatement(
   };
 }
 
-export function iteration(): Scope {
+export function iteration(): Definitions {
   const b = new Map();
 
   b.set("break", Iteration.__break);

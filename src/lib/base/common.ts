@@ -18,6 +18,7 @@ export function isNonExpressionCall(env: Env, form: Form): form is Call {
     Unbounded.__while,
     Unbounded.__for,
     Unbounded.forEach,
+    Unbounded.recursive,
   ];
   return nonExpressions.includes(EnvF.find(env, form[0].v));
 }

@@ -7,6 +7,8 @@
   "scripts": {
     "test": "vitest",
     "test:detailed": "vitest --reporter verbose",
+    "lint": "eslint --ext ts src",
+    "fix:lint": "eslint --ext ts --fix src",
     "test:coverage": "vitest run --coverage"
   },
   "repository": {
@@ -24,11 +26,19 @@
   "homepage": "https://github.com/igrep/custard#readme",
   "devDependencies": {
     "@types/node": "^17.0.25",
+    "@typescript-eslint/eslint-plugin": "^5.40.0",
     "@vitest/coverage-c8": "^0.22.1",
-    "eslint": "^8.13.0",
-    "prettier": "^2.6.2",
+    "eslint": "^8.25.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-config-standard-with-typescript": "^23.0.0",
+    "eslint-plugin-import": "^2.26.0",
+    "eslint-plugin-n": "^15.3.0",
+    "eslint-plugin-no-ignore-returned-union": "file:./eslint-plugin-no-ignore-returned-union",
+    "eslint-plugin-prettier": "^4.2.1",
+    "eslint-plugin-promise": "^6.1.0",
+    "prettier": "^2.7.1",
     "ts-node": "^10.7.0",
-    "typescript": "^4.6.3",
+    "typescript": "^4.8.4",
     "vitest": "^0.10.5"
   }
 }

@@ -1,20 +1,22 @@
 // import { writeDebugOut } from "../../../util/debug";
 
 import * as EnvF from "../../../env.js";
-import { transpile, transpileBlock } from "../../../transpile";
+import { isCall, transpile, transpileBlock } from "../../../transpile";
 import {
   Block,
   Env,
   Form,
   JsSrc,
-  Scope,
   TranspileError,
   isCuSymbol,
   aConst,
+  aRecursiveConst,
+  Definitions,
 } from "../../../types";
 
 import { iteration } from "../iteration.js";
 import { isNonExpressionCall } from "../common.js";
+import { Safe } from "../safe.js";
 
 export namespace Unbounded {
   export function __while(
@@ -155,14 +157,46 @@ export namespace Unbounded {
 
     return `for(const ${id.v} of ${iterableSrc}) {${statementsSrc}}`;
   }
+
+  export function recursive(
+    env: Env,
+    ...consts: Block
+  ): JsSrc | TranspileError {
+    if (consts.length < 1) {
+      return new TranspileError("No `const` statements given to `recursive`!");
+    }
+
+    for (const statement of consts) {
+      if (!isCall(statement)) {
+        return new TranspileError(
+          "All arguments in `recursive` must be `const` declarations!"
+        );
+      }
+      const declName = EnvF.find(env, statement[0].v);
+      if (declName !== Safe.__const) {
+        return new TranspileError(
+          "All declarations in `recursive` must be `const`!"
+        );
+      }
+
+      const id = statement[1];
+      if (!isCuSymbol(id)) {
+        return new TranspileError(`${JSON.stringify(id)} is not a symbol!`);
+      }
+      EnvF.set(env, id.v, aRecursiveConst());
+    }
+
+    return transpileBlock(consts, env);
+  }
 }
 
-export function unbounded(): Scope {
+export function unbounded(): Definitions {
   const b = iteration();
 
   b.set("while", Unbounded.__while);
   b.set("for", Unbounded.__for);
   b.set("forEach", Unbounded.forEach);
+  b.set("recursive", Unbounded.recursive);
 
   return b;
 }

@@ -7,13 +7,13 @@ import {
   aVar,
   Block,
   CuSymbol,
+  Definitions,
   Env,
   Form,
   Id,
   isConst,
   isCuSymbol,
   JsSrc,
-  Scope,
   TranspileError,
 } from "../../types.js";
 import * as EnvF from "../../env.js";
@@ -31,8 +31,7 @@ export namespace Safe {
   export const __const = transpilingForAssignment(
     "const",
     (env: Env, id: CuSymbol, exp: JsSrc) => {
-      const alreadyDefined = EnvF.atWhichScope(env, id.v) === 0;
-      if (alreadyDefined) {
+      if (EnvF.isDefinedInThisScope(env, id.v)) {
         return new TranspileError(
           `Variable ${JSON.stringify(id.v)} is already defined!`
         );
@@ -45,8 +44,7 @@ export namespace Safe {
   export const __let = transpilingForAssignment(
     "let",
     (env: Env, id: CuSymbol, exp: JsSrc) => {
-      const alreadyDefined = EnvF.atWhichScope(env, id.v) === 0;
-      if (alreadyDefined) {
+      if (EnvF.isDefinedInThisScope(env, id.v)) {
         return new TranspileError(
           `Variable ${JSON.stringify(id.v)} is already defined!`
         );
@@ -101,7 +99,7 @@ export namespace Safe {
   export const decrementF = transpilingForVariableMutation("decrementF", "--");
 }
 
-export function safe(): Scope {
+export function safe(): Definitions {
   const b = new Map();
 
   b.set(
