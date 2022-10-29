@@ -2,7 +2,7 @@ module.exports = {
   parser: "@typescript-eslint/parser",
   parserOptions: {
     tsconfigRootDir: __dirname,
-    project: "tsconfig.json",
+    project: ["./tsconfig.json"],
     sourceType: "module",
     extraFileExtensions: [],
   },
@@ -17,6 +17,7 @@ module.exports = {
   },
   extends: [
     "plugin:@typescript-eslint/recommended",
+    "plugin:@typescript-eslint/recommended-requiring-type-checking",
     "plugin:prettier/recommended",
     "plugin:import/errors",
     "plugin:import/warnings",
@@ -30,10 +31,6 @@ module.exports = {
   ignorePatterns: [".eslintrc.cjs"],
   overrides: [
   ],
-  parserOptions: {
-    ecmaVersion: "latest",
-    sourceType: "module"
-  },
   rules: {
     "import/no-unresolved": "off",
     "no-ignore-returned-union/no-ignore-returned-union": "error",
