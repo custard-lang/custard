@@ -34,5 +34,6 @@ module.exports = {
   rules: {
     "import/no-unresolved": "off",
     "no-ignore-returned-union/no-ignore-returned-union": "error",
+    "@typescript-eslint/no-namespace": "off",
   }
 }
