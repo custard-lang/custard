@@ -146,7 +146,10 @@ export namespace Unbounded {
       return iterableSrc;
     }
 
-    EnvF.set(env, id.v, aConst());
+    const r = EnvF.set(env, id.v, aConst());
+    if (r instanceof TranspileError) {
+      return r;
+    }
 
     const statementsSrc = transpileBlock(statements, env);
     if (statementsSrc instanceof TranspileError) {
@@ -183,7 +186,10 @@ export namespace Unbounded {
       if (!isCuSymbol(id)) {
         return new TranspileError(`${JSON.stringify(id)} is not a symbol!`);
       }
-      EnvF.set(env, id.v, aRecursiveConst());
+      const r = EnvF.set(env, id.v, aRecursiveConst());
+      if (r instanceof TranspileError) {
+        return r;
+      }
     }
 
     return transpileBlock(consts, env);

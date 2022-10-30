@@ -36,7 +36,10 @@ export namespace Safe {
           `Variable ${JSON.stringify(id.v)} is already defined!`
         );
       }
-      EnvF.set(env, id.v, aConst());
+      const r = EnvF.set(env, id.v, aConst());
+      if (r instanceof TranspileError) {
+        return r;
+      }
       return `const ${id.v} = ${exp}`;
     }
   );
@@ -49,7 +52,10 @@ export namespace Safe {
           `Variable ${JSON.stringify(id.v)} is already defined!`
         );
       }
-      EnvF.set(env, id.v, aVar());
+      const r = EnvF.set(env, id.v, aVar());
+      if (r instanceof TranspileError) {
+        return r;
+      }
       return `let ${id.v} = ${exp}`;
     }
   );
@@ -311,7 +317,10 @@ function functionPrelude(
         )}`
       );
     }
-    EnvF.set(env, arg.v, aVar());
+    const r = EnvF.set(env, arg.v, aVar());
+    if (r instanceof TranspileError) {
+      return r;
+    }
     argNames.push(arg.v);
   }
 
