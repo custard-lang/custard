@@ -78,6 +78,7 @@ export function transpile(ast: Form, env: Env): JsSrc | TranspileError {
     case "object":
       switch (ast.t) {
         case "Symbol":
+          // TODO: 不正な再帰呼び出しを防ぐために、ここでも参照した変数の定義位置をメモする
           if (EnvF.find(env, ast.v) === undefined) {
             return new TranspileError(`No variable \`${ast.v}\` is defined!`);
           }
