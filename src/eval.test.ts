@@ -8,8 +8,9 @@ import { TranspileError } from "./types";
 import { base } from "./lib/base";
 
 describe("evalForm", () => {
-  function testOf({ src, expected }: { src: string; expected: any }): void {
-    test(`\`${src}\` => ${expected}`, () => {
+  function testOf({ src, expected, only }: { src: string; expected: any, only?: undefined | true }): void {
+    const t = only ? test.only : test;
+    t(`\`${src}\` => ${expected}`, () => {
       expect(evalForm(assertNonError(readStr(src)), Env.init(base()))).toEqual(
         expected
       );
@@ -271,8 +272,9 @@ describe("evalForm", () => {
 });
 
 describe("evalBlock", () => {
-  function testOf({ src, expected }: { src: string; expected: any }): void {
-    test(`\`${src}\` => ${expected}`, () => {
+  function testOf({ src, expected, only }: { src: string; expected: any, only?: true | undefined }): void {
+    const t = only ? test.only : test;
+    t(`\`${src}\` => ${expected}`, () => {
       expect(
         evalBlock(assertNonError(readBlock(src)), Env.init(base()))
       ).toEqual(expected);
@@ -620,6 +622,7 @@ describe("evalBlock", () => {
       expected: new TranspileError(
         "No function `f` is defined! NOTE: If you want to define `f` recursively, wrap the declaration(s) with `recursive`."
       ),
+      only: true,
     });
 
     testOf({
