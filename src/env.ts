@@ -33,8 +33,10 @@ export function isDefinedInThisScope(env: Env, id: Id): boolean {
 }
 
 export function set(env: Env, id: Id, writer: Writer): undefined | TranspileError {
+  if (env[0].o.has(id)) {
+    return new TranspileError(""); // TODO
+  }
   env[0].d.set(id, writer);
-  return;
 }
 
 export function push(env: Env): void {
