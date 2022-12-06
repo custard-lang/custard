@@ -11,7 +11,7 @@ import {
   isCuSymbol,
   aConst,
   aRecursiveConst,
-  Definitions,
+  Scope,
 } from "../../../types";
 
 import { iteration } from "../iteration.js";
@@ -24,8 +24,6 @@ export namespace Unbounded {
     bool: Form,
     ...rest: Block
   ): JsSrc | TranspileError {
-    EnvF.push(env);
-
     if (bool === undefined) {
       return new TranspileError(
         "No conditional expression given to a `while` statement!"
@@ -45,6 +43,9 @@ export namespace Unbounded {
     if (boolSrc instanceof TranspileError) {
       return boolSrc;
     }
+
+    EnvF.push(env);
+
     const statementsSrc = transpileBlock(rest, env);
     if (statementsSrc instanceof TranspileError) {
       return statementsSrc;
@@ -196,7 +197,7 @@ export namespace Unbounded {
   }
 }
 
-export function unbounded(): Definitions {
+export function unbounded(): Scope {
   const b = iteration();
 
   b.set("while", Unbounded.__while);

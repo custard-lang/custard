@@ -7,7 +7,7 @@ import {
   aVar,
   Block,
   CuSymbol,
-  Definitions,
+  Scope,
   Env,
   Form,
   Id,
@@ -105,7 +105,7 @@ export namespace Safe {
   export const decrementF = transpilingForVariableMutation("decrementF", "--");
 }
 
-export function safe(): Definitions {
+export function safe(): Scope {
   const b = new Map();
 
   b.set(

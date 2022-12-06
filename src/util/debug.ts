@@ -1,7 +1,11 @@
 import { appendFileSync, writeFileSync } from "node:fs";
 
-export function pr<T>(x: T): T {
-  console.log(x);
+export function pr<T>(x: T, ...msgs: unknown[]): T {
+  if (msgs.length > 0) {
+    console.log(...[...msgs, x]);
+  } else {
+    console.log(x);
+  }
   return x;
 }
 

@@ -25,16 +25,37 @@ export type CuSymbol = {
   v: string;
 };
 
-export type Env = [Scope, ...Scope[]];
-
-export type Definitions = Map<Id, Writer>;
-
-export type Scope = {
-  o: Set<Id>; // Referred Outer Functions
-  d: Definitions; // Definitions
+export type Env = {
+  readonly s: [Scope, ...Scope[]], // Scopes
+  readonly r: References, // References in the Progaram
 };
 
+export type Scope = Map<Id, Writer>;
+
 export type Id = string;
+
+export type References = {
+  // Mapping of Scopes to Variables
+  readonly m: Map<Id, Ref[]>;
+  // Path to Current Scope
+  readonly p: ScopePath,
+  // Next ScopeIndex
+  n: ScopeIndex,
+};
+
+export type Ref = {
+  readonly r: ScopePath;     // Referer
+  readonly e: ReferencePath; // Referee
+};
+
+export type ReferencePath = {
+  s: ScopePath, // Index of the every scope
+  i: Id, // The variable name
+};
+
+export type ScopeIndex = number;
+
+export type ScopePath = ScopeIndex[];
 
 export type JsSrc = string;
 

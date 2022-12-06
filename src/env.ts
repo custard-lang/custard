@@ -1,12 +1,17 @@
-import { Definitions, Env, Id, isRecursiveConst, TranspileError, Writer } from "./types.js";
+import { Scope, Env, Id, isRecursiveConst, TranspileError, Writer } from "./types.js";
+import * as References from "./references.js";
+import { isDeeperThanOrEqual, isShallowerThan } from "./scope-path.js";
 
-export function init(initial: Definitions): Env {
-  return [{ d: initial, o: new Set() }];
+export function init(initial: Scope): Env {
+  return {
+    s: [initial],
+    r: References.init(),
+  };
 }
 
-export function find(env: Env, id: Id): Writer | undefined {
-  for (const frame of env) {
-    const result = frame.d.get(id);
+export function find({ s } : Env, id: Id): Writer | undefined {
+  for (const frame of s.values()) {
+    const result = frame.get(id);
     if (result !== undefined) {
       return result;
     }
@@ -14,39 +19,39 @@ export function find(env: Env, id: Id): Writer | undefined {
   return undefined;
 }
 
-export function findWithScopeOffset(
-  env: Env,
-  id: Id
-): [Writer, number] | undefined {
-  for (const [i, frame] of env.entries()) {
-    const result = frame.d.get(id);
+export function referTo({ s, r } : Env, id: Id): Writer | TranspileError {
+  for (const [i, frame] of s.entries()) {
+    const result = frame.get(id);
     if (result !== undefined) {
-      return [result, i];
+      const s = r.p.slice(i);
+      References.add(r, { i: id, s });
+      return result;
     }
   }
-  return undefined;
+  return new TranspileError(`No variable \`${id}\` is defined! NOTE: If you want to define \`${id}\` recursively, wrap the declaration(s) with \`recursive\`.`);
 }
 
-export function isDefinedInThisScope(env: Env, id: Id): boolean {
-  const w = env[0].d.get(id);
+export function isDefinedInThisScope({ s }: Env, id: Id): boolean {
+  const w = s[0].get(id);
   return w !== undefined && !isRecursiveConst(w);
 }
 
-export function set(env: Env, id: Id, writer: Writer): undefined | TranspileError {
-  if (env[0].o.has(id)) {
-    return new TranspileError(""); // TODO
+export function set({ s, r: { m, p } }: Env, id: Id, writer: Writer): undefined | TranspileError {
+  const rs = m.get(id) || [];
+  if (rs.some((r) => isDeeperThanOrEqual(r.r, p) && isShallowerThan(r.e.s, p))) {
+    return new TranspileError(
+      `No variable \`${id}\` is defined! NOTE: If you want to define \`${id}\` recursively, wrap the declaration(s) with \`recursive\`.`
+    );
   }
-  env[0].d.set(id, writer);
+  s[0].set(id, writer);
 }
 
-export function push(env: Env): void {
-  env.unshift({ d: new Map(), o: new Set() });
+export function push({ s, r }: Env): void {
+  References.appendNewScope(r);
+  s.unshift(new Map());
 }
 
-export function pop(env: Env): void {
-  env.shift();
-}
-
-export function rememberOuterFunctionIsReferred(env: Env, id: Id): void {
-  env[0].o.add(id);
+export function pop({ s, r }: Env): void {
+  References.returnToPreviousScope(r);
+  s.shift();
 }

@@ -5,6 +5,13 @@ export function assertNonError<T>(v: T | Error): T {
   return v;
 }
 
+export function assertNonNull<T>(v: T | undefined, msg: string): T {
+  if (v === undefined) {
+    throw new Error(msg);
+  }
+  return v;
+}
+
 export function mapE<T, U, E extends Error>(
   xs: Iterable<T>,
   klass: new () => E,

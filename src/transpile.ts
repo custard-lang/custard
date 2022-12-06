@@ -41,19 +41,14 @@ export function transpile(ast: Form, env: Env): JsSrc | TranspileError {
     if (!isCuSymbol(sym)) {
       return new TranspileError(`${JSON.stringify(sym)} is not a symbol!`);
     }
-    const fo = EnvF.findWithScopeOffset(env, sym.v);
-    if (fo === undefined) {
-      return new TranspileError(`No function \`${sym.v}\` is defined!`);
+    const f = EnvF.referTo(env, sym.v);
+    if (f instanceof TranspileError) {
+      return f;
     }
-    const [f, offset] = fo;
     if (isAContextualKeyword(f)) {
       return new TranspileError(
         `\`${sym.v}\` must be used with \`${f.companion}\`!`
       );
-    }
-
-    if (offset !== 0) {
-      EnvF.rememberOuterFunctionIsReferred(env, sym.v);
     }
 
     if (isVar(f) || isConst(f) || isRecursiveConst(f)) {
@@ -78,9 +73,9 @@ export function transpile(ast: Form, env: Env): JsSrc | TranspileError {
     case "object":
       switch (ast.t) {
         case "Symbol":
-          // TODO: 不正な再帰呼び出しを防ぐために、ここでも参照した変数の定義位置をメモする
-          if (EnvF.find(env, ast.v) === undefined) {
-            return new TranspileError(`No variable \`${ast.v}\` is defined!`);
+          const r = EnvF.referTo(env, ast.v);
+          if (r instanceof TranspileError) {
+            return r;
           }
           return ast.v;
         case "Integer32":
@@ -153,6 +148,7 @@ export function transpilingForAssignment(
     if (!isCuSymbol(id)) {
       return new TranspileError(`${JSON.stringify(id)} is not a symbol!`);
     }
+
     const exp = transpile(v, env);
     if (exp instanceof TranspileError) {
       return exp;
