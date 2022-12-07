@@ -1,6 +1,8 @@
 import { Block, Env, Form } from "./types.js";
 import { transpile, transpileBlock } from "./transpile.js";
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 export function evalForm(ast: Form, env: Env): any | Error {
   const jsSrc = transpile(ast, env);
   if (jsSrc instanceof Error) {

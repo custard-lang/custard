@@ -60,6 +60,7 @@ function list(s: Scanner): CuArray | ParseError {
     }
     result.push(f);
   }
+  // eslint-disable-next-line no-ignore-returned-union/no-ignore-returned-union
   s.next(); // drop close paren
   return result;
 }

@@ -30,6 +30,13 @@ module.exports = {
   },
   ignorePatterns: [".eslintrc.cjs"],
   overrides: [
+    {
+      files: ["*.test.ts"],
+      rules: {
+        "@typescript-eslint/no-null-assertion": "off",
+        "no-ignore-returned-union/no-ignore-returned-union": "off",
+      },
+    },
   ],
   rules: {
     "import/no-unresolved": "off",

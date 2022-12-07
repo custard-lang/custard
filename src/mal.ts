@@ -10,6 +10,8 @@ import * as Env from "./env.js";
 import { evalForm } from "./eval.js";
 import { base } from "./lib/base.js";
 
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument*/
+
 const rl = readline.createInterface({ input, output });
 
 // READ

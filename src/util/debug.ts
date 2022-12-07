@@ -13,6 +13,7 @@ export function pr<T>(x: T, ...msgs: unknown[]): T {
 const DEBUG_LOG_PATH = process.env.CUSTARD_DEBUG_LOG_PATH;
 
 export function writeDebugOut(s: string) {
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   appendFileSync(DEBUG_LOG_PATH!, `${s}\n`);
 }
 

@@ -68,5 +68,6 @@ export function push({ s, r }: Env): void {
 
 export function pop({ s, r }: Env): void {
   References.returnToPreviousScope(r);
+  // eslint-disable-next-line no-ignore-returned-union/no-ignore-returned-union
   s.shift();
 }

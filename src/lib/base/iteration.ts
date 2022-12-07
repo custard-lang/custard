@@ -17,7 +17,7 @@ function transpilingControlStatement(
 }
 
 export function iteration(): Scope {
-  const b = new Map();
+  const b: Scope = new Map();
 
   b.set("break", Iteration.__break);
   b.set("continue", Iteration.__continue);

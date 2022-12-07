@@ -1,5 +1,5 @@
 // import { pr } from "../util/debug.js";
-import { mapE } from "../../util/error.js";
+import { assertNonNull, mapE } from "../../util/error.js";
 
 import {
   aConst,
@@ -106,7 +106,7 @@ export namespace Safe {
 }
 
 export function safe(): Scope {
-  const b = new Map();
+  const b: Scope = new Map();
 
   b.set(
     "plusF",
@@ -246,7 +246,12 @@ export function safe(): Scope {
         return ifTrueSrcs;
       }
       const ifTrueSrc =
-        ifTrueSrcs.length > 1 ? `(${ifTrueSrcs.join(", ")})` : ifTrueSrcs[0];
+        ifTrueSrcs.length > 1
+          ? `(${ifTrueSrcs.join(", ")})`
+          : assertNonNull(ifTrueSrcs[0], "Impossilbe");
+      if (ifTrueSrc instanceof TranspileError) {
+        return ifTrueSrc;
+      }
 
       const ifFalseSrcs = mapE(falseForms, TranspileError, (ifFalse) =>
         transpile(ifFalse, env),
