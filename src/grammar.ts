@@ -25,7 +25,7 @@ export function buildTokenRegex(): RegExp {
       comment,
       nonSpecial,
     ].join("|")})`,
-    "g"
+    "g",
   );
 }
 
@@ -44,7 +44,9 @@ export function form(s: Scanner): Form | ParseError {
 function list(s: Scanner): CuArray | ParseError {
   const token = s.next(); // drop open paren
   if (token !== "(") {
-    return new ParseError(`Expected an opening paren, but found ${JSON.stringify(token)}`);
+    return new ParseError(
+      `Expected an opening paren, but found ${JSON.stringify(token)}`,
+    );
   }
   const result: CuArray = [];
   while (true) {
@@ -74,7 +76,7 @@ function atom(s: Scanner): Atom | ParseError {
   }
   const md = /^-?[0-9]+(\.[0-9]+)?$/.exec(token);
   if (md) {
-    if (md[1]){
+    if (md[1]) {
       return Number(md[0]);
     }
     return {
@@ -82,7 +84,7 @@ function atom(s: Scanner): Atom | ParseError {
       v: Number(md[0]) | 0,
     };
   }
-  switch(token){
+  switch (token) {
     case "true":
       return true;
     case "false":

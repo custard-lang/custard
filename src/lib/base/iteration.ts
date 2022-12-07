@@ -6,7 +6,7 @@ export namespace Iteration {
 }
 
 function transpilingControlStatement(
-  id: Id
+  id: Id,
 ): (env: Env, ...rest: Form[]) => JsSrc | TranspileError {
   return function (_env: Env, ...rest: Form[]): JsSrc | TranspileError {
     if (rest.length > 0) {

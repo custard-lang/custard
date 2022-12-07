@@ -26,7 +26,7 @@ export namespace Unbounded {
   ): JsSrc | TranspileError {
     if (bool === undefined) {
       return new TranspileError(
-        "No conditional expression given to a `while` statement!"
+        "No conditional expression given to a `while` statement!",
       );
     }
     if (rest.length < 1) {
@@ -35,7 +35,7 @@ export namespace Unbounded {
 
     if (isNonExpressionCall(env, bool)) {
       return new TranspileError(
-        `The conditional expression in a \`for\` must be an expression! But \`${bool[0].v}\` is a statement!`
+        `The conditional expression in a \`for\` must be an expression! But \`${bool[0].v}\` is a statement!`,
       );
     }
 
@@ -66,19 +66,19 @@ export namespace Unbounded {
 
     if (initialStatement === undefined) {
       return new TranspileError(
-        "No initialization statement given to a `for` statement!"
+        "No initialization statement given to a `for` statement!",
       );
     }
 
     if (bool === undefined) {
       return new TranspileError(
-        "No conditional expression given to a `for` statement!"
+        "No conditional expression given to a `for` statement!",
       );
     }
 
     if (final === undefined) {
       return new TranspileError(
-        "No final expression given to a `for` statement!"
+        "No final expression given to a `for` statement!",
       );
     }
 
@@ -88,7 +88,7 @@ export namespace Unbounded {
 
     if (isNonExpressionCall(env, bool)) {
       return new TranspileError(
-        `The conditional expression in a \`for\` must be an expression! But \`${bool[0].v}\` is a statement!`
+        `The conditional expression in a \`for\` must be an expression! But \`${bool[0].v}\` is a statement!`,
       );
     }
 
@@ -123,22 +123,22 @@ export namespace Unbounded {
 
     if (id === undefined) {
       return new TranspileError(
-        "No variable name given to a `forEach` statement!"
+        "No variable name given to a `forEach` statement!",
       );
     }
     if (!isCuSymbol(id)) {
       return new TranspileError(
-        "The first argument to `for` must be a symbol!"
+        "The first argument to `for` must be a symbol!",
       );
     }
     if (iterable === undefined) {
       return new TranspileError(
-        "No iterable expression given to a `forEach` statement!"
+        "No iterable expression given to a `forEach` statement!",
       );
     }
     if (statements.length < 1) {
       return new TranspileError(
-        "No statements given to a `forEach` statement!"
+        "No statements given to a `forEach` statement!",
       );
     }
 
@@ -173,13 +173,13 @@ export namespace Unbounded {
     for (const statement of consts) {
       if (!isCall(statement)) {
         return new TranspileError(
-          "All arguments in `recursive` must be `const` declarations!"
+          "All arguments in `recursive` must be `const` declarations!",
         );
       }
       const declName = EnvF.find(env, statement[0].v);
       if (declName !== Safe.__const) {
         return new TranspileError(
-          "All declarations in `recursive` must be `const`!"
+          "All declarations in `recursive` must be `const`!",
         );
       }
 

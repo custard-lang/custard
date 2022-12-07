@@ -23,9 +23,9 @@ describe("Interactions of the functions in EnvF", () => {
         r: [0],
         e: {
           s: [0],
-          i: "v0_0"
+          i: "v0_0",
         },
-      }
+      },
     ]);
 
     const v0_1v = aVar();
@@ -76,7 +76,7 @@ describe("Interactions of the functions in EnvF", () => {
           r: [0, 0, 0],
           e: {
             s: [0],
-            i: "v0_1"
+            i: "v0_1",
           },
         });
 
@@ -87,7 +87,7 @@ describe("Interactions of the functions in EnvF", () => {
             r: [0, 0, 0],
             e: {
               s: [0, 0],
-              i: "v00_0"
+              i: "v00_0",
             },
           },
         ]);
@@ -101,7 +101,7 @@ describe("Interactions of the functions in EnvF", () => {
           r: [1, 0, 0],
           e: {
             s: [0],
-            i: "v0_0"
+            i: "v0_0",
           },
         });
 
@@ -111,7 +111,7 @@ describe("Interactions of the functions in EnvF", () => {
           r: [1, 0, 0],
           e: {
             s: [0],
-            i: "v0_1"
+            i: "v0_1",
           },
         });
 
@@ -121,7 +121,7 @@ describe("Interactions of the functions in EnvF", () => {
           r: [1, 0, 0],
           e: {
             s: [0, 0],
-            i: "v00_0"
+            i: "v00_0",
           },
         });
       });
@@ -170,7 +170,7 @@ describe("Interactions of the functions in EnvF", () => {
           r: [0, 1, 0],
           e: {
             s: [0],
-            i: "v0_1"
+            i: "v0_1",
           },
         });
 
@@ -181,7 +181,7 @@ describe("Interactions of the functions in EnvF", () => {
             r: [0, 1, 0],
             e: {
               s: [1, 0],
-              i: "v01_0"
+              i: "v01_0",
             },
           },
         ]);
@@ -195,7 +195,7 @@ describe("Interactions of the functions in EnvF", () => {
           r: [1, 1, 0],
           e: {
             s: [0],
-            i: "v0_0"
+            i: "v0_0",
           },
         });
 
@@ -205,7 +205,7 @@ describe("Interactions of the functions in EnvF", () => {
           r: [1, 1, 0],
           e: {
             s: [0],
-            i: "v0_1"
+            i: "v0_1",
           },
         });
 
@@ -215,7 +215,7 @@ describe("Interactions of the functions in EnvF", () => {
           r: [1, 1, 0],
           e: {
             s: [1, 0],
-            i: "v01_0"
+            i: "v01_0",
           },
         });
       });
@@ -264,7 +264,7 @@ describe("Interactions of the functions in EnvF", () => {
           r: [0, 2, 0],
           e: {
             s: [0],
-            i: "v0_1"
+            i: "v0_1",
           },
         });
 
@@ -275,7 +275,7 @@ describe("Interactions of the functions in EnvF", () => {
             r: [0, 2, 0],
             e: {
               s: [2, 0],
-              i: "v02_0"
+              i: "v02_0",
             },
           },
         ]);
@@ -289,7 +289,7 @@ describe("Interactions of the functions in EnvF", () => {
           r: [1, 2, 0],
           e: {
             s: [0],
-            i: "v0_0"
+            i: "v0_0",
           },
         });
 
@@ -299,7 +299,7 @@ describe("Interactions of the functions in EnvF", () => {
           r: [1, 2, 0],
           e: {
             s: [0],
-            i: "v0_1"
+            i: "v0_1",
           },
         });
 
@@ -309,7 +309,7 @@ describe("Interactions of the functions in EnvF", () => {
           r: [1, 2, 0],
           e: {
             s: [2, 0],
-            i: "v02_0"
+            i: "v02_0",
           },
         });
       });
@@ -322,7 +322,7 @@ describe("Interactions of the functions in EnvF", () => {
           r: [2, 2, 0],
           e: {
             s: [0],
-            i: "v0_0"
+            i: "v0_0",
           },
         });
 
@@ -332,7 +332,7 @@ describe("Interactions of the functions in EnvF", () => {
           r: [2, 2, 0],
           e: {
             s: [0],
-            i: "v0_1"
+            i: "v0_1",
           },
         });
 
@@ -342,7 +342,7 @@ describe("Interactions of the functions in EnvF", () => {
           r: [2, 2, 0],
           e: {
             s: [2, 0],
-            i: "v02_0"
+            i: "v02_0",
           },
         });
 
@@ -355,7 +355,7 @@ describe("Interactions of the functions in EnvF", () => {
           r: [2, 2, 0],
           e: {
             s: [2, 2, 0],
-            i: "v022_0"
+            i: "v022_0",
           },
         });
       });
@@ -373,7 +373,11 @@ describe("Interactions of the functions in EnvF", () => {
 
       inScope(env, () => {
         EnvF.referTo(env, "v0");
-        expect(EnvF.set(env, "v0", aVar())).toEqual(new TranspileError("No variable `v0` is defined! NOTE: If you want to define `v0` recursively, wrap the declaration(s) with `recursive`."));
+        expect(EnvF.set(env, "v0", aVar())).toEqual(
+          new TranspileError(
+            "No variable `v0` is defined! NOTE: If you want to define `v0` recursively, wrap the declaration(s) with `recursive`.",
+          ),
+        );
       });
     });
 
@@ -389,7 +393,11 @@ describe("Interactions of the functions in EnvF", () => {
         inScope(env, () => {
           EnvF.referTo(env, "v0");
         });
-        expect(EnvF.set(env, "v0", aVar())).toEqual(new TranspileError("No variable `v0` is defined! NOTE: If you want to define `v0` recursively, wrap the declaration(s) with `recursive`."));
+        expect(EnvF.set(env, "v0", aVar())).toEqual(
+          new TranspileError(
+            "No variable `v0` is defined! NOTE: If you want to define `v0` recursively, wrap the declaration(s) with `recursive`.",
+          ),
+        );
       });
     });
 
@@ -405,13 +413,21 @@ describe("Interactions of the functions in EnvF", () => {
         EnvF.referTo(env, "v1");
         expect(EnvF.set(env, "v0", aVar())).toBeUndefined();
 
-        expect(EnvF.set(env, "v1", aVar())).toEqual(new TranspileError("No variable `v1` is defined! NOTE: If you want to define `v1` recursively, wrap the declaration(s) with `recursive`."));
+        expect(EnvF.set(env, "v1", aVar())).toEqual(
+          new TranspileError(
+            "No variable `v1` is defined! NOTE: If you want to define `v1` recursively, wrap the declaration(s) with `recursive`.",
+          ),
+        );
 
         inScope(env, () => {
           EnvF.referTo(env, "v1");
           expect(EnvF.set(env, "v0", aVar())).toBeUndefined();
 
-          expect(EnvF.set(env, "v1", aVar())).toEqual(new TranspileError("No variable `v1` is defined! NOTE: If you want to define `v1` recursively, wrap the declaration(s) with `recursive`."));
+          expect(EnvF.set(env, "v1", aVar())).toEqual(
+            new TranspileError(
+              "No variable `v1` is defined! NOTE: If you want to define `v1` recursively, wrap the declaration(s) with `recursive`.",
+            ),
+          );
         });
       });
     });
@@ -430,7 +446,11 @@ describe("Interactions of the functions in EnvF", () => {
         });
         expect(EnvF.set(env, "v0", aVar())).toBeUndefined();
 
-        expect(EnvF.set(env, "v1", aVar())).toEqual(new TranspileError("No variable `v1` is defined! NOTE: If you want to define `v1` recursively, wrap the declaration(s) with `recursive`."));
+        expect(EnvF.set(env, "v1", aVar())).toEqual(
+          new TranspileError(
+            "No variable `v1` is defined! NOTE: If you want to define `v1` recursively, wrap the declaration(s) with `recursive`.",
+          ),
+        );
 
         inScope(env, () => {
           inScope(env, () => {
@@ -438,7 +458,11 @@ describe("Interactions of the functions in EnvF", () => {
           });
           expect(EnvF.set(env, "v0", aVar())).toBeUndefined();
 
-          expect(EnvF.set(env, "v1", aVar())).toEqual(new TranspileError("No variable `v1` is defined! NOTE: If you want to define `v1` recursively, wrap the declaration(s) with `recursive`."));
+          expect(EnvF.set(env, "v1", aVar())).toEqual(
+            new TranspileError(
+              "No variable `v1` is defined! NOTE: If you want to define `v1` recursively, wrap the declaration(s) with `recursive`.",
+            ),
+          );
         });
       });
     });

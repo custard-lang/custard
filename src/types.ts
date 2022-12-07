@@ -26,8 +26,8 @@ export type CuSymbol = {
 };
 
 export type Env = {
-  readonly s: [Scope, ...Scope[]], // Scopes
-  readonly r: References, // References in the Progaram
+  readonly s: [Scope, ...Scope[]]; // Scopes
+  readonly r: References; // References in the Progaram
 };
 
 export type Scope = Map<Id, Writer>;
@@ -38,19 +38,19 @@ export type References = {
   // Mapping of Scopes to Variables
   readonly m: Map<Id, Ref[]>;
   // Path to Current Scope
-  readonly p: ScopePath,
+  readonly p: ScopePath;
   // Next ScopeIndex
-  n: ScopeIndex,
+  n: ScopeIndex;
 };
 
 export type Ref = {
-  readonly r: ScopePath;     // Referer
+  readonly r: ScopePath; // Referer
   readonly e: ReferencePath; // Referee
 };
 
 export type ReferencePath = {
-  s: ScopePath, // Index of the every scope
-  i: Id, // The variable name
+  s: ScopePath; // Index of the every scope
+  i: Id; // The variable name
 };
 
 export type ScopeIndex = number;
@@ -59,31 +59,44 @@ export type ScopePath = ScopeIndex[];
 
 export type JsSrc = string;
 
-export type ContextualKeyword = { readonly t: 0; readonly companion: Id; };
-export function aContextualKeyword(companion: Id): ContextualKeyword { return { t: 0, companion } };
+export type ContextualKeyword = { readonly t: 0; readonly companion: Id };
+export function aContextualKeyword(companion: Id): ContextualKeyword {
+  return { t: 0, companion };
+}
 export function isAContextualKeyword(x: Writer): x is ContextualKeyword {
-  return (x as Record<string, unknown>).t === 0
-};
+  return (x as Record<string, unknown>).t === 0;
+}
 
 export type Var = { readonly t: 1 };
-export function aVar(): Var { return { t: 1 } };
+export function aVar(): Var {
+  return { t: 1 };
+}
 export function isVar(x: Writer): x is Var {
-  return (x as Record<string, unknown>).t === 1
-};
+  return (x as Record<string, unknown>).t === 1;
+}
 
 export type Const = { readonly t: 2 };
-export function aConst(): Const { return { t: 2 } };
+export function aConst(): Const {
+  return { t: 2 };
+}
 export function isConst(x: Writer): x is Const {
-  return (x as Record<string, unknown>).t === 2
-};
+  return (x as Record<string, unknown>).t === 2;
+}
 
 export type RecursiveConst = { readonly t: 3 };
-export function aRecursiveConst(): RecursiveConst { return { t: 3 } };
+export function aRecursiveConst(): RecursiveConst {
+  return { t: 3 };
+}
 export function isRecursiveConst(x: Writer): x is RecursiveConst {
-  return (x as Record<string, unknown>).t === 3
-};
+  return (x as Record<string, unknown>).t === 3;
+}
 
-export type Writer = ContextualKeyword | Var | Const | RecursiveConst | ((env: Env, ...forms: CuArray) => JsSrc | TranspileError);
+export type Writer =
+  | ContextualKeyword
+  | Var
+  | Const
+  | RecursiveConst
+  | ((env: Env, ...forms: CuArray) => JsSrc | TranspileError);
 
 export function isCuSymbol(v: Form): v is CuSymbol {
   return v !== undefined && (v as CuSymbol).t === "Symbol";

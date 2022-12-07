@@ -1,12 +1,12 @@
-import { append, clone, goUp } from './scope-path.js';
-import { ReferencePath, References } from './types.js';
+import { append, clone, goUp } from "./scope-path.js";
+import { ReferencePath, References } from "./types.js";
 
 export function init(): References {
   return {
     m: new Map(),
     p: [0],
     n: 0,
-  }
+  };
 }
 
 /*
@@ -69,7 +69,9 @@ export function appendNewScope(r: References): void {
 export function returnToPreviousScope(r: References): void {
   const lastI = goUp(r.p);
   if (lastI === undefined) {
-    throw new Error(`Assertion Failure: No scope to return! r: ${JSON.stringify(r)}`);
+    throw new Error(
+      `Assertion Failure: No scope to return! r: ${JSON.stringify(r)}`,
+    );
   }
   r.n = lastI + 1;
 }

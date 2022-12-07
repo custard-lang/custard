@@ -1,4 +1,4 @@
-import type { ScopeIndex, ScopePath } from './types.js';
+import type { ScopeIndex, ScopePath } from "./types.js";
 
 function isPrefixOf(path0: ScopePath, path1: ScopePath): boolean {
   // ScopePath is ordered by deeper to shallower.
@@ -14,12 +14,15 @@ function isPrefixOf(path0: ScopePath, path1: ScopePath): boolean {
   return true;
 }
 
-export function isDeeperThanOrEqual(path0: ScopePath, path1: ScopePath): boolean {
-  return  path0.length >= path1.length && isPrefixOf(path1, path0);
+export function isDeeperThanOrEqual(
+  path0: ScopePath,
+  path1: ScopePath,
+): boolean {
+  return path0.length >= path1.length && isPrefixOf(path1, path0);
 }
 
 export function isShallowerThan(path0: ScopePath, path1: ScopePath): boolean {
-  return  path0.length < path1.length && isPrefixOf(path0, path1);
+  return path0.length < path1.length && isPrefixOf(path0, path1);
 }
 
 export function clone(path: ScopePath): ScopePath {

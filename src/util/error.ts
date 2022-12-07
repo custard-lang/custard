@@ -15,7 +15,7 @@ export function assertNonNull<T>(v: T | undefined, msg: string): T {
 export function mapE<T, U, E extends Error>(
   xs: Iterable<T>,
   klass: new () => E,
-  f: (x: T) => U | E
+  f: (x: T) => U | E,
 ): U[] | E {
   const result: U[] = [];
   for (const x of xs) {

@@ -47,7 +47,7 @@ export function transpile(ast: Form, env: Env): JsSrc | TranspileError {
     }
     if (isAContextualKeyword(f)) {
       return new TranspileError(
-        `\`${sym.v}\` must be used with \`${f.companion}\`!`
+        `\`${sym.v}\` must be used with \`${f.companion}\`!`,
       );
     }
 
@@ -98,7 +98,7 @@ export function transpileBlock(forms: Block, env: Env): JsSrc | TranspileError {
 
 export function transpiling1(
   formId: Id,
-  f: (a: JsSrc) => JsSrc
+  f: (a: JsSrc) => JsSrc,
 ): (env: Env, a: Form, ...unused: Form[]) => JsSrc | TranspileError {
   return (env: Env, a: Form, ...unused: Form[]): JsSrc | TranspileError => {
     const ra = transpile(a, env);
@@ -108,7 +108,7 @@ export function transpiling1(
 
     if (unused.length > 0) {
       return new TranspileError(
-        `\`${formId}\` must receive exactly one expression!`
+        `\`${formId}\` must receive exactly one expression!`,
       );
     }
 
@@ -117,7 +117,7 @@ export function transpiling1(
 }
 
 export function transpiling2(
-  f: (a: JsSrc, b: JsSrc) => JsSrc
+  f: (a: JsSrc, b: JsSrc) => JsSrc,
 ): (env: Env, a: Form, b: Form) => JsSrc | TranspileError {
   return (env: Env, a: Form, b: Form): JsSrc | TranspileError => {
     const ra = transpile(a, env);
@@ -137,12 +137,12 @@ export function transpiling2(
 // TODO: Handle assignment to reserved words etc.
 export function transpilingForAssignment(
   formId: Id,
-  f: (env: Env, id: CuSymbol, exp: JsSrc) => JsSrc | TranspileError
+  f: (env: Env, id: CuSymbol, exp: JsSrc) => JsSrc | TranspileError,
 ): Writer {
   return (env: Env, id: Form, v: Form, another?: Form) => {
     if (another != null) {
       return new TranspileError(
-        `The number of arguments to \`${formId}\` must be 2!`
+        `The number of arguments to \`${formId}\` must be 2!`,
       );
     }
     if (!isCuSymbol(id)) {
@@ -159,7 +159,7 @@ export function transpilingForAssignment(
 
 export function transpilingForVariableMutation(
   formId: Id,
-  operator: JsSrc
+  operator: JsSrc,
 ): Writer {
   return (env: Env, id: Form, another?: Form) => {
     if (another !== undefined) {
@@ -168,14 +168,14 @@ export function transpilingForVariableMutation(
 
     if (!isCuSymbol(id)) {
       return new TranspileError(
-        `The argument to \`${formId}\` must be a name of a variable!`
+        `The argument to \`${formId}\` must be a name of a variable!`,
       );
     }
 
     const val = EnvF.find(env, id.v);
     if (val === undefined || !isVar(val)) {
       return new TranspileError(
-        `The argument to \`${formId}\` must be a name of a variable declared by \`let\`!`
+        `The argument to \`${formId}\` must be a name of a variable declared by \`let\`!`,
       );
     }
 
