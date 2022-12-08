@@ -1,0 +1,13 @@
+#!/bin/bash
+
+set -u
+
+jsFiles=($(git diff-tree --no-commit-id --name-only -r HEAD | grep -Ee '\.ts$'))
+
+if [ "${#jsFiles[@]}" -ne 0 ]; then
+  npx eslint --fix -- "${jsFiles[@]}"
+fi
+
+if [ "${#jsFiles[@]}" -ne 0 ]; then
+  git add -- "${jsFiles[@]}"
+fi
