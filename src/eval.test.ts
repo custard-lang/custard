@@ -642,6 +642,15 @@ describe("evalBlock", () => {
         "No variable `g` is defined! NOTE: If you want to define `g` recursively, wrap the declaration(s) with `recursive`.",
       ),
     });
+
+    describe("optimize tail calls", () => {
+      // function fact(n, acc) { if (n === 1) return acc; else return fact(n - 1, acc * n); }
+      // fact(99999, 1)
+      testOf({
+        src: "(recursive (const fact (fn (n acc) (if (equals n 0) acc else (fact (minusF n 1) (timesF acc n)))))) (fact 99999 1)",
+        expected: Infinity,
+      });
+    });
   });
 
   describe("(recursive d e c l a r a t i o n s)", () => {

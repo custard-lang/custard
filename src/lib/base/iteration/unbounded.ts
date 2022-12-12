@@ -162,6 +162,7 @@ export namespace Unbounded {
     return `for(const ${id.v} of ${iterableSrc}) {${statementsSrc}}`;
   }
 
+  // https://try.purescript.org/?code=LYewJgrgNgpgBAWQIYEsB2cDuALGAnGAKEJWAAcQ8AXOABQKgjCJPMpoFEAzLmAYxoAKbrwEBKVhWpwR-KgDoAwiDQBnELDiCoIAOYTCwVBgBcJmTzlwAqmhRVDxuAF44YEIThwduuABI4VWwQTC0uJAE4AEYABmiDcMizOABJNBoAWgA%2BVPS4bNyHRJo4iL4XODLCYrgMMoqawQwM%2BK16gCpaiSA
   export function recursive(
     env: Env,
     ...consts: Block
