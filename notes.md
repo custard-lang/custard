@@ -59,3 +59,6 @@
     - `incrementF`とかが危ない
 - [ ] `break`, `continue`が使える箇所のvalidation, test
 - [ ] `comment`マクロ: 空のソースコードを出力。`null`も返さない
+- [ ] tail call optimizationは、マクロ機能を付けた後、`recursive`を拡張するついでにやろう
+    - それでもやっぱ難しいと感じたらやめよう
+    - [ ] エッジケースっちゃエッジケースだけど、`(recursive (const x x))`は恐らくエラーになっちゃうのでついでに直す
