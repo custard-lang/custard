@@ -6,6 +6,7 @@ import {
   TranspileError,
   Writer,
   ModulePaths,
+  Path,
 } from "./types.js";
 import * as References from "./references.js";
 import { isDeeperThanOrEqual, isShallowerThan } from "./scope-path.js";
@@ -72,4 +73,8 @@ export function pop({ s, r }: Env): void {
   References.returnToPreviousScope(r);
   // eslint-disable-next-line no-ignore-returned-union/no-ignore-returned-union
   s.shift();
+}
+
+export function findModule({ m } : Env, id: Id): Path | undefined{
+  return m.get(id);
 }

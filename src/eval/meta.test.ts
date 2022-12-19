@@ -6,7 +6,6 @@ import { evalForm } from "../eval";
 
 import { describe, expect, test } from "vitest";
 import { base } from "../lib/base";
-import { meta } from "../lib/meta";
 import { merge } from "../scope";
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/restrict-template-expressions */
@@ -24,7 +23,7 @@ describe("evalForm", () => {
     const t = only ? test.only : test;
     t(`\`${src}\` => ${expected}`, () => {
       expect(
-        evalForm(assertNonError(readStr(src)), Env.init(merge(base, meta))),
+        evalForm(assertNonError(readStr(src)), Env.init(merge(base))),
       ).toEqual(expected);
     });
   }

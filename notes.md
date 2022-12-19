@@ -50,6 +50,14 @@
                                 - 2022/11/04: 変数の定義位置について。変数自身もindexで管理しようと思ったけど、変数と番号のmappingが必要になっちゃうし、やっぱりスコープはスコープのindexで管理して、変数は名前で管理しよう
         - `recursive`内の場合、内部の`const`を従来通り当該スコープにおける`RecursiveConst`として扱う？
 
+- moduleの取り扱い
+    - `import`は文脈によって異なるコードを吐き出す必要がある
+        - `evaluate`のような、replの文脈では`import()`関数
+            - `await`が使えない場合と使える場合に備えてかき分ける
+                - どの道吐き出すコードで`await`使いたいケースがあるだろうし、やっぱ`await`が使える状況を作ろう
+                    - [AsyncFunction](https://developer.mozilla.org/ja/docs/Web/JavaScript/Reference/Global_Objects/AsyncFunction)
+        - moduleをtranspileする文脈では`import`文
+
 # TODO
 
 - [ ] `Integer32`も`number`にする。動的なチェックは `| 0` で行う
