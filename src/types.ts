@@ -28,11 +28,16 @@ export type CuSymbol = {
 export type Env = {
   readonly s: [Scope, ...Scope[]]; // Scopes
   readonly r: References; // References in the Progaram
+  readonly m: ModulePaths; // Mapping from module name to its path.
 };
 
 export type Scope = Map<Id, Writer>;
 
+export type ModulePaths = Map<Id, Path>;
+
 export type Id = string;
+
+export type Path = string;
 
 export type References = {
   // Mapping of Scopes to Variables

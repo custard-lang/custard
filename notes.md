@@ -52,6 +52,7 @@
 
 # TODO
 
+- [ ] `Integer32`も`number`にする。動的なチェックは `| 0` で行う
 - [ ] `evalBlock`において、余分な閉じカッコがあっても構文エラーにならない
 - [ ] `debug`マクロも作ろう: `(console.log(x), x)`
 - [ ] `error`マクロも作ろう: `(() => throw error)()`

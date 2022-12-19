@@ -5,14 +5,16 @@ import {
   isRecursiveConst,
   TranspileError,
   Writer,
+  ModulePaths,
 } from "./types.js";
 import * as References from "./references.js";
 import { isDeeperThanOrEqual, isShallowerThan } from "./scope-path.js";
 
-export function init(initial: Scope): Env {
+export function init(initial: Scope, m: ModulePaths = new Map()): Env {
   return {
     s: [initial],
     r: References.init(),
+    m,
   };
 }
 
