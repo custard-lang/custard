@@ -1,3 +1,8 @@
+import type { Stats } from "node:fs";
+import { stat } from "node:fs/promises";
+
+import { Awaitable } from "./util/types.js";
+
 export type Block = Form[];
 
 export type Form = CuArray | Atom;
@@ -5,7 +10,14 @@ export type Form = CuArray | Atom;
 export type CuArray = Form[];
 
 // The `Cu` prefix is only to avoid conflicts with TypeScript's builtin types.
-export type Atom = Integer32 | Float64 | CuString | Bool | Undefined | CuSymbol;
+export type Atom =
+  | Integer32
+  | Float64
+  | CuString
+  | Bool
+  | Undefined
+  | CuSymbol
+  | PropertyAccess;
 
 export type Integer32 = {
   t: "Integer32";
@@ -25,19 +37,53 @@ export type CuSymbol = {
   v: string;
 };
 
+export type PropertyAccess = {
+  t: "PropertyAccess";
+  v: string[];
+};
+
 export type Env = {
   readonly s: [Scope, ...Scope[]]; // Scopes
   readonly r: References; // References in the Progaram
   readonly m: ModulePaths; // Mapping from module name to its path.
+  readonly o: TranspileOptions;
 };
 
 export type Scope = Map<Id, Writer>;
 
-export type ModulePaths = Map<Id, Path>;
+export type ModulePaths = Map<Id, FilePath>;
+
+export type TranspileOptions =  TranspileRepl | TranspileModule ;
+
+export type TranspileRepl = {
+  mode: "repl";
+  src: Stats;
+  srcPath: FilePath;
+  awaitingId: Id | undefined;
+};
+
+export type TranspileModule = {
+  mode: "module";
+  src: Stats;
+  srcPath: FilePath;
+};
+
+// In REPL without loading any file, use current directory as `srcPath`.
+export async function transpileOptionsRepl(
+  srcPath: FilePath = process.cwd(),
+): Promise<TranspileOptions> {
+  return { mode: "repl", src: await stat(srcPath), srcPath, awaitingId: undefined };
+}
+
+export async function transpileOptionsModule(
+  srcPath: FilePath = process.cwd(),
+): Promise<TranspileOptions> {
+  return { mode: "module", src: await stat(srcPath), srcPath };
+}
 
 export type Id = string;
 
-export type Path = string;
+export type FilePath = string;
 
 export type References = {
   // Mapping of Scopes to Variables
@@ -101,7 +147,7 @@ export type Writer =
   | Var
   | Const
   | RecursiveConst
-  | ((env: Env, ...forms: CuArray) => JsSrc | TranspileError);
+  | ((env: Env, ...forms: CuArray) => Awaitable<JsSrc | TranspileError>);
 
 export function isCuSymbol(v: Form): v is CuSymbol {
   return v !== undefined && (v as CuSymbol).t === "Symbol";

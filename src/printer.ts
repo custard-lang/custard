@@ -23,5 +23,7 @@ export function prStr(form: Form): string {
       return form.v.toString();
     case "Symbol":
       return form.v;
+    case "PropertyAccess":
+      return form.v.join(".");
   }
 }

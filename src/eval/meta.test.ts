@@ -21,9 +21,12 @@ describe("evalForm", () => {
     only?: undefined | true;
   }): void {
     const t = only ? test.only : test;
-    t(`\`${src}\` => ${expected}`, () => {
+    t(`\`${src}\` => ${expected}`, async () => {
       expect(
-        evalForm(assertNonError(readStr(src)), Env.init(merge(base))),
+        await evalForm(
+          assertNonError(readStr(src)),
+          await Env.init(merge(base)),
+        ),
       ).toEqual(expected);
     });
   }

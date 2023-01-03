@@ -1,6 +1,6 @@
 // import { pr } from "./util/debug.js";
 // import { prDebugOut, writeDebugOut } from "./util/debug.js";
-import { mapE } from "./util/error.js";
+import { assertNonNull, mapAE } from "./util/error.js";
 
 import {
   Block,
@@ -20,17 +20,31 @@ import {
 } from "./types.js";
 import * as EnvF from "./env.js";
 
-export function transpile(ast: Form, env: Env): JsSrc | TranspileError {
+export async function transpileStatement(ast: Form, env: Env): Promise<JsSrc | TranspileError> {
+  if (env.o.mode === "repl" && env.o.awaitingId !== undefined) {
+    const restSrc = await transpileExpression(ast, env);
+    if (restSrc instanceof TranspileError) {
+      return restSrc;
+    }
+    const promiseId = `__cu$promise_${env.o.awaitingId}`;
+    const result = `__cu$Context.get(${JSON.stringify(promiseId)}).then((${env.o.awaitingId}) => {\nreturn ${restSrc};\n})`;
+    env.o.awaitingId = undefined;
+    return result;
+  }
+  return await transpileExpression(ast, env);
+}
+
+export async function transpileExpression(ast: Form, env: Env): Promise<JsSrc | TranspileError> {
   if (ast instanceof Array) {
     const [sym, ...args] = ast;
 
     if (isCall(sym)) {
-      const funcSrc = transpile(sym, env);
+      const funcSrc = await transpileExpression(sym, env);
       if (funcSrc instanceof TranspileError) {
         return funcSrc;
       }
 
-      const argSrcs = mapE(args, TranspileError, (arg) => transpile(arg, env));
+      const argSrcs = await mapAE(args, TranspileError, async (arg) => await transpileExpression(arg, env));
       if (argSrcs instanceof TranspileError) {
         return argSrcs;
       }
@@ -52,15 +66,22 @@ export function transpile(ast: Form, env: Env): JsSrc | TranspileError {
     }
 
     if (isVar(f) || isConst(f) || isRecursiveConst(f)) {
-      const argSrcs = mapE(args, TranspileError, (arg) => transpile(arg, env));
+      const argSrcs = await mapAE(args, TranspileError, async (arg) => await transpileExpression(arg, env));
       if (argSrcs instanceof TranspileError) {
         return argSrcs;
       }
 
       return `${sym.v}(${argSrcs.join(", ")})`;
     }
+
+    const r = f(env, ...args);
+    if (r instanceof Promise) {
+      return await r;
+    }
     return f(env, ...args);
   }
+
+  let r: Writer | TranspileError;
   switch (typeof ast) {
     case "string":
       return JSON.stringify(ast);
@@ -73,21 +94,33 @@ export function transpile(ast: Form, env: Env): JsSrc | TranspileError {
     case "object":
       switch (ast.t) {
         case "Symbol":
-          const r = EnvF.referTo(env, ast.v);
+          r = EnvF.referTo(env, ast.v);
           if (r instanceof TranspileError) {
             return r;
           }
           return ast.v;
+        case "PropertyAccess":
+          r = EnvF.referTo(
+            env,
+            assertNonNull(
+              ast.v[0],
+              "Assertion failure: PropertyAccess with no symbol.",
+            ),
+          );
+          if (r instanceof TranspileError) {
+            return r;
+          }
+          return ast.v.join(".");
         case "Integer32":
           return `${ast.v}`;
       }
   }
 }
 
-export function transpileBlock(forms: Block, env: Env): JsSrc | TranspileError {
+export async function transpileBlock(forms: Block, env: Env): Promise<JsSrc | TranspileError> {
   let jsSrc = "";
   for (const form of forms) {
-    const s = transpile(form, env);
+    const s = await transpileStatement(form, env);
     if (s instanceof Error) {
       return s;
     }
@@ -99,9 +132,9 @@ export function transpileBlock(forms: Block, env: Env): JsSrc | TranspileError {
 export function transpiling1(
   formId: Id,
   f: (a: JsSrc) => JsSrc,
-): (env: Env, a: Form, ...unused: Form[]) => JsSrc | TranspileError {
-  return (env: Env, a: Form, ...unused: Form[]): JsSrc | TranspileError => {
-    const ra = transpile(a, env);
+): (env: Env, a: Form, ...unused: Form[]) => Promise<JsSrc | TranspileError> {
+  return async (env: Env, a: Form, ...unused: Form[]): Promise<JsSrc | TranspileError> => {
+    const ra = await transpileExpression(a, env);
     if (ra instanceof TranspileError) {
       return ra;
     }
@@ -118,14 +151,14 @@ export function transpiling1(
 
 export function transpiling2(
   f: (a: JsSrc, b: JsSrc) => JsSrc,
-): (env: Env, a: Form, b: Form) => JsSrc | TranspileError {
-  return (env: Env, a: Form, b: Form): JsSrc | TranspileError => {
-    const ra = transpile(a, env);
+): (env: Env, a: Form, b: Form) => Promise<JsSrc | TranspileError> {
+  return async (env: Env, a: Form, b: Form): Promise<JsSrc | TranspileError> => {
+    const ra = await transpileExpression(a, env);
     if (ra instanceof TranspileError) {
       return ra;
     }
 
-    const rb = transpile(b, env);
+    const rb = await transpileExpression(b, env);
     if (rb instanceof TranspileError) {
       return rb;
     }
@@ -139,7 +172,7 @@ export function transpilingForAssignment(
   formId: Id,
   f: (env: Env, id: CuSymbol, exp: JsSrc) => JsSrc | TranspileError,
 ): Writer {
-  return (env: Env, id: Form, v: Form, another?: Form) => {
+  return async (env: Env, id: Form, v: Form, another?: Form) => {
     if (another != null) {
       return new TranspileError(
         `The number of arguments to \`${formId}\` must be 2!`,
@@ -149,7 +182,7 @@ export function transpilingForAssignment(
       return new TranspileError(`${JSON.stringify(id)} is not a symbol!`);
     }
 
-    const exp = transpile(v, env);
+    const exp = await transpileExpression(v, env);
     if (exp instanceof TranspileError) {
       return exp;
     }

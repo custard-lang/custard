@@ -1,5 +1,13 @@
 import * as EnvF from "../../env";
-import { CuArray, Env, isCuSymbol, JsSrc, Scope, TranspileError } from "../../types";
+import {
+  CuArray,
+  Env,
+  isCuSymbol,
+  JsSrc,
+  Scope,
+  TranspileError,
+} from "../../types";
+import { expectNever } from "../../util/error";
 
 export function module(): Scope {
   const b: Scope = new Map();
@@ -13,12 +21,30 @@ export function module(): Scope {
       return new TranspileError("The argument of `import` must be a Symbol.");
     }
 
-    // TODO: ライブラリーのパスを、現在transpileしているファイルからの相対パスにした方がよさそう
     const modulePath = EnvF.findModule(env, id.v);
     if (modulePath === undefined) {
-      return new TranspileError(`No module \`${id.v}\` registered in the Module Paths`);
+      return new TranspileError(
+        `No module \`${id.v}\` registered in the Module Paths`,
+      );
     }
-    return `import * as ${id.v} from "${modulePath}"`;
+    if (modulePath instanceof TranspileError) {
+      return modulePath;
+    }
+
+    if (EnvF.isAtTopLevel(env)) {
+      switch (env.o.mode) {
+        case "repl":
+          // TODO: マクロができたら (constAwait id  ...) でリファクタリング
+          env.o.awaitingId = id.v;
+          const promiseId = `__cu$promise_${id.v}`;
+          return `__cu$Context.set(${JSON.stringify(promiseId)}, import(${JSON.stringify(modulePath)}))`;
+        case "module":
+          return `import * as ${id.v} from ${JSON.stringify(modulePath)}`;
+        default:
+          return expectNever(env.o);
+      }
+    }
+    return `const ${id.v} = await import(${JSON.stringify(modulePath)})`;
   });
 
   return b;

@@ -1,7 +1,7 @@
 // import { writeDebugOut } from "../../../util/debug";
 
 import * as EnvF from "../../../env.js";
-import { isCall, transpile, transpileBlock } from "../../../transpile";
+import { isCall, transpileBlock, transpileExpression, transpileStatement } from "../../../transpile";
 import {
   Block,
   Env,
@@ -19,11 +19,11 @@ import { isNonExpressionCall } from "../common.js";
 import { Safe } from "../safe.js";
 
 export namespace Unbounded {
-  export function __while(
+  export async function __while(
     env: Env,
     bool: Form,
     ...rest: Block
-  ): JsSrc | TranspileError {
+  ): Promise<JsSrc | TranspileError> {
     if (bool === undefined) {
       return new TranspileError(
         "No conditional expression given to a `while` statement!",
@@ -39,14 +39,14 @@ export namespace Unbounded {
       );
     }
 
-    const boolSrc = transpile(bool, env);
+    const boolSrc = await transpileExpression(bool, env);
     if (boolSrc instanceof TranspileError) {
       return boolSrc;
     }
 
     EnvF.push(env);
 
-    const statementsSrc = transpileBlock(rest, env);
+    const statementsSrc = await transpileBlock(rest, env);
     if (statementsSrc instanceof TranspileError) {
       return statementsSrc;
     }
@@ -55,13 +55,13 @@ export namespace Unbounded {
     return `while(${boolSrc}){\n${statementsSrc}\n}`;
   }
 
-  export function __for(
+  export async function __for(
     env: Env,
     initialStatement: Form,
     bool: Form,
     final: Form,
     ...rest: Block
-  ): JsSrc | TranspileError {
+  ): Promise<JsSrc | TranspileError> {
     EnvF.push(env);
 
     if (initialStatement === undefined) {
@@ -92,19 +92,19 @@ export namespace Unbounded {
       );
     }
 
-    const initialStatementSrc = transpile(initialStatement, env);
+    const initialStatementSrc = await transpileStatement(initialStatement, env);
     if (initialStatementSrc instanceof TranspileError) {
       return initialStatementSrc;
     }
-    const boolSrc = transpile(bool, env);
+    const boolSrc = await transpileExpression(bool, env);
     if (boolSrc instanceof TranspileError) {
       return boolSrc;
     }
-    const finalSrc = transpile(final, env);
+    const finalSrc = await transpileExpression(final, env);
     if (finalSrc instanceof TranspileError) {
       return finalSrc;
     }
-    const statementsSrc = transpileBlock(rest, env);
+    const statementsSrc = await transpileBlock(rest, env);
     if (statementsSrc instanceof TranspileError) {
       return statementsSrc;
     }
@@ -113,12 +113,12 @@ export namespace Unbounded {
     return `for(${initialStatementSrc};${boolSrc};${finalSrc}){${statementsSrc}}`;
   }
 
-  export function forEach(
+  export async function forEach(
     env: Env,
     id: Form,
     iterable: Form,
     ...statements: Block
-  ): JsSrc | TranspileError {
+  ): Promise<JsSrc | TranspileError> {
     EnvF.push(env);
 
     if (id === undefined) {
@@ -142,7 +142,7 @@ export namespace Unbounded {
       );
     }
 
-    const iterableSrc = transpile(iterable, env);
+    const iterableSrc = await transpileExpression(iterable, env);
     if (iterableSrc instanceof TranspileError) {
       return iterableSrc;
     }
@@ -152,7 +152,7 @@ export namespace Unbounded {
       return r;
     }
 
-    const statementsSrc = transpileBlock(statements, env);
+    const statementsSrc = await transpileBlock(statements, env);
     if (statementsSrc instanceof TranspileError) {
       return statementsSrc;
     }
@@ -162,10 +162,10 @@ export namespace Unbounded {
     return `for(const ${id.v} of ${iterableSrc}) {${statementsSrc}}`;
   }
 
-  export function recursive(
+  export async function recursive(
     env: Env,
     ...consts: Block
-  ): JsSrc | TranspileError {
+  ): Promise<JsSrc | TranspileError> {
     if (consts.length < 1) {
       return new TranspileError("No `const` statements given to `recursive`!");
     }
@@ -193,7 +193,7 @@ export namespace Unbounded {
       }
     }
 
-    return transpileBlock(consts, env);
+    return await transpileBlock(consts, env);
   }
 }
 

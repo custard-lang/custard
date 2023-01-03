@@ -10,8 +10,8 @@ function inScope(env: Env, f: () => void): void {
 }
 
 describe("Interactions of the functions in EnvF", () => {
-  test("referTo returns the set variable, and logs the reference to the variable", () => {
-    const env = EnvF.init(new Map());
+  test("referTo returns the set variable, and logs the reference to the variable", async () => {
+    const env = await EnvF.init(new Map());
 
     // Scope 0
     const v0_0v = aVar();
@@ -363,8 +363,8 @@ describe("Interactions of the functions in EnvF", () => {
   });
 
   describe("set returns an error if the variable is referred to as an outer variable", () => {
-    test("1: the variable is recursively referred", () => {
-      const env = EnvF.init(new Map());
+    test("1: the variable is recursively referred", async () => {
+      const env = await EnvF.init(new Map());
 
       expect(EnvF.set(env, "v0", aVar())).toBeUndefined();
 
@@ -381,8 +381,8 @@ describe("Interactions of the functions in EnvF", () => {
       });
     });
 
-    test("2: the variable is recursively referred in the inner scope", () => {
-      const env = EnvF.init(new Map());
+    test("2: the variable is recursively referred in the inner scope", async () => {
+      const env = await EnvF.init(new Map());
 
       expect(EnvF.set(env, "v0", aVar())).toBeUndefined();
 
@@ -401,8 +401,8 @@ describe("Interactions of the functions in EnvF", () => {
       });
     });
 
-    test("3: the variable is back-referred", () => {
-      const env = EnvF.init(new Map());
+    test("3: the variable is back-referred", async () => {
+      const env = await EnvF.init(new Map());
 
       expect(EnvF.set(env, "v0", aVar())).toBeUndefined();
 
@@ -432,8 +432,8 @@ describe("Interactions of the functions in EnvF", () => {
       });
     });
 
-    test("4: the variable is back-referred in the inner scope", () => {
-      const env = EnvF.init(new Map());
+    test("4: the variable is back-referred in the inner scope", async () => {
+      const env = await EnvF.init(new Map());
 
       expect(EnvF.set(env, "v0", aVar())).toBeUndefined();
 
@@ -468,8 +468,8 @@ describe("Interactions of the functions in EnvF", () => {
     });
   });
 
-  test("set returns undefined if the variable is referred to *not* actually as an outer variable", () => {
-    const env = EnvF.init(new Map());
+  test("set returns undefined if the variable is referred to *not* actually as an outer variable", async () => {
+    const env = await EnvF.init(new Map());
 
     expect(EnvF.set(env, "v0", aVar())).toBeUndefined();
 

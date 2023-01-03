@@ -5,26 +5,17 @@ import type { Form, CuArray, Atom } from "./types.js";
 
 const ignored = "[\\s,]*";
 
-const tildeAt = "~@";
-
 const specialSingle = "[\\[\\]{}()'`~^@]";
 
 const doubleQuoted = '"(?:\\\\.|[^\\\\"])*"?';
 const doubleQuotedRe = new RegExp(doubleQuoted);
 
-const comment = ";.*";
-
+// TODO: symbolに変えて、JSのidentifierと同等に
 const nonSpecial = "[^\\s\\[\\]{}('\"`,;)]*";
 
 export function buildTokenRegex(): RegExp {
   return new RegExp(
-    `${ignored}(${[
-      tildeAt,
-      specialSingle,
-      doubleQuoted,
-      comment,
-      nonSpecial,
-    ].join("|")})`,
+    `${ignored}(${[specialSingle, doubleQuoted, nonSpecial].join("|")})`,
     "g",
   );
 }
@@ -93,6 +84,13 @@ function atom(s: Scanner): Atom | ParseError {
     case "undefined":
       return undefined;
     default:
+      // TODO: Tokenize the period character.
+      if (token.includes(".")) {
+        return {
+          t: "PropertyAccess",
+          v: token.split("."),
+        };
+      }
       return {
         t: "Symbol",
         v: token,
