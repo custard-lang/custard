@@ -37,11 +37,13 @@ export function module(): Scope {
           // TODO: マクロができたら (constAwait id  ...) でリファクタリング
           env.o.awaitingId = id.v;
           const promiseId = `__cu$promise_${id.v}`;
-          return `__cu$Context.set(${JSON.stringify(promiseId)}, import(${JSON.stringify(modulePath)}))`;
+          const promiseIdS = JSON.stringify(promiseId);
+          const modulePathS = JSON.stringify(modulePath);
+          return `__cu$Context.set(${promiseIdS}, import(${modulePathS}))`;
         case "module":
           return `import * as ${id.v} from ${JSON.stringify(modulePath)}`;
         default:
-          return expectNever(env.o);
+          return expectNever(env.o) as string;
       }
     }
     return `const ${id.v} = await import(${JSON.stringify(modulePath)})`;

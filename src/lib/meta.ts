@@ -8,6 +8,7 @@ export function readString(input: string, _env: Env): Block | ParseError {
   return readBlock(input);
 }
 
+/* eslint-disable-disable-next-line @typescript-eslint/no-explicit-any */
 export function evaluate(block: Block, env: Env): any | Error {
   return transpileBlock(block, env);
 }

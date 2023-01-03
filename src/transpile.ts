@@ -20,21 +20,29 @@ import {
 } from "./types.js";
 import * as EnvF from "./env.js";
 
-export async function transpileStatement(ast: Form, env: Env): Promise<JsSrc | TranspileError> {
+export async function transpileStatement(
+  ast: Form,
+  env: Env,
+): Promise<JsSrc | TranspileError> {
   if (env.o.mode === "repl" && env.o.awaitingId !== undefined) {
     const restSrc = await transpileExpression(ast, env);
     if (restSrc instanceof TranspileError) {
       return restSrc;
     }
     const promiseId = `__cu$promise_${env.o.awaitingId}`;
-    const result = `__cu$Context.get(${JSON.stringify(promiseId)}).then((${env.o.awaitingId}) => {\nreturn ${restSrc};\n})`;
+    const result = `__cu$Context.get(${JSON.stringify(promiseId)}).then((${
+      env.o.awaitingId
+    }) => {\nreturn ${restSrc};\n})`;
     env.o.awaitingId = undefined;
     return result;
   }
   return await transpileExpression(ast, env);
 }
 
-export async function transpileExpression(ast: Form, env: Env): Promise<JsSrc | TranspileError> {
+export async function transpileExpression(
+  ast: Form,
+  env: Env,
+): Promise<JsSrc | TranspileError> {
   if (ast instanceof Array) {
     const [sym, ...args] = ast;
 
@@ -44,7 +52,11 @@ export async function transpileExpression(ast: Form, env: Env): Promise<JsSrc | 
         return funcSrc;
       }
 
-      const argSrcs = await mapAE(args, TranspileError, async (arg) => await transpileExpression(arg, env));
+      const argSrcs = await mapAE(
+        args,
+        TranspileError,
+        async (arg) => await transpileExpression(arg, env),
+      );
       if (argSrcs instanceof TranspileError) {
         return argSrcs;
       }
@@ -66,7 +78,11 @@ export async function transpileExpression(ast: Form, env: Env): Promise<JsSrc | 
     }
 
     if (isVar(f) || isConst(f) || isRecursiveConst(f)) {
-      const argSrcs = await mapAE(args, TranspileError, async (arg) => await transpileExpression(arg, env));
+      const argSrcs = await mapAE(
+        args,
+        TranspileError,
+        async (arg) => await transpileExpression(arg, env),
+      );
       if (argSrcs instanceof TranspileError) {
         return argSrcs;
       }
@@ -117,7 +133,10 @@ export async function transpileExpression(ast: Form, env: Env): Promise<JsSrc | 
   }
 }
 
-export async function transpileBlock(forms: Block, env: Env): Promise<JsSrc | TranspileError> {
+export async function transpileBlock(
+  forms: Block,
+  env: Env,
+): Promise<JsSrc | TranspileError> {
   let jsSrc = "";
   for (const form of forms) {
     const s = await transpileStatement(form, env);
@@ -133,7 +152,11 @@ export function transpiling1(
   formId: Id,
   f: (a: JsSrc) => JsSrc,
 ): (env: Env, a: Form, ...unused: Form[]) => Promise<JsSrc | TranspileError> {
-  return async (env: Env, a: Form, ...unused: Form[]): Promise<JsSrc | TranspileError> => {
+  return async (
+    env: Env,
+    a: Form,
+    ...unused: Form[]
+  ): Promise<JsSrc | TranspileError> => {
     const ra = await transpileExpression(a, env);
     if (ra instanceof TranspileError) {
       return ra;
@@ -152,7 +175,11 @@ export function transpiling1(
 export function transpiling2(
   f: (a: JsSrc, b: JsSrc) => JsSrc,
 ): (env: Env, a: Form, b: Form) => Promise<JsSrc | TranspileError> {
-  return async (env: Env, a: Form, b: Form): Promise<JsSrc | TranspileError> => {
+  return async (
+    env: Env,
+    a: Form,
+    b: Form,
+  ): Promise<JsSrc | TranspileError> => {
     const ra = await transpileExpression(a, env);
     if (ra instanceof TranspileError) {
       return ra;

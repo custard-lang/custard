@@ -1,6 +1,8 @@
 import { Worker } from "node:worker_threads";
 import { JsSrc } from "../types.js";
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 // Vitest correctly loads by this path.
 const worker = new Worker("./dist/src/eval/worker.js");
 

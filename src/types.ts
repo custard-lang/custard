@@ -53,7 +53,7 @@ export type Scope = Map<Id, Writer>;
 
 export type ModulePaths = Map<Id, FilePath>;
 
-export type TranspileOptions =  TranspileRepl | TranspileModule ;
+export type TranspileOptions = TranspileRepl | TranspileModule;
 
 export type TranspileRepl = {
   mode: "repl";
@@ -72,7 +72,12 @@ export type TranspileModule = {
 export async function transpileOptionsRepl(
   srcPath: FilePath = process.cwd(),
 ): Promise<TranspileOptions> {
-  return { mode: "repl", src: await stat(srcPath), srcPath, awaitingId: undefined };
+  return {
+    mode: "repl",
+    src: await stat(srcPath),
+    srcPath,
+    awaitingId: undefined,
+  };
 }
 
 export async function transpileOptionsModule(

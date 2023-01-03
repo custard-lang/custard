@@ -7,7 +7,9 @@ import { evalBlock } from "../eval";
 import { assertNonError } from "../util/error";
 import { readBlock } from "../reader";
 
-describe("evalBlock", async () => {
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/restrict-template-expressions */
+
+describe("evalBlock", () => {
   function testOf({
     src,
     expected,
