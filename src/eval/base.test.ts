@@ -1,12 +1,12 @@
-import { assertNonError } from "./util/error";
+import { assertNonError } from "../util/error";
 
-import * as Env from "./env.js";
-import { readBlock, readStr } from "./reader";
-import { evalForm, evalBlock } from "./eval";
+import * as Env from "../env";
+import { readBlock, readStr } from "../reader";
+import { evalForm, evalBlock } from "../eval";
 
 import { describe, expect, test } from "vitest";
-import { TranspileError } from "./types";
-import { base } from "./lib/base";
+import { TranspileError } from "../types";
+import { base } from "../lib/base";
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/restrict-template-expressions */
 
@@ -21,10 +21,10 @@ describe("evalForm", () => {
     only?: undefined | true;
   }): void {
     const t = only ? test.only : test;
-    t(`\`${src}\` => ${expected}`, () => {
-      expect(evalForm(assertNonError(readStr(src)), Env.init(base()))).toEqual(
-        expected,
-      );
+    t(`\`${src}\` => ${expected}`, async () => {
+      expect(
+        await evalForm(assertNonError(readStr(src)), await Env.init(base())),
+      ).toEqual(expected);
     });
   }
 
@@ -297,9 +297,9 @@ describe("evalBlock", () => {
     only?: true | undefined;
   }): void {
     const t = only ? test.only : test;
-    t(`\`${src}\` => ${expected}`, () => {
+    t(`\`${src}\` => ${expected}`, async () => {
       expect(
-        evalBlock(assertNonError(readBlock(src)), Env.init(base())),
+        await evalBlock(assertNonError(readBlock(src)), await Env.init(base())),
       ).toEqual(expected);
     });
   }

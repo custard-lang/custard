@@ -20,8 +20,8 @@ function read(str: string): Form | ParseError {
 }
 
 // EVAL
-function evalCustard(ast: Form): any {
-  return evalForm(ast, Env.init(base()));
+async function evalCustard(ast: Form): Promise<any> {
+  return evalForm(ast, await Env.init(base()));
 }
 
 // PRINT

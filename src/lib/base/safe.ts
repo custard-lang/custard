@@ -1,5 +1,5 @@
 // import { pr } from "../util/debug.js";
-import { assertNonNull, mapE } from "../../util/error.js";
+import { assertNonNull, mapAE } from "../../util/error.js";
 
 import {
   aConst,
@@ -18,7 +18,8 @@ import {
 } from "../../types.js";
 import * as EnvF from "../../env.js";
 import {
-  transpile,
+  transpileExpression,
+  transpileStatement,
   transpileBlock,
   transpiling1,
   transpiling2,
@@ -62,12 +63,15 @@ export namespace Safe {
 
   export const __else = aContextualKeyword("if");
 
-  export function __return(env: Env, ...args: Form[]): JsSrc | TranspileError {
+  export async function __return(
+    env: Env,
+    ...args: Form[]
+  ): Promise<JsSrc | TranspileError> {
     switch (args.length) {
       case 0:
         return "return";
       case 1:
-        const argSrc = transpile(args[0], env);
+        const argSrc = await transpileExpression(args[0], env);
         if (argSrc instanceof TranspileError) {
           return argSrc;
         }
@@ -79,22 +83,22 @@ export namespace Safe {
     }
   }
 
-  export function when(
+  export async function when(
     env: Env,
     bool: Form,
     ...rest: Block
-  ): JsSrc | TranspileError {
+  ): Promise<JsSrc | TranspileError> {
     if (bool === undefined) {
       return new TranspileError("No expressions given to a `when` statement!");
     }
     if (rest.length < 1) {
       return new TranspileError("No statements given to a `when` statement!");
     }
-    const boolSrc = transpile(bool, env);
+    const boolSrc = await transpileExpression(bool, env);
     if (boolSrc instanceof TranspileError) {
       return boolSrc;
     }
-    const statementsSrc = transpileBlock(rest, env);
+    const statementsSrc = await transpileBlock(rest, env);
     if (statementsSrc instanceof TranspileError) {
       return statementsSrc;
     }
@@ -180,25 +184,32 @@ export function safe(): Scope {
     }),
   );
 
-  b.set("scope", (env: Env, ...block: Block): JsSrc | TranspileError => {
-    EnvF.push(env);
-    let result = "(\n";
+  b.set(
+    "scope",
+    async (env: Env, ...block: Block): Promise<JsSrc | TranspileError> => {
+      EnvF.push(env);
+      let result = "(\n";
 
-    const funcSrc = buildFn(env, "scope", [], block);
-    if (funcSrc instanceof TranspileError) {
-      return funcSrc;
-    }
-    result = `${result}${funcSrc}`;
-    result = `${result})()`;
+      const funcSrc = await buildFn(env, "scope", [], block);
+      if (funcSrc instanceof TranspileError) {
+        return funcSrc;
+      }
+      result = `${result}${funcSrc}`;
+      result = `${result})()`;
 
-    EnvF.pop(env);
-    return result;
-  });
+      EnvF.pop(env);
+      return result;
+    },
+  );
 
   b.set(
     "if",
-    (env: Env, bool: Form, ...rest: Form[]): JsSrc | TranspileError => {
-      const boolSrc = transpile(bool, env);
+    async (
+      env: Env,
+      bool: Form,
+      ...rest: Form[]
+    ): Promise<JsSrc | TranspileError> => {
+      const boolSrc = await transpileExpression(bool, env);
       if (boolSrc instanceof TranspileError) {
         return boolSrc;
       }
@@ -239,8 +250,10 @@ export function safe(): Scope {
         );
       }
 
-      const ifTrueSrcs = mapE(trueForms, TranspileError, (ifTrue) =>
-        transpile(ifTrue, env),
+      const ifTrueSrcs = await mapAE(
+        trueForms,
+        TranspileError,
+        async (ifTrue) => await transpileExpression(ifTrue, env),
       );
       if (ifTrueSrcs instanceof TranspileError) {
         return ifTrueSrcs;
@@ -253,8 +266,10 @@ export function safe(): Scope {
         return ifTrueSrc;
       }
 
-      const ifFalseSrcs = mapE(falseForms, TranspileError, (ifFalse) =>
-        transpile(ifFalse, env),
+      const ifFalseSrcs = await mapAE(
+        falseForms,
+        TranspileError,
+        async (ifFalse) => await transpileExpression(ifFalse, env),
       );
       if (ifFalseSrcs instanceof TranspileError) {
         return ifFalseSrcs;
@@ -269,15 +284,23 @@ export function safe(): Scope {
 
   b.set(
     "fn",
-    (env: Env, args: Form, ...block: Form[]): JsSrc | TranspileError => {
-      return buildFn(env, "fn", args, block);
+    async (
+      env: Env,
+      args: Form,
+      ...block: Form[]
+    ): Promise<JsSrc | TranspileError> => {
+      return await buildFn(env, "fn", args, block);
     },
   );
 
   b.set(
     "procedure",
-    (env: Env, args: Form, ...block: Form[]): JsSrc | TranspileError => {
-      return buildProcedure(env, "procedure", args, block);
+    async (
+      env: Env,
+      args: Form,
+      ...block: Form[]
+    ): Promise<JsSrc | TranspileError> => {
+      return await buildProcedure(env, "procedure", args, block);
     },
   );
 
@@ -288,13 +311,20 @@ export function safe(): Scope {
   b.set("incrementF", Safe.incrementF);
   b.set("decrementF", Safe.decrementF);
 
-  b.set("array", (env: Env, ...args: Form[]): JsSrc | TranspileError => {
-    const argsSrcs = mapE(args, TranspileError, (arg) => transpile(arg, env));
-    if (argsSrcs instanceof TranspileError) {
-      return argsSrcs;
-    }
-    return `[${argsSrcs.join(",")}]`;
-  });
+  b.set(
+    "array",
+    async (env: Env, ...args: Form[]): Promise<JsSrc | TranspileError> => {
+      const argsSrcs = await mapAE(
+        args,
+        TranspileError,
+        async (arg) => await transpileExpression(arg, env),
+      );
+      if (argsSrcs instanceof TranspileError) {
+        return argsSrcs;
+      }
+      return `[${argsSrcs.join(",")}]`;
+    },
+  );
 
   return b;
 }
@@ -344,12 +374,12 @@ function functionPostlude(env: Env, src: JsSrc): JsSrc {
   return `${src}}`;
 }
 
-function buildFn(
+async function buildFn(
   env: Env,
   formId: Id,
   args: Form,
   block: Block,
-): JsSrc | TranspileError {
+): Promise<JsSrc | TranspileError> {
   let result = functionPrelude(env, formId, args, block);
   if (result instanceof TranspileError) {
     return result;
@@ -357,7 +387,7 @@ function buildFn(
 
   const lastI = block.length - 1;
   for (let i = 0; i < lastI; ++i) {
-    const src = transpile(block[i], env);
+    const src = await transpileStatement(block[i], env);
     if (src instanceof TranspileError) {
       return src;
     }
@@ -370,7 +400,7 @@ function buildFn(
       `The last statement in a \`${formId}\` must be an expression! But \`${lastStatement[0].v}\` is a statement!`,
     );
   }
-  const lastSrc = transpile(lastStatement, env);
+  const lastSrc = await transpileStatement(lastStatement, env);
   if (lastSrc instanceof TranspileError) {
     return lastSrc;
   }
@@ -379,19 +409,19 @@ function buildFn(
   return functionPostlude(env, result);
 }
 
-function buildProcedure(
+async function buildProcedure(
   env: Env,
   formId: Id,
   args: Form,
   block: Block,
-): JsSrc | TranspileError {
+): Promise<JsSrc | TranspileError> {
   let result = functionPrelude(env, formId, args, block);
   if (result instanceof TranspileError) {
     return result;
   }
 
   for (let i = 0; i < block.length; ++i) {
-    const src = transpile(block[i], env);
+    const src = await transpileStatement(block[i], env);
     if (src instanceof TranspileError) {
       return src;
     }

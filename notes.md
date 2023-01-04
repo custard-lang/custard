@@ -50,8 +50,29 @@
                                 - 2022/11/04: 変数の定義位置について。変数自身もindexで管理しようと思ったけど、変数と番号のmappingが必要になっちゃうし、やっぱりスコープはスコープのindexで管理して、変数は名前で管理しよう
         - `recursive`内の場合、内部の`const`を従来通り当該スコープにおける`RecursiveConst`として扱う？
 
+- moduleの取り扱い
+    - `import`は文脈によって異なるコードを吐き出す必要がある
+        - `evaluate`のような、replの（トップレベルの）文脈では`import()`関数
+            - `await`の仕様を先に考えよう
+                - `evalForm` / `evalBlock`を`async`にして、結果を`await`していたら次の式を`then`の文脈で実行する
+                - 式の途中に`await`が来るケースは？とりあえず禁止しよう
+                    - やるとしたらreplをstack machineにして`await`が現れるまでの関数呼び出しと`await`を含む関数呼び出しを交互にスタックに積んで評価する、って感じかな
+                    - というわけで`constAwait`という名前で実装しよう
+        - repl（かつトップレベル）の文脈では`const`や`let`も`context.varName = ...`に変えなければ
+            - やっぱ`env`に文脈についての情報を持たせて実装を変える、って感じかな...
+                - REPLであることを表すフラグと、scopeの深さで区別しよう
+            - `postMessage`で結果を受け取ると`Promise`とかが使えない問題が悩ましいな。転送できないオブジェクトを見分けてprintするか？
+                - というか、printできる文字列にして送り返すのが正解か
+        - moduleをtranspileする文脈では`import`文
+
+- 予約した識別子のprefixとして`__cu$`を採用しよう
+
 # TODO
 
+- [ ] workerが評価した結果をprintできるオブジェクトにしてから転送する
+- [ ] 1文字プロパティー名をやめる: プロパティー名のminifyは別のレイヤーでやる
+- [ ] `__cu$promise_`と`__cu$Context`周りの関心を切り出して独立したモジュールに
+- [ ] `Integer32`も`number`にする。動的なチェックは `| 0` で行う
 - [ ] `evalBlock`において、余分な閉じカッコがあっても構文エラーにならない
 - [ ] `debug`マクロも作ろう: `(console.log(x), x)`
 - [ ] `error`マクロも作ろう: `(() => throw error)()`

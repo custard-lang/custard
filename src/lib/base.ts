@@ -1,11 +1,6 @@
-import { Scope } from "../types.js";
+import { merge } from "../scope.js";
 import { safe } from "./base/safe.js";
+import { module } from "./base/module.js";
 import { unbounded } from "./base/iteration/unbounded.js";
 
-export function base(): Scope {
-  const b = safe();
-  for (const [id, f] of unbounded()) {
-    b.set(id, f);
-  }
-  return b;
-}
+export const base = () => merge(safe, unbounded, module);

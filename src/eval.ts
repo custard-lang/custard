@@ -1,20 +1,31 @@
+import * as EnvF from "./env.js";
 import { Block, Env, Form } from "./types.js";
-import { transpile, transpileBlock } from "./transpile.js";
+import { transpileStatement, transpileBlock } from "./transpile.js";
+import { evalAsync } from "./eval/worker-controller.js";
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-return */
 
-export function evalForm(ast: Form, env: Env): any | Error {
-  const jsSrc = transpile(ast, env);
+export async function evalForm(ast: Form, env: Env): Promise<any | Error> {
+  const jsSrc = await transpileStatement(ast, EnvF.forRepl(env, "evalForm"));
   if (jsSrc instanceof Error) {
     return jsSrc;
   }
-  return eval(jsSrc);
+  try {
+    return await evalAsync(jsSrc);
+  } catch (e) {
+    return e;
+  }
 }
 
-export function evalBlock(forms: Block, env: Env): any | Error {
-  const jsSrc = transpileBlock(forms, env);
+export async function evalBlock(forms: Block, env: Env): Promise<any | Error> {
+  const jsSrc = await transpileBlock(forms, EnvF.forRepl(env, "evalBlock"));
   if (jsSrc instanceof Error) {
     return jsSrc;
   }
-  return eval(jsSrc);
+
+  try {
+    return await evalAsync(jsSrc);
+  } catch (e) {
+    return e;
+  }
 }

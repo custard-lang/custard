@@ -39,6 +39,21 @@ describe("readStr", () => {
     });
   });
 
+  describe("PropertyAccess", () => {
+    test("`a.b.c` -> `a.b.c`", () => {
+      expect(readStr("a.b.c")).toEqual({
+        t: "PropertyAccess",
+        v: ["a", "b", "c"],
+      });
+    });
+    test("`aa.bc ` -> `aa.bc`", () => {
+      expect(readStr("aa.bc ")).toEqual({
+        t: "PropertyAccess",
+        v: ["aa", "bc"],
+      });
+    });
+  });
+
   describe("reserved symbols", () => {
     test("`true` -> `true`", () => {
       expect(readStr("true")).toEqual(true);
@@ -65,12 +80,12 @@ describe("readStr", () => {
         { t: "Integer32", v: 789 },
       ]);
     });
-    test('`( + 2 (* 3 4) undefined  "foo" )` -> `(+ 2 (* 3 4) undefined "foo")`', () => {
-      expect(readStr('( + 2 (* 3 4) undefined  "foo" )')).toEqual([
-        { t: "Symbol", v: "+" },
+    test('`( pl.us 2 (m 3 4) undefined  "foo" )` -> `(pl.us 2 (m 3 4) undefined "foo")`', () => {
+      expect(readStr('( pl.us 2 (m 3 4) undefined  "foo" )')).toEqual([
+        { t: "PropertyAccess", v: ["pl", "us"] },
         { t: "Integer32", v: 2 },
         [
-          { t: "Symbol", v: "*" },
+          { t: "Symbol", v: "m" },
           { t: "Integer32", v: 3 },
           { t: "Integer32", v: 4 },
         ],
@@ -82,17 +97,17 @@ describe("readStr", () => {
 
   describe("ParseError", () => {
     test("when the input string contains unmatched parentheses", () => {
-      expect(readStr("(+ 45")).toEqual(
+      expect(readStr("(p 45")).toEqual(
         new ParseError("Unexpected end of input!"),
       );
     });
     test("when the input string contains an extra closing parenthesis", () => {
-      expect(readStr("(+ 0 9))")).toEqual(
+      expect(readStr("(p 0 9))")).toEqual(
         new ParseError('Unexpected token left!: ")"'),
       );
     });
     test("when the input string contains unmatched double quotes", () => {
-      expect(readStr('(+ "hello)')).toEqual(
+      expect(readStr('(p "hello)')).toEqual(
         new ParseError("Unexpected end of input!"),
       );
     });
