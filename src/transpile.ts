@@ -94,7 +94,7 @@ export async function transpileExpression(
     if (r instanceof Promise) {
       return await r;
     }
-    return f(env, ...args);
+    return r;
   }
 
   let r: Writer | TranspileError;
