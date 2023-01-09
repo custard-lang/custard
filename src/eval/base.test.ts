@@ -8,7 +8,7 @@ import { describe, expect, test } from "vitest";
 import { TranspileError } from "../types";
 import { base } from "../lib/base";
 
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/restrict-template-expressions */
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/restrict-template-expressions, @typescript-eslint/no-unsafe-assignment */
 
 describe("evalForm", () => {
   function testOf({
