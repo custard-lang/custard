@@ -2,7 +2,7 @@
 
 import * as EnvF from "../../../env.js";
 import {
-  isCall,
+  asCall,
   transpileBlock,
   transpileExpression,
   transpileStatement,
@@ -17,6 +17,7 @@ import {
   aConst,
   aRecursiveConst,
   Scope,
+  showSymbolAccess,
 } from "../../../types";
 
 import { iteration } from "../iteration.js";
@@ -39,8 +40,9 @@ export namespace Unbounded {
     }
 
     if (isNonExpressionCall(env, bool)) {
+      const id = showSymbolAccess(bool[0]);
       return new TranspileError(
-        `The conditional expression in a \`for\` must be an expression! But \`${bool[0].v}\` is a statement!`,
+        `The conditional expression in a \`for\` must be an expression! But \`${id}\` is a statement!`,
       );
     }
 
@@ -92,8 +94,9 @@ export namespace Unbounded {
     }
 
     if (isNonExpressionCall(env, bool)) {
+      const id = showSymbolAccess(bool[0]);
       return new TranspileError(
-        `The conditional expression in a \`for\` must be an expression! But \`${bool[0].v}\` is a statement!`,
+        `The conditional expression in a \`for\` must be an expression! But \`${id}\` is a statement!`,
       );
     }
 
@@ -176,19 +179,20 @@ export namespace Unbounded {
     }
 
     for (const statement of consts) {
-      if (!isCall(statement)) {
+      const call = asCall(statement);
+      if (call === undefined) {
         return new TranspileError(
           "All arguments in `recursive` must be `const` declarations!",
         );
       }
-      const declName = EnvF.find(env, statement[0].v);
+      const declName = EnvF.find(env, call[0]);
       if (declName !== Safe.__const) {
         return new TranspileError(
           "All declarations in `recursive` must be `const`!",
         );
       }
 
-      const id = statement[1];
+      const id = call[1];
       if (!isCuSymbol(id)) {
         return new TranspileError(`${JSON.stringify(id)} is not a symbol!`);
       }

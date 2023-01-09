@@ -15,6 +15,7 @@ import {
   isCuSymbol,
   JsSrc,
   TranspileError,
+  showSymbolAccess,
 } from "../../types.js";
 import * as EnvF from "../../env.js";
 import {
@@ -396,8 +397,9 @@ async function buildFn(
 
   const lastStatement = block[lastI];
   if (isNonExpressionCall(env, lastStatement)) {
+    const id = showSymbolAccess(lastStatement[0]);
     return new TranspileError(
-      `The last statement in a \`${formId}\` must be an expression! But \`${lastStatement[0].v}\` is a statement!`,
+      `The last statement in a \`${formId}\` must be an expression! But \`${id}\` is a statement!`,
     );
   }
   const lastSrc = await transpileStatement(lastStatement, env);

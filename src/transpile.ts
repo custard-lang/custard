@@ -17,6 +17,8 @@ import {
   Writer,
   isConst,
   isRecursiveConst,
+  isPropertyAccess,
+  showSymbolAccess,
 } from "./types.js";
 import * as EnvF from "./env.js";
 
@@ -30,9 +32,9 @@ export async function transpileStatement(
       return restSrc;
     }
     const promiseId = `__cu$promise_${env.o.awaitingId}`;
-    const result = `__cu$Context.get(${JSON.stringify(promiseId)}).then((${
-      env.o.awaitingId
-    }) => {\nreturn ${restSrc};\n})`;
+    const result = `__cu$env.o.topLevelValues.get(${JSON.stringify(
+      promiseId,
+    )})`; //`.then((${env.o.awaitingId}) => {\nreturn ${restSrc};\n})`;
     env.o.awaitingId = undefined;
     return result;
   }
@@ -64,16 +66,25 @@ export async function transpileExpression(
       return `(${funcSrc})(${argSrcs.join(", ")})`;
     }
 
-    if (!isCuSymbol(sym)) {
+    let id: Id;
+    let fullId: Id;
+    if (isCuSymbol(sym)) {
+      id = sym.v;
+      fullId = id;
+    } else if (isPropertyAccess(sym)) {
+      id = assertNonNull(sym.v[0], "Assertion failure: empty PropertyAccess");
+      fullId = sym.v.join(".");
+    } else {
       return new TranspileError(`${JSON.stringify(sym)} is not a symbol!`);
     }
-    const f = EnvF.referTo(env, sym.v);
+    const f = EnvF.referTo(env, id);
     if (f instanceof TranspileError) {
       return f;
     }
+
     if (isAContextualKeyword(f)) {
       return new TranspileError(
-        `\`${sym.v}\` must be used with \`${f.companion}\`!`,
+        `\`${showSymbolAccess(sym)}\` must be used with \`${f.companion}\`!`,
       );
     }
 
@@ -87,7 +98,7 @@ export async function transpileExpression(
         return argSrcs;
       }
 
-      return `${sym.v}(${argSrcs.join(", ")})`;
+      return `${fullId}(${argSrcs.join(", ")})`;
     }
 
     const r = f(env, ...args);
@@ -243,6 +254,22 @@ export function transpilingForVariableMutation(
   };
 }
 
-export function isCall(form: Form): form is Call {
-  return form instanceof Array && isCuSymbol(form[0]);
+function isCall(form: Form): form is Call {
+  return (
+    form instanceof Array && (isCuSymbol(form[0]) || isPropertyAccess(form[0]))
+  );
+}
+
+export function asCall(form: Form): [Id, ...Form[]] | undefined {
+  if (!(form instanceof Array)) {
+    return;
+  }
+  const id = form[0];
+  if (isCuSymbol(id)) {
+    return [id.v, ...form.slice(1)];
+  }
+  if (isPropertyAccess(id)) {
+    const msg = "Assertion failure: an empty PropertyAccess";
+    return [assertNonNull(id.v[0], msg), ...form.slice(1)];
+  }
 }

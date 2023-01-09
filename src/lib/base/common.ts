@@ -1,12 +1,13 @@
 import * as EnvF from "../../env.js";
-import { isCall } from "../../transpile";
+import { asCall } from "../../transpile";
 import { Call, Env, Form, Writer } from "../../types";
 import { Iteration } from "./iteration";
 import { Unbounded } from "./iteration/unbounded";
 import { Safe } from "./safe";
 
 export function isNonExpressionCall(env: Env, form: Form): form is Call {
-  if (!isCall(form)) {
+  const call = asCall(form);
+  if (call === undefined) {
     return false;
   }
   const nonExpressions: (Writer | undefined)[] = [
@@ -23,5 +24,5 @@ export function isNonExpressionCall(env: Env, form: Form): form is Call {
     Iteration.__break,
     Iteration.__continue,
   ];
-  return nonExpressions.includes(EnvF.find(env, form[0].v));
+  return nonExpressions.includes(EnvF.find(env, call[0]));
 }

@@ -1,7 +1,10 @@
 import type { Stats } from "node:fs";
 import { stat } from "node:fs/promises";
+import { expectNever } from "./util/error.js";
 
 import { Awaitable } from "./util/types.js";
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 export type Block = Form[];
 
@@ -60,6 +63,7 @@ export type TranspileRepl = {
   src: Stats;
   srcPath: FilePath;
   awaitingId: Id | undefined;
+  topLevelValues: Map<Id, any>;
 };
 
 export type TranspileModule = {
@@ -77,6 +81,7 @@ export async function transpileOptionsRepl(
     src: await stat(srcPath),
     srcPath,
     awaitingId: undefined,
+    topLevelValues: new Map(),
   };
 }
 
@@ -155,11 +160,28 @@ export type Writer =
   | ((env: Env, ...forms: CuArray) => Awaitable<JsSrc | TranspileError>);
 
 export function isCuSymbol(v: Form): v is CuSymbol {
-  return v !== undefined && (v as CuSymbol).t === "Symbol";
+  return v !== undefined && (v as Record<string, unknown>).t === "Symbol";
+}
+
+export function isPropertyAccess(v: Form): v is PropertyAccess {
+  return (
+    v !== undefined && (v as Record<string, unknown>).t === "PropertyAccess"
+  );
+}
+
+export function showSymbolAccess(sym: CuSymbol | PropertyAccess): string {
+  switch (sym.t) {
+    case "Symbol":
+      return sym.v;
+    case "PropertyAccess":
+      return sym.v.join(".");
+    default:
+      return expectNever(sym) as string;
+  }
 }
 
 export class TranspileError extends Error {
   override name = "TranspileError";
 }
 
-export type Call = [CuSymbol, ...Form[]];
+export type Call = [CuSymbol | PropertyAccess, ...Form[]];

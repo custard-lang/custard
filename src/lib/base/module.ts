@@ -39,7 +39,7 @@ export function module(): Scope {
           const promiseId = `__cu$promise_${id.v}`;
           const promiseIdS = JSON.stringify(promiseId);
           const modulePathS = JSON.stringify(modulePath);
-          return `__cu$Context.set(${promiseIdS}, import(${modulePathS}))`;
+          return `import(${modulePathS}).then((mod) => { __cu$env.o.topLevelValues.set(${promiseIdS}, mod) })`;
         case "module":
           return `import * as ${id.v} from ${JSON.stringify(modulePath)}`;
         default:

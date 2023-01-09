@@ -12,6 +12,7 @@ import {
   TranspileOptions,
   transpileOptionsRepl,
   aVar,
+  TranspileRepl,
 } from "./types.js";
 import * as References from "./references.js";
 import { isDeeperThanOrEqual, isShallowerThan } from "./scope-path.js";
@@ -125,13 +126,16 @@ export function findModule(
   }
 }
 
-export function forRepl(env: Env, caller: string): Env {
-  if (env.o.mode === "module") {
+export function forceToBeRepl(env: Env, caller: string): void {
+  if (env.o.mode !== "repl") {
     console.warn(
-      `${caller}: TranspileOptions.mode "module" is invalid for \`${caller}\`. Replaced with "repl".`,
+      `${caller}: TranspileOptions.mode "${env.o.mode}" is invalid for \`${caller}\`. Replaced with "repl".`,
     );
+    const o = env.o as TranspileOptions;
+    o.mode = "repl";
+    (o as TranspileRepl).awaitingId = undefined;
+    (o as TranspileRepl).topLevelValues = new Map();
   }
-  return { ...env, o: { ...env.o, mode: "repl", awaitingId: undefined } };
 }
 
 export function isAtTopLevel({ s }: Env): boolean {

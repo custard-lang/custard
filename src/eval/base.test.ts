@@ -298,9 +298,14 @@ describe("evalBlock", () => {
   }): void {
     const t = only ? test.only : test;
     t(`\`${src}\` => ${expected}`, async () => {
-      expect(
-        await evalBlock(assertNonError(readBlock(src)), await Env.init(base())),
-      ).toEqual(expected);
+      const result = await evalBlock(
+        assertNonError(readBlock(src)),
+        await Env.init(base()),
+      );
+      if (!(expected instanceof Error) && result instanceof Error) {
+        throw result;
+      }
+      expect(result).toEqual(expected);
     });
   }
 
