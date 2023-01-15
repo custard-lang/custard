@@ -3,6 +3,7 @@ import { stat } from "node:fs/promises";
 import { expectNever } from "./util/error.js";
 
 import { Awaitable } from "./util/types.js";
+import { createVmContext, VmContext } from "./util/vm.js";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -45,11 +46,11 @@ export type PropertyAccess = {
   v: string[];
 };
 
-export type Env = {
+export type Env<Options = TranspileOptions> = {
   readonly s: [Scope, ...Scope[]]; // Scopes
   readonly r: References; // References in the Progaram
   readonly m: ModulePaths; // Mapping from module name to its path.
-  readonly o: TranspileOptions;
+  readonly o: Options;
 };
 
 export type Scope = Map<Id, Writer>;
@@ -62,8 +63,8 @@ export type TranspileRepl = {
   mode: "repl";
   src: Stats;
   srcPath: FilePath;
+  vmContext: VmContext;
   awaitingId: Id | undefined;
-  topLevelValues: Map<Id, any>;
 };
 
 export type TranspileModule = {
@@ -75,19 +76,19 @@ export type TranspileModule = {
 // In REPL without loading any file, use current directory as `srcPath`.
 export async function transpileOptionsRepl(
   srcPath: FilePath = process.cwd(),
-): Promise<TranspileOptions> {
+): Promise<TranspileRepl> {
   return {
     mode: "repl",
     src: await stat(srcPath),
     srcPath,
+    vmContext: createVmContext(),
     awaitingId: undefined,
-    topLevelValues: new Map(),
   };
 }
 
 export async function transpileOptionsModule(
   srcPath: FilePath = process.cwd(),
-): Promise<TranspileOptions> {
+): Promise<TranspileModule> {
   return { mode: "module", src: await stat(srcPath), srcPath };
 }
 

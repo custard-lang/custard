@@ -9,10 +9,10 @@ import {
   Writer,
   ModulePaths,
   FilePath,
-  TranspileOptions,
   transpileOptionsRepl,
   aVar,
   TranspileRepl,
+  TranspileOptions,
 } from "./types.js";
 import * as References from "./references.js";
 import { isDeeperThanOrEqual, isShallowerThan } from "./scope-path.js";
@@ -21,8 +21,19 @@ import { escapeRegExp } from "./util/regexp.js";
 
 export async function init(
   initial: Scope,
+  modulePaths?: ModulePaths,
+): Promise<Env<TranspileRepl>>;
+
+export async function init<Options extends TranspileOptions>(
+  initial: Scope,
+  modulePaths: ModulePaths,
+  options: Options,
+): Promise<Env<Options>>;
+
+export async function init<Options extends TranspileOptions>(
+  initial: Scope,
   modulePaths: ModulePaths = new Map(),
-  options: TranspileOptions | undefined = undefined,
+  options?: Options,
 ): Promise<Env> {
   return {
     s: [initial],
@@ -123,18 +134,6 @@ export function findModule(
         : relativeModPath.replace(new RegExp(escapeRegExp(path.sep), "g"), "/");
     default:
       expectNever(mode);
-  }
-}
-
-export function forceToBeRepl(env: Env, caller: string): void {
-  if (env.o.mode !== "repl") {
-    console.warn(
-      `${caller}: TranspileOptions.mode "${env.o.mode}" is invalid for \`${caller}\`. Replaced with "repl".`,
-    );
-    const o = env.o as TranspileOptions;
-    o.mode = "repl";
-    (o as TranspileRepl).awaitingId = undefined;
-    (o as TranspileRepl).topLevelValues = new Map();
   }
 }
 

@@ -42,7 +42,7 @@ describe("evalForm", () => {
     });
 
     testOf({
-      src: '(meta.readString "(const x 9.2) (plusF x 5.2) (let y 0.1)")',
+      src: '(meta.readString "(const x 9.2) (plusF 4.1 5.2) (let y 0.1)")',
       expected: [
         [{ t: "Symbol", v: "const" }, { t: "Symbol", v: "x" }, 9.2],
         [{ t: "Symbol", v: "plusF" }, 4.1, 5.2],

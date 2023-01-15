@@ -37,9 +37,8 @@ export function module(): Scope {
           // TODO: マクロができたら (constAwait id  ...) でリファクタリング
           env.o.awaitingId = id.v;
           const promiseId = `__cu$promise_${id.v}`;
-          const promiseIdS = JSON.stringify(promiseId);
           const modulePathS = JSON.stringify(modulePath);
-          return `import(${modulePathS}).then((mod) => { __cu$env.o.topLevelValues.set(${promiseIdS}, mod) })`;
+          return `const ${promiseId} = import(${modulePathS})`;
         case "module":
           return `import * as ${id.v} from ${JSON.stringify(modulePath)}`;
         default:

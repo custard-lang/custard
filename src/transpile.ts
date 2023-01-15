@@ -32,9 +32,7 @@ export async function transpileStatement(
       return restSrc;
     }
     const promiseId = `__cu$promise_${env.o.awaitingId}`;
-    const result = `__cu$env.o.topLevelValues.get(${JSON.stringify(
-      promiseId,
-    )})`; //`.then((${env.o.awaitingId}) => {\nreturn ${restSrc};\n})`;
+    const result = `${promiseId}.then((${env.o.awaitingId}) => {\nreturn ${restSrc};\n})`;
     env.o.awaitingId = undefined;
     return result;
   }
