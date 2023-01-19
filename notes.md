@@ -52,14 +52,22 @@
 
 - moduleの取り扱い
     - `import`は文脈によって異なるコードを吐き出す必要がある
-        - `evaluate`のような、replの文脈では`import()`関数
-            - `await`が使えない場合と使える場合に備えてかき分ける
-                - どの道吐き出すコードで`await`使いたいケースがあるだろうし、やっぱ`await`が使える状況を作ろう
-                    - [AsyncFunction](https://developer.mozilla.org/ja/docs/Web/JavaScript/Reference/Global_Objects/AsyncFunction)
+        - `evaluate`のような、replの（トップレベルの）文脈では`import()`関数
+            - `await`の仕様を先に考えよう
+                - `evalForm` / `evalBlock`を`async`にして、結果を`await`していたら次の式を`then`の文脈で実行する
+                - 式の途中に`await`が来るケースは？とりあえず禁止しよう
+                    - やるとしたらreplをstack machineにして`await`が現れるまでの関数呼び出しと`await`を含む関数呼び出しを交互にスタックに積んで評価する、って感じかな
+                    - というわけで`constAwait`という名前で実装しよう
         - moduleをtranspileする文脈では`import`文
+        - `Env`を転送することにすると、REPL向けにスレッドを分けるのは失敗な気がするなぁ。よりセキュアだろうってことでスレッドを分けたけど、`Env`をいじる機能をユーザーに与える限りはあまり意味がない。将来的にはisolateを使うとかプロセスを分けるとか、別の実行モデルをサポートして`Env`をいじれる
+            - やっぱり`transpile`も`eval`用のスレッドでやってしまおう。どうも`vm.runInContext`だとうまく行かないし、どうせブラウザーとかで評価するとき必要になるだろうし
+
+- 予約した識別子のprefixとして`__cu$`を採用しよう
 
 # TODO
 
+- [ ] 1文字プロパティー名をやめる: プロパティー名のminifyは別のレイヤーでやる
+- [ ] `__cu$promise_`と`__cu$env`周りの関心を切り出して独立したモジュールに
 - [ ] `Integer32`も`number`にする。動的なチェックは `| 0` で行う
 - [ ] `evalBlock`において、余分な閉じカッコがあっても構文エラーにならない
 - [ ] `debug`マクロも作ろう: `(console.log(x), x)`

@@ -31,8 +31,8 @@ export async function transpileStatement(
     if (restSrc instanceof TranspileError) {
       return restSrc;
     }
-    const promiseId = `__cu$promise_${env.o.awaitingId}`;
-    const result = `${promiseId}.then((${env.o.awaitingId}) => {\nreturn ${restSrc};\n})`;
+    const promiseIdS = JSON.stringify(`__cu$promise_${env.o.awaitingId}`);
+    const result = `__cu$Context.get(${promiseIdS}).then((${env.o.awaitingId}) => {\nreturn ${restSrc};\n})`;
     env.o.awaitingId = undefined;
     return result;
   }

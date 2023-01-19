@@ -3,7 +3,6 @@ import { stat } from "node:fs/promises";
 import { expectNever } from "./util/error.js";
 
 import { Awaitable } from "./util/types.js";
-import { createVmContext, VmContext } from "./util/vm.js";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -63,7 +62,7 @@ export type TranspileRepl = {
   mode: "repl";
   src: Stats;
   srcPath: FilePath;
-  vmContext: VmContext;
+  topLevelValues: Map<Id, any>;
   awaitingId: Id | undefined;
 };
 
@@ -81,7 +80,7 @@ export async function transpileOptionsRepl(
     mode: "repl",
     src: await stat(srcPath),
     srcPath,
-    vmContext: createVmContext(),
+    topLevelValues: new Map(),
     awaitingId: undefined,
   };
 }
