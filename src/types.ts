@@ -1,5 +1,4 @@
-import type { Stats } from "node:fs";
-import { stat } from "node:fs/promises";
+import { Env } from "./internal/types.js";
 import { expectNever } from "./util/error.js";
 
 import { Awaitable } from "./util/types.js";
@@ -45,78 +44,33 @@ export type PropertyAccess = {
   v: string[];
 };
 
-export type Env<Options = TranspileOptions> = {
-  readonly s: [Scope, ...Scope[]]; // Scopes
-  readonly r: References; // References in the Progaram
-  readonly m: ModulePaths; // Mapping from module name to its path.
-  readonly o: Options;
+export type ProvidedSymbols = {
+  initialScope: Scope;
+  modulePaths: ModulePaths;
 };
+
+export function provideNoModules(initialScope: Scope): ProvidedSymbols {
+  return {
+    initialScope,
+    modulePaths: new Map(),
+  };
+}
 
 export type Scope = Map<Id, Writer>;
 
 export type ModulePaths = Map<Id, FilePath>;
 
-export type TranspileOptions = TranspileRepl | TranspileModule;
-
-export type TranspileRepl = {
-  mode: "repl";
-  src: Stats;
-  srcPath: FilePath;
-  topLevelValues: Map<Id, any>;
-  awaitingId: Id | undefined;
-};
-
-export type TranspileModule = {
-  mode: "module";
-  src: Stats;
+export type TranspileOptions = {
   srcPath: FilePath;
 };
 
-// In REPL without loading any file, use current directory as `srcPath`.
-export async function transpileOptionsRepl(
-  srcPath: FilePath = process.cwd(),
-): Promise<TranspileRepl> {
-  return {
-    mode: "repl",
-    src: await stat(srcPath),
-    srcPath,
-    topLevelValues: new Map(),
-    awaitingId: undefined,
-  };
-}
-
-export async function transpileOptionsModule(
-  srcPath: FilePath = process.cwd(),
-): Promise<TranspileModule> {
-  return { mode: "module", src: await stat(srcPath), srcPath };
+export function defaultTranspileOptions(): TranspileOptions {
+  return { srcPath: process.cwd() };
 }
 
 export type Id = string;
 
 export type FilePath = string;
-
-export type References = {
-  // Mapping of Scopes to Variables
-  readonly m: Map<Id, Ref[]>;
-  // Path to Current Scope
-  readonly p: ScopePath;
-  // Next ScopeIndex
-  n: ScopeIndex;
-};
-
-export type Ref = {
-  readonly r: ScopePath; // Referer
-  readonly e: ReferencePath; // Referee
-};
-
-export type ReferencePath = {
-  s: ScopePath; // Index of the every scope
-  i: Id; // The variable name
-};
-
-export type ScopeIndex = number;
-
-export type ScopePath = ScopeIndex[];
 
 export type JsSrc = string;
 

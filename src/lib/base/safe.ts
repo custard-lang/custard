@@ -1,5 +1,7 @@
-// import { pr } from "../util/debug.js";
 import { assertNonNull, mapAE } from "../../util/error.js";
+
+import { Env } from "../../internal/types.js";
+import * as EnvF from "../../internal/env.js";
 
 import {
   aConst,
@@ -8,7 +10,6 @@ import {
   Block,
   CuSymbol,
   Scope,
-  Env,
   Form,
   Id,
   isConst,
@@ -17,7 +18,6 @@ import {
   TranspileError,
   showSymbolAccess,
 } from "../../types.js";
-import * as EnvF from "../../env.js";
 import {
   transpileExpression,
   transpileStatement,
@@ -26,7 +26,8 @@ import {
   transpiling2,
   transpilingForAssignment,
   transpilingForVariableMutation,
-} from "../../transpile.js";
+} from "../../internal/transpile.js";
+
 import { isNonExpressionCall } from "./common.js";
 
 export namespace Safe {

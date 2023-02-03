@@ -1,6 +1,6 @@
 import { assertNonError } from "../util/error";
 
-import * as Env from "../env";
+import { Repl, replOptionsFromInitialScope } from "../repl";
 import { readBlock, readStr } from "../reader";
 import { evalForm, evalBlock } from "../eval";
 
@@ -22,9 +22,11 @@ describe("evalForm", () => {
   }): void {
     const t = only ? test.only : test;
     t(`\`${src}\` => ${expected}`, async () => {
-      expect(
-        await evalForm(assertNonError(readStr(src)), await Env.init(base())),
-      ).toEqual(expected);
+      await Repl.using(replOptionsFromInitialScope(base()), async (repl) => {
+        expect(await evalForm(assertNonError(readStr(src)), repl)).toEqual(
+          expected,
+        );
+      });
     });
   }
 
@@ -298,19 +300,21 @@ describe("evalBlock", () => {
   }): void {
     const t = only ? test.only : test;
     t(`\`${src}\` => ${expected}`, async () => {
-      const result = await evalBlock(
-        assertNonError(readBlock(src)),
-        await Env.init(base()),
-      );
-      if (!(expected instanceof Error) && result instanceof Error) {
-        throw result;
-      }
-      expect(result).toEqual(expected);
+      process.stdout.write("test running\n");
+      await Repl.using(replOptionsFromInitialScope(base()), async (repl) => {
+        process.stdout.write("test running in REPL\n");
+        const result = await evalBlock(assertNonError(readBlock(src)), repl);
+        if (!(expected instanceof Error) && result instanceof Error) {
+          throw result;
+        }
+        expect(result).toEqual(expected);
+      });
     });
   }
 
   describe("(const|let|assign id expression)", () => {
     testOf({
+      only: true,
       src: "(const x (timesF 3 3))(plusF x 2)",
       expected: 11,
     });

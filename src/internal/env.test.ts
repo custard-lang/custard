@@ -1,7 +1,9 @@
 import { describe, expect, test } from "vitest";
 
-import { aVar, Env, TranspileError } from "./types.js";
+import type { Env } from "./types.js";
+import { aVar, defaultTranspileOptions, TranspileError } from "../types.js";
 import * as EnvF from "./env.js";
+import { transpileRepl } from "./transpile-state.js";
 
 function inScope(env: Env, f: () => void): void {
   EnvF.push(env);
@@ -9,21 +11,28 @@ function inScope(env: Env, f: () => void): void {
   EnvF.pop(env);
 }
 
+async function subjectEnv(): Promise<Env> {
+  return await EnvF.init(
+    new Map(),
+    await transpileRepl(defaultTranspileOptions()),
+  );
+}
+
 describe("Interactions of the functions in EnvF", () => {
   test("referTo returns the set variable, and logs the reference to the variable", async () => {
-    const env = await EnvF.init(new Map());
+    const env = await subjectEnv();
 
     // Scope 0
     const v0_0v = aVar();
     EnvF.set(env, "v0_0", v0_0v);
     const w0_0 = EnvF.referTo(env, "v0_0");
     expect(w0_0).toBe(v0_0v);
-    expect(env.r.m.get("v0_0")).toEqual([
+    expect(env.references.referenceById.get("v0_0")).toEqual([
       {
-        r: [0],
-        e: {
-          s: [0],
-          i: "v0_0",
+        referer: [0],
+        referee: {
+          scopePath: [0],
+          id: "v0_0",
         },
       },
     ]);
@@ -35,22 +44,22 @@ describe("Interactions of the functions in EnvF", () => {
     inScope(env, () => {
       const w0_0 = EnvF.referTo(env, "v0_0");
       expect(w0_0).toBe(v0_0v);
-      expect(env.r.m.get("v0_0")?.at(-1)).toEqual({
-        r: [0, 0],
-        e: {
-          s: [0],
-          i: "v0_0",
+      expect(env.references.referenceById.get("v0_0")?.at(-1)).toEqual({
+        referer: [0, 0],
+        referee: {
+          scopePath: [0],
+          id: "v0_0",
         },
       });
 
       const w0_1 = EnvF.referTo(env, "v0_1");
       expect(w0_1).toBe(v0_1v);
-      expect(env.r.m.get("v0_1")).toEqual([
+      expect(env.references.referenceById.get("v0_1")).toEqual([
         {
-          r: [0, 0],
-          e: {
-            s: [0],
-            i: "v0_1",
+          referer: [0, 0],
+          referee: {
+            scopePath: [0],
+            id: "v0_1",
           },
         },
       ]);
@@ -62,32 +71,32 @@ describe("Interactions of the functions in EnvF", () => {
       inScope(env, () => {
         const w0_0 = EnvF.referTo(env, "v0_0");
         expect(w0_0).toBe(v0_0v);
-        expect(env.r.m.get("v0_0")?.at(-1)).toEqual({
-          r: [0, 0, 0],
-          e: {
-            s: [0],
-            i: "v0_0",
+        expect(env.references.referenceById.get("v0_0")?.at(-1)).toEqual({
+          referer: [0, 0, 0],
+          referee: {
+            scopePath: [0],
+            id: "v0_0",
           },
         });
 
         const w0_1 = EnvF.referTo(env, "v0_1");
         expect(w0_1).toBe(v0_1v);
-        expect(env.r.m.get("v0_1")?.at(-1)).toEqual({
-          r: [0, 0, 0],
-          e: {
-            s: [0],
-            i: "v0_1",
+        expect(env.references.referenceById.get("v0_1")?.at(-1)).toEqual({
+          referer: [0, 0, 0],
+          referee: {
+            scopePath: [0],
+            id: "v0_1",
           },
         });
 
         const w00_0 = EnvF.referTo(env, "v00_0");
         expect(w00_0).toBe(v00_0v);
-        expect(env.r.m.get("v00_0")).toEqual([
+        expect(env.references.referenceById.get("v00_0")).toEqual([
           {
-            r: [0, 0, 0],
-            e: {
-              s: [0, 0],
-              i: "v00_0",
+            referer: [0, 0, 0],
+            referee: {
+              scopePath: [0, 0],
+              id: "v00_0",
             },
           },
         ]);
@@ -97,31 +106,31 @@ describe("Interactions of the functions in EnvF", () => {
       inScope(env, () => {
         const w0_0 = EnvF.referTo(env, "v0_0");
         expect(w0_0).toBe(v0_0v);
-        expect(env.r.m.get("v0_0")?.at(-1)).toEqual({
-          r: [1, 0, 0],
-          e: {
-            s: [0],
-            i: "v0_0",
+        expect(env.references.referenceById.get("v0_0")?.at(-1)).toEqual({
+          referer: [1, 0, 0],
+          referee: {
+            scopePath: [0],
+            id: "v0_0",
           },
         });
 
         const w0_1 = EnvF.referTo(env, "v0_1");
         expect(w0_1).toBe(v0_1v);
-        expect(env.r.m.get("v0_1")?.at(-1)).toEqual({
-          r: [1, 0, 0],
-          e: {
-            s: [0],
-            i: "v0_1",
+        expect(env.references.referenceById.get("v0_1")?.at(-1)).toEqual({
+          referer: [1, 0, 0],
+          referee: {
+            scopePath: [0],
+            id: "v0_1",
           },
         });
 
         const w00_0 = EnvF.referTo(env, "v00_0");
         expect(w00_0).toBe(v00_0v);
-        expect(env.r.m.get("v00_0")?.at(-1)).toEqual({
-          r: [1, 0, 0],
-          e: {
-            s: [0, 0],
-            i: "v00_0",
+        expect(env.references.referenceById.get("v00_0")?.at(-1)).toEqual({
+          referer: [1, 0, 0],
+          referee: {
+            scopePath: [0, 0],
+            id: "v00_0",
           },
         });
       });
@@ -131,21 +140,21 @@ describe("Interactions of the functions in EnvF", () => {
     inScope(env, () => {
       const w0_0 = EnvF.referTo(env, "v0_0");
       expect(w0_0).toBe(v0_0v);
-      expect(env.r.m.get("v0_0")?.at(-1)).toEqual({
-        r: [1, 0],
-        e: {
-          s: [0],
-          i: "v0_0",
+      expect(env.references.referenceById.get("v0_0")?.at(-1)).toEqual({
+        referer: [1, 0],
+        referee: {
+          scopePath: [0],
+          id: "v0_0",
         },
       });
 
       const w0_1 = EnvF.referTo(env, "v0_1");
       expect(w0_1).toBe(v0_1v);
-      expect(env.r.m.get("v0_1")?.at(-1)).toEqual({
-        r: [1, 0],
-        e: {
-          s: [0],
-          i: "v0_1",
+      expect(env.references.referenceById.get("v0_1")?.at(-1)).toEqual({
+        referer: [1, 0],
+        referee: {
+          scopePath: [0],
+          id: "v0_1",
         },
       });
 
@@ -156,32 +165,32 @@ describe("Interactions of the functions in EnvF", () => {
       inScope(env, () => {
         const w0_0 = EnvF.referTo(env, "v0_0");
         expect(w0_0).toBe(v0_0v);
-        expect(env.r.m.get("v0_0")?.at(-1)).toEqual({
-          r: [0, 1, 0],
-          e: {
-            s: [0],
-            i: "v0_0",
+        expect(env.references.referenceById.get("v0_0")?.at(-1)).toEqual({
+          referer: [0, 1, 0],
+          referee: {
+            scopePath: [0],
+            id: "v0_0",
           },
         });
 
         const w0_1 = EnvF.referTo(env, "v0_1");
         expect(w0_1).toBe(v0_1v);
-        expect(env.r.m.get("v0_1")?.at(-1)).toEqual({
-          r: [0, 1, 0],
-          e: {
-            s: [0],
-            i: "v0_1",
+        expect(env.references.referenceById.get("v0_1")?.at(-1)).toEqual({
+          referer: [0, 1, 0],
+          referee: {
+            scopePath: [0],
+            id: "v0_1",
           },
         });
 
         const w01_0 = EnvF.referTo(env, "v01_0");
         expect(w01_0).toBe(v01_0v);
-        expect(env.r.m.get("v01_0")).toEqual([
+        expect(env.references.referenceById.get("v01_0")).toEqual([
           {
-            r: [0, 1, 0],
-            e: {
-              s: [1, 0],
-              i: "v01_0",
+            referer: [0, 1, 0],
+            referee: {
+              scopePath: [1, 0],
+              id: "v01_0",
             },
           },
         ]);
@@ -191,31 +200,31 @@ describe("Interactions of the functions in EnvF", () => {
       inScope(env, () => {
         const w0_0 = EnvF.referTo(env, "v0_0");
         expect(w0_0).toBe(v0_0v);
-        expect(env.r.m.get("v0_0")?.at(-1)).toEqual({
-          r: [1, 1, 0],
-          e: {
-            s: [0],
-            i: "v0_0",
+        expect(env.references.referenceById.get("v0_0")?.at(-1)).toEqual({
+          referer: [1, 1, 0],
+          referee: {
+            scopePath: [0],
+            id: "v0_0",
           },
         });
 
         const w0_1 = EnvF.referTo(env, "v0_1");
         expect(w0_1).toBe(v0_1v);
-        expect(env.r.m.get("v0_1")?.at(-1)).toEqual({
-          r: [1, 1, 0],
-          e: {
-            s: [0],
-            i: "v0_1",
+        expect(env.references.referenceById.get("v0_1")?.at(-1)).toEqual({
+          referer: [1, 1, 0],
+          referee: {
+            scopePath: [0],
+            id: "v0_1",
           },
         });
 
         const w01_0 = EnvF.referTo(env, "v01_0");
         expect(w01_0).toBe(v01_0v);
-        expect(env.r.m.get("v01_0")?.at(-1)).toEqual({
-          r: [1, 1, 0],
-          e: {
-            s: [1, 0],
-            i: "v01_0",
+        expect(env.references.referenceById.get("v01_0")?.at(-1)).toEqual({
+          referer: [1, 1, 0],
+          referee: {
+            scopePath: [1, 0],
+            id: "v01_0",
           },
         });
       });
@@ -225,21 +234,21 @@ describe("Interactions of the functions in EnvF", () => {
     inScope(env, () => {
       const w0_0 = EnvF.referTo(env, "v0_0");
       expect(w0_0).toBe(v0_0v);
-      expect(env.r.m.get("v0_0")?.at(-1)).toEqual({
-        r: [2, 0],
-        e: {
-          s: [0],
-          i: "v0_0",
+      expect(env.references.referenceById.get("v0_0")?.at(-1)).toEqual({
+        referer: [2, 0],
+        referee: {
+          scopePath: [0],
+          id: "v0_0",
         },
       });
 
       const w0_1 = EnvF.referTo(env, "v0_1");
       expect(w0_1).toBe(v0_1v);
-      expect(env.r.m.get("v0_1")?.at(-1)).toEqual({
-        r: [2, 0],
-        e: {
-          s: [0],
-          i: "v0_1",
+      expect(env.references.referenceById.get("v0_1")?.at(-1)).toEqual({
+        referer: [2, 0],
+        referee: {
+          scopePath: [0],
+          id: "v0_1",
         },
       });
 
@@ -250,32 +259,32 @@ describe("Interactions of the functions in EnvF", () => {
       inScope(env, () => {
         const w0_0 = EnvF.referTo(env, "v0_0");
         expect(w0_0).toBe(v0_0v);
-        expect(env.r.m.get("v0_0")?.at(-1)).toEqual({
-          r: [0, 2, 0],
-          e: {
-            s: [0],
-            i: "v0_0",
+        expect(env.references.referenceById.get("v0_0")?.at(-1)).toEqual({
+          referer: [0, 2, 0],
+          referee: {
+            scopePath: [0],
+            id: "v0_0",
           },
         });
 
         const w0_1 = EnvF.referTo(env, "v0_1");
         expect(w0_1).toBe(v0_1v);
-        expect(env.r.m.get("v0_1")?.at(-1)).toEqual({
-          r: [0, 2, 0],
-          e: {
-            s: [0],
-            i: "v0_1",
+        expect(env.references.referenceById.get("v0_1")?.at(-1)).toEqual({
+          referer: [0, 2, 0],
+          referee: {
+            scopePath: [0],
+            id: "v0_1",
           },
         });
 
         const w01_0 = EnvF.referTo(env, "v02_0");
         expect(w01_0).toBe(v02_0v);
-        expect(env.r.m.get("v02_0")).toEqual([
+        expect(env.references.referenceById.get("v02_0")).toEqual([
           {
-            r: [0, 2, 0],
-            e: {
-              s: [2, 0],
-              i: "v02_0",
+            referer: [0, 2, 0],
+            referee: {
+              scopePath: [2, 0],
+              id: "v02_0",
             },
           },
         ]);
@@ -285,31 +294,31 @@ describe("Interactions of the functions in EnvF", () => {
       inScope(env, () => {
         const w0_0 = EnvF.referTo(env, "v0_0");
         expect(w0_0).toBe(v0_0v);
-        expect(env.r.m.get("v0_0")?.at(-1)).toEqual({
-          r: [1, 2, 0],
-          e: {
-            s: [0],
-            i: "v0_0",
+        expect(env.references.referenceById.get("v0_0")?.at(-1)).toEqual({
+          referer: [1, 2, 0],
+          referee: {
+            scopePath: [0],
+            id: "v0_0",
           },
         });
 
         const w0_1 = EnvF.referTo(env, "v0_1");
         expect(w0_1).toBe(v0_1v);
-        expect(env.r.m.get("v0_1")?.at(-1)).toEqual({
-          r: [1, 2, 0],
-          e: {
-            s: [0],
-            i: "v0_1",
+        expect(env.references.referenceById.get("v0_1")?.at(-1)).toEqual({
+          referer: [1, 2, 0],
+          referee: {
+            scopePath: [0],
+            id: "v0_1",
           },
         });
 
         const w01_0 = EnvF.referTo(env, "v02_0");
         expect(w01_0).toBe(v02_0v);
-        expect(env.r.m.get("v02_0")?.at(-1)).toEqual({
-          r: [1, 2, 0],
-          e: {
-            s: [2, 0],
-            i: "v02_0",
+        expect(env.references.referenceById.get("v02_0")?.at(-1)).toEqual({
+          referer: [1, 2, 0],
+          referee: {
+            scopePath: [2, 0],
+            id: "v02_0",
           },
         });
       });
@@ -318,31 +327,31 @@ describe("Interactions of the functions in EnvF", () => {
       inScope(env, () => {
         const w0_0 = EnvF.referTo(env, "v0_0");
         expect(w0_0).toBe(v0_0v);
-        expect(env.r.m.get("v0_0")?.at(-1)).toEqual({
-          r: [2, 2, 0],
-          e: {
-            s: [0],
-            i: "v0_0",
+        expect(env.references.referenceById.get("v0_0")?.at(-1)).toEqual({
+          referer: [2, 2, 0],
+          referee: {
+            scopePath: [0],
+            id: "v0_0",
           },
         });
 
         const w0_1 = EnvF.referTo(env, "v0_1");
         expect(w0_1).toBe(v0_1v);
-        expect(env.r.m.get("v0_1")?.at(-1)).toEqual({
-          r: [2, 2, 0],
-          e: {
-            s: [0],
-            i: "v0_1",
+        expect(env.references.referenceById.get("v0_1")?.at(-1)).toEqual({
+          referer: [2, 2, 0],
+          referee: {
+            scopePath: [0],
+            id: "v0_1",
           },
         });
 
         const w01_0 = EnvF.referTo(env, "v02_0");
         expect(w01_0).toBe(v02_0v);
-        expect(env.r.m.get("v02_0")?.at(-1)).toEqual({
-          r: [2, 2, 0],
-          e: {
-            s: [2, 0],
-            i: "v02_0",
+        expect(env.references.referenceById.get("v02_0")?.at(-1)).toEqual({
+          referer: [2, 2, 0],
+          referee: {
+            scopePath: [2, 0],
+            id: "v02_0",
           },
         });
 
@@ -351,11 +360,11 @@ describe("Interactions of the functions in EnvF", () => {
 
         const w022_0 = EnvF.referTo(env, "v022_0");
         expect(w022_0).toBe(v022_0v);
-        expect(env.r.m.get("v022_0")?.at(-1)).toEqual({
-          r: [2, 2, 0],
-          e: {
-            s: [2, 2, 0],
-            i: "v022_0",
+        expect(env.references.referenceById.get("v022_0")?.at(-1)).toEqual({
+          referer: [2, 2, 0],
+          referee: {
+            scopePath: [2, 2, 0],
+            id: "v022_0",
           },
         });
       });
@@ -364,7 +373,7 @@ describe("Interactions of the functions in EnvF", () => {
 
   describe("set returns an error if the variable is referred to as an outer variable", () => {
     test("1: the variable is recursively referred", async () => {
-      const env = await EnvF.init(new Map());
+      const env = await subjectEnv();
 
       expect(EnvF.set(env, "v0", aVar())).toBeUndefined();
 
@@ -382,7 +391,7 @@ describe("Interactions of the functions in EnvF", () => {
     });
 
     test("2: the variable is recursively referred in the inner scope", async () => {
-      const env = await EnvF.init(new Map());
+      const env = await subjectEnv();
 
       expect(EnvF.set(env, "v0", aVar())).toBeUndefined();
 
@@ -402,7 +411,7 @@ describe("Interactions of the functions in EnvF", () => {
     });
 
     test("3: the variable is back-referred", async () => {
-      const env = await EnvF.init(new Map());
+      const env = await subjectEnv();
 
       expect(EnvF.set(env, "v0", aVar())).toBeUndefined();
 
@@ -433,7 +442,7 @@ describe("Interactions of the functions in EnvF", () => {
     });
 
     test("4: the variable is back-referred in the inner scope", async () => {
-      const env = await EnvF.init(new Map());
+      const env = await subjectEnv();
 
       expect(EnvF.set(env, "v0", aVar())).toBeUndefined();
 
@@ -469,7 +478,7 @@ describe("Interactions of the functions in EnvF", () => {
   });
 
   test("set returns undefined if the variable is referred to *not* actually as an outer variable", async () => {
-    const env = await EnvF.init(new Map());
+    const env = await subjectEnv();
 
     expect(EnvF.set(env, "v0", aVar())).toBeUndefined();
 

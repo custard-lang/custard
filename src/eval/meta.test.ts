@@ -1,13 +1,12 @@
+import { describe, expect, test } from "vitest";
+
 import { assertNonError } from "../util/error";
 
-import * as Env from "../env";
+import { Repl, replOptionsFromProvidedSymbols } from "../repl";
 import { readStr } from "../reader";
 import { evalForm } from "../eval";
-
-import { describe, expect, test } from "vitest";
 import { base } from "../lib/base";
-import { merge } from "../scope";
-import { ModulePaths, transpileOptionsRepl } from "../types";
+import { ModulePaths } from "../types";
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/restrict-template-expressions */
 
@@ -23,15 +22,22 @@ describe("evalForm", () => {
   }): void {
     const t = only ? test.only : test;
     t(`\`${src}\` => ${expected}`, async () => {
-      const modules: ModulePaths = new Map();
-      modules.set("meta", "../../dist/src/lib/meta.js");
+      const modulePaths: ModulePaths = new Map();
+      modulePaths.set("meta", "../../dist/src/lib/meta.js");
 
-      const opts = await transpileOptionsRepl(__filename);
-      const env = await Env.init(merge(base), modules, opts);
-      void (await evalForm(assertNonError(readStr("(import meta)")), env));
-      expect(await evalForm(assertNonError(readStr(src)), env)).toEqual(
-        expected,
-      );
+      const opts = {
+        transpileOptions: { srcPath: __filename },
+        providedSymbols: {
+          modulePaths,
+          initialScope: base(),
+        },
+      };
+      await Repl.using(opts, async (repl) => {
+        void (await evalForm(assertNonError(readStr("(import meta)")), repl));
+        expect(await evalForm(assertNonError(readStr(src)), repl)).toEqual(
+          expected,
+        );
+      });
     });
   }
 

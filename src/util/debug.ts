@@ -1,3 +1,4 @@
+import { threadId } from "node:worker_threads";
 import { appendFileSync, writeFileSync } from "node:fs";
 
 export function pr<T>(x: T, ...msgs: unknown[]): T {
@@ -10,11 +11,14 @@ export function pr<T>(x: T, ...msgs: unknown[]): T {
 }
 
 // Used when console.log doesn't help when running tests.
-const DEBUG_LOG_PATH = process.env.CUSTARD_DEBUG_LOG_PATH;
+const DEBUG_LOG_PREFIX = process.env.CUSTARD_DEBUG_LOG_PREFIX;
+const DEBUG_LOG_PATH = DEBUG_LOG_PREFIX && `${DEBUG_LOG_PREFIX}${threadId}.log`;
 
-export function writeDebugOut(s: string) {
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  appendFileSync(DEBUG_LOG_PATH!, `${s}\n`);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function writeDebugOut(s: any) {
+  if (DEBUG_LOG_PATH) {
+    appendFileSync(DEBUG_LOG_PATH, `${s}\n`);
+  }
 }
 
 export function prDebugOut<T>(x: T): T {

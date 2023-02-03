@@ -1,7 +1,7 @@
 import { describe, test, expect } from "vitest";
 
-import * as Env from "../env";
-import { ModulePaths, transpileOptionsRepl } from "../types";
+import { Repl, replOptionsFromProvidedSymbols } from "../repl";
+import { ModulePaths } from "../types";
 import { base } from "../lib/base";
 import { evalBlock } from "../eval";
 import { assertNonError } from "../util/error";
@@ -21,19 +21,20 @@ describe("evalBlock", () => {
   }): void {
     const t = only ? test.only : test;
     t(`\`${src}\` => ${expected}`, async () => {
-      const modules: ModulePaths = new Map();
-      modules.set("a", "../../test-assets/a.js");
-
-      expect(
-        await evalBlock(
-          assertNonError(readBlock(src)),
-          await Env.init(
-            base(),
-            modules,
-            await transpileOptionsRepl(__filename),
-          ),
-        ),
-      ).toEqual(expected);
+      const modulePaths: ModulePaths = new Map();
+      modulePaths.set("a", "../../test-assets/a.js");
+      const opts = {
+        transpileOptions: { srcPath: __filename },
+        providedSymbols: {
+          modulePaths,
+          initialScope: base(),
+        },
+      };
+      await Repl.using(opts, async (repl) => {
+        expect(await evalBlock(assertNonError(readBlock(src)), repl)).toEqual(
+          expected,
+        );
+      });
     });
   }
 

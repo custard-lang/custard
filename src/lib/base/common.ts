@@ -1,9 +1,10 @@
-import * as EnvF from "../../env.js";
-import { asCall } from "../../transpile";
-import { Call, Env, Form, Writer } from "../../types";
-import { Iteration } from "./iteration";
-import { Unbounded } from "./iteration/unbounded";
-import { Safe } from "./safe";
+import * as EnvF from "../../internal/env.js";
+import { asCall } from "../../internal/transpile.js";
+import { Env } from "../../internal/types.js";
+import { Call, Form, Writer } from "../../types.js";
+import { Iteration } from "./iteration.js";
+import { Unbounded } from "./iteration/unbounded.js";
+import { Safe } from "./safe.js";
 
 export function isNonExpressionCall(env: Env, form: Form): form is Call {
   const call = asCall(form);

@@ -2,49 +2,35 @@ import * as path from "node:path";
 
 import {
   Scope,
-  Env,
-  Id,
   isRecursiveConst,
   TranspileError,
   Writer,
   ModulePaths,
   FilePath,
-  transpileOptionsRepl,
   aVar,
-  TranspileRepl,
-  TranspileOptions,
-} from "./types.js";
+  Id,
+} from "../types.js";
+import type { Env, TranspileState } from "./types.js";
 import * as References from "./references.js";
 import { isDeeperThanOrEqual, isShallowerThan } from "./scope-path.js";
-import { expectNever } from "./util/error.js";
-import { escapeRegExp } from "./util/regexp.js";
+import { expectNever } from "../util/error.js";
+import { escapeRegExp } from "../util/regexp.js";
 
-export async function init(
+export async function init<State extends TranspileState>(
   initial: Scope,
-  modulePaths?: ModulePaths,
-): Promise<Env<TranspileRepl>>;
-
-export async function init<Options extends TranspileOptions>(
-  initial: Scope,
-  modulePaths: ModulePaths,
-  options: Options,
-): Promise<Env<Options>>;
-
-export async function init<Options extends TranspileOptions>(
-  initial: Scope,
+  state: State,
   modulePaths: ModulePaths = new Map(),
-  options?: Options,
-): Promise<Env> {
+): Promise<Env<State>> {
   return {
-    s: [initial],
-    r: References.init(),
-    m: modulePaths,
-    o: options ?? (await transpileOptionsRepl()),
+    scopes: [initial],
+    references: References.init(),
+    modules: modulePaths,
+    transpileState: state,
   };
 }
 
-export function find({ s }: Env, id: Id): Writer | undefined {
-  for (const frame of s.values()) {
+export function find({ scopes }: Env, id: Id): Writer | undefined {
+  for (const frame of scopes.values()) {
     const result = frame.get(id);
     if (result !== undefined) {
       return result;
@@ -53,12 +39,15 @@ export function find({ s }: Env, id: Id): Writer | undefined {
   return undefined;
 }
 
-export function referTo({ s, r }: Env, id: Id): Writer | TranspileError {
-  for (const [i, frame] of s.entries()) {
+export function referTo(
+  { scopes, references }: Env,
+  id: Id,
+): Writer | TranspileError {
+  for (const [i, frame] of scopes.entries()) {
     const result = frame.get(id);
     if (result !== undefined) {
-      const s = r.p.slice(i);
-      References.add(r, { i: id, s });
+      const scopePath = references.currentScope.slice(i);
+      References.add(references, { id, scopePath });
       return result;
     }
   }
@@ -67,36 +56,40 @@ export function referTo({ s, r }: Env, id: Id): Writer | TranspileError {
   );
 }
 
-export function isDefinedInThisScope({ s }: Env, id: Id): boolean {
-  const w = s[0].get(id);
+export function isDefinedInThisScope({ scopes }: Env, id: Id): boolean {
+  const w = scopes[0].get(id);
   return w !== undefined && !isRecursiveConst(w);
 }
 
 export function set(
-  { s, r: { m, p } }: Env,
+  { scopes, references: { referenceById, currentScope } }: Env,
   id: Id,
   writer: Writer,
 ): undefined | TranspileError {
-  const rs = m.get(id) || [];
+  const rs = referenceById.get(id) || [];
   if (
-    rs.some((r) => isDeeperThanOrEqual(r.r, p) && isShallowerThan(r.e.s, p))
+    rs.some(
+      (references) =>
+        isDeeperThanOrEqual(references.referer, currentScope) &&
+        isShallowerThan(references.referee.scopePath, currentScope),
+    )
   ) {
     return new TranspileError(
       `No variable \`${id}\` is defined! NOTE: If you want to define \`${id}\` recursively, wrap the declaration(s) with \`recursive\`.`,
     );
   }
-  s[0].set(id, writer);
+  scopes[0].set(id, writer);
 }
 
-export function push({ s, r }: Env): void {
-  References.appendNewScope(r);
-  s.unshift(new Map());
+export function push({ scopes, references }: Env): void {
+  References.appendNewScope(references);
+  scopes.unshift(new Map());
 }
 
-export function pop({ s, r }: Env): void {
-  References.returnToPreviousScope(r);
+export function pop({ scopes, references }: Env): void {
+  References.returnToPreviousScope(references);
   // eslint-disable-next-line no-ignore-returned-union/no-ignore-returned-union
-  s.shift();
+  scopes.shift();
 }
 
 export function findModule(
@@ -104,10 +97,10 @@ export function findModule(
   id: Id,
 ): FilePath | undefined | TranspileError {
   const {
-    m,
-    o: { mode, src, srcPath },
+    modules,
+    transpileState: { mode, src, srcPath },
   } = env;
-  const modPath = m.get(id);
+  const modPath = modules.get(id);
   if (modPath === undefined) {
     return;
   }
@@ -116,9 +109,9 @@ export function findModule(
   const currentFileDir = src.isDirectory() ? srcPath : path.dirname(srcPath);
   const modFullPath = path.resolve(currentFileDir, modPath);
 
-  const r = set(env, id, aVar());
-  if (r instanceof TranspileError) {
-    return r;
+  const references = set(env, id, aVar());
+  if (references instanceof TranspileError) {
+    return references;
   }
 
   switch (mode) {
@@ -137,6 +130,6 @@ export function findModule(
   }
 }
 
-export function isAtTopLevel({ s }: Env): boolean {
-  return s.length <= 1;
+export function isAtTopLevel({ scopes }: Env): boolean {
+  return scopes.length <= 1;
 }

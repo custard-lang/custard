@@ -1,4 +1,5 @@
-import { Scope, Env, Form, Id, JsSrc, TranspileError } from "../../types";
+import { Env } from "../../internal/types.js";
+import { Scope, Form, Id, JsSrc, TranspileError } from "../../types.js";
 
 export namespace Iteration {
   export const __break = transpilingControlStatement("break");

@@ -1,13 +1,14 @@
-import * as EnvF from "../../env";
+import * as EnvF from "../../internal/env.js";
+import { Env } from "../../internal/types.js";
+
 import {
   CuArray,
-  Env,
   isCuSymbol,
   JsSrc,
   Scope,
   TranspileError,
-} from "../../types";
-import { expectNever } from "../../util/error";
+} from "../../types.js";
+import { expectNever } from "../../util/error.js";
 
 export function module(): Scope {
   const b: Scope = new Map();
@@ -32,10 +33,10 @@ export function module(): Scope {
     }
 
     if (EnvF.isAtTopLevel(env)) {
-      switch (env.o.mode) {
+      switch (env.transpileState.mode) {
         case "repl":
           // TODO: マクロができたら (constAwait id  ...) でリファクタリング
-          env.o.awaitingId = id.v;
+          env.transpileState.awaitingId = id.v;
           const promiseId = `__cu$promise_${id.v}`;
           const promiseIdS = JSON.stringify(promiseId);
           const modulePathS = JSON.stringify(modulePath);
@@ -43,7 +44,7 @@ export function module(): Scope {
         case "module":
           return `import * as ${id.v} from ${JSON.stringify(modulePath)}`;
         default:
-          return expectNever(env.o) as string;
+          return expectNever(env.transpileState) as string;
       }
     }
     return `const ${id.v} = await import(${JSON.stringify(modulePath)})`;

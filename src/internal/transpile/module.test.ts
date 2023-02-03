@@ -1,19 +1,14 @@
-import { assertNonError } from "../util/error";
+import { describe, expect, test } from "vitest";
+
+import { assertNonError } from "../../util/error";
 
 import * as EnvF from "../env";
-import { readBlock } from "../reader";
+import { readBlock } from "../../reader";
 import { transpileBlock } from "../transpile";
-
-import { describe, expect, test } from "vitest";
-import {
-  Env,
-  isConst,
-  JsSrc,
-  ModulePaths,
-  TranspileError,
-  transpileOptionsModule,
-} from "../types";
-import { base } from "../lib/base";
+import { transpileModule } from "../transpile-state";
+import { Env } from "../types";
+import { isConst, JsSrc, ModulePaths, TranspileError } from "../../types";
+import { base } from "../../lib/base";
 
 describe("transpileBlock", () => {
   const subject = async (
@@ -24,8 +19,8 @@ describe("transpileBlock", () => {
 
     const env = await EnvF.init(
       base(),
+      await transpileModule({ srcPath: __filename }),
       modules,
-      await transpileOptionsModule(__filename),
     );
     const jsSrc = await transpileBlock(assertNonError(readBlock(src)), env);
     return [jsSrc, env];

@@ -1,15 +1,14 @@
-// import { writeDebugOut } from "../../../util/debug";
-
-import * as EnvF from "../../../env.js";
+import * as EnvF from "../../../internal/env.js";
 import {
   asCall,
   transpileBlock,
   transpileExpression,
   transpileStatement,
-} from "../../../transpile";
+} from "../../../internal/transpile.js";
+import { Env } from "../../../internal/types.js";
+
 import {
   Block,
-  Env,
   Form,
   JsSrc,
   TranspileError,
