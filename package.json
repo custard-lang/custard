@@ -5,11 +5,11 @@
   "description": "My programming language",
   "main": "dist/src/mal.js",
   "scripts": {
-    "test": "node --experimental-vm-modules ./node_modules/vitest/vitest.mjs",
-    "test:detailed": "node --experimental-vm-modules ./node_modules/vitest/vitest.mjs --reporter verbose",
+    "test": "vitest",
+    "test:detailed": "vitest --reporter verbose",
     "lint": "eslint --ext ts src",
     "fix:lint": "eslint --ext ts --fix src",
-    "test:coverage": "node --experimental-vm-modules ./node_modules/vitest/vitest.mjs --reporter verbose"
+    "test:coverage": "vitest run --coverage"
   },
   "repository": {
     "type": "git",
