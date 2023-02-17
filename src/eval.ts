@@ -11,6 +11,5 @@ export async function evalBlock(
   block: Block,
   repl: Repl,
 ): Promise<any | Error> {
-  process.stdout.write("evalBlock running\n");
   return await repl.sendEvalCommand({ command: "evalBlock", block });
 }
