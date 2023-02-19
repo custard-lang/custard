@@ -30,5 +30,5 @@ export async function mapAE<T, U, E extends Error>(
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function expectNever(_: never): any {
-  /* empty */
+  throw new Error("Assertion failure: Unreachable!");
 }

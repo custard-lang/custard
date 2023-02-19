@@ -1,4 +1,4 @@
-import { assertNonNull, mapAE } from "../util/error.js";
+import { assertNonNull, expectNever, mapAE } from "../util/error.js";
 
 import {
   Block,
@@ -6,7 +6,7 @@ import {
   CuSymbol,
   Form,
   Id,
-  isAContextualKeyword,
+  isContextualKeyword,
   isVar,
   isCuSymbol,
   JsSrc,
@@ -16,6 +16,11 @@ import {
   isRecursiveConst,
   isPropertyAccess,
   showSymbolAccess,
+  markAsDirectWriter,
+  MarkedDirectWriter,
+  isNamespace,
+  isMarkedFunctionWithEnv,
+  isMarkedDirectWriter,
 } from "../types.js";
 import { Env } from "./types.js";
 import * as EnvF from "./env.js";
@@ -33,8 +38,8 @@ export async function transpileStatement(
         if (restSrc instanceof TranspileError) {
           return restSrc;
         }
-        const promiseIdS = `"__cu$promise_${awaitingId}"`;
-        const result = `__cu$env.transpileState.topLevelValues.get(${promiseIdS}).then((${awaitingId}) => {\nreturn ${restSrc};\n})`;
+        const promiseIdS = `"_cu$promise_${awaitingId}"`;
+        const result = `_cu$env.transpileState.topLevelValues.get(${promiseIdS}).then((${awaitingId}) => {\nreturn ${restSrc}\n})`;
         transpileState.awaitingId = undefined;
         return result;
       }
@@ -47,6 +52,21 @@ export async function transpileExpression(
   ast: Form,
   env: Env,
 ): Promise<JsSrc | TranspileError> {
+  async function buildJsSrc(
+    funcExpSrc: JsSrc,
+    args: Form[],
+  ): Promise<JsSrc | TranspileError> {
+    const argSrcs = await mapAE(
+      args,
+      TranspileError,
+      async (arg) => await transpileExpression(arg, env),
+    );
+    if (argSrcs instanceof TranspileError) {
+      return argSrcs;
+    }
+    return `${funcExpSrc}(${argSrcs.join(", ")})`;
+  }
+
   if (ast instanceof Array) {
     const [sym, ...args] = ast;
 
@@ -56,58 +76,53 @@ export async function transpileExpression(
         return funcSrc;
       }
 
-      const argSrcs = await mapAE(
-        args,
-        TranspileError,
-        async (arg) => await transpileExpression(arg, env),
-      );
-      if (argSrcs instanceof TranspileError) {
-        return argSrcs;
-      }
-
-      return `(${funcSrc})(${argSrcs.join(", ")})`;
+      return await buildJsSrc(`(${funcSrc})`, args);
     }
 
-    let id: Id;
     let fullId: Id;
     if (isCuSymbol(sym)) {
-      id = sym.v;
-      fullId = id;
+      fullId = sym.v;
     } else if (isPropertyAccess(sym)) {
-      id = assertNonNull(sym.v[0], "Assertion failure: empty PropertyAccess");
       fullId = sym.v.join(".");
     } else {
       return new TranspileError(`${JSON.stringify(sym)} is not a symbol!`);
     }
-    const f = EnvF.referTo(env, id);
+    const f = EnvF.referTo(env, sym);
     if (f instanceof TranspileError) {
       return f;
     }
 
-    if (isAContextualKeyword(f)) {
+    if (isContextualKeyword(f)) {
       return new TranspileError(
         `\`${showSymbolAccess(sym)}\` must be used with \`${f.companion}\`!`,
       );
     }
+    if (isNamespace(f)) {
+      return new TranspileError(
+        `\`${showSymbolAccess(
+          sym,
+        )}\` is just a namespace. Doesn't represent a function!`,
+      );
+    }
 
     if (isVar(f) || isConst(f) || isRecursiveConst(f)) {
-      const argSrcs = await mapAE(
-        args,
-        TranspileError,
-        async (arg) => await transpileExpression(arg, env),
-      );
-      if (argSrcs instanceof TranspileError) {
-        return argSrcs;
+      return await buildJsSrc(fullId, args);
+    }
+    if (isMarkedFunctionWithEnv(f)) {
+      return await EnvF.enablingCuEnv(env, async (cuEnv) => {
+        return await buildJsSrc(`${fullId}.call`, [cuEnv, ...args]);
+      });
+    }
+
+    if (isMarkedDirectWriter(f)) {
+      const r = f.call(env, ...args);
+      if (r instanceof Promise) {
+        return await r;
       }
-
-      return `${fullId}(${argSrcs.join(", ")})`;
+      return r;
     }
 
-    const r = f(env, ...args);
-    if (r instanceof Promise) {
-      return await r;
-    }
-    return r;
+    return expectNever(f) as JsSrc;
   }
 
   let r: Writer | TranspileError;
@@ -123,19 +138,13 @@ export async function transpileExpression(
     case "object":
       switch (ast.t) {
         case "Symbol":
-          r = EnvF.referTo(env, ast.v);
+          r = EnvF.referTo(env, ast);
           if (r instanceof TranspileError) {
             return r;
           }
           return ast.v;
         case "PropertyAccess":
-          r = EnvF.referTo(
-            env,
-            assertNonNull(
-              ast.v[0],
-              "Assertion failure: PropertyAccess with no symbol.",
-            ),
-          );
+          r = EnvF.referTo(env, ast);
           if (r instanceof TranspileError) {
             return r;
           }
@@ -143,6 +152,8 @@ export async function transpileExpression(
         case "Integer32":
           return `${ast.v}`;
       }
+    default:
+      return expectNever(ast) as JsSrc;
   }
 }
 
@@ -164,77 +175,79 @@ export async function transpileBlock(
 export function transpiling1(
   formId: Id,
   f: (a: JsSrc) => JsSrc,
-): (env: Env, a: Form, ...unused: Form[]) => Promise<JsSrc | TranspileError> {
-  return async (
-    env: Env,
-    a: Form,
-    ...unused: Form[]
-  ): Promise<JsSrc | TranspileError> => {
-    const ra = await transpileExpression(a, env);
-    if (ra instanceof TranspileError) {
-      return ra;
-    }
+): MarkedDirectWriter {
+  return markAsDirectWriter(
+    async (
+      env: Env,
+      a: Form,
+      ...unused: Form[]
+    ): Promise<JsSrc | TranspileError> => {
+      const ra = await transpileExpression(a, env);
+      if (ra instanceof TranspileError) {
+        return ra;
+      }
 
-    if (unused.length > 0) {
-      return new TranspileError(
-        `\`${formId}\` must receive exactly one expression!`,
-      );
-    }
+      if (unused.length > 0) {
+        return new TranspileError(
+          `\`${formId}\` must receive exactly one expression!`,
+        );
+      }
 
-    return f(ra);
-  };
+      return f(ra);
+    },
+  );
 }
 
 export function transpiling2(
   f: (a: JsSrc, b: JsSrc) => JsSrc,
-): (env: Env, a: Form, b: Form) => Promise<JsSrc | TranspileError> {
-  return async (
-    env: Env,
-    a: Form,
-    b: Form,
-  ): Promise<JsSrc | TranspileError> => {
-    const ra = await transpileExpression(a, env);
-    if (ra instanceof TranspileError) {
-      return ra;
-    }
+): MarkedDirectWriter {
+  return markAsDirectWriter(
+    async (env: Env, a: Form, b: Form): Promise<JsSrc | TranspileError> => {
+      const ra = await transpileExpression(a, env);
+      if (ra instanceof TranspileError) {
+        return ra;
+      }
 
-    const rb = await transpileExpression(b, env);
-    if (rb instanceof TranspileError) {
-      return rb;
-    }
+      const rb = await transpileExpression(b, env);
+      if (rb instanceof TranspileError) {
+        return rb;
+      }
 
-    return f(ra, rb);
-  };
+      return f(ra, rb);
+    },
+  );
 }
 
 // TODO: Handle assignment to reserved words etc.
 export function transpilingForAssignment(
   formId: Id,
   f: (env: Env, id: CuSymbol, exp: JsSrc) => JsSrc | TranspileError,
-): Writer {
-  return async (env: Env, id: Form, v: Form, another?: Form) => {
-    if (another != null) {
-      return new TranspileError(
-        `The number of arguments to \`${formId}\` must be 2!`,
-      );
-    }
-    if (!isCuSymbol(id)) {
-      return new TranspileError(`${JSON.stringify(id)} is not a symbol!`);
-    }
+): MarkedDirectWriter {
+  return markAsDirectWriter(
+    async (env: Env, id: Form, v: Form, another?: Form) => {
+      if (another != null) {
+        return new TranspileError(
+          `The number of arguments to \`${formId}\` must be 2!`,
+        );
+      }
+      if (!isCuSymbol(id)) {
+        return new TranspileError(`${JSON.stringify(id)} is not a symbol!`);
+      }
 
-    const exp = await transpileExpression(v, env);
-    if (exp instanceof TranspileError) {
-      return exp;
-    }
-    return f(env, id, exp);
-  };
+      const exp = await transpileExpression(v, env);
+      if (exp instanceof TranspileError) {
+        return exp;
+      }
+      return f(env, id, exp);
+    },
+  );
 }
 
 export function transpilingForVariableMutation(
   formId: Id,
   operator: JsSrc,
-): Writer {
-  return (env: Env, id: Form, another?: Form) => {
+): MarkedDirectWriter {
+  return markAsDirectWriter((env: Env, id: Form, another?: Form) => {
     if (another !== undefined) {
       return new TranspileError(`\`${formId}\` must receive only one symbol!`);
     }
@@ -253,7 +266,7 @@ export function transpilingForVariableMutation(
     }
 
     return `${id.v}${operator}`;
-  };
+  });
 }
 
 function isCall(form: Form): form is Call {

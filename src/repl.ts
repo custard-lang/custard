@@ -2,12 +2,14 @@ import { Worker } from "node:worker_threads";
 
 import {
   defaultTranspileOptions,
+  FilePath,
   Form,
-  ProvidedSymbols,
+  ProvidedSymbolsConfig,
   provideNoModules,
-  Scope,
   TranspileOptions,
-} from "./types";
+} from "./types.js";
+
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-return */
 
 export class Repl {
   private readonly _worker: Worker;
@@ -25,6 +27,7 @@ export class Repl {
       ...options,
     });
 
+    await instance._awaitResponse();
     return instance;
   }
 
@@ -42,15 +45,19 @@ export class Repl {
 
   async sendEvalCommand(command: EvalCommand): Promise<any | Error> {
     this._worker.postMessage(command);
+    return this._awaitResponse();
+  }
+
+  async exit(): Promise<void> {
+    await this._worker.terminate();
+  }
+
+  private async _awaitResponse(): Promise<any> {
     return new Promise((resolve) => {
       this._worker.once("message", (value) => {
         resolve(value);
       });
     });
-  }
-
-  async exit(): Promise<void> {
-    await this._worker.terminate();
   }
 }
 
@@ -60,18 +67,20 @@ export type EvalCommand = EvalFormCommand | EvalBlockCommand;
 
 export type ReplOptions = {
   transpileOptions: TranspileOptions;
-  providedSymbols: ProvidedSymbols;
+  providedSymbols: ProvidedSymbolsConfig;
 };
 
-export function replOptionsFromInitialScope(initialScope: Scope): ReplOptions {
+export function replOptionsFromBuiltinModulePath(
+  builtinModulePath: FilePath,
+): ReplOptions {
   return {
     transpileOptions: defaultTranspileOptions(),
-    providedSymbols: provideNoModules(initialScope),
+    providedSymbols: provideNoModules(builtinModulePath),
   };
 }
 
 export function replOptionsFromProvidedSymbols(
-  providedSymbols: ProvidedSymbols,
+  providedSymbols: ProvidedSymbolsConfig,
 ): ReplOptions {
   return {
     transpileOptions: defaultTranspileOptions(),

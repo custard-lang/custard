@@ -1,9 +1,10 @@
 import type { Env } from "./types.js";
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
+// This module is inherently unsafe!
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-return */
 
 // _cu$ is the reserved prefix of Custard
-export const __cu$eval = async (
+export const _cu$eval = async (
   _cu$code: string,
   _cu$env: Env,
 ): Promise<any> => {

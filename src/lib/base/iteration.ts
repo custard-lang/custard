@@ -1,27 +1,23 @@
 import { Env } from "../../internal/types.js";
-import { Scope, Form, Id, JsSrc, TranspileError } from "../../types.js";
+import {
+  Form,
+  Id,
+  JsSrc,
+  markAsDirectWriter,
+  MarkedDirectWriter,
+  TranspileError,
+} from "../../types.js";
 
-export namespace Iteration {
-  export const __break = transpilingControlStatement("break");
-  export const __continue = transpilingControlStatement("continue");
-}
+export const _cu$break = transpilingControlStatement("break");
+export const _cu$continue = transpilingControlStatement("continue");
 
-function transpilingControlStatement(
-  id: Id,
-): (env: Env, ...rest: Form[]) => JsSrc | TranspileError {
-  return function (_env: Env, ...rest: Form[]): JsSrc | TranspileError {
-    if (rest.length > 0) {
-      return new TranspileError(`\`${id}\` doesn't accept any arguments!`);
-    }
-    return id;
-  };
-}
-
-export function iteration(): Scope {
-  const b: Scope = new Map();
-
-  b.set("break", Iteration.__break);
-  b.set("continue", Iteration.__continue);
-
-  return b;
+function transpilingControlStatement(id: Id): MarkedDirectWriter {
+  return markAsDirectWriter(
+    (_env: Env, ...rest: Form[]): JsSrc | TranspileError => {
+      if (rest.length > 0) {
+        return new TranspileError(`\`${id}\` doesn't accept any arguments!`);
+      }
+      return id;
+    },
+  );
 }

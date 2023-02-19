@@ -39,19 +39,25 @@ export type CuSymbol = {
   v: string;
 };
 
+export function cuSymbol(v: string): CuSymbol {
+  return { t: "Symbol", v };
+}
+
 export type PropertyAccess = {
   t: "PropertyAccess";
   v: string[];
 };
 
-export type ProvidedSymbols = {
-  initialScope: Scope;
+export type ProvidedSymbolsConfig = {
+  builtinModulePaths: FilePath[];
   modulePaths: ModulePaths;
 };
 
-export function provideNoModules(initialScope: Scope): ProvidedSymbols {
+export function provideNoModules(
+  ...builtinModulePaths: FilePath[]
+): ProvidedSymbolsConfig {
   return {
-    initialScope,
+    builtinModulePaths,
     modulePaths: new Map(),
   };
 }
@@ -74,36 +80,85 @@ export type FilePath = string;
 
 export type JsSrc = string;
 
-export type ContextualKeyword = { readonly t: 0; readonly companion: Id };
-export function aContextualKeyword(companion: Id): ContextualKeyword {
-  return { t: 0, companion };
+const IsWriterKey: unique symbol = Symbol("IsWriterKey");
+type IsWriter = { [IsWriterKey]: true };
+function asWriter<T extends Record<string, unknown>>(x: T): IsWriter & T {
+  return { ...x, [IsWriterKey]: true };
 }
-export function isAContextualKeyword(x: Writer): x is ContextualKeyword {
-  return (x as Record<string, unknown>).t === 0;
+export function isWriter(x: unknown): x is Writer {
+  return !!(x as Record<symbol, unknown>)[IsWriterKey];
 }
 
-export type Var = { readonly t: 1 };
+export type ContextualKeyword = IsWriter & {
+  readonly t: 0;
+  readonly companion: Id;
+};
+export function aContextualKeyword(companion: Id): ContextualKeyword {
+  return asWriter({ t: 0, companion });
+}
+export function isContextualKeyword(x: Writer): x is ContextualKeyword {
+  return x.t === 0;
+}
+
+export type Var = IsWriter & { readonly t: 1 };
 export function aVar(): Var {
-  return { t: 1 };
+  return asWriter({ t: 1 });
 }
 export function isVar(x: Writer): x is Var {
-  return (x as Record<string, unknown>).t === 1;
+  return x.t === 1;
 }
 
-export type Const = { readonly t: 2 };
+export type Const = IsWriter & { readonly t: 2 };
 export function aConst(): Const {
-  return { t: 2 };
+  return asWriter({ t: 2 });
 }
 export function isConst(x: Writer): x is Const {
-  return (x as Record<string, unknown>).t === 2;
+  return x.t === 2;
 }
 
-export type RecursiveConst = { readonly t: 3 };
+export type RecursiveConst = IsWriter & { readonly t: 3 };
 export function aRecursiveConst(): RecursiveConst {
-  return { t: 3 };
+  return asWriter({ t: 3 });
 }
 export function isRecursiveConst(x: Writer): x is RecursiveConst {
-  return (x as Record<string, unknown>).t === 3;
+  return x.t === 3;
+}
+
+export type Namespace = IsWriter & { readonly t: 4; readonly scope: Scope };
+export function aNamespace(): Namespace {
+  return asWriter({ t: 4, scope: new Map() });
+}
+export function isNamespace(x: Writer): x is Namespace {
+  return x.t === 4;
+}
+
+export type DirectWriter = (
+  env: Env,
+  ...forms: CuArray
+) => Awaitable<JsSrc | TranspileError>;
+export type MarkedDirectWriter = IsWriter & {
+  readonly t: 5;
+  readonly call: DirectWriter;
+};
+export function markAsDirectWriter(call: DirectWriter): MarkedDirectWriter {
+  return asWriter({ t: 5, call });
+}
+export function isMarkedDirectWriter(x: Writer): x is MarkedDirectWriter {
+  return x.t === 5;
+}
+
+export type FunctionWithEnv = (env: Env, ...rest: any[]) => any | Error;
+export type MarkedFunctionWithEnv = IsWriter & {
+  readonly t: 6;
+  readonly call: FunctionWithEnv;
+};
+export function markAsFunctionWithEnv(
+  call: FunctionWithEnv,
+): MarkedFunctionWithEnv {
+  return asWriter({ t: 6, call });
+}
+export function isMarkedFunctionWithEnv(x: Writer): x is MarkedFunctionWithEnv {
+  return x.t === 6;
 }
 
 export type Writer =
@@ -111,7 +166,9 @@ export type Writer =
   | Var
   | Const
   | RecursiveConst
-  | ((env: Env, ...forms: CuArray) => Awaitable<JsSrc | TranspileError>);
+  | Namespace
+  | MarkedDirectWriter
+  | MarkedFunctionWithEnv;
 
 export function isCuSymbol(v: Form): v is CuSymbol {
   return v !== undefined && (v as Record<string, unknown>).t === "Symbol";

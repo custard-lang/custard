@@ -15,20 +15,21 @@ import {
   isCuSymbol,
   aConst,
   aRecursiveConst,
-  Scope,
   showSymbolAccess,
-} from "../../../types";
+  markAsDirectWriter,
+} from "../../../types.js";
 
-import { iteration } from "../iteration.js";
 import { isNonExpressionCall } from "../common.js";
-import { Safe } from "../safe.js";
+import { _cu$const } from "../safe.js";
 
-export namespace Unbounded {
-  export async function __while(
+export * from "../iteration.js";
+
+export const _cu$while = markAsDirectWriter(
+  async (
     env: Env,
     bool: Form,
     ...rest: Block
-  ): Promise<JsSrc | TranspileError> {
+  ): Promise<JsSrc | TranspileError> => {
     if (bool === undefined) {
       return new TranspileError(
         "No conditional expression given to a `while` statement!",
@@ -59,15 +60,17 @@ export namespace Unbounded {
 
     EnvF.pop(env);
     return `while(${boolSrc}){\n${statementsSrc}\n}`;
-  }
+  },
+);
 
-  export async function __for(
+export const _cu$for = markAsDirectWriter(
+  async (
     env: Env,
     initialStatement: Form,
     bool: Form,
     final: Form,
     ...rest: Block
-  ): Promise<JsSrc | TranspileError> {
+  ): Promise<JsSrc | TranspileError> => {
     EnvF.push(env);
 
     if (initialStatement === undefined) {
@@ -118,14 +121,16 @@ export namespace Unbounded {
 
     EnvF.pop(env);
     return `for(${initialStatementSrc};${boolSrc};${finalSrc}){${statementsSrc}}`;
-  }
+  },
+);
 
-  export async function forEach(
+export const forEach = markAsDirectWriter(
+  async (
     env: Env,
     id: Form,
     iterable: Form,
     ...statements: Block
-  ): Promise<JsSrc | TranspileError> {
+  ): Promise<JsSrc | TranspileError> => {
     EnvF.push(env);
 
     if (id === undefined) {
@@ -167,12 +172,11 @@ export namespace Unbounded {
     EnvF.pop(env);
 
     return `for(const ${id.v} of ${iterableSrc}) {${statementsSrc}}`;
-  }
+  },
+);
 
-  export async function recursive(
-    env: Env,
-    ...consts: Block
-  ): Promise<JsSrc | TranspileError> {
+export const recursive = markAsDirectWriter(
+  async (env: Env, ...consts: Block): Promise<JsSrc | TranspileError> => {
     if (consts.length < 1) {
       return new TranspileError("No `const` statements given to `recursive`!");
     }
@@ -185,7 +189,7 @@ export namespace Unbounded {
         );
       }
       const declName = EnvF.find(env, call[0]);
-      if (declName !== Safe.__const) {
+      if (declName !== _cu$const) {
         return new TranspileError(
           "All declarations in `recursive` must be `const`!",
         );
@@ -202,16 +206,5 @@ export namespace Unbounded {
     }
 
     return await transpileBlock(consts, env);
-  }
-}
-
-export function unbounded(): Scope {
-  const b = iteration();
-
-  b.set("while", Unbounded.__while);
-  b.set("for", Unbounded.__for);
-  b.set("forEach", Unbounded.forEach);
-  b.set("recursive", Unbounded.recursive);
-
-  return b;
-}
+  },
+);

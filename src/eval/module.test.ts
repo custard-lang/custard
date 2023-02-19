@@ -1,11 +1,11 @@
 import { describe, test, expect } from "vitest";
 
-import { Repl, replOptionsFromProvidedSymbols } from "../repl";
+import { Repl } from "../repl";
 import { ModulePaths } from "../types";
-import { base } from "../lib/base";
 import { evalBlock } from "../eval";
 import { assertNonError } from "../util/error";
 import { readBlock } from "../reader";
+import { standardRoot } from "../module";
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/restrict-template-expressions */
 
@@ -22,12 +22,12 @@ describe("evalBlock", () => {
     const t = only ? test.only : test;
     t(`\`${src}\` => ${expected}`, async () => {
       const modulePaths: ModulePaths = new Map();
-      modulePaths.set("a", "../../test-assets/a.js");
+      modulePaths.set("a", "../../test-assets/a.mjs");
       const opts = {
         transpileOptions: { srcPath: __filename },
         providedSymbols: {
           modulePaths,
-          initialScope: base(),
+          builtinModulePaths: [`${standardRoot}/base.js`],
         },
       };
       await Repl.using(opts, async (repl) => {

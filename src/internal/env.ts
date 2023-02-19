@@ -7,20 +7,26 @@ import {
   Writer,
   ModulePaths,
   FilePath,
-  aVar,
   Id,
+  isNamespace,
+  PropertyAccess,
+  CuSymbol,
+  isCuSymbol,
+  isPropertyAccess,
+  aConst,
+  cuSymbol,
 } from "../types.js";
 import type { Env, TranspileState } from "./types.js";
 import * as References from "./references.js";
 import { isDeeperThanOrEqual, isShallowerThan } from "./scope-path.js";
-import { expectNever } from "../util/error.js";
+import { assertNonNull, expectNever } from "../util/error.js";
 import { escapeRegExp } from "../util/regexp.js";
 
-export async function init<State extends TranspileState>(
+export function init<State extends TranspileState>(
   initial: Scope,
   state: State,
   modulePaths: ModulePaths = new Map(),
-): Promise<Env<State>> {
+): Env<State> {
   return {
     scopes: [initial],
     references: References.init(),
@@ -41,19 +47,56 @@ export function find({ scopes }: Env, id: Id): Writer | undefined {
 
 export function referTo(
   { scopes, references }: Env,
-  id: Id,
+  symLike: CuSymbol | PropertyAccess,
 ): Writer | TranspileError {
-  for (const [i, frame] of scopes.entries()) {
-    const result = frame.get(id);
-    if (result !== undefined) {
-      const scopePath = references.currentScope.slice(i);
-      References.add(references, { id, scopePath });
-      return result;
+  function byId(id: Id): Writer | TranspileError {
+    for (const [i, frame] of scopes.entries()) {
+      const result = frame.get(id);
+      if (result !== undefined) {
+        const scopePath = references.currentScope.slice(i);
+        References.add(references, { id, scopePath });
+        return result;
+      }
     }
+    return new TranspileError(
+      `No variable \`${id}\` is defined! NOTE: If you want to define \`${id}\` recursively, wrap the declaration(s) with \`recursive\`.`,
+    );
   }
-  return new TranspileError(
-    `No variable \`${id}\` is defined! NOTE: If you want to define \`${id}\` recursively, wrap the declaration(s) with \`recursive\`.`,
-  );
+
+  if (isCuSymbol(symLike)) {
+    return byId(symLike.v);
+  }
+  if (isPropertyAccess(symLike)) {
+    const [id, ...restIds] = symLike.v;
+
+    const w = byId(
+      assertNonNull(id, "Assertion failed: empty PropertyAccess!"),
+    );
+    if (w instanceof TranspileError || !isNamespace(w)) {
+      return w;
+    }
+
+    let { scope } = w;
+    let lastW = w;
+    for (const [i, part] of restIds.entries()) {
+      const subW = scope.get(part);
+      if (subW === undefined) {
+        return new TranspileError(
+          `${part} is not defined in \`${symLike.v
+            .slice(0, i - 1)
+            .join(".")}\`!`,
+        );
+      }
+      if (isNamespace(subW)) {
+        scope = subW.scope;
+        lastW = subW;
+        continue;
+      }
+      return subW;
+    }
+    return lastW;
+  }
+  return expectNever(symLike) as Writer;
 }
 
 export function isDefinedInThisScope({ scopes }: Env, id: Id): boolean {
@@ -92,13 +135,18 @@ export function pop({ scopes, references }: Env): void {
   scopes.shift();
 }
 
+export type FindModuleResult = {
+  url: FilePath;
+  relativePath: FilePath;
+};
+
 export function findModule(
   env: Env,
   id: Id,
-): FilePath | undefined | TranspileError {
+): FindModuleResult | undefined | TranspileError {
   const {
     modules,
-    transpileState: { mode, src, srcPath },
+    transpileState: { src, srcPath },
   } = env;
   const modPath = modules.get(id);
   if (modPath === undefined) {
@@ -107,29 +155,35 @@ export function findModule(
 
   // If src is a directory, srcPath should be the absolute path to cwd.
   const currentFileDir = src.isDirectory() ? srcPath : path.dirname(srcPath);
-  const modFullPath = path.resolve(currentFileDir, modPath);
+  const fullPath = path.resolve(currentFileDir, modPath);
+  const uncanonicalPath = path.relative(path.resolve(currentFileDir), fullPath);
 
-  const references = set(env, id, aVar());
-  if (references instanceof TranspileError) {
-    return references;
-  }
-
-  switch (mode) {
-    case "repl":
-      return `file://${modFullPath}`;
-    case "module":
-      const relativeModPath = path.relative(
-        path.resolve(currentFileDir),
-        modFullPath,
-      );
-      return path.sep === "/"
-        ? relativeModPath
-        : relativeModPath.replace(new RegExp(escapeRegExp(path.sep), "g"), "/");
-    default:
-      expectNever(mode);
-  }
+  return {
+    url: `file://${fullPath}`,
+    relativePath:
+      path.sep === "/"
+        ? uncanonicalPath
+        : uncanonicalPath.replace(new RegExp(escapeRegExp(path.sep), "g"), "/"),
+  };
 }
 
 export function isAtTopLevel({ scopes }: Env): boolean {
   return scopes.length <= 1;
+}
+
+export async function enablingCuEnv<T>(
+  env: Env,
+  f: (cuEnv: CuSymbol) => Promise<T>,
+): Promise<T> {
+  const id = "_cu$env";
+  // TODO: I'm currently not sure how to handle the _cu$env variable here.
+  // eslint-disable-next-line no-ignore-returned-union/no-ignore-returned-union
+  set(env, id, aConst());
+  try {
+    return await f(cuSymbol(id));
+  } finally {
+    // I just want to delete, so I don't have to use the result.
+    // eslint-disable-next-line no-ignore-returned-union/no-ignore-returned-union
+    env.scopes[0].delete(id);
+  }
 }

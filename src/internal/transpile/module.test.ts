@@ -8,17 +8,17 @@ import { transpileBlock } from "../transpile";
 import { transpileModule } from "../transpile-state";
 import { Env } from "../types";
 import { isConst, JsSrc, ModulePaths, TranspileError } from "../../types";
-import { base } from "../../lib/base";
+import { loadAsScope, standardRoot } from "../../module";
 
 describe("transpileBlock", () => {
   const subject = async (
     src: string,
   ): Promise<[JsSrc | TranspileError, Env]> => {
     const modules: ModulePaths = new Map();
-    modules.set("a", "../../../test-assets/a.js");
+    modules.set("a", "../../../test-assets/a.mjs");
 
-    const env = await EnvF.init(
-      base(),
+    const env = EnvF.init(
+      await loadAsScope([`${standardRoot}/base.js`]),
       await transpileModule({ srcPath: __filename }),
       modules,
     );
@@ -31,7 +31,7 @@ describe("transpileBlock", () => {
       test("adds identifiers in the module, and returns imports in JavaScript", async () => {
         const [jsSrc, env] = await subject("(import a)");
         expect(assertNonError(jsSrc).trim()).toEqual(
-          'import * as a from "../../../test-assets/a.js";',
+          'import * as a from "../../../test-assets/a.mjs";',
         );
         expect(EnvF.find(env, "a")).toSatisfy(isConst);
       });

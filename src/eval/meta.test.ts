@@ -2,11 +2,11 @@ import { describe, expect, test } from "vitest";
 
 import { assertNonError } from "../util/error";
 
-import { Repl, replOptionsFromProvidedSymbols } from "../repl";
+import { Repl } from "../repl";
 import { readStr } from "../reader";
 import { evalForm } from "../eval";
-import { base } from "../lib/base";
 import { ModulePaths } from "../types";
+import { standardRoot } from "../module";
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/restrict-template-expressions */
 
@@ -29,7 +29,7 @@ describe("evalForm", () => {
         transpileOptions: { srcPath: __filename },
         providedSymbols: {
           modulePaths,
-          initialScope: base(),
+          builtinModulePaths: [`${standardRoot}/base.js`],
         },
       };
       await Repl.using(opts, async (repl) => {
@@ -64,8 +64,8 @@ describe("evalForm", () => {
     });
 
     testOf({
-      src: '(meta.evaluate (meta.readString "(const x 9.2) (plusF x 5.2) (let y 0.1)"))',
-      expected: undefined,
+      src: '(meta.evaluate (meta.readString "(const x 9.2) (plusF x 5.1) (let y 0.1)"))',
+      expected: 9.2 + 5.1,
     });
   });
 });

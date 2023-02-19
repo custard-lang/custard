@@ -5,20 +5,21 @@ import * as EnvF from "./internal/env.js";
 import type {
   Block,
   JsSrc,
-  ProvidedSymbols,
+  ProvidedSymbolsConfig,
   TranspileError,
   TranspileOptions,
 } from "./types.js";
+import { loadAsScope } from "./module.js";
 
 export async function transpileModule(
   ast: Block,
   transpileOptions: TranspileOptions,
-  proviedSymbols: ProvidedSymbols,
+  proviedSymbols: ProvidedSymbolsConfig,
 ): Promise<JsSrc | TranspileError> {
   return await transpileStatement(
     ast,
-    await EnvF.init(
-      proviedSymbols.initialScope,
+    EnvF.init(
+      await loadAsScope(proviedSymbols.builtinModulePaths),
       await State.transpileModule(transpileOptions),
       proviedSymbols.modulePaths,
     ),

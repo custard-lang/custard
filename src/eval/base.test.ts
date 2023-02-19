@@ -1,12 +1,12 @@
 import { assertNonError } from "../util/error";
 
-import { Repl, replOptionsFromInitialScope } from "../repl";
+import { Repl, replOptionsFromBuiltinModulePath } from "../repl";
 import { readBlock, readStr } from "../reader";
 import { evalForm, evalBlock } from "../eval";
 
 import { describe, expect, test } from "vitest";
 import { TranspileError } from "../types";
-import { base } from "../lib/base";
+import { standardRoot } from "../module";
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/restrict-template-expressions, @typescript-eslint/no-unsafe-assignment */
 
@@ -22,11 +22,14 @@ describe("evalForm", () => {
   }): void {
     const t = only ? test.only : test;
     t(`\`${src}\` => ${expected}`, async () => {
-      await Repl.using(replOptionsFromInitialScope(base()), async (repl) => {
-        expect(await evalForm(assertNonError(readStr(src)), repl)).toEqual(
-          expected,
-        );
-      });
+      await Repl.using(
+        replOptionsFromBuiltinModulePath(`${standardRoot}/base.js`),
+        async (repl) => {
+          expect(await evalForm(assertNonError(readStr(src)), repl)).toEqual(
+            expected,
+          );
+        },
+      );
     });
   }
 
@@ -300,21 +303,21 @@ describe("evalBlock", () => {
   }): void {
     const t = only ? test.only : test;
     t(`\`${src}\` => ${expected}`, async () => {
-      process.stdout.write("test running\n");
-      await Repl.using(replOptionsFromInitialScope(base()), async (repl) => {
-        process.stdout.write("test running in REPL\n");
-        const result = await evalBlock(assertNonError(readBlock(src)), repl);
-        if (!(expected instanceof Error) && result instanceof Error) {
-          throw result;
-        }
-        expect(result).toEqual(expected);
-      });
+      await Repl.using(
+        replOptionsFromBuiltinModulePath(`${standardRoot}/base.js`),
+        async (repl) => {
+          const result = await evalBlock(assertNonError(readBlock(src)), repl);
+          if (!(expected instanceof Error) && result instanceof Error) {
+            throw result;
+          }
+          expect(result).toEqual(expected);
+        },
+      );
     });
   }
 
   describe("(const|let|assign id expression)", () => {
     testOf({
-      only: true,
       src: "(const x (timesF 3 3))(plusF x 2)",
       expected: 11,
     });

@@ -17,6 +17,8 @@ const DEBUG_LOG_PATH = DEBUG_LOG_PREFIX && `${DEBUG_LOG_PREFIX}${threadId}.log`;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function writeDebugOut(s: any) {
   if (DEBUG_LOG_PATH) {
+    // TODO: Implement our custom serializer
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     appendFileSync(DEBUG_LOG_PATH, `${s}\n`);
   }
 }
