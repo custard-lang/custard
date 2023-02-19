@@ -26,7 +26,6 @@ async function evalCustard(ast: Form, repl: Repl): Promise<any> {
 
 // PRINT
 function print(exp: any): string {
-  console.log(exp)
   return prStr(exp);
 }
 
