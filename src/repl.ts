@@ -11,23 +11,25 @@ import {
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-return */
 
-export class Repl {
-  private readonly _worker: Worker;
+// FIXME: How can I resolve the path to the .js file?
+//        __filename points to the .ts file (perhaps by vite).
+const worker = new Worker("./dist/src/internal/worker.js");
+let lastContextId = 0;
 
+export class Repl {
+  private _contextId = lastContextId++;
   private constructor() {
-    // FIXME: How can I resolve the path to the .js file?
-    //        __filename points to the .ts file (perhaps by vite).
-    this._worker = new Worker("./dist/src/internal/worker.js");
+    // All properties are filled. Nothing to do.
   }
 
   static async start(options: ReplOptions): Promise<Repl> {
     const instance = new this();
-    instance._worker.postMessage({
-      command: "init",
+
+    await _postCommand({
+      command: "initContext",
+      contextId: instance._contextId,
       ...options,
     });
-
-    await instance._awaitResponse();
     return instance;
   }
 
@@ -43,27 +45,73 @@ export class Repl {
     }
   }
 
-  async sendEvalCommand(command: EvalCommand): Promise<any | Error> {
-    this._worker.postMessage(command);
-    return this._awaitResponse();
+  async evalForm(form: Form): Promise<any | Error> {
+    return await _postCommand({
+      command: "evalForm",
+      contextId: this._contextId,
+      form,
+    });
+  }
+
+  async evalBlock(block: Form[]): Promise<any | Error> {
+    return await _postCommand({
+      command: "evalBlock",
+      contextId: this._contextId,
+      block,
+    });
   }
 
   async exit(): Promise<void> {
-    await this._worker.terminate();
-  }
-
-  private async _awaitResponse(): Promise<any> {
-    return new Promise((resolve) => {
-      this._worker.once("message", (value) => {
-        resolve(value);
-      });
-    });
+    await _postCommand({ command: "dropContext", contextId: this._contextId });
   }
 }
 
-export type Command = InitCommand | EvalCommand;
+async function _postCommand(command: Command): Promise<any> {
+  worker.postMessage(command);
+  return new Promise((resolve) => {
+    worker.once("message", (value) => {
+      resolve(value);
+    });
+  });
+}
 
-export type EvalCommand = EvalFormCommand | EvalBlockCommand;
+export type Command =
+  | InitContextCommand
+  | EvalFormCommand
+  | EvalBlockCommand
+  | DropContextCommand;
+
+export function replOptionsFromProvidedSymbols(
+  providedSymbols: ProvidedSymbolsConfig,
+): ReplOptions {
+  return {
+    transpileOptions: defaultTranspileOptions(),
+    providedSymbols,
+  };
+}
+
+type WithContextId = { contextId: ContextId };
+
+export type InitContextCommand = WithContextId &
+  ReplOptions & {
+    command: "initContext";
+  };
+
+export type EvalFormCommand = WithContextId & {
+  command: "evalForm";
+  form: Form;
+};
+
+export type EvalBlockCommand = WithContextId & {
+  command: "evalBlock";
+  block: Form[];
+};
+
+export type DropContextCommand = WithContextId & {
+  command: "dropContext";
+};
+
+export type ContextId = number;
 
 export type ReplOptions = {
   transpileOptions: TranspileOptions;
@@ -78,26 +126,3 @@ export function replOptionsFromBuiltinModulePath(
     providedSymbols: provideNoModules(builtinModulePath),
   };
 }
-
-export function replOptionsFromProvidedSymbols(
-  providedSymbols: ProvidedSymbolsConfig,
-): ReplOptions {
-  return {
-    transpileOptions: defaultTranspileOptions(),
-    providedSymbols,
-  };
-}
-
-export type InitCommand = ReplOptions & {
-  command: "init";
-};
-
-export type EvalFormCommand = {
-  command: "evalForm";
-  form: Form;
-};
-
-export type EvalBlockCommand = {
-  command: "evalBlock";
-  block: Form[];
-};
