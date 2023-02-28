@@ -15,6 +15,7 @@ export async function loadInto(
   path: string,
   scope: Scope,
 ): Promise<undefined | TranspileError> {
+  // TODO: Parse JavaScript source to avoid unsafe execution.
   const mod = (await import(path)) as Record<string, unknown>;
   for (const [id, def] of Object.entries(mod)) {
     const unprefixed = id.replace(/^_cu\$/, "");
