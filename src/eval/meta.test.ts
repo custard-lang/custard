@@ -41,7 +41,7 @@ describe("evalForm", () => {
     });
   }
 
-  describe("readString", () => {
+  describe("meta.readString", () => {
     testOf({
       src: '(meta.readString "(plusF 4.1 5.2)")',
       expected: [[{ t: "Symbol", v: "plusF" }, 4.1, 5.2]],
@@ -57,7 +57,7 @@ describe("evalForm", () => {
     });
   });
 
-  describe("evaluate", () => {
+  describe("meta.evaluate", () => {
     testOf({
       src: '(meta.evaluate (meta.readString "(plusF 4.1 5.2)"))',
       expected: 4.1 + 5.2,
