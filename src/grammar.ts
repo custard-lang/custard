@@ -1,17 +1,25 @@
 import type { Scanner } from "./scanner.js";
-import type { Form, CuArray, Atom } from "./types.js";
+import {
+  Form,
+  CuArray,
+  Atom,
+  KeyValues,
+  KeyValue,
+  CuSymbol,
+  isCuSymbol,
+} from "./types.js";
 
 // const tokenRegex = /[\s,]*(~@|[\[\]{}()'`~^@]|"(?:\\.|[^\\"])*"?|;.*|[^\s\[\]{}('"`,;)]*)/;
 
 const ignored = "[\\s,]*";
 
-const specialSingle = "[\\[\\]{}()'`~^@]";
+const specialSingle = "[\\[\\]{}()'`~^@:]";
 
 const doubleQuoted = '"(?:\\\\.|[^\\\\"])*"?';
 const doubleQuotedRe = new RegExp(doubleQuoted);
 
 // TODO: symbolに変えて、JSのidentifierと同等に
-const nonSpecial = "[^\\s\\[\\]{}('\"`,;)]*";
+const nonSpecial = "[^\\s\\[\\]{}('\"`,;:)]*";
 
 export function buildTokenRegex(): RegExp {
   return new RegExp(
@@ -25,27 +33,70 @@ export class ParseError extends Error {
 }
 
 export function form(s: Scanner): Form | ParseError {
-  const token = s.peek();
-  if (token === "(") {
-    return list(s);
+  switch (s.peek()) {
+    case "(":
+      return list(s);
+    case "{":
+      return object(s);
+    default:
+      return atom(s);
   }
-  return atom(s);
 }
 
 function list(s: Scanner): CuArray | ParseError {
-  const token = s.next(); // drop open paren
-  if (token !== "(") {
-    return new ParseError(
-      `Expected an opening paren, but found ${JSON.stringify(token)}`,
-    );
+  return untilClose(s, ")", form);
+}
+
+function object(s: Scanner): KeyValues | ParseError {
+  const v = untilClose(s, "}", keyValueOrSymbol);
+  if (v instanceof ParseError) {
+    return v;
   }
-  const result: CuArray = [];
+  return {
+    t: "KeyValues",
+    v,
+  };
+}
+
+function keyValueOrSymbol(s: Scanner): KeyValue | CuSymbol | ParseError {
+  const key = form(s);
+  if (key instanceof ParseError) {
+    return key;
+  }
+  if (s.peek() === ":") {
+    // eslint-disable-next-line no-ignore-returned-union/no-ignore-returned-union
+    s.next(); // drop colon
+    const value = form(s);
+    if (value instanceof ParseError) {
+      return value;
+    }
+    return [key, value];
+  }
+  if (isCuSymbol(key)) {
+    return key;
+  }
+  return new ParseError(
+    `key of an object without a value must be a symbol, but ${JSON.stringify(
+      key,
+    )}`,
+  );
+}
+
+function untilClose<Result>(
+  s: Scanner,
+  close: string,
+  symbol: (s: Scanner) => Result | ParseError,
+): Result[] | ParseError {
+  // eslint-disable-next-line no-ignore-returned-union/no-ignore-returned-union
+  s.next(); // drop open paren
+
+  const result: Result[] = [];
   while (true) {
     const next = s.peek();
-    if (next === ")") {
+    if (next === close) {
       break;
     }
-    const f = form(s);
+    const f = symbol(s);
     if (f instanceof ParseError) {
       return f;
     }

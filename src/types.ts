@@ -7,9 +7,17 @@ import { Awaitable } from "./util/types.js";
 
 export type Block = Form[];
 
-export type Form = CuArray | Atom;
+export type Form = CuArray | KeyValues | Atom;
 
 export type CuArray = Form[];
+
+export type KeyValues = {
+  t: "KeyValues";
+  v: (KeyValue | CuSymbol)[];
+};
+
+// TODO: Perhaps key should be either an Atom or Call;
+export type KeyValue = [Form, Form];
 
 // The `Cu` prefix is only to avoid conflicts with TypeScript's builtin types.
 export type Atom =
@@ -47,6 +55,27 @@ export type PropertyAccess = {
   t: "PropertyAccess";
   v: string[];
 };
+
+export function isCuSymbol(v: Form): v is CuSymbol {
+  return v !== undefined && (v as Record<string, unknown>).t === "Symbol";
+}
+
+export function isPropertyAccess(v: Form): v is PropertyAccess {
+  return (
+    v !== undefined && (v as Record<string, unknown>).t === "PropertyAccess"
+  );
+}
+
+export function showSymbolAccess(sym: CuSymbol | PropertyAccess): string {
+  switch (sym.t) {
+    case "Symbol":
+      return sym.v;
+    case "PropertyAccess":
+      return sym.v.join(".");
+    default:
+      return expectNever(sym) as string;
+  }
+}
 
 export type ProvidedSymbolsConfig = {
   builtinModulePaths: FilePath[];
@@ -169,27 +198,6 @@ export type Writer =
   | Namespace
   | MarkedDirectWriter
   | MarkedFunctionWithEnv;
-
-export function isCuSymbol(v: Form): v is CuSymbol {
-  return v !== undefined && (v as Record<string, unknown>).t === "Symbol";
-}
-
-export function isPropertyAccess(v: Form): v is PropertyAccess {
-  return (
-    v !== undefined && (v as Record<string, unknown>).t === "PropertyAccess"
-  );
-}
-
-export function showSymbolAccess(sym: CuSymbol | PropertyAccess): string {
-  switch (sym.t) {
-    case "Symbol":
-      return sym.v;
-    case "PropertyAccess":
-      return sym.v.join(".");
-    default:
-      return expectNever(sym) as string;
-  }
-}
 
 export class TranspileError extends Error {
   override name = "TranspileError";

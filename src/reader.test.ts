@@ -1,6 +1,7 @@
 import { readStr } from "./reader";
 import { describe, expect, test } from "vitest";
 import { ParseError } from "./grammar";
+import { cuSymbol } from "./types";
 
 describe("readStr", () => {
   describe("Integer32", () => {
@@ -92,6 +93,39 @@ describe("readStr", () => {
         undefined,
         "foo",
       ]);
+    });
+  });
+
+  describe("Object", () => {
+    test('`{ a: 1.0 bc: "def" }`', () => {
+      expect(readStr('{ a: 1.0 bc: "def" }')).toEqual({
+        t: "KeyValues",
+        v: [
+          [cuSymbol("a"), 1.0],
+          [cuSymbol("bc"), "def"],
+        ],
+      });
+    });
+
+    test('`{ a: { aa: ( 1.1 2.1 3.3 ) ab: 3.0 } bc: "def" }`', () => {
+      expect(
+        readStr('{ a: { aa: ( 1.1 2.1 3.3 ) ab: 3.0 } bc: "def" }'),
+      ).toEqual({
+        t: "KeyValues",
+        v: [
+          [
+            cuSymbol("a"),
+            {
+              t: "KeyValues",
+              v: [
+                [cuSymbol("aa"), [1.1, 2.1, 3.3]],
+                [cuSymbol("ab"), 3.0],
+              ],
+            },
+          ],
+          [cuSymbol("bc"), "def"],
+        ],
+      });
     });
   });
 
