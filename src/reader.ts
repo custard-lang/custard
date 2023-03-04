@@ -5,6 +5,9 @@ import { Block, Form } from "./types.js";
 export function readStr(input: string): Form | ParseError {
   const s = new Scanner(buildTokenRegex(), input);
   const parsed = form(s);
+  if (parsed instanceof ParseError) {
+    return parsed;
+  }
   const left = s.next();
   if (left) {
     return new ParseError(`Unexpected token left!: ${JSON.stringify(left)}`);
