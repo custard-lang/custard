@@ -80,6 +80,7 @@ export function showSymbolAccess(sym: CuSymbol | PropertyAccess): string {
 export type ProvidedSymbolsConfig = {
   builtinModulePaths: FilePath[];
   modulePaths: ModulePaths;
+  jsTopLevels: Id[];
 };
 
 export function provideNoModules(
@@ -88,6 +89,7 @@ export function provideNoModules(
   return {
     builtinModulePaths,
     modulePaths: new Map(),
+    jsTopLevels: [],
   };
 }
 

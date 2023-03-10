@@ -25,5 +25,8 @@ export function prStr(form: Form): string {
       return form.v;
     case "PropertyAccess":
       return form.v.join(".");
+    case "KeyValues":
+      // TODO
+      throw new Error("KeyValues not yet implemented");
   }
 }

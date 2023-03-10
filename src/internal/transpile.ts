@@ -21,6 +21,7 @@ import {
   isNamespace,
   isMarkedFunctionWithEnv,
   isMarkedDirectWriter,
+  KeyValues,
 } from "../types.js";
 import { Env } from "./types.js";
 import * as EnvF from "./env.js";
@@ -149,12 +150,46 @@ export async function transpileExpression(
             return r;
           }
           return ast.v.join(".");
+        case "KeyValues":
+          return await transpileKeyValues(ast, env);
         case "Integer32":
           return `${ast.v}`;
       }
     default:
       return expectNever(ast) as JsSrc;
   }
+}
+
+async function transpileKeyValues(
+  ast: KeyValues,
+  env: Env,
+): Promise<JsSrc | TranspileError> {
+  let objectContents = "";
+  for (const kv of ast.v) {
+    let kvSrc: string;
+    if (isCuSymbol(kv)) {
+      const f = EnvF.referTo(env, kv);
+      if (f instanceof TranspileError) {
+        return f;
+      }
+      kvSrc = kv.v;
+    } else {
+      const [k, v] = kv;
+      const kSrc = isCuSymbol(k) ? k.v : await transpileExpression(k, env);
+      if (kSrc instanceof TranspileError) {
+        return kSrc;
+      }
+
+      const vSrc = await transpileExpression(v, env);
+      if (vSrc instanceof TranspileError) {
+        return vSrc;
+      }
+
+      kvSrc = `${kSrc}: ${vSrc}`;
+    }
+    objectContents = `${objectContents}${kvSrc}, `;
+  }
+  return `{ ${objectContents} }`;
 }
 
 export async function transpileBlock(

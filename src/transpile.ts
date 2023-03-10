@@ -9,7 +9,7 @@ import type {
   TranspileError,
   TranspileOptions,
 } from "./types.js";
-import { loadAsScope } from "./module.js";
+import { fromProvidedSymbolsConfig } from "./internal/scope.js";
 
 export async function transpileModule(
   ast: Block,
@@ -19,7 +19,7 @@ export async function transpileModule(
   return await transpileStatement(
     ast,
     EnvF.init(
-      await loadAsScope(proviedSymbols.builtinModulePaths),
+      await fromProvidedSymbolsConfig(proviedSymbols),
       await State.transpileModule(transpileOptions),
       proviedSymbols.modulePaths,
     ),

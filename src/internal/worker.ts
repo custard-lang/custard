@@ -5,8 +5,8 @@ import { transpileRepl } from "./transpile-state.js";
 
 import type { Env, TranspileRepl } from "./types.js";
 import { evalBlock, evalForm } from "./eval.js";
-import { loadAsScope } from "../module.js";
 import { expectNever } from "../util/error.js";
+import { fromProvidedSymbolsConfig } from "./scope.js";
 
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 
@@ -22,7 +22,7 @@ parentPort!.on("message", async (message: Command) => {
         envs.set(
           contextId,
           EnvF.init(
-            await loadAsScope(providedSymbols.builtinModulePaths),
+            await fromProvidedSymbolsConfig(providedSymbols),
             await transpileRepl(transpileOptions),
             providedSymbols.modulePaths,
           ),

@@ -30,6 +30,7 @@ describe("evalForm", () => {
         providedSymbols: {
           modulePaths,
           builtinModulePaths: [`${standardRoot}/base.js`],
+          jsTopLevels: [],
         },
       };
       await Repl.using(opts, async (repl) => {
