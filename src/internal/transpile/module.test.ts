@@ -7,7 +7,7 @@ import { readBlock } from "../../reader";
 import { transpileBlock } from "../transpile";
 import { transpileModule } from "../transpile-state";
 import { Env } from "../types";
-import { isConst, JsSrc, ModulePaths, TranspileError } from "../../types";
+import { isNamespace, JsSrc, ModulePaths, TranspileError } from "../../types";
 import { loadAsScope, standardRoot } from "../../module";
 
 describe("transpileBlock", () => {
@@ -33,7 +33,7 @@ describe("transpileBlock", () => {
         expect(assertNonError(jsSrc).trim()).toEqual(
           'import * as a from "../../../test-assets/a.mjs";',
         );
-        expect(EnvF.find(env, "a")).toSatisfy(isConst);
+        expect(EnvF.find(env, "a")).toSatisfy(isNamespace);
       });
     });
 
