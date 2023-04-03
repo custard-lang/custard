@@ -8,7 +8,7 @@ import { standardModuleRoot } from "../definitions";
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/restrict-template-expressions */
 
 describe("evalForm", () => {
-  async function setUpReplOptions(): Promise<ReplOptions> {
+  function setUpReplOptions(): ReplOptions {
     const modulePaths: ModulePaths = new Map();
     modulePaths.set("meta", "../../dist/src/lib/meta.js");
 

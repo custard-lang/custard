@@ -18,7 +18,10 @@ function inScope(env: Env, f: () => void): void {
 }
 
 async function subjectEnv(): Promise<Env> {
-  return EnvF.init(ScopeF.init(), await transpileRepl(defaultTranspileOptions()));
+  return EnvF.init(
+    ScopeF.init(),
+    await transpileRepl(defaultTranspileOptions()),
+  );
 }
 
 describe("Interactions of the functions in EnvF", () => {

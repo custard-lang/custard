@@ -129,7 +129,7 @@ export function set(
   ScopeF.set(scopes[0], id, writer);
 }
 
-export function push({ scopes, references }: Env, isAsync: boolean = false): void {
+export function push({ scopes, references }: Env, isAsync = false): void {
   References.appendNewScope(references);
   scopes.unshift(isAsync ? ScopeF.initAsync() : ScopeF.init());
 }

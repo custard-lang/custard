@@ -7,9 +7,11 @@ import { readBlock } from "../../reader";
 import { transpileBlock } from "../transpile";
 import { transpileModule } from "../transpile-state";
 import { fromDefinitions } from "../scope";
-import { Env } from "../types";
-import { isNamespace, JsSrc, ModulePaths, TranspileError } from "../../internal/types";
-import { loadModulePaths, standardModuleRoot } from "../../internal/definitions";
+import { Env, isNamespace, JsSrc, ModulePaths, TranspileError } from "../types";
+import {
+  loadModulePaths,
+  standardModuleRoot,
+} from "../../internal/definitions";
 
 describe("transpileBlock", () => {
   const subject = async (

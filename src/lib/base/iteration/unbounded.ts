@@ -5,9 +5,8 @@ import {
   transpileExpression,
   transpileStatement,
 } from "../../../internal/transpile.js";
-import { Env } from "../../../internal/types.js";
-
 import {
+  Env,
   Block,
   Form,
   JsSrc,

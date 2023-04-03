@@ -170,7 +170,10 @@ export function isRecursiveConst(x: Writer): x is RecursiveConst {
   return x.t === 3;
 }
 
-export type Namespace = IsWriter & { readonly t: 4; readonly definitions: Definitions };
+export type Namespace = IsWriter & {
+  readonly t: 4;
+  readonly definitions: Definitions;
+};
 export function aNamespace(): Namespace {
   return asWriter({ t: 4, definitions: new Map() });
 }

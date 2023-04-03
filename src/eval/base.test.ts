@@ -7,10 +7,9 @@ import { standardModuleRoot } from "../definitions";
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/restrict-template-expressions, @typescript-eslint/no-unsafe-assignment */
 
-async function setUpReplOptions(): Promise<ReplOptions> {
+function setUpReplOptions(): ReplOptions {
   return replOptionsFromBuiltinModulePath(`${standardModuleRoot}/base.js`);
 }
-
 
 describe("evalForm", () => {
   testEvalFormOf({
@@ -34,8 +33,16 @@ describe("evalForm", () => {
   });
 
   describe("(if bool x else y)", () => {
-    testEvalFormOf({ src: "(if true 1 else 2)", expected: 1, setUpReplOptions });
-    testEvalFormOf({ src: "(if false 1 else 2)", expected: 2, setUpReplOptions });
+    testEvalFormOf({
+      src: "(if true 1 else 2)",
+      expected: 1,
+      setUpReplOptions,
+    });
+    testEvalFormOf({
+      src: "(if false 1 else 2)",
+      expected: 2,
+      setUpReplOptions,
+    });
     testEvalFormOf({
       src: "(if)",
       expected: new TranspileError(
@@ -94,7 +101,11 @@ describe("evalForm", () => {
   });
 
   describe("(fn (a r g s) (f) (o) (r) (m) (s))", () => {
-    testEvalFormOf({ src: "( (fn (x) (plusF x 3)) 2 )", expected: 5, setUpReplOptions });
+    testEvalFormOf({
+      src: "( (fn (x) (plusF x 3)) 2 )",
+      expected: 5,
+      setUpReplOptions,
+    });
     testEvalFormOf({ src: "( (fn () 3) 2 )", expected: 3, setUpReplOptions });
     testEvalFormOf({
       src: "((fn ()))",
@@ -187,12 +198,24 @@ describe("evalForm", () => {
   });
 
   describe("(equals x y)", () => {
-    testEvalFormOf({ src: '(scope (const x "123") (equals x "123"))', expected: true, setUpReplOptions });
-    testEvalFormOf({ src: '(scope (const x "123") (equals x 123))', expected: false, setUpReplOptions });
+    testEvalFormOf({
+      src: '(scope (const x "123") (equals x "123"))',
+      expected: true,
+      setUpReplOptions,
+    });
+    testEvalFormOf({
+      src: '(scope (const x "123") (equals x 123))',
+      expected: false,
+      setUpReplOptions,
+    });
   });
 
   describe("(notEquals x y)", () => {
-    testEvalFormOf({ src: "(scope (const x 123) (notEquals x 123))", expected: false, setUpReplOptions });
+    testEvalFormOf({
+      src: "(scope (const x 123) (notEquals x 123))",
+      expected: false,
+      setUpReplOptions,
+    });
     testEvalFormOf({
       src: '(scope (const x 123) (notEquals x "123"))',
       expected: true,
@@ -201,7 +224,11 @@ describe("evalForm", () => {
   });
 
   describe("(isLessThan x y)", () => {
-    testEvalFormOf({ src: "(scope (const x 123) (isLessThan x 124))", expected: true, setUpReplOptions });
+    testEvalFormOf({
+      src: "(scope (const x 123) (isLessThan x 124))",
+      expected: true,
+      setUpReplOptions,
+    });
     testEvalFormOf({
       src: "(scope (const x 123) (isLessThan x 123))",
       expected: false,
@@ -269,17 +296,45 @@ describe("evalForm", () => {
   });
 
   describe("(and x y)", () => {
-    testEvalFormOf({ src: "(and true true)", expected: true, setUpReplOptions });
-    testEvalFormOf({ src: "(and false true)", expected: false, setUpReplOptions });
-    testEvalFormOf({ src: "(and true false)", expected: false, setUpReplOptions });
-    testEvalFormOf({ src: "(and false false)", expected: false, setUpReplOptions });
+    testEvalFormOf({
+      src: "(and true true)",
+      expected: true,
+      setUpReplOptions,
+    });
+    testEvalFormOf({
+      src: "(and false true)",
+      expected: false,
+      setUpReplOptions,
+    });
+    testEvalFormOf({
+      src: "(and true false)",
+      expected: false,
+      setUpReplOptions,
+    });
+    testEvalFormOf({
+      src: "(and false false)",
+      expected: false,
+      setUpReplOptions,
+    });
   });
 
   describe("(or x y)", () => {
     testEvalFormOf({ src: "(or true true)", expected: true, setUpReplOptions });
-    testEvalFormOf({ src: "(or false true)", expected: true, setUpReplOptions });
-    testEvalFormOf({ src: "(or true false)", expected: true, setUpReplOptions });
-    testEvalFormOf({ src: "(or false false)", expected: false, setUpReplOptions });
+    testEvalFormOf({
+      src: "(or false true)",
+      expected: true,
+      setUpReplOptions,
+    });
+    testEvalFormOf({
+      src: "(or true false)",
+      expected: true,
+      setUpReplOptions,
+    });
+    testEvalFormOf({
+      src: "(or false false)",
+      expected: false,
+      setUpReplOptions,
+    });
   });
 
   describe("(not x)", () => {
@@ -295,7 +350,11 @@ describe("evalForm", () => {
   });
 
   describe("(array f o r m s)", () => {
-    testEvalFormOf({ src: "(array 1 2 3)", expected: [1, 2, 3], setUpReplOptions });
+    testEvalFormOf({
+      src: "(array 1 2 3)",
+      expected: [1, 2, 3],
+      setUpReplOptions,
+    });
     testEvalFormOf({ src: "(array)", expected: [], setUpReplOptions });
     testEvalFormOf({
       src: "(array 1 (if (isLessThan 2 3) 4 else 5) 6)",
@@ -348,7 +407,9 @@ describe("evalBlock", () => {
     });
 
     testEvalBlockOf({
-      src: "(const y 5)(scope (const y 3) (timesF y 2))", expected: 6, setUpReplOptions,
+      src: "(const y 5)(scope (const y 3) (timesF y 2))",
+      expected: 6,
+      setUpReplOptions,
     });
 
     testEvalBlockOf({

@@ -66,4 +66,7 @@ async function loop(repl: Repl): Promise<void> {
 
 // I don't need top-level `await` here!
 // eslint-disable-next-line @typescript-eslint/no-floating-promises
-Repl.using(replOptionsFromBuiltinModulePath(`${standardModuleRoot}/base.js`), loop);
+Repl.using(
+  replOptionsFromBuiltinModulePath(`${standardModuleRoot}/base.js`),
+  loop,
+);

@@ -1,7 +1,25 @@
 import * as EnvF from "../../internal/env.js";
-import { asCall, transpileExpression, transpileStatement } from "../../internal/transpile.js";
-import { Env } from "../../internal/types.js";
-import { aVar, Block, Call, CuSymbol, Form, Id, isCuSymbol, JsSrc, markAsDirectWriter, MarkedDirectWriter, showSymbolAccess, TranspileError, Writer } from "../../internal/types.js";
+import {
+  asCall,
+  transpileExpression,
+  transpileStatement,
+} from "../../internal/transpile.js";
+import {
+  Env,
+  aVar,
+  Block,
+  Call,
+  CuSymbol,
+  Form,
+  Id,
+  isCuSymbol,
+  JsSrc,
+  markAsDirectWriter,
+  MarkedDirectWriter,
+  showSymbolAccess,
+  TranspileError,
+  Writer,
+} from "../../internal/types.js";
 import * as Iteration from "./iteration.js";
 import * as Unbounded from "./iteration/unbounded.js";
 import * as Safe from "./safe.js";
@@ -157,7 +175,7 @@ export async function buildFn(
   formId: Id,
   args: Form,
   block: Block,
-  isAsync: boolean = false,
+  isAsync = false,
 ): Promise<JsSrc | TranspileError> {
   let result = functionPrelude(env, formId, args, block, isAsync);
   if (result instanceof TranspileError) {
@@ -194,7 +212,7 @@ export async function buildProcedure(
   formId: Id,
   args: Form,
   block: Block,
-  isAsync: boolean = false,
+  isAsync = false,
 ): Promise<JsSrc | TranspileError> {
   let result = functionPrelude(env, formId, args, block, isAsync);
   if (result instanceof TranspileError) {
@@ -212,7 +230,11 @@ export async function buildProcedure(
   return functionPostlude(env, result);
 }
 
-export function buildScope(prefix: string, id: Id, isAsync: boolean = false): MarkedDirectWriter {
+export function buildScope(
+  prefix: string,
+  id: Id,
+  isAsync = false,
+): MarkedDirectWriter {
   return markAsDirectWriter(
     async (env: Env, ...block: Block): Promise<JsSrc | TranspileError> => {
       // EnvF.push(env);
@@ -222,7 +244,7 @@ export function buildScope(prefix: string, id: Id, isAsync: boolean = false): Ma
         return funcSrc;
       }
       // EnvF.pop(env);
-      return `(${prefix}${funcSrc})()`;;
+      return `(${prefix}${funcSrc})()`;
     },
   );
 }

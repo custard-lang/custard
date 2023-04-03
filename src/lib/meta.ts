@@ -1,9 +1,13 @@
-import { Env, TranspileRepl } from "../internal/types.js";
+import {
+  Env,
+  TranspileRepl,
+  Block,
+  markAsFunctionWithEnv,
+} from "../internal/types.js";
 import { evalBlock } from "../internal/eval.js";
 
 import { ParseError } from "../grammar.js";
 import { readBlock } from "../reader.js";
-import { Block, markAsFunctionWithEnv } from "../internal/types.js";
 
 export function readString(input: string): Block | ParseError {
   return readBlock(input);

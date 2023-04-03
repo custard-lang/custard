@@ -21,7 +21,14 @@ import {
   transpilingForVariableMutation,
 } from "../../internal/transpile.js";
 
-import { buildFn, buildProcedure, buildScope, transpiling1, transpiling2, transpilingForAssignment } from "./common.js";
+import {
+  buildFn,
+  buildProcedure,
+  buildScope,
+  transpiling1,
+  transpiling2,
+  transpilingForAssignment,
+} from "./common.js";
 
 export const _cu$const = transpilingForAssignment(
   "const",

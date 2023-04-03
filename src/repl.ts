@@ -9,7 +9,7 @@ import {
   TranspileOptions,
 } from "./types.js";
 
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-assignment */
 
 // FIXME: How can I resolve the path to the .js file?
 //        __filename points to the .ts file (perhaps by vite).
@@ -30,7 +30,7 @@ export class Repl {
       contextId: instance._contextId,
       ...options,
     });
-    if (r instanceof Error){
+    if (r instanceof Error) {
       throw r;
     }
 
@@ -66,8 +66,11 @@ export class Repl {
   }
 
   async exit(): Promise<void> {
-    const r = await _postCommand({ command: "dropContext", contextId: this._contextId });
-    if (r instanceof Error){
+    const r = await _postCommand({
+      command: "dropContext",
+      contextId: this._contextId,
+    });
+    if (r instanceof Error) {
       throw r;
     }
   }

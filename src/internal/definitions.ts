@@ -1,4 +1,10 @@
-import { aConst, Definitions, FilePath, isWriter, TranspileError } from "./types.js";
+import {
+  aConst,
+  Definitions,
+  FilePath,
+  isWriter,
+  TranspileError,
+} from "./types.js";
 
 // Path to the `lib` directory from this module.
 export const standardModuleRoot = "../lib";
@@ -32,4 +38,3 @@ export async function loadModulePathInto(
     definitions.set(id, aConst());
   }
 }
-

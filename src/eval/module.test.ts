@@ -8,7 +8,7 @@ import { testEvalBlockOf } from "../util/test-expectations";
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/restrict-template-expressions */
 
 describe("evalBlock", () => {
-  async function setUpReplOptions(): Promise<ReplOptions> {
+  function setUpReplOptions(): ReplOptions {
     const modulePaths: ModulePaths = new Map();
     modulePaths.set("a", "../../test-assets/a.mjs");
     return {

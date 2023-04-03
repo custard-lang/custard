@@ -7,7 +7,7 @@ import { standardModuleRoot } from "./definitions";
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/restrict-template-expressions */
 
 describe("evalBlock", () => {
-  async function setUpReplOptions(): Promise<ReplOptions> {
+  function setUpReplOptions(): ReplOptions {
     return {
       transpileOptions: { srcPath: __filename },
       providedSymbols: {
@@ -15,9 +15,8 @@ describe("evalBlock", () => {
         builtinModulePaths: [`${standardModuleRoot}/base.js`],
         jsTopLevels: ["structuredClone"],
       },
-    }
+    };
   }
-
 
   describe("structuredClone, provided by `jsTopLevels`", () => {
     testEvalBlockOf({
