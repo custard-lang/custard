@@ -1,7 +1,7 @@
 import { readStr } from "./reader";
 import { describe, expect, test } from "vitest";
 import { ParseError } from "./grammar";
-import { cuSymbol } from "./types";
+import { cuSymbol } from "./internal/types";
 
 describe("readStr", () => {
   describe("Integer32", () => {

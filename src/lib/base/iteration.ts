@@ -1,12 +1,12 @@
-import { Env } from "../../internal/types.js";
 import {
+  Env,
   Form,
   Id,
   JsSrc,
   markAsDirectWriter,
   MarkedDirectWriter,
   TranspileError,
-} from "../../types.js";
+} from "../../internal/types.js";
 
 export const _cu$break = transpilingControlStatement("break");
 export const _cu$continue = transpilingControlStatement("continue");

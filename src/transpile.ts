@@ -1,4 +1,5 @@
 import { transpileStatement } from "./internal/transpile.js";
+import { fromDefinitions } from "./internal/scope.js";
 import * as State from "./internal/transpile-state.js";
 import * as EnvF from "./internal/env.js";
 
@@ -9,7 +10,7 @@ import type {
   TranspileError,
   TranspileOptions,
 } from "./types.js";
-import { fromProvidedSymbolsConfig } from "./internal/scope.js";
+import { fromProvidedSymbolsConfig } from "./definitions.js";
 
 export async function transpileModule(
   ast: Block,
@@ -19,7 +20,7 @@ export async function transpileModule(
   return await transpileStatement(
     ast,
     EnvF.init(
-      await fromProvidedSymbolsConfig(proviedSymbols),
+      fromDefinitions(await fromProvidedSymbolsConfig(proviedSymbols)),
       await State.transpileModule(transpileOptions),
       proviedSymbols.modulePaths,
     ),

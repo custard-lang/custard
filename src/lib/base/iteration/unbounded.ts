@@ -17,7 +17,7 @@ import {
   aRecursiveConst,
   showSymbolAccess,
   markAsDirectWriter,
-} from "../../../types.js";
+} from "../../../internal/types.js";
 
 import { isNonExpressionCall } from "../common.js";
 import { _cu$const } from "../safe.js";
@@ -51,7 +51,7 @@ export const _cu$while = markAsDirectWriter(
       return boolSrc;
     }
 
-    EnvF.push(env);
+    EnvF.pushInherited(env);
 
     const statementsSrc = await transpileBlock(rest, env);
     if (statementsSrc instanceof TranspileError) {
@@ -71,7 +71,7 @@ export const _cu$for = markAsDirectWriter(
     final: Form,
     ...rest: Block
   ): Promise<JsSrc | TranspileError> => {
-    EnvF.push(env);
+    EnvF.pushInherited(env);
 
     if (initialStatement === undefined) {
       return new TranspileError(
@@ -131,7 +131,7 @@ export const forEach = markAsDirectWriter(
     iterable: Form,
     ...statements: Block
   ): Promise<JsSrc | TranspileError> => {
-    EnvF.push(env);
+    EnvF.pushInherited(env);
 
     if (id === undefined) {
       return new TranspileError(

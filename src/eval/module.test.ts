@@ -1,46 +1,29 @@
-import { describe, test, expect } from "vitest";
+import { describe } from "vitest";
 
-import { Repl } from "../repl";
+import { ReplOptions } from "../repl";
 import { ModulePaths } from "../types";
-import { evalBlock } from "../eval";
-import { assertNonError } from "../util/error";
-import { readBlock } from "../reader";
-import { standardRoot } from "../module";
+import { standardModuleRoot } from "../definitions";
+import { testEvalBlockOf } from "../util/test-expectations";
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/restrict-template-expressions */
 
 describe("evalBlock", () => {
-  function testOf({
-    src,
-    expected,
-    only,
-  }: {
-    src: string;
-    expected: any;
-    only?: undefined | true;
-  }): void {
-    const t = only ? test.only : test;
-    t(`\`${src}\` => ${expected}`, async () => {
-      const modulePaths: ModulePaths = new Map();
-      modulePaths.set("a", "../../test-assets/a.mjs");
-      const opts = {
-        transpileOptions: { srcPath: __filename },
-        providedSymbols: {
-          modulePaths,
-          builtinModulePaths: [`${standardRoot}/base.js`],
-          jsTopLevels: [],
-        },
-      };
-      await Repl.using(opts, async (repl) => {
-        expect(await evalBlock(assertNonError(readBlock(src)), repl)).toEqual(
-          expected,
-        );
-      });
-    });
+  async function setUpReplOptions(): Promise<ReplOptions> {
+    const modulePaths: ModulePaths = new Map();
+    modulePaths.set("a", "../../test-assets/a.mjs");
+    return {
+      transpileOptions: { srcPath: __filename },
+      providedSymbols: {
+        modulePaths,
+        builtinModulePaths: [`${standardModuleRoot}/base.js`],
+        jsTopLevels: [],
+      },
+    };
   }
 
-  testOf({
+  testEvalBlockOf({
     src: "(import a) a.a",
     expected: "Module A",
+    setUpReplOptions,
   });
 });

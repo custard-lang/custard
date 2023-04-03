@@ -6,9 +6,10 @@ import * as EnvF from "../env";
 import { readBlock } from "../../reader";
 import { transpileBlock } from "../transpile";
 import { transpileModule } from "../transpile-state";
+import { fromDefinitions } from "../scope";
 import { Env } from "../types";
-import { isNamespace, JsSrc, ModulePaths, TranspileError } from "../../types";
-import { loadAsScope, standardRoot } from "../../module";
+import { isNamespace, JsSrc, ModulePaths, TranspileError } from "../../internal/types";
+import { loadModulePaths, standardModuleRoot } from "../../internal/definitions";
 
 describe("transpileBlock", () => {
   const subject = async (
@@ -18,7 +19,7 @@ describe("transpileBlock", () => {
     modules.set("a", "../../../test-assets/a.mjs");
 
     const env = EnvF.init(
-      await loadAsScope([`${standardRoot}/base.js`]),
+      fromDefinitions(await loadModulePaths([`${standardModuleRoot}/base.js`])),
       await transpileModule({ srcPath: __filename }),
       modules,
     );

@@ -3,7 +3,6 @@ import { assertNonNull, expectNever, mapAE } from "../util/error.js";
 import {
   Block,
   Call,
-  CuSymbol,
   Form,
   Id,
   isContextualKeyword,
@@ -22,7 +21,7 @@ import {
   isMarkedFunctionWithEnv,
   isMarkedDirectWriter,
   KeyValues,
-} from "../types.js";
+} from "../internal/types.js";
 import { Env } from "./types.js";
 import * as EnvF from "./env.js";
 
@@ -205,77 +204,6 @@ export async function transpileBlock(
     jsSrc = `${jsSrc}${s};\n`;
   }
   return jsSrc;
-}
-
-export function transpiling1(
-  formId: Id,
-  f: (a: JsSrc) => JsSrc,
-): MarkedDirectWriter {
-  return markAsDirectWriter(
-    async (
-      env: Env,
-      a: Form,
-      ...unused: Form[]
-    ): Promise<JsSrc | TranspileError> => {
-      const ra = await transpileExpression(a, env);
-      if (ra instanceof TranspileError) {
-        return ra;
-      }
-
-      if (unused.length > 0) {
-        return new TranspileError(
-          `\`${formId}\` must receive exactly one expression!`,
-        );
-      }
-
-      return f(ra);
-    },
-  );
-}
-
-export function transpiling2(
-  f: (a: JsSrc, b: JsSrc) => JsSrc,
-): MarkedDirectWriter {
-  return markAsDirectWriter(
-    async (env: Env, a: Form, b: Form): Promise<JsSrc | TranspileError> => {
-      const ra = await transpileExpression(a, env);
-      if (ra instanceof TranspileError) {
-        return ra;
-      }
-
-      const rb = await transpileExpression(b, env);
-      if (rb instanceof TranspileError) {
-        return rb;
-      }
-
-      return f(ra, rb);
-    },
-  );
-}
-
-// TODO: Handle assignment to reserved words etc.
-export function transpilingForAssignment(
-  formId: Id,
-  f: (env: Env, id: CuSymbol, exp: JsSrc) => JsSrc | TranspileError,
-): MarkedDirectWriter {
-  return markAsDirectWriter(
-    async (env: Env, id: Form, v: Form, another?: Form) => {
-      if (another != null) {
-        return new TranspileError(
-          `The number of arguments to \`${formId}\` must be 2!`,
-        );
-      }
-      if (!isCuSymbol(id)) {
-        return new TranspileError(`${JSON.stringify(id)} is not a symbol!`);
-      }
-
-      const exp = await transpileExpression(v, env);
-      if (exp instanceof TranspileError) {
-        return exp;
-      }
-      return f(env, id, exp);
-    },
-  );
 }
 
 export function transpilingForVariableMutation(

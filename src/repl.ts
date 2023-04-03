@@ -25,11 +25,15 @@ export class Repl {
   static async start(options: ReplOptions): Promise<Repl> {
     const instance = new this();
 
-    await _postCommand({
+    const r = await _postCommand({
       command: "initContext",
       contextId: instance._contextId,
       ...options,
     });
+    if (r instanceof Error){
+      throw r;
+    }
+
     return instance;
   }
 
@@ -62,7 +66,10 @@ export class Repl {
   }
 
   async exit(): Promise<void> {
-    await _postCommand({ command: "dropContext", contextId: this._contextId });
+    const r = await _postCommand({ command: "dropContext", contextId: this._contextId });
+    if (r instanceof Error){
+      throw r;
+    }
   }
 }
 

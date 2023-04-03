@@ -6,9 +6,10 @@ import {
   cuSymbol,
   defaultTranspileOptions,
   TranspileError,
-} from "../types.js";
+} from "../internal/types.js";
 import * as EnvF from "./env.js";
 import { transpileRepl } from "./transpile-state.js";
+import * as ScopeF from "./scope.js";
 
 function inScope(env: Env, f: () => void): void {
   EnvF.push(env);
@@ -17,7 +18,7 @@ function inScope(env: Env, f: () => void): void {
 }
 
 async function subjectEnv(): Promise<Env> {
-  return EnvF.init(new Map(), await transpileRepl(defaultTranspileOptions()));
+  return EnvF.init(ScopeF.init(), await transpileRepl(defaultTranspileOptions()));
 }
 
 describe("Interactions of the functions in EnvF", () => {

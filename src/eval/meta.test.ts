@@ -1,72 +1,61 @@
-import { describe, expect, test } from "vitest";
+import { describe } from "vitest";
+import { testEvalFormOf } from "../util/test-expectations";
 
-import { assertNonError } from "../util/error";
-
-import { Repl } from "../repl";
-import { readStr } from "../reader";
-import { evalForm } from "../eval";
+import { ReplOptions } from "../repl";
 import { ModulePaths } from "../types";
-import { standardRoot } from "../module";
+import { standardModuleRoot } from "../definitions";
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/restrict-template-expressions */
 
 describe("evalForm", () => {
-  function testOf({
-    src,
-    expected,
-    only,
-  }: {
-    src: string;
-    expected: any;
-    only?: undefined | true;
-  }): void {
-    const t = only ? test.only : test;
-    t(`\`${src}\` => ${expected}`, async () => {
-      const modulePaths: ModulePaths = new Map();
-      modulePaths.set("meta", "../../dist/src/lib/meta.js");
+  async function setUpReplOptions(): Promise<ReplOptions> {
+    const modulePaths: ModulePaths = new Map();
+    modulePaths.set("meta", "../../dist/src/lib/meta.js");
 
-      const opts = {
-        transpileOptions: { srcPath: __filename },
-        providedSymbols: {
-          modulePaths,
-          builtinModulePaths: [`${standardRoot}/base.js`],
-          jsTopLevels: [],
-        },
-      };
-      await Repl.using(opts, async (repl) => {
-        void (await evalForm(assertNonError(readStr("(import meta)")), repl));
-        expect(await evalForm(assertNonError(readStr(src)), repl)).toEqual(
-          expected,
-        );
-      });
-    });
+    return {
+      transpileOptions: { srcPath: __filename },
+      providedSymbols: {
+        modulePaths,
+        builtinModulePaths: [`${standardModuleRoot}/base.js`],
+        jsTopLevels: [],
+      },
+    };
   }
+  const preludeSrc = "(import meta)";
 
   describe("meta.readString", () => {
-    testOf({
+    testEvalFormOf({
       src: '(meta.readString "(plusF 4.1 5.2)")',
       expected: [[{ t: "Symbol", v: "plusF" }, 4.1, 5.2]],
+      setUpReplOptions,
+      preludeSrc,
     });
 
-    testOf({
+    testEvalFormOf({
       src: '(meta.readString "(const x 9.2) (plusF 4.1 5.2) (let y 0.1)")',
       expected: [
         [{ t: "Symbol", v: "const" }, { t: "Symbol", v: "x" }, 9.2],
         [{ t: "Symbol", v: "plusF" }, 4.1, 5.2],
         [{ t: "Symbol", v: "let" }, { t: "Symbol", v: "y" }, 0.1],
       ],
+      setUpReplOptions,
+      preludeSrc,
     });
   });
 
   describe("meta.evaluate", () => {
-    testOf({
+    testEvalFormOf({
       src: '(meta.evaluate (meta.readString "(plusF 4.1 5.2)"))',
       expected: 4.1 + 5.2,
+      setUpReplOptions,
+      preludeSrc,
     });
 
-    testOf({
+    testEvalFormOf({
       src: '(meta.evaluate (meta.readString "(const x 9.2) (plusF x 5.1) (let y 0.1)"))',
       expected: 9.2 + 5.1,
+      setUpReplOptions,
+      preludeSrc,
     });
   });
 });

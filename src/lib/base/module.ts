@@ -1,16 +1,16 @@
-import * as EnvF from "../../internal/env.js";
-import { Env } from "../../internal/types.js";
-import { loadInto } from "../../module.js";
+import { expectNever } from "../../util/error.js";
 
+import * as EnvF from "../../internal/env.js";
+import { loadModulePathInto } from "../../definitions.js";
 import {
   aNamespace,
   CuArray,
+  Env,
   isCuSymbol,
   JsSrc,
   markAsDirectWriter,
   TranspileError,
-} from "../../types.js";
-import { expectNever } from "../../util/error.js";
+} from "../../internal/types.js";
 
 export const _cu$import = markAsDirectWriter(
   async (env: Env, ...forms: CuArray): Promise<JsSrc | TranspileError> => {
@@ -35,7 +35,7 @@ export const _cu$import = markAsDirectWriter(
     }
 
     const ns = aNamespace();
-    const r1 = await loadInto(foundModule.url, ns.scope);
+    const r1 = await loadModulePathInto(foundModule.url, ns.definitions);
     if (r1 instanceof TranspileError) {
       return r1;
     }

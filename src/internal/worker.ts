@@ -1,12 +1,15 @@
 import { parentPort } from "node:worker_threads";
+
+import { expectNever } from "../util/error.js";
+
+import { fromDefinitions } from "./scope.js";
 import * as EnvF from "./env.js";
 import type { Command, ContextId } from "../repl.js";
 import { transpileRepl } from "./transpile-state.js";
 
 import type { Env, TranspileRepl } from "./types.js";
 import { evalBlock, evalForm } from "./eval.js";
-import { expectNever } from "../util/error.js";
-import { fromProvidedSymbolsConfig } from "./scope.js";
+import { fromProvidedSymbolsConfig } from "../definitions.js";
 
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 
@@ -22,7 +25,7 @@ parentPort!.on("message", async (message: Command) => {
         envs.set(
           contextId,
           EnvF.init(
-            await fromProvidedSymbolsConfig(providedSymbols),
+            fromDefinitions(await fromProvidedSymbolsConfig(providedSymbols)),
             await transpileRepl(transpileOptions),
             providedSymbols.modulePaths,
           ),

@@ -8,7 +8,7 @@ import { ParseError } from "./grammar.js";
 import { prStr } from "./printer.js";
 import { evalForm } from "./eval.js";
 import { Repl, replOptionsFromBuiltinModulePath } from "./repl.js";
-import { standardRoot } from "./module.js";
+import { standardModuleRoot } from "./definitions.js";
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-return */
 
@@ -66,4 +66,4 @@ async function loop(repl: Repl): Promise<void> {
 
 // I don't need top-level `await` here!
 // eslint-disable-next-line @typescript-eslint/no-floating-promises
-Repl.using(replOptionsFromBuiltinModulePath(`${standardRoot}/base.js`), loop);
+Repl.using(replOptionsFromBuiltinModulePath(`${standardModuleRoot}/base.js`), loop);

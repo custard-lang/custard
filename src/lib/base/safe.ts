@@ -1,34 +1,27 @@
 import { assertNonNull, mapAE } from "../../util/error.js";
 
-import { Env } from "../../internal/types.js";
 import * as EnvF from "../../internal/env.js";
-
 import {
   aConst,
   aContextualKeyword,
   aVar,
   Block,
   CuSymbol,
+  Env,
   Form,
-  Id,
   isConst,
   isCuSymbol,
   JsSrc,
   TranspileError,
-  showSymbolAccess,
   markAsDirectWriter,
-} from "../../types.js";
+} from "../../internal/types.js";
 import {
   transpileExpression,
-  transpileStatement,
   transpileBlock,
-  transpiling1,
-  transpiling2,
-  transpilingForAssignment,
   transpilingForVariableMutation,
 } from "../../internal/transpile.js";
 
-import { isNonExpressionCall } from "./common.js";
+import { buildFn, buildProcedure, buildScope, transpiling1, transpiling2, transpilingForAssignment } from "./common.js";
 
 export const _cu$const = transpilingForAssignment(
   "const",
@@ -148,22 +141,7 @@ export const assign = transpilingForAssignment(
   },
 );
 
-export const scope = markAsDirectWriter(
-  async (env: Env, ...block: Block): Promise<JsSrc | TranspileError> => {
-    EnvF.push(env);
-    let result = "(\n";
-
-    const funcSrc = await buildFn(env, "scope", [], block);
-    if (funcSrc instanceof TranspileError) {
-      return funcSrc;
-    }
-    result = `${result}${funcSrc}`;
-    result = `${result})()`;
-
-    EnvF.pop(env);
-    return result;
-  },
-);
+export const scope = buildScope("", "scope");
 
 export const _cu$if = markAsDirectWriter(
   async (
@@ -271,106 +249,3 @@ export const array = markAsDirectWriter(
     return `[${argsSrcs.join(",")}]`;
   },
 );
-
-function functionPrelude(
-  env: Env,
-  formId: Id,
-  args: Form,
-  block: Block,
-): JsSrc | TranspileError {
-  if (!(args instanceof Array)) {
-    return new TranspileError(
-      `Arguments for a function must be an array of symbols! But actually ${JSON.stringify(
-        args,
-      )}`,
-    );
-  }
-  if (block.length < 1) {
-    return new TranspileError(
-      `\`${formId}\` must receive at least one expression!`,
-    );
-  }
-
-  EnvF.push(env);
-
-  const argNames = [];
-  for (const arg of args) {
-    if (!isCuSymbol(arg)) {
-      return new TranspileError(
-        `Arguments for a function must be an array of symbols! But actually ${JSON.stringify(
-          args,
-        )}`,
-      );
-    }
-    const r = EnvF.set(env, arg.v, aVar());
-    if (r instanceof TranspileError) {
-      return r;
-    }
-    argNames.push(arg.v);
-  }
-
-  return `(${argNames.join(", ")}) => {\n`;
-}
-
-function functionPostlude(env: Env, src: JsSrc): JsSrc {
-  EnvF.pop(env);
-  return `${src}}`;
-}
-
-async function buildFn(
-  env: Env,
-  formId: Id,
-  args: Form,
-  block: Block,
-): Promise<JsSrc | TranspileError> {
-  let result = functionPrelude(env, formId, args, block);
-  if (result instanceof TranspileError) {
-    return result;
-  }
-
-  const lastI = block.length - 1;
-  for (let i = 0; i < lastI; ++i) {
-    const src = await transpileStatement(block[i], env);
-    if (src instanceof TranspileError) {
-      return src;
-    }
-    result = `${result}  ${src};\n`;
-  }
-
-  const lastStatement = block[lastI];
-  if (isNonExpressionCall(env, lastStatement)) {
-    const id = showSymbolAccess(lastStatement[0]);
-    return new TranspileError(
-      `The last statement in a \`${formId}\` must be an expression! But \`${id}\` is a statement!`,
-    );
-  }
-  const lastSrc = await transpileStatement(lastStatement, env);
-  if (lastSrc instanceof TranspileError) {
-    return lastSrc;
-  }
-  result = `${result}  return ${lastSrc};\n`;
-
-  return functionPostlude(env, result);
-}
-
-async function buildProcedure(
-  env: Env,
-  formId: Id,
-  args: Form,
-  block: Block,
-): Promise<JsSrc | TranspileError> {
-  let result = functionPrelude(env, formId, args, block);
-  if (result instanceof TranspileError) {
-    return result;
-  }
-
-  for (let i = 0; i < block.length; ++i) {
-    const src = await transpileStatement(block[i], env);
-    if (src instanceof TranspileError) {
-      return src;
-    }
-    result = `${result}  ${src};\n`;
-  }
-
-  return functionPostlude(env, result);
-}
