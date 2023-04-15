@@ -8,6 +8,7 @@ import { evalBlock } from "../internal/eval.js";
 
 import { ParseError } from "../grammar.js";
 import { readBlock } from "../reader.js";
+export { transpileModule } from "../transpile.js";
 
 export function readString(input: string): Block | ParseError {
   return readBlock(input);

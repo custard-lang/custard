@@ -26,7 +26,7 @@ export function testEvalFormOf({
     await Repl.using(await setUpReplOptions(), async (repl) => {
       if (preludeSrc) {
         assertNonError(
-          await evalForm(assertNonError(readStr(preludeSrc)), repl),
+          await evalBlock(assertNonError(readBlock(preludeSrc)), repl),
         );
       }
       const result = await evalForm(assertNonError(readStr(src)), repl);
@@ -56,7 +56,7 @@ export function testEvalBlockOf({
     await Repl.using(await setUpReplOptions(), async (repl) => {
       if (preludeSrc) {
         assertNonError(
-          await evalForm(assertNonError(readStr(preludeSrc)), repl),
+          await evalBlock(assertNonError(readBlock(preludeSrc)), repl),
         );
       }
       const result = await evalBlock(assertNonError(readBlock(src)), repl);

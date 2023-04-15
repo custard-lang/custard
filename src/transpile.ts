@@ -1,4 +1,4 @@
-import { transpileStatement } from "./internal/transpile.js";
+import { transpileBlock } from "./internal/transpile.js";
 import { fromDefinitions } from "./internal/scope.js";
 import * as State from "./internal/transpile-state.js";
 import * as EnvF from "./internal/env.js";
@@ -17,7 +17,7 @@ export async function transpileModule(
   transpileOptions: TranspileOptions,
   proviedSymbols: ProvidedSymbolsConfig,
 ): Promise<JsSrc | TranspileError> {
-  return await transpileStatement(
+  return await transpileBlock(
     ast,
     EnvF.init(
       fromDefinitions(await fromProvidedSymbolsConfig(proviedSymbols)),

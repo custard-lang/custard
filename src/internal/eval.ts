@@ -14,7 +14,7 @@ export async function evalForm(
     return jsSrc;
   }
   try {
-    return await _cu$eval(jsSrc, env);
+    return await _cu$eval("", jsSrc, env);
   } catch (e) {
     return e;
   }
@@ -24,13 +24,17 @@ export async function evalBlock(
   forms: Block,
   env: Env<TranspileRepl>,
 ): Promise<any | Error> {
-  const jsSrc = await transpileBlock(forms, env);
+  const jsSrc = await transpileBlock(forms.slice(0, -1), env);
   if (jsSrc instanceof Error) {
     return jsSrc;
   }
+  const lastJsSrc = await transpileStatement(forms[forms.length - 1], env);
+  if (lastJsSrc instanceof Error) {
+    return lastJsSrc;
+  }
 
   try {
-    return await _cu$eval(jsSrc, env);
+    return await _cu$eval(jsSrc, lastJsSrc, env);
   } catch (e) {
     return e;
   }

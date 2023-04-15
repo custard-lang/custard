@@ -11,17 +11,18 @@ describe("evalForm", () => {
   function setUpReplOptions(): ReplOptions {
     const modulePaths: ModulePaths = new Map();
     modulePaths.set("meta", "../../dist/src/lib/meta.js");
+    modulePaths.set("async", "../../dist/src/lib/async.js");
 
     return {
       transpileOptions: { srcPath: __filename },
       providedSymbols: {
         modulePaths,
         builtinModulePaths: [`${standardModuleRoot}/base.js`],
-        jsTopLevels: [],
+        jsTopLevels: ['eval'],
       },
     };
   }
-  const preludeSrc = "(import meta)";
+  const preludeSrc = "(import meta)(import async)";
 
   describe("meta.readString", () => {
     testEvalFormOf({
@@ -38,6 +39,24 @@ describe("evalForm", () => {
         [{ t: "Symbol", v: "plusF" }, 4.1, 5.2],
         [{ t: "Symbol", v: "let" }, { t: "Symbol", v: "y" }, 0.1],
       ],
+      setUpReplOptions,
+      preludeSrc,
+    });
+  });
+
+  describe("meta.transpileModule", () => {
+    const transpileOptionsSrc = '{ srcPath: "dist/src/eval/meta.test.js" }';
+    const proviedSymbolsSrc = `{ modulePaths: (Map), builtinModulePaths: (array "${`${standardModuleRoot}/base.js`}"), jsTopLevels: (array) }`;
+    testEvalFormOf({
+      src: `(eval (async.await (meta.transpileModule (meta.readString "(plusF 4.1 5.2)") ${transpileOptionsSrc} ${proviedSymbolsSrc})))`,
+      expected: 4.1 + 5.2,
+      setUpReplOptions,
+      preludeSrc,
+    });
+
+    testEvalFormOf({
+      src: `(eval (async.await (meta.transpileModule (meta.readString "(const x 9.2) (let y 0.1) (plusF x y)") ${transpileOptionsSrc} ${proviedSymbolsSrc})))`,
+      expected: 9.2 + 0.1,
       setUpReplOptions,
       preludeSrc,
     });

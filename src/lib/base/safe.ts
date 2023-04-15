@@ -256,3 +256,17 @@ export const array = markAsDirectWriter(
     return `[${argsSrcs.join(",")}]`;
   },
 );
+
+export const Map = markAsDirectWriter(
+  async (env: Env, ...args: Form[]): Promise<JsSrc | TranspileError> => {
+    if (args.length > 1) {
+      return new TranspileError(`Too many arguments to \`Map\` (${JSON.stringify(args)})`);
+    }
+    if (args.length === 1) {
+      const [arg] = args;
+      const argSrc = await transpileExpression(arg, env);
+      return `new Map(${argSrc})`;
+    }
+    return "new Map()";
+  },
+);
