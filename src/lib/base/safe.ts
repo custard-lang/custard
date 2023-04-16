@@ -42,6 +42,7 @@ export const _cu$const = transpilingForAssignment(
     if (r instanceof TranspileError) {
       return r;
     }
+    // TODO: Top levelかつreplでは _cu$env.topLevelValuesにset
     return `const ${id.v} = ${exp}`;
   },
 );
@@ -58,6 +59,7 @@ export const _cu$let = transpilingForAssignment(
     if (r instanceof TranspileError) {
       return r;
     }
+    // TODO: Top levelかつreplでは _cu$env.topLevelValuesにset
     return `let ${id.v} = ${exp}`;
   },
 );
