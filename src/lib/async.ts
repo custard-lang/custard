@@ -15,11 +15,6 @@ import {
 
 export const _cu$await = markAsDirectWriter(
   (env: Env, a: Form, ...unused: Form[]) => {
-    if (EnvF.isAtTopLevel(env)) {
-      return new TranspileError(
-        "Top-level `await` is not supported yet. Sorry.",
-      );
-    }
     if (!EnvF.isInAsyncContext(env)) {
       return new TranspileError(
         "`await` in a non-async function or scope is not allowed.",

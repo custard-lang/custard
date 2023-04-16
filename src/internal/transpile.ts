@@ -29,23 +29,7 @@ export async function transpileStatement(
   ast: Form,
   env: Env,
 ): Promise<JsSrc | TranspileError> {
-  const { transpileState } = env;
-  switch (transpileState.mode) {
-    case "repl":
-      const { awaitingId } = transpileState;
-      if (awaitingId !== undefined && EnvF.isAtTopLevel(env)) {
-        const restSrc = await transpileExpression(ast, env);
-        if (restSrc instanceof TranspileError) {
-          return restSrc;
-        }
-        const promiseIdS = `"_cu$promise_${awaitingId}"`;
-        const result = `_cu$env.transpileState.topLevelValues.get(${promiseIdS}).then((${awaitingId}) => {\nreturn ${restSrc}\n})`;
-        transpileState.awaitingId = undefined;
-        return result;
-      }
-    case "module":
-      return await transpileExpression(ast, env);
-  }
+  return await transpileExpression(ast, env);
 }
 
 export async function transpileExpression(
@@ -201,7 +185,7 @@ export async function transpileBlock(
     if (s instanceof Error) {
       return s;
     }
-    jsSrc = `${jsSrc}${s};\n`;
+    jsSrc = appendJsStatement(jsSrc, s);
   }
   return jsSrc;
 }
@@ -250,4 +234,8 @@ export function asCall(form: Form): [Id, ...Form[]] | undefined {
     const msg = "Assertion failure: an empty PropertyAccess";
     return [assertNonNull(id.v[0], msg), ...form.slice(1)];
   }
+}
+
+export function appendJsStatement(jsBlock: JsSrc, jsExpression: JsSrc): JsSrc {
+  return `${jsBlock}${jsExpression};\n`;
 }

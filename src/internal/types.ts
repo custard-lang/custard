@@ -230,10 +230,6 @@ export type TranspileState = TranspileRepl | TranspileModule;
 export type TranspileRepl = TranspileOptions & {
   mode: "repl";
   src: Stats;
-  // `topLevelValues` must contain literally any values.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  topLevelValues: Map<Id, any>;
-  awaitingId: Id | undefined;
 };
 
 export type TranspileModule = TranspileOptions & {

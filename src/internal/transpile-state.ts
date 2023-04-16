@@ -11,8 +11,6 @@ export async function transpileRepl(
     ...options,
     mode: "repl",
     src: await stat(options.srcPath),
-    topLevelValues: new Map(),
-    awaitingId: undefined,
   };
 }
 

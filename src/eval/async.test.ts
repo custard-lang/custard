@@ -77,9 +77,7 @@ describe("evalForm", () => {
   describe("async.await", () => {
     testEvalFormOf({
       src: "(async.await (Promise.resolve 5))",
-      expected: new TranspileError(
-        "Top-level `await` is not supported yet. Sorry.",
-      ),
+      expected: 5,
       setUpReplOptions,
       preludeSrc,
     });

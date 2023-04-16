@@ -1,7 +1,9 @@
 import { Env, TranspileRepl } from "./types.js";
 import { Block, Form } from "../types.js";
-import { transpileStatement, transpileBlock } from "./transpile.js";
+import { appendJsStatement, transpileBlock, transpileStatement } from "./transpile.js";
 import { _cu$eval } from "./isolated-eval.js";
+
+import { isNonExpressionCall } from "../lib/base/common.js";
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-return */
 
@@ -28,12 +30,19 @@ export async function evalBlock(
   if (jsSrc instanceof Error) {
     return jsSrc;
   }
-  const lastJsSrc = await transpileStatement(forms[forms.length - 1], env);
+
+  const lastForm = forms[forms.length - 1];
+  const lastIsNonExpression = isNonExpressionCall(env, lastForm);
+
+  const lastJsSrc = await transpileStatement(lastForm, env);
   if (lastJsSrc instanceof Error) {
     return lastJsSrc;
   }
 
   try {
+    if (lastIsNonExpression) {
+      return await _cu$eval(appendJsStatement(jsSrc, lastJsSrc), "", env);
+    }
     return await _cu$eval(jsSrc, lastJsSrc, env);
   } catch (e) {
     return e;
