@@ -1,5 +1,5 @@
-import { Repl } from "./repl";
-import { Block, Form } from "./types";
+import { Repl } from "./repl.js";
+import { Block, Form } from "./types.js";
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-return */
 
