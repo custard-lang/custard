@@ -32,7 +32,11 @@ import {
   transpilingForVariableDeclaration,
 } from "./common.js";
 
-export const _cu$const = transpilingForVariableDeclaration("const", "const", aConst);
+export const _cu$const = transpilingForVariableDeclaration(
+  "const",
+  "const",
+  aConst,
+);
 
 export const _cu$let = transpilingForVariableDeclaration("let", "let", aVar);
 
@@ -118,10 +122,10 @@ export const assign = transpilingForAssignment(
         `Variable "${id.v}" is NOT declared by \`let\`!`,
       );
     }
-  if (EnvF.isAtTopLevel(env) && env.transpileState.mode === "repl") {
-    return pseudoTopLevelAssignment(id, exp);
-  }
-  return `${id.v} = ${exp}`;
+    if (EnvF.isAtTopLevel(env) && env.transpileState.mode === "repl") {
+      return pseudoTopLevelAssignment(id, exp);
+    }
+    return `${id.v} = ${exp}`;
   },
 );
 
@@ -237,7 +241,9 @@ export const array = markAsDirectWriter(
 export const Map = markAsDirectWriter(
   async (env: Env, ...args: Form[]): Promise<JsSrc | TranspileError> => {
     if (args.length > 1) {
-      return new TranspileError(`Too many arguments to \`Map\` (${JSON.stringify(args)})`);
+      return new TranspileError(
+        `Too many arguments to \`Map\` (${JSON.stringify(args)})`,
+      );
     }
     if (args.length === 1) {
       const [arg] = args;

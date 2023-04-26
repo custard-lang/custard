@@ -18,7 +18,7 @@ describe("evalForm", () => {
       providedSymbols: {
         modulePaths,
         builtinModulePaths: [`${standardModuleRoot}/base.js`],
-        jsTopLevels: ['eval'],
+        jsTopLevels: ["eval"],
       },
     };
   }

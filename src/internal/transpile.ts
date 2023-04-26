@@ -22,7 +22,11 @@ import {
   isMarkedDirectWriter,
   KeyValues,
 } from "../internal/types.js";
-import { enablingCuEnv, pseudoTopLevelReference, pseudoTopLevelReferenceToPropertyAccess } from "./cu-env.js";
+import {
+  enablingCuEnv,
+  pseudoTopLevelReference,
+  pseudoTopLevelReferenceToPropertyAccess,
+} from "./cu-env.js";
 import { Env } from "./types.js";
 import * as EnvF from "./env.js";
 
@@ -80,7 +84,9 @@ export async function transpileExpression(
 
     if (isContextualKeyword(f.writer)) {
       return new TranspileError(
-        `\`${showSymbolAccess(sym)}\` must be used with \`${f.writer.companion}\`!`,
+        `\`${showSymbolAccess(sym)}\` must be used with \`${
+          f.writer.companion
+        }\`!`,
       );
     }
     if (isNamespace(f.writer)) {
@@ -159,8 +165,7 @@ type NextCall = {
 async function transpileExpressionWithNextCall(
   ast: Form,
   env: Env,
-): Promise<[JsSrc, NextCall | undefined] | TranspileError> {
-}
+): Promise<[JsSrc, NextCall | undefined] | TranspileError> {}
 
 async function transpileKeyValues(
   ast: KeyValues,

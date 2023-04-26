@@ -146,7 +146,9 @@ export function transpilingForVariableDeclaration(
       if (EnvF.isAtTopLevel(env) && env.transpileState.mode === "repl") {
         return pseudoTopLevelAssignment(id, exp);
       }
-      return keyword === "" ? `${id.v} = ${exp}` : `${keyword} ${id.v} = ${exp}`;
+      return keyword === ""
+        ? `${id.v} = ${exp}`
+        : `${keyword} ${id.v} = ${exp}`;
     },
   );
 }

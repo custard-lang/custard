@@ -50,7 +50,9 @@ export const _cu$import = markAsDirectWriter(
         case "repl":
           return pseudoTopLevelAssignment(id, awaitImport);
         case "module":
-          return `import * as ${id.v} from ${JSON.stringify(foundModule.relativePath)}`;
+          return `import * as ${id.v} from ${JSON.stringify(
+            foundModule.relativePath,
+          )}`;
       }
     }
     return `const ${id.v} = ${awaitImport}`;

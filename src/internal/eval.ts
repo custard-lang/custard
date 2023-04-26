@@ -1,6 +1,10 @@
 import { Env, TranspileRepl } from "./types.js";
 import { Block, Form } from "../types.js";
-import { appendJsStatement, transpileBlock, transpileStatement } from "./transpile.js";
+import {
+  appendJsStatement,
+  transpileBlock,
+  transpileStatement,
+} from "./transpile.js";
 import { _cu$eval } from "./isolated-eval.js";
 
 import { isNonExpressionCall } from "../lib/base/common.js";

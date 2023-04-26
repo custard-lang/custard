@@ -95,7 +95,10 @@ describe("Interactions of the functions in EnvF", () => {
           },
         });
 
-        const w00_0 = EnvF.referTo(env, cuSymbol("v00_0")) as EnvF.ReferToResult;
+        const w00_0 = EnvF.referTo(
+          env,
+          cuSymbol("v00_0"),
+        ) as EnvF.ReferToResult;
         expect(w00_0.writer).toBe(v00_0v);
         expect(env.references.referenceById.get("v00_0")).toEqual([
           {
@@ -130,7 +133,10 @@ describe("Interactions of the functions in EnvF", () => {
           },
         });
 
-        const w00_0 = EnvF.referTo(env, cuSymbol("v00_0")) as EnvF.ReferToResult;
+        const w00_0 = EnvF.referTo(
+          env,
+          cuSymbol("v00_0"),
+        ) as EnvF.ReferToResult;
         expect(w00_0.writer).toBe(v00_0v);
         expect(env.references.referenceById.get("v00_0")?.at(-1)).toEqual({
           referer: [1, 0, 0],
@@ -189,7 +195,10 @@ describe("Interactions of the functions in EnvF", () => {
           },
         });
 
-        const w01_0 = EnvF.referTo(env, cuSymbol("v01_0")) as EnvF.ReferToResult;
+        const w01_0 = EnvF.referTo(
+          env,
+          cuSymbol("v01_0"),
+        ) as EnvF.ReferToResult;
         expect(w01_0.writer).toBe(v01_0v);
         expect(env.references.referenceById.get("v01_0")).toEqual([
           {
@@ -224,7 +233,10 @@ describe("Interactions of the functions in EnvF", () => {
           },
         });
 
-        const w01_0 = EnvF.referTo(env, cuSymbol("v01_0")) as EnvF.ReferToResult;
+        const w01_0 = EnvF.referTo(
+          env,
+          cuSymbol("v01_0"),
+        ) as EnvF.ReferToResult;
         expect(w01_0.writer).toBe(v01_0v);
         expect(env.references.referenceById.get("v01_0")?.at(-1)).toEqual({
           referer: [1, 1, 0],
@@ -283,7 +295,10 @@ describe("Interactions of the functions in EnvF", () => {
           },
         });
 
-        const w01_0 = EnvF.referTo(env, cuSymbol("v02_0")) as EnvF.ReferToResult;
+        const w01_0 = EnvF.referTo(
+          env,
+          cuSymbol("v02_0"),
+        ) as EnvF.ReferToResult;
         expect(w01_0.writer).toBe(v02_0v);
         expect(env.references.referenceById.get("v02_0")).toEqual([
           {
@@ -318,7 +333,10 @@ describe("Interactions of the functions in EnvF", () => {
           },
         });
 
-        const w01_0 = EnvF.referTo(env, cuSymbol("v02_0")) as EnvF.ReferToResult;
+        const w01_0 = EnvF.referTo(
+          env,
+          cuSymbol("v02_0"),
+        ) as EnvF.ReferToResult;
         expect(w01_0.writer).toBe(v02_0v);
         expect(env.references.referenceById.get("v02_0")?.at(-1)).toEqual({
           referer: [1, 2, 0],
@@ -351,7 +369,10 @@ describe("Interactions of the functions in EnvF", () => {
           },
         });
 
-        const w01_0 = EnvF.referTo(env, cuSymbol("v02_0")) as EnvF.ReferToResult;
+        const w01_0 = EnvF.referTo(
+          env,
+          cuSymbol("v02_0"),
+        ) as EnvF.ReferToResult;
         expect(w01_0.writer).toBe(v02_0v);
         expect(env.references.referenceById.get("v02_0")?.at(-1)).toEqual({
           referer: [2, 2, 0],
@@ -364,7 +385,10 @@ describe("Interactions of the functions in EnvF", () => {
         const v022_0v = aVar();
         EnvF.set(env, "v022_0", v022_0v);
 
-        const w022_0 = EnvF.referTo(env, cuSymbol("v022_0")) as EnvF.ReferToResult;
+        const w022_0 = EnvF.referTo(
+          env,
+          cuSymbol("v022_0"),
+        ) as EnvF.ReferToResult;
         expect(w022_0.writer).toBe(v022_0v);
         expect(env.references.referenceById.get("v022_0")?.at(-1)).toEqual({
           referer: [2, 2, 0],
