@@ -248,6 +248,9 @@ export const Map = markAsDirectWriter(
     if (args.length === 1) {
       const [arg] = args;
       const argSrc = await transpileExpression(arg, env);
+      if (argSrc instanceof TranspileError) {
+        return argSrc;
+      }
       return `new Map(${argSrc})`;
     }
     return "new Map()";
