@@ -13,8 +13,6 @@ import {
   CuSymbol,
   isCuSymbol,
   isPropertyAccess,
-  aConst,
-  cuSymbol,
 } from "./types.js";
 import type { Env, TranspileState } from "./types.js";
 import * as References from "./references.js";
@@ -23,13 +21,17 @@ import { isDeeperThanOrEqual, isShallowerThan } from "./scope-path.js";
 import { assertNonNull, expectNever } from "../util/error.js";
 import { escapeRegExp } from "../util/regexp.js";
 
+// To distinguish jsTopLevels and the top level scope of the code,
+// assign the second scope as the top level.
+const TOP_LEVEL_OFFSET = 2;
+
 export function init<State extends TranspileState>(
   initial: Scope,
   state: State,
   modulePaths: ModulePaths = new Map(),
 ): Env<State> {
   return {
-    scopes: [initial],
+    scopes: [initial, ScopeF.initAsync()],
     references: References.init(),
     modules: modulePaths,
     transpileState: state,
@@ -46,17 +48,23 @@ export function find({ scopes }: Env, id: Id): Writer | undefined {
   return undefined;
 }
 
+export type ReferToResult = {
+  readonly writer: Writer;
+  readonly isAtTopLevel: boolean;
+};
+
 export function referTo(
   { scopes, references }: Env,
   symLike: CuSymbol | PropertyAccess,
-): Writer | TranspileError {
-  function byId(id: Id): Writer | TranspileError {
+): ReferToResult | TranspileError {
+  const topLevelI = scopes.length - TOP_LEVEL_OFFSET;
+  function byId(id: Id): ReferToResult | TranspileError {
     for (const [i, frame] of scopes.entries()) {
-      const result = ScopeF.get(frame, id);
-      if (result !== undefined) {
+      const writer = ScopeF.get(frame, id);
+      if (writer !== undefined) {
         const scopePath = references.currentScope.slice(i);
         References.add(references, { id, scopePath });
-        return result;
+        return { writer, isAtTopLevel: i === topLevelI };
       }
     }
     return new TranspileError(
@@ -70,15 +78,15 @@ export function referTo(
   if (isPropertyAccess(symLike)) {
     const [id, ...restIds] = symLike.v;
 
-    const w = byId(
+    const r = byId(
       assertNonNull(id, "Assertion failed: empty PropertyAccess!"),
     );
-    if (w instanceof TranspileError || !isNamespace(w)) {
-      return w;
+    if (r instanceof TranspileError || !isNamespace(r.writer)) {
+      return r;
     }
 
-    let { definitions: scope } = w;
-    let lastW = w;
+    let { definitions: scope } = r.writer;
+    let lastW: Writer = r.writer;
     for (const [i, part] of restIds.entries()) {
       const subW = scope.get(part);
       if (subW === undefined) {
@@ -93,11 +101,11 @@ export function referTo(
         lastW = subW;
         continue;
       }
-      return subW;
+      return { writer: subW, isAtTopLevel: r.isAtTopLevel };
     }
-    return lastW;
+    return { writer: lastW, isAtTopLevel: r.isAtTopLevel };
   }
-  return expectNever(symLike) as Writer;
+  return expectNever(symLike) as ReferToResult;
 }
 
 export function isDefinedInThisScope({ scopes }: Env, id: Id): boolean {
@@ -177,20 +185,5 @@ export function findModule(
 }
 
 export function isAtTopLevel({ scopes }: Env): boolean {
-  return scopes.length <= 1;
-}
-
-export async function enablingCuEnv<T>(
-  env: Env,
-  f: (cuEnv: CuSymbol) => Promise<T>,
-): Promise<T> {
-  const id = "_cu$env";
-  // TODO: I'm currently not sure how to handle the _cu$env variable here.
-  // eslint-disable-next-line no-ignore-returned-union/no-ignore-returned-union
-  set(env, id, aConst());
-  try {
-    return await f(cuSymbol(id));
-  } finally {
-    ScopeF.destroy(env.scopes[0], id);
-  }
+  return scopes.length <= TOP_LEVEL_OFFSET;
 }

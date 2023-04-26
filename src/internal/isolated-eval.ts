@@ -1,7 +1,8 @@
 // This module is inherently unsafe!
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-return */
 
-import { Env } from "./types";
+import { CU_ENV } from "./cu-env.js";
+import { Env } from "./types.js";
 
 // Ref. https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/AsyncFunction/AsyncFunction
 // eslint-disable-next-line @typescript-eslint/no-empty-function
@@ -12,6 +13,6 @@ export const _cu$eval = async (
   lastExpression: string,
   env: Env,
 ): Promise<any> => {
-  // _cu$ is the reserved prefix of Custard
-  return await new _cu$AsyncFunction("_cu$env", `${code}return ${lastExpression};`)(env);
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,  @typescript-eslint/no-unsafe-argument
+  return await (new _cu$AsyncFunction(CU_ENV, `${code}return ${lastExpression};`))(env);
 };

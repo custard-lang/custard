@@ -25,6 +25,7 @@ import * as Iteration from "./iteration.js";
 import * as Unbounded from "./iteration/unbounded.js";
 import * as Safe from "./safe.js";
 import * as Module from "./module.js";
+import { pseudoTopLevelAssignment } from "../../internal/cu-env.js";
 
 export function isNonExpressionCall(env: Env, form: Form): form is Call {
   const call = asCall(form);
@@ -121,6 +122,31 @@ export function transpilingForAssignment(
         return exp;
       }
       return f(env, id, exp);
+    },
+  );
+}
+
+export function transpilingForVariableDeclaration(
+  formId: Id,
+  keyword: Id,
+  newWriter: () => Writer,
+): MarkedDirectWriter {
+  return transpilingForAssignment(
+    formId,
+    (env: Env, id: CuSymbol, exp: JsSrc) => {
+      if (EnvF.isDefinedInThisScope(env, id.v)) {
+        return new TranspileError(
+          `Variable ${JSON.stringify(id.v)} is already defined!`,
+        );
+      }
+      const r = EnvF.set(env, id.v, newWriter());
+      if (r instanceof TranspileError) {
+        return r;
+      }
+      if (EnvF.isAtTopLevel(env) && env.transpileState.mode === "repl") {
+        return pseudoTopLevelAssignment(id, exp);
+      }
+      return keyword === "" ? `${id.v} = ${exp}` : `${keyword} ${id.v} = ${exp}`;
     },
   );
 }

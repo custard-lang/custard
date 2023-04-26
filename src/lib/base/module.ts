@@ -9,6 +9,7 @@ import {
   markAsDirectWriter,
   TranspileError,
 } from "../../internal/types.js";
+import { pseudoTopLevelAssignment } from "../../internal/cu-env.js";
 
 export const _cu$import = markAsDirectWriter(
   async (env: Env, ...forms: CuArray): Promise<JsSrc | TranspileError> => {
@@ -43,13 +44,15 @@ export const _cu$import = markAsDirectWriter(
       return r2;
     }
 
-    if (env.transpileState.mode === "repl") {
-      // TODO: マクロができたら (constAwait id  ...) でリファクタリング
-      // TODO: Top levelかつreplでは _cu$env.topLevelValuesにset
-      return `const ${id.v} = await import(${JSON.stringify(foundModule.url)})`;
+    const awaitImport = `await import(${JSON.stringify(foundModule.url)})`;
+    if (EnvF.isAtTopLevel(env)) {
+      switch (env.transpileState.mode) {
+        case "repl":
+          return pseudoTopLevelAssignment(id, awaitImport);
+        case "module":
+          return `import * as ${id.v} from ${JSON.stringify(foundModule.relativePath)}`;
+      }
     }
-    return `import * as ${id.v} from ${JSON.stringify(
-      foundModule.relativePath,
-    )}`;
+    return `const ${id.v} = ${awaitImport}`;
   },
 );

@@ -22,6 +22,7 @@ import {
   isMarkedDirectWriter,
   KeyValues,
 } from "../internal/types.js";
+import { enablingCuEnv, pseudoTopLevelReference, pseudoTopLevelReferenceToPropertyAccess } from "./cu-env.js";
 import { Env } from "./types.js";
 import * as EnvF from "./env.js";
 
@@ -36,6 +37,7 @@ export async function transpileExpression(
   ast: Form,
   env: Env,
 ): Promise<JsSrc | TranspileError> {
+  // TODO: Rename into buildJsFunctionCall
   async function buildJsSrc(
     funcExpSrc: JsSrc,
     args: Form[],
@@ -65,9 +67,9 @@ export async function transpileExpression(
 
     let fullId: Id;
     if (isCuSymbol(sym)) {
-      fullId = sym.v;
+      fullId = pseudoTopLevelReference(sym);
     } else if (isPropertyAccess(sym)) {
-      fullId = sym.v.join(".");
+      fullId = pseudoTopLevelReferenceToPropertyAccess(sym);
     } else {
       return new TranspileError(`${JSON.stringify(sym)} is not a symbol!`);
     }
@@ -76,12 +78,12 @@ export async function transpileExpression(
       return f;
     }
 
-    if (isContextualKeyword(f)) {
+    if (isContextualKeyword(f.writer)) {
       return new TranspileError(
-        `\`${showSymbolAccess(sym)}\` must be used with \`${f.companion}\`!`,
+        `\`${showSymbolAccess(sym)}\` must be used with \`${f.writer.companion}\`!`,
       );
     }
-    if (isNamespace(f)) {
+    if (isNamespace(f.writer)) {
       return new TranspileError(
         `\`${showSymbolAccess(
           sym,
@@ -89,27 +91,27 @@ export async function transpileExpression(
       );
     }
 
-    if (isVar(f) || isConst(f) || isRecursiveConst(f)) {
+    if (isVar(f.writer) || isConst(f.writer) || isRecursiveConst(f.writer)) {
       return await buildJsSrc(fullId, args);
     }
-    if (isMarkedFunctionWithEnv(f)) {
-      return await EnvF.enablingCuEnv(env, async (cuEnv) => {
+    if (isMarkedFunctionWithEnv(f.writer)) {
+      return await enablingCuEnv(env, async (cuEnv) => {
         return await buildJsSrc(`${fullId}.call`, [cuEnv, ...args]);
       });
     }
 
-    if (isMarkedDirectWriter(f)) {
-      const r = f.call(env, ...args);
+    if (isMarkedDirectWriter(f.writer)) {
+      const r = f.writer.call(env, ...args);
       if (r instanceof Promise) {
         return await r;
       }
       return r;
     }
 
-    return expectNever(f) as JsSrc;
+    return expectNever(f.writer) as JsSrc;
   }
 
-  let r: Writer | TranspileError;
+  let r: EnvF.ReferToResult | TranspileError;
   switch (typeof ast) {
     case "string":
       return JSON.stringify(ast);
@@ -126,11 +128,17 @@ export async function transpileExpression(
           if (r instanceof TranspileError) {
             return r;
           }
+          if (r.isAtTopLevel) {
+            return pseudoTopLevelReference(ast);
+          }
           return ast.v;
         case "PropertyAccess":
           r = EnvF.referTo(env, ast);
           if (r instanceof TranspileError) {
             return r;
+          }
+          if (r.isAtTopLevel) {
+            return pseudoTopLevelReferenceToPropertyAccess(ast);
           }
           return ast.v.join(".");
         case "KeyValues":
@@ -141,6 +149,17 @@ export async function transpileExpression(
     default:
       return expectNever(ast) as JsSrc;
   }
+}
+
+type NextCall = {
+  writer: Writer;
+  args: Form[];
+};
+
+async function transpileExpressionWithNextCall(
+  ast: Form,
+  env: Env,
+): Promise<[JsSrc, NextCall | undefined] | TranspileError> {
 }
 
 async function transpileKeyValues(

@@ -20,6 +20,7 @@ import {
   transpileBlock,
   transpilingForVariableMutation,
 } from "../../internal/transpile.js";
+import { pseudoTopLevelAssignment } from "../../internal/cu-env.js";
 
 import {
   buildFn,
@@ -28,41 +29,12 @@ import {
   transpiling1,
   transpiling2,
   transpilingForAssignment,
+  transpilingForVariableDeclaration,
 } from "./common.js";
 
-export const _cu$const = transpilingForAssignment(
-  "const",
-  (env: Env, id: CuSymbol, exp: JsSrc) => {
-    if (EnvF.isDefinedInThisScope(env, id.v)) {
-      return new TranspileError(
-        `Variable ${JSON.stringify(id.v)} is already defined!`,
-      );
-    }
-    const r = EnvF.set(env, id.v, aConst());
-    if (r instanceof TranspileError) {
-      return r;
-    }
-    // TODO: Top levelかつreplでは _cu$env.topLevelValuesにset
-    return `const ${id.v} = ${exp}`;
-  },
-);
+export const _cu$const = transpilingForVariableDeclaration("const", "const", aConst);
 
-export const _cu$let = transpilingForAssignment(
-  "let",
-  (env: Env, id: CuSymbol, exp: JsSrc) => {
-    if (EnvF.isDefinedInThisScope(env, id.v)) {
-      return new TranspileError(
-        `Variable ${JSON.stringify(id.v)} is already defined!`,
-      );
-    }
-    const r = EnvF.set(env, id.v, aVar());
-    if (r instanceof TranspileError) {
-      return r;
-    }
-    // TODO: Top levelかつreplでは _cu$env.topLevelValuesにset
-    return `let ${id.v} = ${exp}`;
-  },
-);
+export const _cu$let = transpilingForVariableDeclaration("let", "let", aVar);
 
 export const _cu$else = aContextualKeyword("if");
 
@@ -146,7 +118,10 @@ export const assign = transpilingForAssignment(
         `Variable "${id.v}" is NOT declared by \`let\`!`,
       );
     }
-    return `${id.v} = ${exp}`;
+  if (EnvF.isAtTopLevel(env) && env.transpileState.mode === "repl") {
+    return pseudoTopLevelAssignment(id, exp);
+  }
+  return `${id.v} = ${exp}`;
   },
 );
 
