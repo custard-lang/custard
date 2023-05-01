@@ -199,3 +199,14 @@ export function findModule(
 export function isAtTopLevel({ scopes }: Env): boolean {
   return scopes.length <= TOP_LEVEL_OFFSET;
 }
+
+export function isAtReplTopLevel(env: Env): boolean {
+  return isAtTopLevel(env) && env.transpileState.mode === "repl";
+}
+
+export function writerIsAtReplTopLevel(
+  env: Env,
+  r: WriterWithIsAtTopLevel,
+): boolean {
+  return r.isAtTopLevel && env.transpileState.mode === "repl";
+}

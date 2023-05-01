@@ -131,7 +131,7 @@ export const assign = transpilingForAssignment(
         `Variable "${id.v}" is NOT declared by \`let\`!`,
       );
     }
-    if (r.isAtTopLevel && env.transpileState.mode === "repl") {
+    if (EnvF.writerIsAtReplTopLevel(env, r)) {
       return pseudoTopLevelAssignment(id, exp);
     }
     return `${id.v} = ${exp}`;

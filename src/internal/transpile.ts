@@ -75,7 +75,7 @@ export async function transpileExpression(
         return f;
       }
 
-      if (f.isAtTopLevel) {
+      if (EnvF.writerIsAtReplTopLevel(env, f)) {
         fullId = pseudoTopLevelReference(sym);
       } else {
         fullId = sym.v;
@@ -86,7 +86,7 @@ export async function transpileExpression(
         return f;
       }
 
-      if (f.isAtTopLevel) {
+      if (EnvF.writerIsAtReplTopLevel(env, f)) {
         fullId = pseudoTopLevelReferenceToPropertyAccess(sym);
       } else {
         fullId = sym.v.join(".");
@@ -154,7 +154,7 @@ export async function transpileExpression(
           if (r instanceof TranspileError) {
             return r;
           }
-          if (r.isAtTopLevel) {
+          if (EnvF.writerIsAtReplTopLevel(env, r)) {
             return pseudoTopLevelReference(ast);
           }
           return ast.v;
@@ -163,7 +163,7 @@ export async function transpileExpression(
           if (r instanceof TranspileError) {
             return r;
           }
-          if (r.isAtTopLevel) {
+          if (EnvF.writerIsAtReplTopLevel(env, r)) {
             return pseudoTopLevelReferenceToPropertyAccess(ast);
           }
           return ast.v.join(".");

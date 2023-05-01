@@ -147,7 +147,7 @@ export function transpilingForVariableDeclaration(
       if (r instanceof TranspileError) {
         return r;
       }
-      if (EnvF.isAtTopLevel(env) && env.transpileState.mode === "repl") {
+      if (EnvF.isAtReplTopLevel(env)) {
         return pseudoTopLevelAssignment(id, exp);
       }
       return keyword === ""
@@ -181,7 +181,7 @@ export function transpilingForVariableMutation(
       );
     }
 
-    if (r.isAtTopLevel && env.transpileState.mode === "repl") {
+    if (EnvF.writerIsAtReplTopLevel(env, r)) {
       return pseudoTopLevelAssignment(
         id,
         whenTopRepl(pseudoTopLevelReference(id)),
