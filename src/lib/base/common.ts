@@ -26,7 +26,10 @@ import * as Iteration from "./iteration.js";
 import * as Unbounded from "./iteration/unbounded.js";
 import * as Safe from "./safe.js";
 import * as Module from "./module.js";
-import { pseudoTopLevelAssignment, pseudoTopLevelReference } from "../../internal/cu-env.js";
+import {
+  pseudoTopLevelAssignment,
+  pseudoTopLevelReference,
+} from "../../internal/cu-env.js";
 
 export function isNonExpressionCall(env: Env, form: Form): form is Call {
   const call = asCall(form);
@@ -179,7 +182,10 @@ export function transpilingForVariableMutation(
     }
 
     if (r.isAtTopLevel && env.transpileState.mode === "repl") {
-      return pseudoTopLevelAssignment(id, whenTopRepl(pseudoTopLevelReference(id)));
+      return pseudoTopLevelAssignment(
+        id,
+        whenTopRepl(pseudoTopLevelReference(id)),
+      );
     }
     return otherwise(id.v);
   });
