@@ -38,27 +38,39 @@ export function init<State extends TranspileState>(
   };
 }
 
-export function find({ scopes }: Env, id: Id): Writer | undefined {
-  for (const frame of scopes.values()) {
-    const result = ScopeF.get(frame, id);
-    if (result !== undefined) {
-      return result;
+export function find(env: Env, id: Id): Writer | undefined {
+  const r = findWithIsAtTopLevel(env, id);
+  if (r === undefined) {
+    return r;
+  }
+  return r.writer;
+}
+
+export type WriterWithIsAtTopLevel = {
+  readonly writer: Writer;
+  readonly isAtTopLevel: boolean;
+};
+
+export function findWithIsAtTopLevel(
+  { scopes }: Env,
+  id: Id,
+): WriterWithIsAtTopLevel | undefined {
+  const topLevelI = scopes.length - TOP_LEVEL_OFFSET;
+  for (const [i, frame] of scopes.entries()) {
+    const writer = ScopeF.get(frame, id);
+    if (writer !== undefined) {
+      return { writer, isAtTopLevel: i === topLevelI };
     }
   }
   return undefined;
 }
 
-export type ReferToResult = {
-  readonly writer: Writer;
-  readonly isAtTopLevel: boolean;
-};
-
 export function referTo(
   { scopes, references }: Env,
   symLike: CuSymbol | PropertyAccess,
-): ReferToResult | TranspileError {
+): WriterWithIsAtTopLevel | TranspileError {
   const topLevelI = scopes.length - TOP_LEVEL_OFFSET;
-  function byId(id: Id): ReferToResult | TranspileError {
+  function byId(id: Id): WriterWithIsAtTopLevel | TranspileError {
     for (const [i, frame] of scopes.entries()) {
       const writer = ScopeF.get(frame, id);
       if (writer !== undefined) {
@@ -105,7 +117,7 @@ export function referTo(
     }
     return { writer: lastW, isAtTopLevel: r.isAtTopLevel };
   }
-  return expectNever(symLike) as ReferToResult;
+  return expectNever(symLike) as WriterWithIsAtTopLevel;
 }
 
 export function isDefinedInThisScope({ scopes }: Env, id: Id): boolean {

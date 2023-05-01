@@ -116,13 +116,13 @@ export const not = transpiling1("not", (a: JsSrc) => `!(${a})`);
 export const assign = transpilingForAssignment(
   "assign",
   (env: Env, id: CuSymbol, exp: JsSrc) => {
-    const w = EnvF.find(env, id.v);
-    if (w !== undefined && isConst(w)) {
+    const r = EnvF.findWithIsAtTopLevel(env, id.v);
+    if (r === undefined || isConst(r.writer)) {
       return new TranspileError(
         `Variable "${id.v}" is NOT declared by \`let\`!`,
       );
     }
-    if (EnvF.isAtTopLevel(env) && env.transpileState.mode === "repl") {
+    if (r.isAtTopLevel && env.transpileState.mode === "repl") {
       return pseudoTopLevelAssignment(id, exp);
     }
     return `${id.v} = ${exp}`;

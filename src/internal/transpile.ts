@@ -70,16 +70,32 @@ export async function transpileExpression(
     }
 
     let fullId: Id;
+    let f: EnvF.WriterWithIsAtTopLevel | TranspileError;
     if (isCuSymbol(sym)) {
-      fullId = pseudoTopLevelReference(sym);
+      f = EnvF.referTo(env, sym);
+      if (f instanceof TranspileError) {
+        return f;
+      }
+
+      if (f.isAtTopLevel) {
+        fullId = pseudoTopLevelReference(sym);
+      } else {
+        fullId = sym.v;
+      }
     } else if (isPropertyAccess(sym)) {
-      fullId = pseudoTopLevelReferenceToPropertyAccess(sym);
+
+      f = EnvF.referTo(env, sym);
+      if (f instanceof TranspileError) {
+        return f;
+      }
+
+      if (f.isAtTopLevel) {
+        fullId = pseudoTopLevelReferenceToPropertyAccess(sym);
+      } else {
+        fullId = sym.v.join(".");
+      }
     } else {
       return new TranspileError(`${JSON.stringify(sym)} is not a symbol!`);
-    }
-    const f = EnvF.referTo(env, sym);
-    if (f instanceof TranspileError) {
-      return f;
     }
 
     if (isContextualKeyword(f.writer)) {
@@ -117,7 +133,7 @@ export async function transpileExpression(
     return expectNever(f.writer) as JsSrc;
   }
 
-  let r: EnvF.ReferToResult | TranspileError;
+  let r: EnvF.WriterWithIsAtTopLevel | TranspileError;
   switch (typeof ast) {
     case "string":
       return JSON.stringify(ast);
