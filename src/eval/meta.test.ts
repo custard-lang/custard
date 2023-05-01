@@ -71,8 +71,8 @@ describe("evalForm", () => {
     });
 
     testEvalFormOf({
-      src: '(meta.evaluate (meta.readString "(const x 9.2) (plusF x 5.1) (let y 0.1)"))',
-      expected: 9.2 + 5.1,
+      src: '(meta.evaluate (meta.readString "(const x 9.2) (let y 0.1) (plusF x y)"))',
+      expected: 9.2 + 0.1,
       setUpReplOptions,
       preludeSrc,
     });
