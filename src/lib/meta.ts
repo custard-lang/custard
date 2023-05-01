@@ -21,5 +21,8 @@ export const evaluate = markAsFunctionWithEnv(
       // Dirty workaround for https://github.com/microsoft/TypeScript/issues/42384
       return evalBlock(block, env as Env<TranspileRepl>);
     }
+    throw new Error(
+      "Sorry, user `evaluate` function is currently only available in `repl` mode",
+    );
   },
 );
