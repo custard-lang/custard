@@ -1,7 +1,6 @@
 // This module is inherently unsafe!
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-return */
 
-import { writeDebugOut } from "../util/debug.js";
 import { Env } from "./types.js";
 
 // See cu-env.ts for details of the `_CU$` prefix.
@@ -12,6 +11,6 @@ export const _cu$eval = async (
 ): Promise<any> => {
   // eslint-disable-next-line @typescript-eslint/no-unsafe-call
   return await eval(
-    writeDebugOut(`async () => {\n${_cu$code}return ${_cu$lastExpression}\n}`),
+    `async () => {\n${_cu$code}return ${_cu$lastExpression}\n}`,
   )();
 };
