@@ -1,8 +1,4 @@
-import {
-  CuSymbol,
-  JsSrc,
-  PropertyAccess,
-} from "./types.js";
+import { CuSymbol, JsSrc, PropertyAccess } from "./types.js";
 
 // _cu$ is the reserved prefix of Custard
 export const CU_ENV = "_cu$env";
