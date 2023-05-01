@@ -23,7 +23,7 @@ import {
   KeyValues,
 } from "../internal/types.js";
 import {
-  enablingCuEnv,
+  CU_ENV,
   pseudoTopLevelReference,
   pseudoTopLevelReferenceToPropertyAccess,
 } from "./cu-env.js";
@@ -83,7 +83,6 @@ export async function transpileExpression(
         fullId = sym.v;
       }
     } else if (isPropertyAccess(sym)) {
-
       f = EnvF.referTo(env, sym);
       if (f instanceof TranspileError) {
         return f;
@@ -117,9 +116,16 @@ export async function transpileExpression(
       return await buildJsSrc(fullId, args);
     }
     if (isMarkedFunctionWithEnv(f.writer)) {
-      return await enablingCuEnv(env, async (cuEnv) => {
-        return await buildJsSrc(`${fullId}.call`, [cuEnv, ...args]);
-      });
+      const argSrcs = await mapAE(
+        args,
+        TranspileError,
+        async (arg) => await transpileExpression(arg, env),
+      );
+      if (argSrcs instanceof TranspileError) {
+        return argSrcs;
+      }
+      argSrcs.unshift(CU_ENV);
+      return `${fullId}.call(${argSrcs.join(", ")})`;
     }
 
     if (isMarkedDirectWriter(f.writer)) {
