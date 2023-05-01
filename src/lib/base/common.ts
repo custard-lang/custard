@@ -19,13 +19,14 @@ import {
   showSymbolAccess,
   TranspileError,
   Writer,
+  isVar,
 } from "../../internal/types.js";
 
 import * as Iteration from "./iteration.js";
 import * as Unbounded from "./iteration/unbounded.js";
 import * as Safe from "./safe.js";
 import * as Module from "./module.js";
-import { pseudoTopLevelAssignment } from "../../internal/cu-env.js";
+import { pseudoTopLevelAssignment, pseudoTopLevelReference } from "../../internal/cu-env.js";
 
 export function isNonExpressionCall(env: Env, form: Form): form is Call {
   const call = asCall(form);
@@ -151,6 +152,37 @@ export function transpilingForVariableDeclaration(
         : `${keyword} ${id.v} = ${exp}`;
     },
   );
+}
+
+export function transpilingForVariableMutation(
+  formId: Id,
+  whenTopRepl: (jsExp: JsSrc) => JsSrc,
+  otherwise: (jsExp: JsSrc) => JsSrc,
+): MarkedDirectWriter {
+  return markAsDirectWriter((env: Env, id: Form, another?: Form) => {
+    if (another !== undefined) {
+      return new TranspileError(`\`${formId}\` must receive only one symbol!`);
+    }
+
+    if (!isCuSymbol(id)) {
+      return new TranspileError(
+        `The argument to \`${formId}\` must be a name of a variable!`,
+      );
+    }
+
+    const r = EnvF.findWithIsAtTopLevel(env, id.v);
+    // TODO: Support namespace?
+    if (r === undefined || !isVar(r.writer)) {
+      return new TranspileError(
+        `The argument to \`${formId}\` must be a name of a variable declared by \`let\`!`,
+      );
+    }
+
+    if (r.isAtTopLevel && env.transpileState.mode === "repl") {
+      return pseudoTopLevelAssignment(id, whenTopRepl(pseudoTopLevelReference(id)));
+    }
+    return otherwise(id.v);
+  });
 }
 
 function functionPrelude(

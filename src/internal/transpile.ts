@@ -15,8 +15,6 @@ import {
   isRecursiveConst,
   isPropertyAccess,
   showSymbolAccess,
-  markAsDirectWriter,
-  MarkedDirectWriter,
   isNamespace,
   isMarkedFunctionWithEnv,
   isMarkedDirectWriter,
@@ -234,32 +232,6 @@ export async function transpileBlock(
     jsSrc = appendJsStatement(jsSrc, s);
   }
   return jsSrc;
-}
-
-export function transpilingForVariableMutation(
-  formId: Id,
-  operator: JsSrc,
-): MarkedDirectWriter {
-  return markAsDirectWriter((env: Env, id: Form, another?: Form) => {
-    if (another !== undefined) {
-      return new TranspileError(`\`${formId}\` must receive only one symbol!`);
-    }
-
-    if (!isCuSymbol(id)) {
-      return new TranspileError(
-        `The argument to \`${formId}\` must be a name of a variable!`,
-      );
-    }
-
-    const val = EnvF.find(env, id.v);
-    if (val === undefined || !isVar(val)) {
-      return new TranspileError(
-        `The argument to \`${formId}\` must be a name of a variable declared by \`let\`!`,
-      );
-    }
-
-    return `${id.v}${operator}`;
-  });
 }
 
 function isCall(form: Form): form is Call {

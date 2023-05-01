@@ -18,7 +18,6 @@ import {
 import {
   transpileExpression,
   transpileBlock,
-  transpilingForVariableMutation,
 } from "../../internal/transpile.js";
 import { pseudoTopLevelAssignment } from "../../internal/cu-env.js";
 
@@ -30,6 +29,7 @@ import {
   transpiling2,
   transpilingForAssignment,
   transpilingForVariableDeclaration,
+  transpilingForVariableMutation,
 } from "./common.js";
 
 export const _cu$const = transpilingForVariableDeclaration(
@@ -85,8 +85,17 @@ export const when = markAsDirectWriter(
   },
 );
 
-export const incrementF = transpilingForVariableMutation("incrementF", "++");
-export const decrementF = transpilingForVariableMutation("decrementF", "--");
+export const incrementF = transpilingForVariableMutation(
+  "incrementF",
+  (jsExp) => `${jsExp}+1`,
+  (jsExp) => `${jsExp}++`,
+);
+
+export const decrementF = transpilingForVariableMutation(
+  "decrementF",
+  (jsExp) => `${jsExp}-1`,
+  (jsExp) => `${jsExp}--`,
+);
 
 export const plusF = transpiling2((a: JsSrc, b: JsSrc) => `(${a} + ${b})`);
 export const minusF = transpiling2((a: JsSrc, b: JsSrc) => `(${a} - ${b})`);
