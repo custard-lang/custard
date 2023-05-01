@@ -31,7 +31,7 @@ export function init<State extends TranspileState>(
   modulePaths: ModulePaths = new Map(),
 ): Env<State> {
   return {
-    scopes: [initial, ScopeF.initAsync()],
+    scopes: [ScopeF.initAsync(), initial],
     references: References.init(),
     modules: modulePaths,
     transpileState: state,
