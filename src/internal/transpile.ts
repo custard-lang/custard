@@ -2,7 +2,6 @@ import { assertNonNull, expectNever, mapAE } from "../util/error.js";
 
 import {
   Block,
-  Call,
   Form,
   Id,
   isContextualKeyword,
@@ -19,6 +18,8 @@ import {
   isMarkedFunctionWithEnv,
   isMarkedDirectWriter,
   KeyValues,
+  PropertyAccess,
+  CuSymbol,
 } from "../internal/types.js";
 import {
   CU_ENV,
@@ -39,81 +40,40 @@ export async function transpileExpression(
   ast: Form,
   env: Env,
 ): Promise<JsSrc | TranspileError> {
-  // TODO: Rename into buildJsFunctionCall
-  async function buildJsSrc(
-    funcExpSrc: JsSrc,
-    args: Form[],
-  ): Promise<JsSrc | TranspileError> {
-    const argSrcs = await mapAE(
-      args,
-      TranspileError,
-      async (arg) => await transpileExpression(arg, env),
-    );
-    if (argSrcs instanceof TranspileError) {
-      return argSrcs;
-    }
-    return `${funcExpSrc}(${argSrcs.join(", ")})`;
+  const r = await transpileExpressionWithNextCall(ast, env);
+  if (r instanceof TranspileError) {
+    return r;
   }
+  return r[0];
+}
 
+type NextCall = {
+  writer: Writer;
+  sym: CuSymbol | PropertyAccess;
+};
+
+type JsSrcAndNextCall = [JsSrc, NextCall | undefined];
+
+async function transpileExpressionWithNextCall(
+  ast: Form,
+  env: Env,
+): Promise<JsSrcAndNextCall | TranspileError> {
   if (ast instanceof Array) {
-    const [sym, ...args] = ast;
-
-    if (isCall(sym)) {
-      const funcSrc = await transpileExpression(sym, env);
-      if (funcSrc instanceof TranspileError) {
-        return funcSrc;
-      }
-
-      return await buildJsSrc(`(${funcSrc})`, args);
+    if (ast.length === 0) {
+      return new TranspileError("Invalid function call: empty");
     }
 
-    let fullId: Id;
-    let f: EnvF.WriterWithIsAtTopLevel | TranspileError;
-    if (isCuSymbol(sym)) {
-      f = EnvF.referTo(env, sym);
-      if (f instanceof TranspileError) {
-        return f;
-      }
+    const [funcForm, ...args] = ast;
 
-      if (EnvF.writerIsAtReplTopLevel(env, f)) {
-        fullId = pseudoTopLevelReference(sym);
-      } else {
-        fullId = sym.v;
-      }
-    } else if (isPropertyAccess(sym)) {
-      f = EnvF.referTo(env, sym);
-      if (f instanceof TranspileError) {
-        return f;
-      }
-
-      if (EnvF.writerIsAtReplTopLevel(env, f)) {
-        fullId = pseudoTopLevelReferenceToPropertyAccess(sym);
-      } else {
-        fullId = sym.v.join(".");
-      }
-    } else {
-      return new TranspileError(`${JSON.stringify(sym)} is not a symbol!`);
+    const funcSrcAndNextCall = await transpileExpressionWithNextCall(
+      funcForm,
+      env,
+    );
+    if (funcSrcAndNextCall instanceof TranspileError) {
+      return funcSrcAndNextCall;
     }
 
-    if (isContextualKeyword(f.writer)) {
-      return new TranspileError(
-        `\`${showSymbolAccess(sym)}\` must be used with \`${
-          f.writer.companion
-        }\`!`,
-      );
-    }
-    if (isNamespace(f.writer)) {
-      return new TranspileError(
-        `\`${showSymbolAccess(
-          sym,
-        )}\` is just a namespace. Doesn't represent a function!`,
-      );
-    }
-
-    if (isVar(f.writer) || isConst(f.writer) || isRecursiveConst(f.writer)) {
-      return await buildJsSrc(fullId, args);
-    }
-    if (isMarkedFunctionWithEnv(f.writer)) {
+    async function transpileArgs(): Promise<JsSrc | TranspileError> {
       const argSrcs = await mapAE(
         args,
         TranspileError,
@@ -122,31 +82,69 @@ export async function transpileExpression(
       if (argSrcs instanceof TranspileError) {
         return argSrcs;
       }
-      argSrcs.unshift(CU_ENV);
-      return `${fullId}.call(${argSrcs.join(", ")})`;
+      return argSrcs.join(",");
     }
 
-    if (isMarkedDirectWriter(f.writer)) {
-      const r = f.writer.call(env, ...args);
-      if (r instanceof Promise) {
-        return await r;
+    const [funcSrc, nc] = funcSrcAndNextCall;
+
+    if (nc === undefined) {
+      const argsSrc = await transpileArgs();
+      if (argsSrc instanceof TranspileError) {
+        return argsSrc;
       }
-      return r;
+      return [`(${funcSrc})(${argsSrc})`, undefined];
     }
 
-    return expectNever(f.writer) as JsSrc;
+    const { writer, sym } = nc;
+    if (isContextualKeyword(writer)) {
+      return new TranspileError(
+        `\`${showSymbolAccess(sym)}\` must be used with \`${
+          writer.companion
+        }\`!`,
+      );
+    }
+    if (isNamespace(writer)) {
+      return new TranspileError(
+        `\`${showSymbolAccess(
+          sym,
+        )}\` is just a namespace. Doesn't represent a function!`,
+      );
+    }
+
+    if (isVar(writer) || isConst(writer) || isRecursiveConst(writer)) {
+      const argsSrc = await transpileArgs();
+      if (argsSrc instanceof TranspileError) {
+        return argsSrc;
+      }
+      return [`${funcSrc}(${argsSrc})`, undefined];
+    }
+    if (isMarkedFunctionWithEnv(writer)) {
+      const argsSrc = await transpileArgs();
+      if (argsSrc instanceof TranspileError) {
+        return argsSrc;
+      }
+      return [`${funcSrc}.call(${CU_ENV},${argsSrc})`, undefined];
+    }
+
+    if (isMarkedDirectWriter(writer)) {
+      const srcP = writer.call(env, ...args);
+      const src = srcP instanceof Promise ? await srcP : srcP;
+      return src instanceof TranspileError ? src : [src, undefined];
+    }
+
+    return expectNever(writer) as JsSrcAndNextCall;
   }
 
   let r: EnvF.WriterWithIsAtTopLevel | TranspileError;
   switch (typeof ast) {
     case "string":
-      return JSON.stringify(ast);
+      return [JSON.stringify(ast), undefined];
     case "undefined":
-      return "void 0";
+      return ["void 0", undefined];
     case "number":
-      return `${ast}`;
+      return [`${ast}`, undefined];
     case "boolean":
-      return ast ? "!0" : "!1";
+      return [ast ? "!0" : "!1", undefined];
     case "object":
       switch (ast.t) {
         case "Symbol":
@@ -155,38 +153,37 @@ export async function transpileExpression(
             return r;
           }
           if (EnvF.writerIsAtReplTopLevel(env, r)) {
-            return pseudoTopLevelReference(ast);
+            return [
+              pseudoTopLevelReference(ast),
+              { writer: r.writer, sym: ast },
+            ];
           }
-          return ast.v;
+          return [ast.v, { writer: r.writer, sym: ast }];
         case "PropertyAccess":
           r = EnvF.referTo(env, ast);
           if (r instanceof TranspileError) {
             return r;
           }
           if (EnvF.writerIsAtReplTopLevel(env, r)) {
-            return pseudoTopLevelReferenceToPropertyAccess(ast);
+            return [
+              pseudoTopLevelReferenceToPropertyAccess(ast),
+              { writer: r.writer, sym: ast },
+            ];
           }
-          return ast.v.join(".");
+          return [ast.v.join("."), { writer: r.writer, sym: ast }];
         case "KeyValues":
-          return await transpileKeyValues(ast, env);
+          const kvSrc = await transpileKeyValues(ast, env);
+          if (kvSrc instanceof TranspileError) {
+            return kvSrc;
+          }
+          return [kvSrc, undefined];
         case "Integer32":
-          return `${ast.v}`;
+          return [`${ast.v}`, undefined];
       }
     default:
-      return expectNever(ast) as JsSrc;
+      return expectNever(ast) as JsSrcAndNextCall;
   }
 }
-
-type NextCall = {
-  writer: Writer;
-  args: Form[];
-};
-
-// TODO: Refactor transpileExpression after implementing this function
-async function transpileExpressionWithNextCall(
-  ast: Form,
-  env: Env,
-): Promise<[JsSrc, NextCall | undefined] | TranspileError> {}
 
 async function transpileKeyValues(
   ast: KeyValues,
@@ -233,12 +230,6 @@ export async function transpileBlock(
     jsSrc = appendJsStatement(jsSrc, s);
   }
   return jsSrc;
-}
-
-function isCall(form: Form): form is Call {
-  return (
-    form instanceof Array && (isCuSymbol(form[0]) || isPropertyAccess(form[0]))
-  );
 }
 
 export function asCall(form: Form): [Id, ...Form[]] | undefined {
