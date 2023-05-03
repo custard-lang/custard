@@ -1,6 +1,4 @@
-// NOTE: @types/node doesn't support the Promise API as of writing this
-//import * as readline from "node:readline/promises";
-import * as readline from "node:readline";
+import * as readline from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
 import { readStr } from "./reader.js";
 import { Form } from "./types.js";
@@ -26,13 +24,18 @@ async function evalCustard(ast: Form, repl: Repl): Promise<any> {
 
 // PRINT
 function print(exp: any): string {
+  if (exp instanceof Error) {
+    console.error(exp);
+    return "";
+  }
   return prStr(exp);
 }
 
 async function readEvaluatePrint(str: string, repl: Repl): Promise<void> {
   const r0 = read(str);
-  if (r0 instanceof Error) {
-    throw r0;
+  if (r0 instanceof ParseError) {
+    console.error(r0);
+    return;
   }
   console.log(print(await evalCustard(r0, repl)));
 }
@@ -42,16 +45,11 @@ function finalize() {
   input.destroy();
 }
 
-async function ask(rli: readline.Interface, prompt: string): Promise<string> {
-  return new Promise((resolve) => {
-    rli.question(prompt, resolve);
-  });
-}
-
 async function loop(repl: Repl): Promise<void> {
   try {
     while (true) {
-      const answer = await ask(rl, "custard> ");
+      // FIXME: Stop at EOF
+      const answer = await rl.question("custard> ");
       if (!answer) {
         finalize();
         break;
