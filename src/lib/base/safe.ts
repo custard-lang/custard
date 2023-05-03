@@ -1,4 +1,4 @@
-import { assertNonNull, mapAE } from "../../util/error.js";
+import { mapJoinWithCommaAE } from "../../util/error.js";
 
 import * as EnvF from "../../internal/env.js";
 import {
@@ -183,33 +183,25 @@ export const _cu$if = markAsDirectWriter(
       return new TranspileError("`else` not specified for an `if` expression!");
     }
 
-    const ifTrueSrcs = await mapAE(
+    const ifTrueSrc = await mapJoinWithCommaAE(
       trueForms,
       TranspileError,
       async (ifTrue) => await transpileExpression(ifTrue, env),
     );
-    if (ifTrueSrcs instanceof TranspileError) {
-      return ifTrueSrcs;
-    }
-    const ifTrueSrc =
-      ifTrueSrcs.length > 1
-        ? `(${ifTrueSrcs.join(", ")})`
-        : assertNonNull(ifTrueSrcs[0], "Impossilbe");
     if (ifTrueSrc instanceof TranspileError) {
       return ifTrueSrc;
     }
 
-    const ifFalseSrcs = await mapAE(
+    const ifFalseSrc = await mapJoinWithCommaAE(
       falseForms,
       TranspileError,
       async (ifFalse) => await transpileExpression(ifFalse, env),
     );
-    if (ifFalseSrcs instanceof TranspileError) {
-      return ifFalseSrcs;
+    if (ifFalseSrc instanceof TranspileError) {
+      return ifFalseSrc;
     }
-    const ifFalseSrc = ifFalseSrcs.join(", ");
 
-    return `(${boolSrc} ? ${ifTrueSrc} : ${ifFalseSrc})`;
+    return `(${boolSrc} ? (${ifTrueSrc}) : ${ifFalseSrc})`;
   },
 );
 
@@ -235,15 +227,15 @@ export const procedure = markAsDirectWriter(
 
 export const array = markAsDirectWriter(
   async (env: Env, ...args: Form[]): Promise<JsSrc | TranspileError> => {
-    const argsSrcs = await mapAE(
+    const argsSrc = await mapJoinWithCommaAE(
       args,
       TranspileError,
       async (arg) => await transpileExpression(arg, env),
     );
-    if (argsSrcs instanceof TranspileError) {
-      return argsSrcs;
+    if (argsSrc instanceof TranspileError) {
+      return argsSrc;
     }
-    return `[${argsSrcs.join(",")}]`;
+    return `[${argsSrc}]`;
   },
 );
 

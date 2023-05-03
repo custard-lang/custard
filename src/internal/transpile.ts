@@ -1,4 +1,8 @@
-import { assertNonNull, expectNever, mapAE } from "../util/error.js";
+import {
+  assertNonNull,
+  expectNever,
+  mapJoinWithCommaAE,
+} from "../util/error.js";
 
 import {
   Block,
@@ -74,15 +78,11 @@ async function transpileExpressionWithNextCall(
     }
 
     async function transpileArgs(): Promise<JsSrc | TranspileError> {
-      const argSrcs = await mapAE(
+      return await mapJoinWithCommaAE(
         args,
         TranspileError,
         async (arg) => await transpileExpression(arg, env),
       );
-      if (argSrcs instanceof TranspileError) {
-        return argSrcs;
-      }
-      return argSrcs.join(",");
     }
 
     const [funcSrc, nc] = funcSrcAndNextCall;

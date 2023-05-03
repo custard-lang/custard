@@ -12,18 +12,20 @@ export function assertNonNull<T>(v: T | undefined, msg: string): T {
   return v;
 }
 
-export async function mapAE<T, U, E extends Error>(
-  xs: Iterable<T>,
+export async function mapJoinWithCommaAE<T, E extends Error>(
+  xs: T[],
   klass: new () => E,
-  f: (x: T) => Promise<U | E>,
-): Promise<U[] | E> {
-  const result: U[] = [];
-  for (const x of xs) {
+  f: (x: T) => Promise<string | E>,
+): Promise<string | E> {
+  let result = "";
+  const lastI = xs.length - 1;
+  for (const [i, x] of xs.entries()) {
     const r = await f(x);
     if (r instanceof klass) {
       return r;
     }
-    result.push(r as U);
+    result =
+      i === lastI ? `${result}${r as string}` : `${result}${r as string},`;
   }
   return result;
 }
