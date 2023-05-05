@@ -1,5 +1,8 @@
+#!/usr/bin/env node
+
 import * as readline from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
+
 import { readStr } from "./reader.js";
 import { Form } from "./types.js";
 import { ParseError } from "./grammar.js";
@@ -68,3 +71,4 @@ Repl.using(
   replOptionsFromBuiltinModulePath(`${standardModuleRoot}/base.js`),
   loop,
 );
+
