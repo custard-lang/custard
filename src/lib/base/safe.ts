@@ -239,6 +239,26 @@ export const array = markAsDirectWriter(
   },
 );
 
+export const text = markAsDirectWriter(
+  async (env: Env, ...args: Form[]): Promise<JsSrc | TranspileError> => {
+    const esc = (s: string): string => s.replace(/[$`]/g, "\\$&");
+
+    let result = "`";
+    for (const arg of args) {
+      if (typeof arg === "string") {
+        result = `${result}${esc(arg)}`;
+        continue;
+      }
+      const r = await transpileExpression(arg, env);
+      if (r instanceof TranspileError) {
+        return r;
+      }
+      result = `${result}\${${r}}`;
+    }
+    return `${result}\``;
+  },
+);
+
 export const Map = markAsDirectWriter(
   async (env: Env, ...args: Form[]): Promise<JsSrc | TranspileError> => {
     if (args.length > 1) {

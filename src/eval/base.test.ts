@@ -349,6 +349,19 @@ describe("evalForm", () => {
     });
   });
 
+  describe("(text f o r m s)", () => {
+    testEvalFormOf({
+      src: '(text "$ " false "` " 1)',
+      expected: "$ false` 1",
+      setUpReplOptions,
+    });
+    testEvalFormOf({
+      src: "(text)",
+      expected: "",
+      setUpReplOptions,
+    });
+  });
+
   describe("(array f o r m s)", () => {
     testEvalFormOf({
       src: "(array 1 2 3)",
