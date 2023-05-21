@@ -63,7 +63,7 @@
 
 - 予約した識別子のprefixとして`_cu$`を採用しよう
 
-- JavaScriptの記号プログラミングみたいなことをされれば危険なので、信頼できないコードを実行するときはspecによるチェックは必須だろう
+- JavaScriptの記号プログラミングみたいなことをされたら危険なので、信頼できないコードを実行するときはspecによるチェックは必須だろう
     - Ref. <https://qiita.com/Tatamo/items/24099958b90cbed61d67>
 
 - spec（仮称）と関数呼び出し・オブジェクトなどへのプロパティーアクセス
@@ -72,8 +72,6 @@
 
 # TODO
 
-- [x] BUG: `_cu$env`が`evaluate`しているユーザーのコードから参照できちゃうけど大丈夫？あと、再帰呼び出し防止のチェックは必要？
-    - `evaluate`を`DirectWriter`として実装するしかないね: 直した
 - [ ] transpileModuleしてできたJavaScriptが動くかどうかのテスト
     - replかどうかでの分岐が増えてしまったので、あらゆるケースについて両方で動くことを確認したいね...
         - プロセスをいちいち立ち上げるのは遅すぎるし、`data:`にして`import()`関数を呼んでやるしかないか
@@ -91,4 +89,11 @@
     - それでもやっぱ難しいと感じたらやめよう
     - [ ] エッジケースっちゃエッジケースだけど、`(recursive (const x x))`は恐らくエラーになっちゃうのでついでに直す
 - [ ] `builtinModule`における名前の衝突の検出
-- [ ] mal.ts の挙動がおかしい: 変数を作っても参照できない
+- [ ] providedSymbolsの設定みたいな、transpileしてファイルに書くまでもないけどevalする必要があるtranspileStateもあるといいかもしれない
+    - `import`は`import()`関数を使うけど、トップレベルの変数は普通の代入、みたいな
+    - ややこしいし`data` URIを使ってtranspileすればよくない？
+        - そうすると今度は結果をどうやって返すかが気になるね。最後の式を`export default`する？
+            - そうか、`export`マクロが必要なのね
+- [ ] replにおけるトップレベルの変数の参照方法: 常に`_cu$env.transpileState.topLevelValues`を使うのは冗長なので、一時的な変数に入れるなどの工夫をした方がいいかも
+    - `topLevelValues`を`Object.create(null)`で作ったオブジェクトにしたら`let { ... } = _cu$env.transpileState.topLevelValues`と書けるのでもっと簡潔にできるな！
+    - ただ、その場合`incrementF`などを使う場合に備えて書き戻しの処理も書かないと
