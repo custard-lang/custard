@@ -96,6 +96,44 @@ describe("readStr", () => {
     });
   });
 
+  describe("LiteralArray", () => {
+    test("`[123 456]` -> `[123 456]`", () => {
+      expect(readStr("[123 456]")).toEqual({
+        t: "LiteralArray",
+        v: [
+          { t: "Integer32", v: 123 },
+          { t: "Integer32", v: 456 },
+        ],
+      });
+    });
+    test("`[ 123 456 789 ]` -> `[123 456 789]`", () => {
+      expect(readStr("[123 456 789]")).toEqual({
+        t: "LiteralArray",
+        v: [
+          { t: "Integer32", v: 123 },
+          { t: "Integer32", v: 456 },
+          { t: "Integer32", v: 789 },
+        ],
+      });
+    });
+    test('`[ pl.us 2 (m 3 4) undefined  "foo" ]` -> `[pl.us 2 (m 3 4) undefined "foo"]`', () => {
+      expect(readStr('[ pl.us 2 (m 3 4) undefined  "foo" ]')).toEqual({
+        t: "LiteralArray",
+        v: [
+          { t: "PropertyAccess", v: ["pl", "us"] },
+          { t: "Integer32", v: 2 },
+          [
+            { t: "Symbol", v: "m" },
+            { t: "Integer32", v: 3 },
+            { t: "Integer32", v: 4 },
+          ],
+          undefined,
+          "foo",
+        ],
+      });
+    });
+  });
+
   describe("Object", () => {
     test('`{ a: 1.0 bc: "def" }`', () => {
       expect(readStr('{ a: 1.0 bc: "def" }')).toEqual({

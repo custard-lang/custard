@@ -153,7 +153,7 @@ describe("evalForm", () => {
       setUpReplOptions,
     });
     testEvalFormOf({
-      src: "(scope (forEach x (array 1 2 3)))",
+      src: "(scope (forEach x [1 2 3]))",
       expected: new TranspileError(
         "The last statement in a `scope` must be an expression! But `forEach` is a statement!",
       ),
@@ -362,26 +362,34 @@ describe("evalForm", () => {
     });
   });
 
-  describe("(array f o r m s)", () => {
+  describe("[a r r a y]", () => {
     testEvalFormOf({
-      src: "(array 1 2 3)",
+      src: "[1 2 3]",
       expected: [1, 2, 3],
       setUpReplOptions,
     });
-    testEvalFormOf({ src: "(array)", expected: [], setUpReplOptions });
+    testEvalFormOf({ src: "[]", expected: [], setUpReplOptions });
     testEvalFormOf({
-      src: "(array 1 (if (isLessThan 2 3) 4 else 5) 6)",
+      src: "[1 (if (isLessThan 2 3) 4 else 5) 6]",
       expected: [1, 4, 6],
       setUpReplOptions,
     });
     testEvalFormOf({
-      src: "(array 1 6 (if (isLessThan 2 3) 4 else 5))",
+      src: "[1 6 (if (isLessThan 2 3) 4 else 5)]",
       expected: [1, 6, 4],
       setUpReplOptions,
     });
     testEvalFormOf({
-      src: "(array (if (isLessThan 2 3) 4 else 5) 1 6)",
+      src: "[(if (isLessThan 2 3) 4 else 5) 1 6]",
       expected: [4, 1, 6],
+      setUpReplOptions,
+    });
+  });
+
+  describe('{object: "literal"}', () => {
+    testEvalFormOf({
+      src: '{ a: 1 [(scope "b")]: 3 [(plusF 1 1)]: 2 }',
+      expected: { a: 1, b: 3, "2": 2 },
       setUpReplOptions,
     });
   });
@@ -463,6 +471,26 @@ describe("evalBlock", () => {
       src: "(let y 8)(assign y 9 10))",
       expected: new TranspileError(
         "The number of arguments to `assign` must be 2!",
+      ),
+      setUpReplOptions,
+    });
+  });
+
+  describe('{object: "literal"}', () => {
+    testEvalBlockOf({
+      src: '(const a "A") { a: 1 [a]: 2 }',
+      expected: { a: 1, A: 2 },
+      setUpReplOptions,
+    });
+    testEvalBlockOf({
+      src: '(const a "A") { a b: 1 }',
+      expected: { a: "A", b: 1 },
+      setUpReplOptions,
+    });
+    testEvalBlockOf({
+      src: "{ a b: 1 }",
+      expected: new TranspileError(
+        "No variable `a` is defined! NOTE: If you want to define `a` recursively, wrap the declaration(s) with `recursive`.",
       ),
       setUpReplOptions,
     });
@@ -708,22 +736,22 @@ describe("evalBlock", () => {
 
   describe("(forEach id iterable s t a t e m e n t s)", () => {
     testEvalBlockOf({
-      src: "(let x 0)(forEach v (array 1 2 3) (assign x (plusF x v))) x",
+      src: "(let x 0)(forEach v [1 2 3] (assign x (plusF x v))) x",
       expected: 6,
       setUpReplOptions,
     });
     testEvalBlockOf({
-      src: "(let v 0)(scope (let x 2) (forEach v (array 1 2 3) (assign x (plusF x v))) x)",
+      src: "(let v 0)(scope (let x 2) (forEach v [1 2 3] (assign x (plusF x v))) x)",
       expected: 8,
       setUpReplOptions,
     });
     testEvalBlockOf({
-      src: "(let x 0)(let v 0)(forEach x (array 7 8 9) (assign v (plusF x v))) v",
+      src: "(let x 0)(let v 0)(forEach x [7 8 9] (assign v (plusF x v))) v",
       expected: 24,
       setUpReplOptions,
     });
     testEvalBlockOf({
-      src: "(forEach v (array 1 2 3))",
+      src: "(forEach v [1 2 3])",
       expected: new TranspileError(
         "No statements given to a `forEach` statement!",
       ),

@@ -7,6 +7,7 @@ import {
   KeyValue,
   CuSymbol,
   isCuSymbol,
+  LiteralArray,
 } from "./types.js";
 
 // const tokenRegex = /[\s,]*(~@|[\[\]{}()'`~^@]|"(?:\\.|[^\\"])*"?|;.*|[^\s\[\]{}('"`,;)]*)/;
@@ -36,6 +37,8 @@ export function form(s: Scanner): Form | ParseError {
   switch (s.peek()) {
     case "(":
       return list(s);
+    case "[":
+      return literalArray(s);
     case "{":
       return object(s);
     default:
@@ -45,6 +48,17 @@ export function form(s: Scanner): Form | ParseError {
 
 function list(s: Scanner): CuArray | ParseError {
   return untilClose(s, ")", form);
+}
+
+function literalArray(s: Scanner): LiteralArray | ParseError {
+  const v = untilClose(s, "]", form);
+  if (v instanceof ParseError) {
+    return v;
+  }
+  return {
+    t: "LiteralArray",
+    v,
+  };
 }
 
 function object(s: Scanner): KeyValues | ParseError {

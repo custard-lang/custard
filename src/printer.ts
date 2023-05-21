@@ -28,5 +28,8 @@ export function prStr(form: Form): string {
     case "KeyValues":
       // TODO
       throw new Error("KeyValues not yet implemented");
+    case "LiteralArray":
+      // TODO
+      throw new Error("LiteralArray not yet implemented");
   }
 }

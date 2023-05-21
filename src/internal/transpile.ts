@@ -171,6 +171,16 @@ async function transpileExpressionWithNextCall(
             ];
           }
           return [ast.v.join("."), { writer: r.writer, sym: ast }];
+        case "LiteralArray":
+          const elementsSrc = await mapJoinWithCommaAE(
+            ast.v,
+            TranspileError,
+            async (v) => await transpileExpression(v, env),
+          );
+          if (elementsSrc instanceof TranspileError) {
+            return elementsSrc;
+          }
+          return [`[${elementsSrc}]`, undefined];
         case "KeyValues":
           const kvSrc = await transpileKeyValues(ast, env);
           if (kvSrc instanceof TranspileError) {
@@ -197,9 +207,14 @@ async function transpileKeyValues(
       if (f instanceof TranspileError) {
         return f;
       }
-      kvSrc = kv.v;
+      if (EnvF.writerIsAtReplTopLevel(env, f)) {
+        kvSrc = `${kv.v}: ${pseudoTopLevelReference(kv)}`;
+      } else {
+        kvSrc = kv.v;
+      }
     } else {
       const [k, v] = kv;
+      // TODO: only CuSymbol and LiteralArray with only one element should be valid.
       const kSrc = isCuSymbol(k) ? k.v : await transpileExpression(k, env);
       if (kSrc instanceof TranspileError) {
         return kSrc;

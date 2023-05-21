@@ -7,7 +7,9 @@ import { Awaitable } from "../util/types.js";
 
 export type Block = Form[];
 
-export type Form = CuArray | KeyValues | Atom;
+export type Form = CuArray | LiteralArray | KeyValues | Atom;
+
+export type LiteralArray = { t: "LiteralArray"; v: CuArray };
 
 export type CuArray = Form[];
 

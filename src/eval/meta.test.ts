@@ -46,7 +46,7 @@ describe("evalForm", () => {
 
   describe("meta.transpileModule", () => {
     const transpileOptionsSrc = '{ srcPath: "dist/src/eval/meta.test.js" }';
-    const proviedSymbolsSrc = `{ modulePaths: (Map), builtinModulePaths: (array "${`${standardModuleRoot}/base.js`}"), jsTopLevels: (array) }`;
+    const proviedSymbolsSrc = `{ modulePaths: (Map), builtinModulePaths: ["${`${standardModuleRoot}/base.js`}"], jsTopLevels: [] }`;
     testEvalFormOf({
       src: `(eval (async.await (meta.transpileModule (meta.readString "(plusF 4.1 5.2)") ${transpileOptionsSrc} ${proviedSymbolsSrc})))`,
       expected: 4.1 + 5.2,

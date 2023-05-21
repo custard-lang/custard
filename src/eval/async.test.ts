@@ -37,7 +37,7 @@ describe("evalForm", () => {
       preludeSrc,
     });
     testEvalFormOf({
-      src: "(async.scope (forEach _unused (array) (async.await (Promise.resolve 0))) (async.await (Promise.resolve 10)))",
+      src: "(async.scope (forEach _unused [] (async.await (Promise.resolve 0))) (async.await (Promise.resolve 10)))",
       expected: 10,
       setUpReplOptions,
       preludeSrc,

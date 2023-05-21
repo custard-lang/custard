@@ -5,6 +5,7 @@ export {
   KeyValues,
   KeyValue,
   Atom,
+  LiteralArray,
   Integer32,
   Float64,
   CuString,

@@ -1,5 +1,5 @@
 import * as EnvF from "../../internal/env.js";
-import { loadModulePathInto } from "../../definitions.js";
+import { loadModulePathInto, standardModuleRoot } from "../../definitions.js";
 import {
   aNamespace,
   CuArray,
@@ -10,6 +10,8 @@ import {
   TranspileError,
 } from "../../internal/types.js";
 import { pseudoTopLevelAssignment } from "../../internal/cu-env.js";
+
+export const standardRoot = standardModuleRoot;
 
 export const _cu$import = markAsDirectWriter(
   async (env: Env, ...forms: CuArray): Promise<JsSrc | TranspileError> => {
