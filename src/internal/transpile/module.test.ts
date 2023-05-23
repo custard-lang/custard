@@ -21,7 +21,9 @@ describe("transpileBlock", () => {
     modules.set("a", "../../../test-assets/a.mjs");
 
     const env = EnvF.init(
-      fromDefinitions(await loadModulePaths([`${standardModuleRoot}/base.js`])),
+      fromDefinitions(
+        assertNonError(await loadModulePaths([`${standardModuleRoot}/base.js`])),
+      ),
       await transpileModule({ srcPath: __filename }),
       modules,
     );

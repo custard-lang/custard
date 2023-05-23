@@ -7,9 +7,9 @@ import type {
   Block,
   JsSrc,
   ProvidedSymbolsConfig,
-  TranspileError,
   TranspileOptions,
 } from "./types.js";
+import { TranspileError } from "./types.js";
 import { fromProvidedSymbolsConfig } from "./definitions.js";
 
 export async function transpileModule(
@@ -17,10 +17,14 @@ export async function transpileModule(
   transpileOptions: TranspileOptions,
   proviedSymbols: ProvidedSymbolsConfig,
 ): Promise<JsSrc | TranspileError> {
+  const definitions = await fromProvidedSymbolsConfig(proviedSymbols);
+  if (definitions instanceof TranspileError) {
+    return definitions;
+  }
   return await transpileBlock(
     ast,
     EnvF.init(
-      fromDefinitions(await fromProvidedSymbolsConfig(proviedSymbols)),
+      fromDefinitions(definitions),
       await State.transpileModule(transpileOptions),
       proviedSymbols.modulePaths,
     ),
