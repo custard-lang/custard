@@ -22,7 +22,9 @@ describe("transpileBlock", () => {
 
     const env = EnvF.init(
       fromDefinitions(
-        assertNonError(await loadModulePaths([`${standardModuleRoot}/base.js`])),
+        assertNonError(
+          await loadModulePaths([`${standardModuleRoot}/base.js`]),
+        ),
       ),
       await transpileModule({ srcPath: __filename }),
       modules,

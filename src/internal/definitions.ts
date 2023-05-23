@@ -9,7 +9,9 @@ import {
 // Path to the `lib` directory from this module.
 export const standardModuleRoot = "../lib";
 
-export async function loadModulePaths(paths: FilePath[]): Promise<Definitions | TranspileError> {
+export async function loadModulePaths(
+  paths: FilePath[],
+): Promise<Definitions | TranspileError> {
   const definitions: Definitions = new Map();
   for (const path of paths) {
     const r = await loadModulePathInto(path, definitions);
