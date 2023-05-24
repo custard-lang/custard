@@ -3,6 +3,8 @@ import type { Stats } from "node:fs";
 import { expectNever } from "../util/error.js";
 import { Awaitable } from "../util/types.js";
 
+import * as s from "../lib/spec.js";
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 export type Block = Form[];
@@ -84,6 +86,15 @@ export type ProvidedSymbolsConfig = {
   modulePaths: ModulePaths;
   jsTopLevels: Id[];
 };
+
+export const ProvidedSymbolsConfig: s.Spec<ProvidedSymbolsConfig> = s.withId(
+  "ProvidedSymbolsConfig",
+  s.record({
+    builtinModulePaths: s.array(s.string),
+    modulePaths: s.map(s.string, s.string),
+    jsTopLevels: s.array(s.string),
+  }),
+);
 
 export function provideNoModules(
   ...builtinModulePaths: FilePath[]

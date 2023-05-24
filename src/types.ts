@@ -16,7 +16,7 @@ export {
   isCuSymbol,
   isPropertyAccess,
   showSymbolAccess,
-  type ProvidedSymbolsConfig,
+  ProvidedSymbolsConfig,
   Definitions,
   provideNoModules,
   type ModulePaths,

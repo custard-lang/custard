@@ -3,8 +3,9 @@
   "name": "custard",
   "version": "0.0.1",
   "description": "My programming language",
-  "main": "dist/src/mal.js",
+  "main": "dist/src/cli.js",
   "scripts": {
+    "custard": "node dist/src/cli.js",
     "test": "vitest",
     "test:detailed": "vitest --reporter verbose",
     "lint": "eslint --ext ts src",
