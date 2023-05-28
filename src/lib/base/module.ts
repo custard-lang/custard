@@ -3,9 +3,13 @@ import { loadModulePathInto, standardModuleRoot } from "../../definitions.js";
 import {
   aNamespace,
   CuArray,
+  CuSymbol,
   Env,
   isCuSymbol,
+  isLiteralArray,
   JsSrc,
+  LiteralArray,
+  literalArray,
   markAsDirectWriter,
   TranspileError,
 } from "../../internal/types.js";
@@ -15,20 +19,32 @@ export const standardRoot = standardModuleRoot;
 
 export const _cu$import = markAsDirectWriter(
   async (env: Env, ...forms: CuArray): Promise<JsSrc | TranspileError> => {
-    if (forms.length !== 1) {
+    if (forms.length > 2) {
       return new TranspileError(
         "The number of arguments of `import` must be 1.",
       );
     }
-    const [id] = forms;
-    if (!isCuSymbol(id)) {
-      return new TranspileError("The argument of `import` must be a Symbol.");
+    const [modId] = forms;
+    if (!isCuSymbol(modId)) {
+      return new TranspileError(
+        "The first argument of `import` must be a Symbol.",
+      );
     }
 
-    const foundModule = EnvF.findModule(env, id.v);
+    let exportsTmp = forms[1];
+    if (exportsTmp === undefined) {
+      exportsTmp = literalArray([]);
+    } else if (!isLiteralArray(exportsTmp)) {
+      return new TranspileError(
+        "The second argument of `import` must be a LiteralArray.",
+      );
+    }
+    const exports = exportsTmp;
+
+    const foundModule = EnvF.findModule(env, modId.v);
     if (foundModule === undefined) {
       return new TranspileError(
-        `No module \`${id.v}\` registered in the Module Paths`,
+        `No module \`${modId.v}\` registered in the Module Paths`,
       );
     }
     if (foundModule instanceof TranspileError) {
@@ -41,22 +57,46 @@ export const _cu$import = markAsDirectWriter(
       return r1;
     }
 
-    const r2 = EnvF.set(env, id.v, ns);
+    const r2 = EnvF.set(env, modId.v, ns);
     if (r2 instanceof TranspileError) {
       return r2;
     }
 
+    // TODO: Rewrite with `transpilingForVariableDeclaration`
     const awaitImport = `await import(${JSON.stringify(foundModule.url)})`;
+    let importStatement: JsSrc;
+    let assignExports: JsSrc;
     if (EnvF.isAtTopLevel(env)) {
       switch (env.transpileState.mode) {
         case "repl":
-          return pseudoTopLevelAssignment(id, awaitImport);
+          importStatement = pseudoTopLevelAssignment(modId, awaitImport);
+          assignExports = buildAssignExportsAsPseudoTopLevelReference(
+            modId,
+            exports,
+          );
+          break;
         case "module":
-          return `import * as ${id.v} from ${JSON.stringify(
+          importStatement = `import * as ${modId.v} from ${JSON.stringify(
             foundModule.relativePath,
           )}`;
+          assignExports = buildAssignExports(modId, exports);
+          break;
       }
+    } else {
+      importStatement = `const ${modId.v} = ${awaitImport}`;
+      assignExports = buildAssignExports(modId, exports);
     }
-    return `const ${id.v} = ${awaitImport}`;
+    return `${importStatement}\n${assignExports}`;
   },
 );
+
+function buildAssignExports(modId: CuSymbol, exports: LiteralArray): JsSrc {
+  throw new Error("Function not implemented.");
+}
+
+function buildAssignExportsAsPseudoTopLevelReference(
+  modId: CuSymbol,
+  exports: LiteralArray,
+): JsSrc {
+  throw new Error("Function not implemented.");
+}

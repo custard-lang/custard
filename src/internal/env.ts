@@ -25,17 +25,22 @@ import { escapeRegExp } from "../util/regexp.js";
 // assign the second scope as the top level.
 const TOP_LEVEL_OFFSET = 2;
 
-export function init<State extends TranspileState>(
+export async function init<State extends TranspileState>(
   initial: Scope,
   state: State,
   modulePaths: ModulePaths = new Map(),
-): Env<State> {
-  return {
+): Promise<Env<State> | TranspileError> {
+  const env: Env<State> = {
     scopes: [ScopeF.initAsync(), initial],
     references: References.init(),
     modules: modulePaths,
     transpileState: state,
   };
+  const r = await initializeTopLevelScope(env);
+  if (r instanceof TranspileError) {
+    return r;
+  }
+  return env;
 }
 
 export function find(env: Env, id: Id): Writer | undefined {
@@ -209,4 +214,11 @@ export function writerIsAtReplTopLevel(
   r: WriterWithIsAtTopLevel,
 ): boolean {
   return r.isAtTopLevel && env.transpileState.mode === "repl";
+}
+
+// TODO: top levelのモジュールをtop levelのscopeとして`_cu$env.transpileState.topLevelValues`に仕込んだり、preambleとしてTranspileModuleオブジェクトに入れたり
+async function initializeTopLevelScope(
+  env: Env<State>,
+): Promise<undefined | TranspileError> {
+  throw new Error("Function not implemented.");
 }

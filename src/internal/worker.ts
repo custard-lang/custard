@@ -27,14 +27,12 @@ parentPort!.on("message", async (message: Command) => {
         if (rI instanceof TranspileError) {
           parentPort!.postMessage(rI);
         } else {
-          envs.set(
-            contextId,
-            EnvF.init(
-              fromDefinitions(rI),
-              await transpileRepl(transpileOptions),
-              providedSymbols.modulePaths,
-            ),
+          const newEnv = EnvF.init(
+            fromDefinitions(rI),
+            await transpileRepl(transpileOptions),
+            providedSymbols.modulePaths,
           );
+          envs.set(contextId, newEnv);
           parentPort!.postMessage(null);
         }
         break;

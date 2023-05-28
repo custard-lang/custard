@@ -64,6 +64,14 @@ export function isCuSymbol(v: Form): v is CuSymbol {
   return v !== undefined && (v as Record<string, unknown>).t === "Symbol";
 }
 
+export function literalArray(v: CuArray): LiteralArray {
+  return { t: "LiteralArray", v };
+}
+
+export function isLiteralArray(v: Form): v is LiteralArray {
+  return v !== undefined && (v as Record<string, unknown>).t === "LiteralArray";
+}
+
 export function isPropertyAccess(v: Form): v is PropertyAccess {
   return (
     v !== undefined && (v as Record<string, unknown>).t === "PropertyAccess"
@@ -241,16 +249,17 @@ export type References = {
 export type TranspileState = TranspileRepl | TranspileModule;
 
 export type TranspileRepl = TranspileOptions & {
-  mode: "repl";
-  src: Stats;
+  readonly mode: "repl";
+  readonly src: Stats;
   // `topLevelValues` must contain literally any values.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  topLevelValues: Map<Id, any>;
+  readonly topLevelValues: Map<Id, any>;
 };
 
 export type TranspileModule = TranspileOptions & {
-  mode: "module";
-  src: Stats;
+  readonly mode: "module";
+  readonly src: Stats;
+  preamble: JsSrc;
 };
 
 export type Ref = {
