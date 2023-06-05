@@ -72,6 +72,9 @@
 
 # TODO
 
+- [ ] `eval/*.test.ts`や`transpile/*.test.ts`を`lib/`に統合し、transpileのテストもevalのテストもまとめる
+- [ ] moduleの循環import検出
+    - やはり処理が重たいらしいので必要なときだけONするよう設定したい
 - [ ] transpileModuleしてできたJavaScriptが動くかどうかのテスト
     - replかどうかでの分岐が増えてしまったので、あらゆるケースについて両方で動くことを確認したいね...
         - プロセスをいちいち立ち上げるのは遅すぎるし、`data:`にして`import()`関数を呼んでやるしかないか
@@ -93,7 +96,9 @@
     - `import`は`import()`関数を使うけど、トップレベルの変数は普通の代入、みたいな
     - ややこしいし`data` URIを使ってtranspileすればよくない？
         - そうすると今度は結果をどうやって返すかが気になるね。最後の式を`export default`する？
-            - そうか、`export`マクロが必要なのね
+            - そうだ別に`export default`でいいんだ。`exportDefault`を作ろう
+- [ ] replの`contextId`が不正なのか、workerの`env`が`undefined`になってしまうケースがあるらしい
+    - repl.tsで呼んでいるworker.onceを並行して呼び出すとバグるとか？
 - [ ] replにおけるトップレベルの変数の参照方法: 常に`_cu$env.transpileState.topLevelValues`を使うのは冗長なので、一時的な変数に入れるなどの工夫をした方がいいかも
     - `topLevelValues`を`Object.create(null)`で作ったオブジェクトにしたら`let { ... } = _cu$env.transpileState.topLevelValues`と書けるのでもっと簡潔にできるな！
     - ただ、その場合`incrementF`などを使う場合に備えて書き戻しの処理も書かないと
