@@ -104,22 +104,22 @@ export const dividedByF = transpiling2((a: JsSrc, b: JsSrc) => `(${a} / ${b})`);
 
 export const equals = transpiling2((a: JsSrc, b: JsSrc) => `(${a} === ${b})`);
 export const notEquals = transpiling2(
-  (a: JsSrc, b: JsSrc) => `(${a} !== ${b})`,
+  (a: JsSrc, b: JsSrc) => `(${a}!==${b})`,
 );
 
 export const isLessThan = transpiling2((a: JsSrc, b: JsSrc) => `(${a} < ${b})`);
 export const isLessThanOrEquals = transpiling2(
-  (a: JsSrc, b: JsSrc) => `(${a} <= ${b})`,
+  (a: JsSrc, b: JsSrc) => `(${a}<=${b})`,
 );
 export const isGreaterThan = transpiling2(
-  (a: JsSrc, b: JsSrc) => `(${a} > ${b})`,
+  (a: JsSrc, b: JsSrc) => `(${a}>${b})`,
 );
 export const isGreaterThanOrEquals = transpiling2(
-  (a: JsSrc, b: JsSrc) => `(${a} >= ${b})`,
+  (a: JsSrc, b: JsSrc) => `(${a}>=${b})`,
 );
 
-export const and = transpiling2((a: JsSrc, b: JsSrc) => `(${a} && ${b})`);
-export const or = transpiling2((a: JsSrc, b: JsSrc) => `(${a} || ${b})`);
+export const and = transpiling2((a: JsSrc, b: JsSrc) => `(${a}&&${b})`);
+export const or = transpiling2((a: JsSrc, b: JsSrc) => `(${a}||${b})`);
 export const not = transpiling1("not", (a: JsSrc) => `!(${a})`);
 
 export const assign = transpilingForAssignment(
