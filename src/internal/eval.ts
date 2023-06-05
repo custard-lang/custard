@@ -19,6 +19,9 @@ export async function evalForm(
   if (jsSrc instanceof Error) {
     return jsSrc;
   }
+  //writeDebugOut("//////////////// evalForm BEGIN");
+  //writeDebugOut(jsSrc);
+  //writeDebugOut("//////////////// evalForm END");
   try {
     return await _cu$eval("", jsSrc, env);
   } catch (e) {
@@ -34,6 +37,8 @@ export async function evalBlock(
   if (jsSrc instanceof Error) {
     return jsSrc;
   }
+  //writeDebugOut("//////////////// evalBlock BEGIN");
+  //writeDebugOut(jsSrc);
 
   const lastForm = forms[forms.length - 1];
   const lastIsNonExpression = isNonExpressionCall(env, lastForm);
@@ -42,6 +47,8 @@ export async function evalBlock(
   if (lastJsSrc instanceof Error) {
     return lastJsSrc;
   }
+  //writeDebugOut(lastJsSrc);
+  //writeDebugOut("//////////////// evalBlock END");
 
   try {
     if (lastIsNonExpression) {
