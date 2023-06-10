@@ -24,8 +24,8 @@ export function writeDebugOut<T>(x: T): T {
   return x;
 }
 
-export function prDebugOut<T>(x: T): T {
-  writeDebugOut(JSON.stringify(x));
+export function prDebugOut<T>(x: T, label = ""): T {
+  writeDebugOut(`${label}${JSON.stringify(x)}`);
   return x;
 }
 
