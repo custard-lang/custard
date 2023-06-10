@@ -474,6 +474,36 @@ describe("evalBlock", () => {
       ),
       setUpReplOptions,
     });
+
+    testEvalBlockOf({
+      src: "(const { x, y } { y: 3 x: 2 }) [x, y]",
+      expected: [2, 3],
+      setUpReplOptions,
+    });
+
+    testEvalBlockOf({
+      src: "(let { x, y } { y: 3 x: 2 }) (assign x 4) [x, y]",
+      expected: [4, 3],
+      setUpReplOptions,
+    });
+
+    testEvalBlockOf({
+      src: "(let { x, y } { y: 3 x: 2 }) (assign { x, y } { y: 4 x: 9 }) [x, y]",
+      expected: [9, 4],
+      setUpReplOptions,
+    });
+
+    testEvalBlockOf({
+      src: "(let x 0) (let y 1) (const f (fn () (incrementF x) {x, y}))(const { x: x1, y: y1 } (f)) [x1, y1]",
+      expected: [1, 2],
+      setUpReplOptions,
+    });
+
+    testEvalBlockOf({
+      src: "(let x 0) (let y 1) (const f (fn () (incrementF x) {x, y})) (let x1) (let y1) (assign { x: x1, y: y1 } (f)) [x1, y1]",
+      expected: [1, 2],
+      setUpReplOptions,
+    });
   });
 
   describe('{object: "literal"}', () => {

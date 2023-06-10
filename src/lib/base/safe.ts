@@ -14,6 +14,7 @@ import {
   JsSrc,
   TranspileError,
   markAsDirectWriter,
+  KeyValues,
 } from "../../internal/types.js";
 import {
   transpileExpression,
@@ -34,11 +35,15 @@ import {
 
 export const _cu$const = transpilingForVariableDeclaration(
   "const",
-  "const",
+  (assignee: JsSrc, exp: JsSrc) => `const ${assignee} = ${exp}`,
   aConst,
 );
 
-export const _cu$let = transpilingForVariableDeclaration("let", "let", aVar);
+export const _cu$let = transpilingForVariableDeclaration(
+  "let",
+  (assignee: JsSrc, exp: JsSrc) => `let ${assignee} = ${exp}`,
+  aVar,
+);
 
 export const _cu$else = aContextualKeyword("if");
 
@@ -103,9 +108,7 @@ export const timesF = transpiling2((a: JsSrc, b: JsSrc) => `(${a} * ${b})`);
 export const dividedByF = transpiling2((a: JsSrc, b: JsSrc) => `(${a} / ${b})`);
 
 export const equals = transpiling2((a: JsSrc, b: JsSrc) => `(${a} === ${b})`);
-export const notEquals = transpiling2(
-  (a: JsSrc, b: JsSrc) => `(${a}!==${b})`,
-);
+export const notEquals = transpiling2((a: JsSrc, b: JsSrc) => `(${a}!==${b})`);
 
 export const isLessThan = transpiling2((a: JsSrc, b: JsSrc) => `(${a} < ${b})`);
 export const isLessThanOrEquals = transpiling2(
@@ -124,17 +127,50 @@ export const not = transpiling1("not", (a: JsSrc) => `!(${a})`);
 
 export const assign = transpilingForAssignment(
   "assign",
-  (env: Env, id: CuSymbol, exp: JsSrc) => {
-    const r = EnvF.findWithIsAtTopLevel(env, id.v);
-    if (r === undefined || isConst(r.writer)) {
-      return new TranspileError(
-        `Variable "${id.v}" is NOT declared by \`let\`!`,
-      );
+  async (env: Env, id: CuSymbol | KeyValues, exp: JsSrc) => {
+    function assignStatement(sym: CuSymbol, e: JsSrc): JsSrc | TranspileError {
+      const r = EnvF.findWithIsAtTopLevel(env, sym.v);
+      if (r === undefined || isConst(r.writer)) {
+        return new TranspileError(
+          `Variable "${sym.v}" is NOT declared by \`let\`!`,
+        );
+      }
+      if (EnvF.writerIsAtReplTopLevel(env, r)) {
+        return pseudoTopLevelAssignment(sym, e);
+      }
+      return `${sym.v}=${e}`;
     }
-    if (EnvF.writerIsAtReplTopLevel(env, r)) {
-      return pseudoTopLevelAssignment(id, exp);
+    if (isCuSymbol(id)) {
+      return assignStatement(id, exp);
     }
-    return `${id.v} = ${exp}`;
+    let src = "";
+    for (const kvOrSym of id.v) {
+      if (isCuSymbol(kvOrSym)) {
+        const assignment = assignStatement(kvOrSym, `${exp}.${kvOrSym.v}`);
+        if (assignment instanceof TranspileError) {
+          return assignment;
+        }
+        src = `${src}${assignment}\n`;
+        continue;
+      }
+      const [k, v] = kvOrSym;
+      if (!isCuSymbol(v)) {
+        return new TranspileError(
+          `Assignee must be a symbol, but ${JSON.stringify(v)} is not!`,
+        );
+      }
+      const kSrc = await transpileExpression(k, env);
+      if (kSrc instanceof TranspileError) {
+        return kSrc;
+      }
+      // FIXME: kSrcがsymbol以外だったらうまく行かない
+      const assignment = assignStatement(v, `${exp}.${kSrc}`);
+      if (assignment instanceof TranspileError) {
+        return assignment;
+      }
+      src = `${src}${assignment}\n`;
+    }
+    return src;
   },
 );
 

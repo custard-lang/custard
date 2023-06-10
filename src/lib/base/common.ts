@@ -20,6 +20,8 @@ import {
   TranspileError,
   Writer,
   isVar,
+  isKeyValues,
+  KeyValues,
 } from "../../internal/types.js";
 
 import * as Iteration from "./iteration.js";
@@ -30,6 +32,7 @@ import {
   pseudoTopLevelAssignment,
   pseudoTopLevelReference,
 } from "../../internal/cu-env.js";
+import { expectNever } from "../../util/error.js";
 
 export function isNonExpressionCall(env: Env, form: Form): form is Call {
   const call = asCall(form);
@@ -108,7 +111,11 @@ export function transpiling2(
 // TODO: Handle assignment to reserved words etc.
 export function transpilingForAssignment(
   formId: Id,
-  f: (env: Env, id: CuSymbol, exp: JsSrc) => JsSrc | TranspileError,
+  f: (
+    env: Env,
+    id: CuSymbol | KeyValues,
+    exp: JsSrc,
+  ) => Promise<JsSrc | TranspileError>,
 ): MarkedDirectWriter {
   return markAsDirectWriter(
     async (env: Env, id: Form, v: Form, another?: Form) => {
@@ -117,42 +124,127 @@ export function transpilingForAssignment(
           `The number of arguments to \`${formId}\` must be 2!`,
         );
       }
-      if (!isCuSymbol(id)) {
-        return new TranspileError(`${JSON.stringify(id)} is not a symbol!`);
+      if (!isCuSymbol(id) && !isKeyValues(id)) {
+        return new TranspileError(
+          `${JSON.stringify(id)} is must be a symbol or key values of symbols!`,
+        );
       }
 
       const exp = await transpileExpression(v, env);
       if (exp instanceof TranspileError) {
         return exp;
       }
-      return f(env, id, exp);
+      return await f(env, id, exp);
     },
   );
 }
 
 export function transpilingForVariableDeclaration(
   formId: Id,
-  keyword: Id,
+  buildStatement: (assignee: JsSrc, exp: JsSrc) => JsSrc,
   newWriter: () => Writer,
 ): MarkedDirectWriter {
   return transpilingForAssignment(
     formId,
-    (env: Env, id: CuSymbol, exp: JsSrc) => {
-      if (EnvF.isDefinedInThisScope(env, id.v)) {
-        return new TranspileError(
-          `Variable ${JSON.stringify(id.v)} is already defined!`,
-        );
+    async (env: Env, id: CuSymbol | KeyValues, exp: JsSrc) => {
+      let r: undefined | TranspileError;
+      function tryToSet(id: CuSymbol): undefined | TranspileError {
+        if (EnvF.isDefinedInThisScope(env, id.v)) {
+          return new TranspileError(
+            `Variable ${JSON.stringify(id.v)} is already defined!`,
+          );
+        }
+        const r = EnvF.set(env, id.v, newWriter());
+        if (r instanceof TranspileError) {
+          return r;
+        }
       }
-      const r = EnvF.set(env, id.v, newWriter());
-      if (r instanceof TranspileError) {
-        return r;
-      }
+
       if (EnvF.isAtReplTopLevel(env)) {
-        return pseudoTopLevelAssignment(id, exp);
+        if (isCuSymbol(id)) {
+          r = tryToSet(id);
+          if (r instanceof TranspileError) {
+            return r;
+          }
+          return pseudoTopLevelAssignment(id, exp);
+        }
+        let src = "";
+        for (const kvOrSym of id.v) {
+          if (isCuSymbol(kvOrSym)) {
+            r = tryToSet(kvOrSym);
+            if (r instanceof TranspileError) {
+              return r;
+            }
+            // FIXME: expを保存する一時変数を作ってexpを複製しないようにする
+            const expDotId = `${exp}.${kvOrSym.v}`;
+            src = `${src}\n${pseudoTopLevelAssignment(kvOrSym, expDotId)};`;
+            continue;
+          }
+          const [k, v] = kvOrSym;
+          const kSrc = await transpileExpression(k, env);
+          if (kSrc instanceof TranspileError) {
+            return kSrc;
+          }
+          if (!isCuSymbol(v)) {
+            return new TranspileError(
+              `${formId}'s assignee must be a symbol, but ${JSON.stringify(
+                v,
+              )} is not!`,
+            );
+          }
+          r = tryToSet(v);
+          if (r instanceof TranspileError) {
+            return r;
+          }
+          // FIXME: kSrcがsymbol以外だったらうまく行かない
+          const expDotId = `${exp}.${kSrc}`;
+          src = `${src}\n${pseudoTopLevelAssignment(v, expDotId)};`;
+        }
+        return src;
       }
-      return keyword === ""
-        ? `${id.v} = ${exp}`
-        : `${keyword} ${id.v} = ${exp}`;
+
+      let assignee: JsSrc;
+      if (isCuSymbol(id)) {
+        r = tryToSet(id);
+        if (r instanceof TranspileError) {
+          return r;
+        }
+        assignee = id.v;
+      } else if (isKeyValues(id)) {
+        assignee = "{";
+        for (const kvOrSym of id.v) {
+          if (isCuSymbol(kvOrSym)) {
+            r = tryToSet(kvOrSym);
+            if (r instanceof TranspileError) {
+              return r;
+            }
+            assignee = `${assignee}${kvOrSym.v},`;
+            continue;
+          }
+          const [k, v] = id.v;
+          const kSrc = await transpileExpression(k, env);
+          if (kSrc instanceof TranspileError) {
+            return kSrc;
+          }
+          if (!isCuSymbol(v)) {
+            return new TranspileError(
+              `${formId}'s assignee must be a symbol, but ${JSON.stringify(
+                v,
+              )} is not!`,
+            );
+          }
+          r = tryToSet(v);
+          if (r instanceof TranspileError) {
+            return r;
+          }
+          assignee = `${assignee}${kSrc}:${v.v},`;
+        }
+        assignee = `${assignee}}`;
+      } else {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+        return expectNever(id);
+      }
+      return buildStatement(assignee, exp);
     },
   );
 }

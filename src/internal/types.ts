@@ -15,10 +15,15 @@ export type LiteralArray = { t: "LiteralArray"; v: CuArray };
 
 export type CuArray = Form[];
 
+// TODO: rename into LiteralObject
 export type KeyValues = {
   t: "KeyValues";
   v: (KeyValue | CuSymbol)[];
 };
+
+export function isKeyValues(v: Form): v is KeyValues {
+  return v !== undefined && (v as Record<string, unknown>).t === "KeyValues";
+}
 
 // TODO: Perhaps key should be either an Atom or Call;
 export type KeyValue = [Form, Form];
@@ -135,7 +140,11 @@ export type Env<State = TranspileState> = {
   readonly transpileState: State;
 };
 
-export type Scope = { isAsync: boolean; definitions: Definitions };
+export type Scope = {
+  isAsync: boolean;
+  definitions: Definitions;
+  temporaryVariablesCount: number;
+};
 
 export type Definitions = Map<Id, Writer>;
 

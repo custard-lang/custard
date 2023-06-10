@@ -4,6 +4,7 @@ export function init(): Scope {
   return {
     isAsync: false,
     definitions: new Map(),
+    temporaryVariablesCount: 0,
   };
 }
 
@@ -11,6 +12,7 @@ export function initAsync(): Scope {
   return {
     isAsync: true,
     definitions: new Map(),
+    temporaryVariablesCount: 0,
   };
 }
 
@@ -18,6 +20,7 @@ export function fromDefinitions(definitions: Definitions): Scope {
   return {
     isAsync: false,
     definitions,
+    temporaryVariablesCount: 0,
   };
 }
 
