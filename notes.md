@@ -70,6 +70,16 @@
     - そこもtranspile時にチェックするコードを挟んで面倒を見るべき？まぁ作ってから考えよう
         - オブジェクトリテラルの構文を書いていて思ったけど、やっぱりプロパティーアクセスもマクロ呼び出しに読み替えるべきなんだろうね
 
+## `import`の構文
+
+Elmを少し参考に
+
+- `(import base)`: `base`だけをqualified import
+- `(import { base })`: `base`だけをqualified import （1つ目と同じ）
+- `(import { base: alias })`: `base`を`alias`としてqualified import
+- `(import base {f1 f2})`: `base`にある`f1`と`f2`だけをimport
+- `(import base {f1: a1 f2: a2})`: `base`にある`f1`・`f2`だけをそれぞれ`a1`・`a2`としてimport
+
 # TODO
 
 - [ ] `eval/*.test.ts`や`transpile/*.test.ts`を`lib/`に統合し、transpileのテストもevalのテストもまとめる
