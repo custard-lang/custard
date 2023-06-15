@@ -168,23 +168,31 @@ export function transpilingForVariableDeclaration(
           }
           return pseudoTopLevelAssignment(id, exp);
         }
-        let src = "";
+        const { id: tmpVar, statement } = EnvF.tmpVarOf(env, exp);
+        let src = statement;
         for (const kvOrSym of id.v) {
           if (isCuSymbol(kvOrSym)) {
             r = tryToSet(kvOrSym);
             if (r instanceof TranspileError) {
               return r;
             }
-            // FIXME: expを保存する一時変数を作ってexpを複製しないようにする
-            const expDotId = `${exp}.${kvOrSym.v}`;
+            const expDotId = `${tmpVar}.${kvOrSym.v}`;
             src = `${src}\n${pseudoTopLevelAssignment(kvOrSym, expDotId)};`;
             continue;
           }
           const [k, v] = kvOrSym;
-          const kSrc = await transpileExpression(k, env);
-          if (kSrc instanceof TranspileError) {
-            return kSrc;
+
+          let expDotId: JsSrc | TranspileError;
+          if (isCuSymbol(k)) {
+            expDotId = `${tmpVar}.${k.v}`;
+          } else {
+            const kSrc = await transpileExpression(k, env);
+            if (kSrc instanceof TranspileError) {
+              return kSrc;
+            }
+            expDotId = `${tmpVar}${kSrc}`;
           }
+
           if (!isCuSymbol(v)) {
             return new TranspileError(
               `${formId}'s assignee must be a symbol, but ${JSON.stringify(
@@ -196,8 +204,6 @@ export function transpilingForVariableDeclaration(
           if (r instanceof TranspileError) {
             return r;
           }
-          // FIXME: kSrcがsymbol以外だったらうまく行かない
-          const expDotId = `${exp}.${kSrc}`;
           src = `${src}\n${pseudoTopLevelAssignment(v, expDotId)};`;
         }
         return src;

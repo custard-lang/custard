@@ -494,14 +494,14 @@ describe("evalBlock", () => {
     });
 
     testEvalBlockOf({
-      src: "(let x 0) (let y 1) (const f (fn () (incrementF x) {x, y}))(const { x: x1, y: y1 } (f)) [x1, y1]",
-      expected: [1, 2],
+      src: "(let x 0) (let y 0) (const f (fn () (incrementF y) {x, y}))(const { x: x1 y: y1 } (f)) [x1, y1]",
+      expected: [0, 1],
       setUpReplOptions,
     });
 
     testEvalBlockOf({
-      src: "(let x 0) (let y 1) (const f (fn () (incrementF x) {x, y})) (let x1) (let y1) (assign { x: x1, y: y1 } (f)) [x1, y1]",
-      expected: [1, 2],
+      src: "(let x 0) (let y 0) (const f (fn () (incrementF y) {x, y})) (let x1) (let y1) (assign { x: x1 y: y1 } (f)) [x1, y1]",
+      expected: [0, 1],
       setUpReplOptions,
     });
   });

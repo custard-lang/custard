@@ -1,4 +1,4 @@
-import { Definitions, Id, Scope, Writer } from "./types.js";
+import { Definitions, Id, JsSrc, Scope, Writer } from "./types.js";
 
 export function init(): Scope {
   return {
@@ -36,4 +36,15 @@ export function destroy({ definitions }: Scope, id: Id): void {
   // I just want to delete, so I don't have to use the result.
   // eslint-disable-next-line no-ignore-returned-union/no-ignore-returned-union
   definitions.delete(id);
+}
+
+export function tmpVarOf(
+  scope: Scope,
+  exp: JsSrc,
+): { statement: JsSrc; id: Id } {
+  const id = `_cu$t$${scope.temporaryVariablesCount++}`;
+  return {
+    id,
+    statement: `const ${id} = ${exp};\n`,
+  };
 }

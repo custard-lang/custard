@@ -143,10 +143,11 @@ export const assign = transpilingForAssignment(
     if (isCuSymbol(id)) {
       return assignStatement(id, exp);
     }
-    let src = "";
+    const { id: tmpVar, statement } = EnvF.tmpVarOf(env, exp);
+    let src = statement;
     for (const kvOrSym of id.v) {
       if (isCuSymbol(kvOrSym)) {
-        const assignment = assignStatement(kvOrSym, `${exp}.${kvOrSym.v}`);
+        const assignment = assignStatement(kvOrSym, `${tmpVar}.${kvOrSym.v}`);
         if (assignment instanceof TranspileError) {
           return assignment;
         }
@@ -159,12 +160,17 @@ export const assign = transpilingForAssignment(
           `Assignee must be a symbol, but ${JSON.stringify(v)} is not!`,
         );
       }
-      const kSrc = await transpileExpression(k, env);
-      if (kSrc instanceof TranspileError) {
-        return kSrc;
+
+      let assignment: JsSrc | TranspileError;
+      if (isCuSymbol(k)) {
+        assignment = assignStatement(v, `${tmpVar}.${k.v}`);
+      } else {
+        const kSrc = await transpileExpression(k, env);
+        if (kSrc instanceof TranspileError) {
+          return kSrc;
+        }
+        assignment = assignStatement(v, `${tmpVar}${kSrc}`);
       }
-      // FIXME: kSrcがsymbol以外だったらうまく行かない
-      const assignment = assignStatement(v, `${exp}.${kSrc}`);
       if (assignment instanceof TranspileError) {
         return assignment;
       }
