@@ -80,6 +80,8 @@ Elmを少し参考に
 - `(import base {f1 f2})`: `base`にある`f1`と`f2`だけをimport
 - `(import base {f1: a1 f2: a2})`: `base`にある`f1`・`f2`だけをそれぞれ`a1`・`a2`としてimport
 
+- `import`の数だけコードの量が増えちゃうのは好ましくないし、やっぱrepl top-levelでの`import`は`_cu$env`がいいかな
+
 # TODO
 
 - [ ] `eval/*.test.ts`や`transpile/*.test.ts`を`lib/`に統合し、transpileのテストもevalのテストもまとめる
