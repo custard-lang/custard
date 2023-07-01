@@ -7,7 +7,13 @@ import { readBlock } from "../../reader";
 import { transpileBlock } from "../transpile";
 import { transpileModule } from "../transpile-state";
 import { fromDefinitions } from "../scope";
-import { Env, isNamespace, JsSrc, ModulePaths, TranspileError } from "../types";
+import {
+  Env,
+  isNamespace,
+  JsModule,
+  ModulePaths,
+  TranspileError,
+} from "../types";
 import {
   loadModulePaths,
   standardModuleRoot,
@@ -16,7 +22,7 @@ import {
 describe("transpileBlock", () => {
   const subject = async (
     src: string,
-  ): Promise<[JsSrc | TranspileError, Env]> => {
+  ): Promise<[JsModule | TranspileError, Env]> => {
     const modules: ModulePaths = new Map();
     modules.set("a", "../../../test-assets/a.mjs");
 
@@ -36,11 +42,14 @@ describe("transpileBlock", () => {
   describe("(import id)", () => {
     describe("given an id registered in the ModulePaths", () => {
       test("adds identifiers in the module, and returns imports in JavaScript", async () => {
-        const [jsSrc, env] = await subject("(import a)");
-        expect(assertNonError(jsSrc).trim()).toEqual(
+        const [jsMod, env] = await subject("(import a)");
+        const { imports, body, ...other } = assertNonError(jsMod);
+        expect(assertNonError(imports).trim()).toEqual(
           'import * as a from "../../../test-assets/a.mjs";',
         );
+        expect(assertNonError(body).trim().replace(/;/g, "")).toEqual("");
         expect(EnvF.find(env, "a")).toSatisfy(isNamespace);
+        expect(other).toEqual({});
       });
     });
 

@@ -1,6 +1,9 @@
 import * as EnvF from "../../internal/env.js";
 import {
   asCall,
+  concatJsModules,
+  extendBody,
+  jsModuleOfBody,
   transpileExpression,
   transpileStatement,
 } from "../../internal/transpile.js";
@@ -22,6 +25,7 @@ import {
   isVar,
   isKeyValues,
   KeyValues,
+  JsModule,
 } from "../../internal/types.js";
 
 import * as Iteration from "./iteration.js";
@@ -59,13 +63,17 @@ export function isNonExpressionCall(env: Env, form: Form): form is Call {
 
 export function transpiling1Unmarked(
   formId: Id,
-  f: (a: JsSrc) => JsSrc,
-): (env: Env, a: Form, ...unused: Form[]) => Promise<JsSrc | TranspileError> {
+  f: (a: JsModule) => JsModule,
+): (
+  env: Env,
+  a: Form,
+  ...unused: Form[]
+) => Promise<JsModule | TranspileError> {
   return async (
     env: Env,
     a: Form,
     ...unused: Form[]
-  ): Promise<JsSrc | TranspileError> => {
+  ): Promise<JsModule | TranspileError> => {
     const ra = await transpileExpression(a, env);
     if (ra instanceof TranspileError) {
       return ra;
@@ -83,16 +91,16 @@ export function transpiling1Unmarked(
 
 export function transpiling1(
   formId: Id,
-  f: (a: JsSrc) => JsSrc,
+  f: (a: JsModule) => JsModule,
 ): MarkedDirectWriter {
   return markAsDirectWriter(transpiling1Unmarked(formId, f));
 }
 
 export function transpiling2(
-  f: (a: JsSrc, b: JsSrc) => JsSrc,
+  f: (a: JsModule, b: JsModule) => JsModule,
 ): MarkedDirectWriter {
   return markAsDirectWriter(
-    async (env: Env, a: Form, b: Form): Promise<JsSrc | TranspileError> => {
+    async (env: Env, a: Form, b: Form): Promise<JsModule | TranspileError> => {
       const ra = await transpileExpression(a, env);
       if (ra instanceof TranspileError) {
         return ra;
@@ -114,8 +122,8 @@ export function transpilingForAssignment(
   f: (
     env: Env,
     id: CuSymbol | KeyValues,
-    exp: JsSrc,
-  ) => Promise<JsSrc | TranspileError>,
+    exp: JsModule,
+  ) => Promise<JsModule | TranspileError>,
 ): MarkedDirectWriter {
   return markAsDirectWriter(
     async (env: Env, id: Form, v: Form, another?: Form) => {
@@ -141,12 +149,12 @@ export function transpilingForAssignment(
 
 export function transpilingForVariableDeclaration(
   formId: Id,
-  buildStatement: (assignee: JsSrc, exp: JsSrc) => JsSrc,
+  buildStatement: (assignee: JsModule, exp: JsModule) => JsModule,
   newWriter: () => Writer,
 ): MarkedDirectWriter {
   return transpilingForAssignment(
     formId,
-    async (env: Env, id: CuSymbol | KeyValues, exp: JsSrc) => {
+    async (env: Env, id: CuSymbol | KeyValues, exp: JsModule) => {
       let r: undefined | TranspileError;
       function tryToSet(id: CuSymbol): undefined | TranspileError {
         if (EnvF.isDefinedInThisScope(env, id.v)) {
@@ -177,20 +185,26 @@ export function transpilingForVariableDeclaration(
               return r;
             }
             const expDotId = `${tmpVar}.${kvOrSym.v}`;
-            src = `${src}\n${pseudoTopLevelAssignment(kvOrSym, expDotId)};`;
+            src = concatJsModules(
+              src,
+              jsModuleOfBody("\n"),
+              pseudoTopLevelAssignment(kvOrSym, jsModuleOfBody(expDotId)),
+              jsModuleOfBody(";"),
+            );
             continue;
           }
           const [k, v] = kvOrSym;
 
-          let expDotId: JsSrc | TranspileError;
+          let expDotId: JsModule | TranspileError;
           if (isCuSymbol(k)) {
-            expDotId = `${tmpVar}.${k.v}`;
+            expDotId = jsModuleOfBody(`${tmpVar}.${k.v}`);
           } else {
+            // TODO: expect k is an LiteralArray
             const kSrc = await transpileExpression(k, env);
             if (kSrc instanceof TranspileError) {
               return kSrc;
             }
-            expDotId = `${tmpVar}${kSrc}`;
+            expDotId = extendBody(kSrc, tmpVar);
           }
 
           if (!isCuSymbol(v)) {
@@ -204,27 +218,31 @@ export function transpilingForVariableDeclaration(
           if (r instanceof TranspileError) {
             return r;
           }
-          src = `${src}\n${pseudoTopLevelAssignment(v, expDotId)};`;
+          src = concatJsModules(
+            src,
+            jsModuleOfBody("\n"),
+            pseudoTopLevelAssignment(v, expDotId),
+          );
         }
         return src;
       }
 
-      let assignee: JsSrc;
+      let assignee: JsModule;
       if (isCuSymbol(id)) {
         r = tryToSet(id);
         if (r instanceof TranspileError) {
           return r;
         }
-        assignee = id.v;
+        assignee = jsModuleOfBody(id.v);
       } else if (isKeyValues(id)) {
-        assignee = "{";
+        assignee = jsModuleOfBody("{");
         for (const kvOrSym of id.v) {
           if (isCuSymbol(kvOrSym)) {
             r = tryToSet(kvOrSym);
             if (r instanceof TranspileError) {
               return r;
             }
-            assignee = `${assignee}${kvOrSym.v},`;
+            assignee = extendBody(assignee, `${kvOrSym.v},`);
             continue;
           }
           const [k, v] = id.v;
@@ -243,9 +261,13 @@ export function transpilingForVariableDeclaration(
           if (r instanceof TranspileError) {
             return r;
           }
-          assignee = `${assignee}${kSrc}:${v.v},`;
+          assignee = concatJsModules(
+            assignee,
+            kSrc,
+            jsModuleOfBody(`:${v.v},`),
+          );
         }
-        assignee = `${assignee}}`;
+        assignee = extendBody(assignee, "", "}");
       } else {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-return
         return expectNever(id);
@@ -282,10 +304,10 @@ export function transpilingForVariableMutation(
     if (EnvF.writerIsAtReplTopLevel(env, r)) {
       return pseudoTopLevelAssignment(
         id,
-        whenTopRepl(pseudoTopLevelReference(id)),
+        jsModuleOfBody(whenTopRepl(pseudoTopLevelReference(id))),
       );
     }
-    return otherwise(id.v);
+    return jsModuleOfBody(otherwise(id.v));
   });
 }
 
@@ -295,7 +317,7 @@ function functionPrelude(
   args: Form,
   block: Block,
   isAsync: boolean,
-): JsSrc | TranspileError {
+): JsModule | TranspileError {
   if (!(args instanceof Array)) {
     return new TranspileError(
       `Arguments for a function must be an array of symbols! But actually ${JSON.stringify(
@@ -327,12 +349,12 @@ function functionPrelude(
     argNames.push(arg.v);
   }
 
-  return `(${argNames.join(", ")}) => {\n`;
+  return jsModuleOfBody(`(${argNames.join(", ")}) => {\n`);
 }
 
-function functionPostlude(env: Env, src: JsSrc): JsSrc {
+function functionPostlude(env: Env, src: JsModule): JsModule {
   EnvF.pop(env);
-  return `${src}}`;
+  return extendBody(src, "", "}");
 }
 
 export async function buildFn(
@@ -341,7 +363,7 @@ export async function buildFn(
   args: Form,
   block: Block,
   isAsync = false,
-): Promise<JsSrc | TranspileError> {
+): Promise<JsModule | TranspileError> {
   let result = functionPrelude(env, formId, args, block, isAsync);
   if (result instanceof TranspileError) {
     return result;
@@ -353,7 +375,12 @@ export async function buildFn(
     if (src instanceof TranspileError) {
       return src;
     }
-    result = `${result}  ${src};\n`;
+    result = concatJsModules(
+      result,
+      jsModuleOfBody("  "),
+      src,
+      jsModuleOfBody(";\n"),
+    );
   }
 
   const lastStatement = block[lastI];
@@ -367,7 +394,12 @@ export async function buildFn(
   if (lastSrc instanceof TranspileError) {
     return lastSrc;
   }
-  result = `${result}  return ${lastSrc};\n`;
+  result = concatJsModules(
+    result,
+    jsModuleOfBody("  return "),
+    lastSrc,
+    jsModuleOfBody(";\n"),
+  );
 
   return functionPostlude(env, result);
 }
@@ -378,7 +410,7 @@ export async function buildProcedure(
   args: Form,
   block: Block,
   isAsync = false,
-): Promise<JsSrc | TranspileError> {
+): Promise<JsModule | TranspileError> {
   let result = functionPrelude(env, formId, args, block, isAsync);
   if (result instanceof TranspileError) {
     return result;
@@ -389,7 +421,12 @@ export async function buildProcedure(
     if (src instanceof TranspileError) {
       return src;
     }
-    result = `${result}  ${src};\n`;
+    result = concatJsModules(
+      result,
+      jsModuleOfBody("  "),
+      src,
+      jsModuleOfBody(";\n"),
+    );
   }
 
   return functionPostlude(env, result);
@@ -401,7 +438,7 @@ export function buildScope(
   isAsync = false,
 ): MarkedDirectWriter {
   return markAsDirectWriter(
-    async (env: Env, ...block: Block): Promise<JsSrc | TranspileError> => {
+    async (env: Env, ...block: Block): Promise<JsModule | TranspileError> => {
       // EnvF.push(env);
 
       const funcSrc = await buildFn(env, id, [], block, isAsync);
@@ -409,7 +446,7 @@ export function buildScope(
         return funcSrc;
       }
       // EnvF.pop(env);
-      return `(${prefix}${funcSrc})()`;
+      return extendBody(funcSrc, `(${prefix}`, ")()");
     },
   );
 }

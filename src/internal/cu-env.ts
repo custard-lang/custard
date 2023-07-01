@@ -1,12 +1,17 @@
-import { CuSymbol, JsSrc, PropertyAccess } from "./types.js";
+import { extendBody } from "./transpile.js";
+import { CuSymbol, JsModule, JsSrc, PropertyAccess } from "./types.js";
 
 // _cu$ is the reserved prefix of Custard
 export const CU_ENV = "_cu$env";
 
-export function pseudoTopLevelAssignment(id: CuSymbol, exp: JsSrc): JsSrc {
-  return `void _cu$env.transpileState.topLevelValues.set(${JSON.stringify(
+export function pseudoTopLevelAssignment(
+  id: CuSymbol,
+  exp: JsModule,
+): JsModule {
+  const prefix = `void _cu$env.transpileState.topLevelValues.set(${JSON.stringify(
     id.v,
-  )}, ${exp})`;
+  )},`;
+  return extendBody(exp, prefix, ")");
 }
 
 export function pseudoTopLevelReference(id: CuSymbol): JsSrc {

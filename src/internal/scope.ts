@@ -1,4 +1,5 @@
-import { Definitions, Id, JsSrc, Scope, Writer } from "./types.js";
+import { concatJsModules, jsModuleOfBody } from "./transpile.js";
+import { Definitions, Id, JsModule, Scope, Writer } from "./types.js";
 
 export function init(): Scope {
   return {
@@ -40,11 +41,15 @@ export function destroy({ definitions }: Scope, id: Id): void {
 
 export function tmpVarOf(
   scope: Scope,
-  exp: JsSrc,
-): { statement: JsSrc; id: Id } {
+  exp: JsModule,
+): { statement: JsModule; id: Id } {
   const id = `_cu$t$${scope.temporaryVariablesCount++}`;
   return {
     id,
-    statement: `const ${id} = ${exp};\n`,
+    statement: concatJsModules(
+      jsModuleOfBody(`const ${id}=`),
+      exp,
+      jsModuleOfBody(";\n"),
+    ),
   };
 }

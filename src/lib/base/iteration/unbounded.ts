@@ -1,6 +1,8 @@
 import * as EnvF from "../../../internal/env.js";
 import {
   asCall,
+  concatJsModules,
+  jsModuleOfBody,
   transpileBlock,
   transpileExpression,
   transpileStatement,
@@ -9,13 +11,13 @@ import {
   Env,
   Block,
   Form,
-  JsSrc,
   TranspileError,
   isCuSymbol,
   aConst,
   aRecursiveConst,
   showSymbolAccess,
   markAsDirectWriter,
+  JsModule,
 } from "../../../internal/types.js";
 
 import { isNonExpressionCall } from "../common.js";
@@ -28,7 +30,7 @@ export const _cu$while = markAsDirectWriter(
     env: Env,
     bool: Form,
     ...rest: Block
-  ): Promise<JsSrc | TranspileError> => {
+  ): Promise<JsModule | TranspileError> => {
     if (bool === undefined) {
       return new TranspileError(
         "No conditional expression given to a `while` statement!",
@@ -58,7 +60,13 @@ export const _cu$while = markAsDirectWriter(
     }
 
     EnvF.pop(env);
-    return `while(${boolSrc}){\n${statementsSrc}\n}`;
+    return concatJsModules(
+      jsModuleOfBody("while("),
+      boolSrc,
+      jsModuleOfBody("){"),
+      statementsSrc,
+      jsModuleOfBody("}"),
+    );
   },
 );
 
@@ -69,7 +77,7 @@ export const _cu$for = markAsDirectWriter(
     bool: Form,
     final: Form,
     ...rest: Block
-  ): Promise<JsSrc | TranspileError> => {
+  ): Promise<JsModule | TranspileError> => {
     EnvF.pushInherited(env);
 
     if (initialStatement === undefined) {
@@ -119,7 +127,17 @@ export const _cu$for = markAsDirectWriter(
     }
 
     EnvF.pop(env);
-    return `for(${initialStatementSrc};${boolSrc};${finalSrc}){${statementsSrc}}`;
+    return concatJsModules(
+      jsModuleOfBody("for("),
+      initialStatementSrc,
+      jsModuleOfBody(";"),
+      boolSrc,
+      jsModuleOfBody(";"),
+      finalSrc,
+      jsModuleOfBody("){"),
+      statementsSrc,
+      jsModuleOfBody("}"),
+    );
   },
 );
 
@@ -129,7 +147,7 @@ export const forEach = markAsDirectWriter(
     id: Form,
     iterable: Form,
     ...statements: Block
-  ): Promise<JsSrc | TranspileError> => {
+  ): Promise<JsModule | TranspileError> => {
     EnvF.pushInherited(env);
 
     if (id === undefined) {
@@ -170,12 +188,18 @@ export const forEach = markAsDirectWriter(
 
     EnvF.pop(env);
 
-    return `for(const ${id.v} of ${iterableSrc}) {${statementsSrc}}`;
+    return concatJsModules(
+      jsModuleOfBody(`for(const ${id.v} of `),
+      iterableSrc,
+      jsModuleOfBody(`){`),
+      statementsSrc,
+      jsModuleOfBody(`}`),
+    );
   },
 );
 
 export const recursive = markAsDirectWriter(
-  async (env: Env, ...consts: Block): Promise<JsSrc | TranspileError> => {
+  async (env: Env, ...consts: Block): Promise<JsModule | TranspileError> => {
     if (consts.length < 1) {
       return new TranspileError("No `const` statements given to `recursive`!");
     }

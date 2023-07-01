@@ -5,16 +5,21 @@ import {
   CuArray,
   Env,
   isCuSymbol,
-  JsSrc,
+  JsModule,
   markAsDirectWriter,
   TranspileError,
 } from "../../internal/types.js";
 import { pseudoTopLevelAssignment } from "../../internal/cu-env.js";
+import {
+  extendBody,
+  jsModuleOfBody,
+  jsModuleOfImports,
+} from "../../internal/transpile.js";
 
 export const standardRoot = standardModuleRoot;
 
 export const _cu$import = markAsDirectWriter(
-  async (env: Env, ...forms: CuArray): Promise<JsSrc | TranspileError> => {
+  async (env: Env, ...forms: CuArray): Promise<JsModule | TranspileError> => {
     if (forms.length !== 1) {
       return new TranspileError(
         "The number of arguments of `import` must be 1.",
@@ -46,17 +51,20 @@ export const _cu$import = markAsDirectWriter(
       return r2;
     }
 
-    const awaitImport = `await import(${JSON.stringify(foundModule.url)})`;
+    const awaitImport = jsModuleOfBody(
+      `await import(${JSON.stringify(foundModule.url)})`,
+    );
     if (EnvF.isAtTopLevel(env)) {
       switch (env.transpileState.mode) {
         case "repl":
           return pseudoTopLevelAssignment(id, awaitImport);
         case "module":
-          return `import * as ${id.v} from ${JSON.stringify(
-            foundModule.relativePath,
-          )}`;
+          const modulePathJson = JSON.stringify(foundModule.relativePath);
+          return jsModuleOfImports(
+            `import * as ${id.v} from ${modulePathJson}`,
+          );
       }
     }
-    return `const ${id.v} = ${awaitImport}`;
+    return extendBody(awaitImport, `const ${id.v}=`);
   },
 );

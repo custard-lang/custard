@@ -25,5 +25,7 @@ export {
   Id,
   FilePath,
   JsSrc,
+  JsModule,
+  JsModuleWithResult,
   TranspileError,
 } from "./internal/types.js";

@@ -21,7 +21,7 @@ export async function transpileModule(
   if (definitions instanceof TranspileError) {
     return definitions;
   }
-  return await transpileBlock(
+  const r = await transpileBlock(
     ast,
     EnvF.init(
       fromDefinitions(definitions),
@@ -29,4 +29,8 @@ export async function transpileModule(
       proviedSymbols.modulePaths,
     ),
   );
+  if (r instanceof TranspileError) {
+    return r;
+  }
+  return `${r.imports}\n${r.body}`;
 }

@@ -15,15 +15,19 @@ export async function evalForm(
   ast: Form,
   env: Env<TranspileRepl>,
 ): Promise<any | Error> {
-  const jsSrc = await transpileStatement(ast, env);
-  if (jsSrc instanceof Error) {
-    return jsSrc;
+  const jsMod = await transpileStatement(ast, env);
+  if (jsMod instanceof Error) {
+    return jsMod;
   }
-  //writeDebugOut("//////////////// evalForm BEGIN");
-  //writeDebugOut(jsSrc);
-  //writeDebugOut("//////////////// evalForm END");
   try {
-    return await _cu$eval("", jsSrc, env);
+    return await _cu$eval(
+      {
+        imports: jsMod.imports,
+        body: "",
+        lastExpression: jsMod.body,
+      },
+      env,
+    );
   } catch (e) {
     return e;
   }
@@ -33,28 +37,30 @@ export async function evalBlock(
   forms: Block,
   env: Env<TranspileRepl>,
 ): Promise<any | Error> {
-  const jsSrc = await transpileBlock(forms.slice(0, -1), env);
-  if (jsSrc instanceof Error) {
-    return jsSrc;
+  const jsMod = await transpileBlock(forms.slice(0, -1), env);
+  if (jsMod instanceof Error) {
+    return jsMod;
   }
-  //writeDebugOut("//////////////// evalBlock BEGIN");
-  //writeDebugOut(jsSrc);
 
   const lastForm = forms[forms.length - 1];
   const lastIsNonExpression = isNonExpressionCall(env, lastForm);
 
-  const lastJsSrc = await transpileStatement(lastForm, env);
-  if (lastJsSrc instanceof Error) {
-    return lastJsSrc;
+  const last = await transpileStatement(lastForm, env);
+  if (last instanceof Error) {
+    return last;
   }
-  //writeDebugOut(lastJsSrc);
-  //writeDebugOut("//////////////// evalBlock END");
 
   try {
     if (lastIsNonExpression) {
-      return await _cu$eval(appendJsStatement(jsSrc, lastJsSrc), "", env);
+      return await _cu$eval(
+        {
+          ...appendJsStatement(jsMod, last),
+          lastExpression: "",
+        },
+        env,
+      );
     }
-    return await _cu$eval(jsSrc, lastJsSrc, env);
+    return await _cu$eval({ ...jsMod, lastExpression: last.body }, env);
   } catch (e) {
     return e;
   }

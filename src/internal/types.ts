@@ -125,6 +125,13 @@ export type Id = string;
 
 export type FilePath = string;
 
+export type JsModule = {
+  readonly imports: JsSrc;
+  readonly body: JsSrc;
+};
+
+export type JsModuleWithResult = JsModule & { lastExpression: JsSrc };
+
 export type JsSrc = string;
 
 export class TranspileError extends Error {
@@ -206,7 +213,7 @@ export function isNamespace(x: Writer): x is Namespace {
 export type DirectWriter = (
   env: Env,
   ...forms: CuArray
-) => Awaitable<JsSrc | TranspileError>;
+) => Awaitable<JsModule | TranspileError>;
 export type MarkedDirectWriter = IsWriter & {
   readonly t: 5;
   readonly call: DirectWriter;

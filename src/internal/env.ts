@@ -13,7 +13,7 @@ import {
   CuSymbol,
   isCuSymbol,
   isPropertyAccess,
-  JsSrc,
+  JsModule,
 } from "./types.js";
 import type { Env, TranspileState } from "./types.js";
 import * as References from "./references.js";
@@ -214,7 +214,7 @@ export function writerIsAtReplTopLevel(
 
 export function tmpVarOf(
   { scopes }: Env<TranspileState>,
-  exp: JsSrc,
-): { statement: JsSrc; id: Id } {
+  exp: JsModule,
+): { statement: JsModule; id: Id } {
   return ScopeF.tmpVarOf(scopes[0], exp);
 }
