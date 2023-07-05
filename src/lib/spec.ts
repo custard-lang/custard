@@ -1,7 +1,7 @@
 export type SpecId = string | symbol;
 
 // TODO: more informative: { t: "String" } | { t: "Array", e: BaseStructure[] } | { t: "Map", k: BaseStructure, v: BaseStructure } | ...
-export type BaseStructure = "String" | "Array" | "Map" | "Record";
+export type BaseStructure = "String" | "Array" | "Map" | "Record" | "Or";
 
 export type Breadcrumbs = (string | number | symbol)[];
 
@@ -35,9 +35,54 @@ export const mapSpec
 export const andMap
 
 export const and
-
-export const or
 */
+
+// prettier-ignore
+export interface Or {
+  <T1, T2>(s1: Spec<T1>, s2: Spec<T2>): Spec<T1 | T2>;
+  <T1, T2, T3>(s1: Spec<T1>, s2: Spec<T2>, s3: Spec<T3>): Spec<T1 | T2 | T3>;
+  <T1, T2, T3, T4>(s1: Spec<T1>, s2: Spec<T2>, s3: Spec<T3>, s4: Spec<T4>): Spec<T1 | T2 | T3 | T4>;
+  <T1, T2, T3, T4, T5>(s1: Spec<T1>, s2: Spec<T2>, s3: Spec<T3>, s4: Spec<T4>, s5: Spec<T5>): Spec<T1 | T2 | T3 | T4 | T5>;
+  <T1, T2, T3, T4, T5, T6>(s1: Spec<T1>, s2: Spec<T2>, s3: Spec<T3>, s4: Spec<T4>, s5: Spec<T5>, s6: Spec<T6>): Spec<T1 | T2 | T3 | T4 | T5 | T6>;
+  <T1, T2, T3, T4, T5, T6, T7>(s1: Spec<T1>, s2: Spec<T2>, s3: Spec<T3>, s4: Spec<T4>, s5: Spec<T5>, s6: Spec<T6>, s7: Spec<T7>): Spec<T1 | T2 | T3 | T4 | T5 | T6 | T7>;
+  <T1, T2, T3, T4, T5, T6, T7, T8>(s1: Spec<T1>, s2: Spec<T2>, s3: Spec<T3>, s4: Spec<T4>, s5: Spec<T5>, s6: Spec<T6>, s7: Spec<T7>, s8: Spec<T8>): Spec<T1 | T2 | T3 | T4 | T5 | T6 | T7 | T8>;
+  <T1, T2, T3, T4, T5, T6, T7, T8, T9>(s1: Spec<T1>, s2: Spec<T2>, s3: Spec<T3>, s4: Spec<T4>, s5: Spec<T5>, s6: Spec<T6>, s7: Spec<T7>, s8: Spec<T8>, s9: Spec<T9>): Spec<T1 | T2 | T3 | T4 | T5 | T6 | T7 | T8 | T9>;
+  <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(s1: Spec<T1>, s2: Spec<T2>, s3: Spec<T3>, s4: Spec<T4>, s5: Spec<T5>, s6: Spec<T6>, s7: Spec<T7>, s8: Spec<T8>, s9: Spec<T9>, s10: Spec<T10>): Spec<T1 | T2 | T3 | T4 | T5 | T6 | T7 | T8 | T9 | T10>;
+  <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(s1: Spec<T1>, s2: Spec<T2>, s3: Spec<T3>, s4: Spec<T4>, s5: Spec<T5>, s6: Spec<T6>, s7: Spec<T7>, s8: Spec<T8>, s9: Spec<T9>, s10: Spec<T10>, s11: Spec<T11>): Spec<T1 | T2 | T3 | T4 | T5 | T6 | T7 | T8 | T9 | T10 | T11>;
+  <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>(s1: Spec<T1>, s2: Spec<T2>, s3: Spec<T3>, s4: Spec<T4>, s5: Spec<T5>, s6: Spec<T6>, s7: Spec<T7>, s8: Spec<T8>, s9: Spec<T9>, s10: Spec<T10>, s11: Spec<T11>, s12: Spec<T12>): Spec<T1 | T2 | T3 | T4 | T5 | T6 | T7 | T8 | T9 | T10 | T11 | T12>;
+  <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>(s1: Spec<T1>, s2: Spec<T2>, s3: Spec<T3>, s4: Spec<T4>, s5: Spec<T5>, s6: Spec<T6>, s7: Spec<T7>, s8: Spec<T8>, s9: Spec<T9>, s10: Spec<T10>, s11: Spec<T11>, s12: Spec<T12>, s13: Spec<T13>): Spec<T1 | T2 | T3 | T4 | T5 | T6 | T7 | T8 | T9 | T10 | T11 | T12 | T13>;
+  <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>(s1: Spec<T1>, s2: Spec<T2>, s3: Spec<T3>, s4: Spec<T4>, s5: Spec<T5>, s6: Spec<T6>, s7: Spec<T7>, s8: Spec<T8>, s9: Spec<T9>, s10: Spec<T10>, s11: Spec<T11>, s12: Spec<T12>, s13: Spec<T13>, s14: Spec<T14>): Spec<T1 | T2 | T3 | T4 | T5 | T6 | T7 | T8 | T9 | T10 | T11 | T12 | T13 | T14>;
+  <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>(s1: Spec<T1>, s2: Spec<T2>, s3: Spec<T3>, s4: Spec<T4>, s5: Spec<T5>, s6: Spec<T6>, s7: Spec<T7>, s8: Spec<T8>, s9: Spec<T9>, s10: Spec<T10>, s11: Spec<T11>, s12: Spec<T12>, s13: Spec<T13>, s14: Spec<T14>, s15: Spec<T15>): Spec<T1 | T2 | T3 | T4 | T5 | T6 | T7 | T8 | T9 | T10 | T11 | T12 | T13 | T14 | T15>;
+  <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>(s1: Spec<T1>, s2: Spec<T2>, s3: Spec<T3>, s4: Spec<T4>, s5: Spec<T5>, s6: Spec<T6>, s7: Spec<T7>, s8: Spec<T8>, s9: Spec<T9>, s10: Spec<T10>, s11: Spec<T11>, s12: Spec<T12>, s13: Spec<T13>, s14: Spec<T14>, s15: Spec<T15>, s16: Spec<T16>): Spec<T1 | T2 | T3 | T4 | T5 | T6 | T7 | T8 | T9 | T10 | T11 | T12 | T13 | T14 | T15 | T16>;
+  <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17>(s1: Spec<T1>, s2: Spec<T2>, s3: Spec<T3>, s4: Spec<T4>, s5: Spec<T5>, s6: Spec<T6>, s7: Spec<T7>, s8: Spec<T8>, s9: Spec<T9>, s10: Spec<T10>, s11: Spec<T11>, s12: Spec<T12>, s13: Spec<T13>, s14: Spec<T14>, s15: Spec<T15>, s16: Spec<T16>, s17: Spec<T17>): Spec<T1 | T2 | T3 | T4 | T5 | T6 | T7 | T8 | T9 | T10 | T11 | T12 | T13 | T14 | T15 | T16 | T17>;
+  <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18>(s1: Spec<T1>, s2: Spec<T2>, s3: Spec<T3>, s4: Spec<T4>, s5: Spec<T5>, s6: Spec<T6>, s7: Spec<T7>, s8: Spec<T8>, s9: Spec<T9>, s10: Spec<T10>, s11: Spec<T11>, s12: Spec<T12>, s13: Spec<T13>, s14: Spec<T14>, s15: Spec<T15>, s16: Spec<T16>, s17: Spec<T17>, s18: Spec<T18>): Spec<T1 | T2 | T3 | T4 | T5 | T6 | T7 | T8 | T9 | T10 | T11 | T12 | T13 | T14 | T15 | T16 | T17 | T18>;
+  <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19>(s1: Spec<T1>, s2: Spec<T2>, s3: Spec<T3>, s4: Spec<T4>, s5: Spec<T5>, s6: Spec<T6>, s7: Spec<T7>, s8: Spec<T8>, s9: Spec<T9>, s10: Spec<T10>, s11: Spec<T11>, s12: Spec<T12>, s13: Spec<T13>, s14: Spec<T14>, s15: Spec<T15>, s16: Spec<T16>, s17: Spec<T17>, s18: Spec<T18>, s19: Spec<T19>): Spec<T1 | T2 | T3 | T4 | T5 | T6 | T7 | T8 | T9 | T10 | T11 | T12 | T13 | T14 | T15 | T16 | T17 | T18 | T19>;
+  <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20>(s1: Spec<T1>, s2: Spec<T2>, s3: Spec<T3>, s4: Spec<T4>, s5: Spec<T5>, s6: Spec<T6>, s7: Spec<T7>, s8: Spec<T8>, s9: Spec<T9>, s10: Spec<T10>, s11: Spec<T11>, s12: Spec<T12>, s13: Spec<T13>, s14: Spec<T14>, s15: Spec<T15>, s16: Spec<T16>, s17: Spec<T17>, s18: Spec<T18>, s19: Spec<T19>, s20: Spec<T20>): Spec<T1 | T2 | T3 | T4 | T5 | T6 | T7 | T8 | T9 | T10 | T11 | T12 | T13 | T14 | T15 | T16 | T17 | T18 | T19 | T20>;
+}
+
+export const or: Or = (...ss: Spec<unknown>[]): Spec<unknown> => {
+  return {
+    id: "Or",
+    base: "Or",
+    validate(x: unknown, path: Breadcrumbs = []): unknown | ValidationError {
+      for (const s of ss) {
+        const r = s.validate(x, path);
+        if (!(r instanceof ValidationError)) {
+          return r;
+        }
+      }
+      return new ValidationError("Or", typeof x, path);
+    },
+  };
+};
+
+export interface Tuple {
+  <TS>(...ss: Spec<TS>[]): Spec<TS[]>;
+}
+
+export type Concat = {
+  <TSS>(...sss: Spec<TSS[]>[]): Spec<TSS[]>;
+};
 
 export const record = <T>(keyAndSpecs: {
   [K in keyof T]: Spec<T[K]>;
