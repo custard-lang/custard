@@ -14,17 +14,12 @@ import {
 // Path to the `lib` directory in the dist/ from this module.
 export const standardModuleRoot = [
   path.dirname(
-    path.dirname(
-      path.dirname(
-        pathOfImportMetaUrl(import.meta.url),
-      ),
-    ),
+    path.dirname(path.dirname(pathOfImportMetaUrl(import.meta.url))),
   ),
   "dist",
   "src",
   "lib",
 ].join("/");
-
 
 export async function loadModulePaths(
   paths: FilePath[],

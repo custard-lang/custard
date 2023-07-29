@@ -4,10 +4,7 @@ import { Id, JsModule, JsSrc, PropertyAccess } from "./types.js";
 // _cu$ is the reserved prefix of Custard
 export const CU_ENV = "_cu$env";
 
-export function pseudoTopLevelAssignment(
-  id: Id,
-  exp: JsModule,
-): JsModule {
+export function pseudoTopLevelAssignment(id: Id, exp: JsModule): JsModule {
   const idJson = JSON.stringify(id);
   const prefix = `void _cu$env.transpileState.topLevelValues.set(${idJson},`;
   return extendBody(exp, prefix, ")");

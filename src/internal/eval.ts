@@ -40,11 +40,7 @@ export async function evalBlock(
   forms: Block,
   env: Env<TranspileRepl>,
 ): Promise<any | Error> {
-  const jsMod = await transpileBlockCore(
-    forms,
-    env,
-    { mayHaveResult: true }
-  );
+  const jsMod = await transpileBlockCore(forms, env, { mayHaveResult: true });
   if (jsMod instanceof Error) {
     return jsMod;
   }

@@ -172,10 +172,7 @@ export type FindModuleResult = {
   relativePath: FilePath;
 };
 
-export function findModule(
-  env: Env,
-  id: Id,
-): FindModuleResult | undefined {
+export function findModule(env: Env, id: Id): FindModuleResult | undefined {
   const {
     modules,
     transpileState: { src, srcPath },

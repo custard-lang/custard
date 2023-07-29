@@ -52,9 +52,7 @@ const result = program
 
   const replOptions = {
     transpileOptions: { srcPath: providedSymbolsPath },
-    providedSymbols: implicitlyImporting(
-      `${standardModuleRoot}/base/safe.js`,
-    ),
+    providedSymbols: implicitlyImporting(`${standardModuleRoot}/base/safe.js`),
   };
   const providedSymbolsConfig = await Repl.using(replOptions, (repl) => {
     const r = ProvidedSymbolsConfig.validate(

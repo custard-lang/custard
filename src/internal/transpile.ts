@@ -266,11 +266,11 @@ async function transpileKeyValues(
 export async function transpileBlock(
   forms: Block,
   env: Env,
-  extraOptions: { mayHaveResult: boolean; } = { mayHaveResult: false },
+  extraOptions: { mayHaveResult: boolean } = { mayHaveResult: false },
 ): Promise<JsModule | TranspileError> {
   const jsSrc = await transpileBlockCore(forms, env, extraOptions);
 
-  if (jsSrc instanceof TranspileError){
+  if (jsSrc instanceof TranspileError) {
     return jsSrc;
   }
   const { imports, body, lastExpression } = jsSrc;
@@ -278,7 +278,7 @@ export async function transpileBlock(
     return {
       imports,
       body: `${body}export default ${lastExpression}`,
-    }
+    };
   }
 
   return {
@@ -290,7 +290,7 @@ export async function transpileBlock(
 export async function transpileBlockCore(
   forms: Block,
   env: Env,
-  extraOptions: { mayHaveResult: boolean; } = { mayHaveResult: false },
+  extraOptions: { mayHaveResult: boolean } = { mayHaveResult: false },
 ): Promise<JsModuleWithResult | TranspileError> {
   let jsSrc = emptyJsModule();
   for (const form of forms.slice(0, -1)) {
@@ -374,10 +374,9 @@ export function appendJsStatement(
   jsExpression: JsModule,
 ): JsModule {
   return {
-    imports:
-      jsExpression.imports
-        ? `${jsBlock.imports}${jsExpression.imports};\n`
-        : jsBlock.imports,
+    imports: jsExpression.imports
+      ? `${jsBlock.imports}${jsExpression.imports};\n`
+      : jsBlock.imports,
     body: `${jsBlock.body}${jsExpression.body};\n`,
   };
 }

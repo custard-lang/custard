@@ -27,13 +27,10 @@ describe("transpileBlock", () => {
     const modulePaths: ModulePaths = new Map();
     modulePaths.set("a", "../../../test-assets/a.mjs");
 
-    const env = EnvF.init(
-      await transpileModule({ srcPath: __filename }),
-      {
-        ...ProvidedSymbolsConfigF.empty(),
-        modulePaths,
-      },
-    );
+    const env = EnvF.init(await transpileModule({ srcPath: __filename }), {
+      ...ProvidedSymbolsConfigF.empty(),
+      modulePaths,
+    });
     const jsSrc = await transpileBlock(assertNonError(readBlock(src)), env);
     return [jsSrc, env];
   };

@@ -51,8 +51,7 @@ describe("evalForm", () => {
 
   describe("meta.transpileModule", () => {
     const basePathJson = JSON.stringify(`${standardModuleRoot}/base.js`);
-    const proviedSymbolsSrc =
-      `{ modulePaths: (Map [["base" ${basePathJson}]]), implicitStatements: "(importAnyOf base)", jsTopLevels: [] }`;
+    const proviedSymbolsSrc = `{ modulePaths: (Map [["base" ${basePathJson}]]), implicitStatements: "(importAnyOf base)", jsTopLevels: [] }`;
     const extraOptionsSrc = `{ mayHaveResult: true }`;
 
     test("transpiled source code can be `eval`ed as a JavaScript code.", async () => {
@@ -61,7 +60,7 @@ describe("evalForm", () => {
           const transpileOptionsSrc = `{ srcPath: ${JSON.stringify(src)} }`;
           const srcCode = `(async.await (meta.transpileModule (meta.readString "(plusF 4.1 5.2)") ${transpileOptionsSrc} ${proviedSymbolsSrc} ${extraOptionsSrc}))`;
           const result = assertNonError(
-            await evalForm(assertNonError(readStr(srcCode)), repl)
+            await evalForm(assertNonError(readStr(srcCode)), repl),
           );
           expect((await writeAndEval(dest, result)).default).toEqual(4.1 + 5.2);
         });
@@ -74,7 +73,7 @@ describe("evalForm", () => {
           const transpileOptionsSrc = `{ srcPath: ${JSON.stringify(src)} }`;
           const srcCode = `(async.await (meta.transpileModule (meta.readString "(const x 9.2) (let y 0.1) (plusF x y)") ${transpileOptionsSrc} ${proviedSymbolsSrc} ${extraOptionsSrc}))`;
           const result = assertNonError(
-            await evalForm(assertNonError(readStr(srcCode)), repl)
+            await evalForm(assertNonError(readStr(srcCode)), repl),
           );
           expect((await writeAndEval(dest, result)).default).toEqual(9.2 + 0.1);
         });

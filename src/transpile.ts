@@ -14,7 +14,7 @@ export async function transpileModule(
   ast: Block,
   transpileOptions: TranspileOptions,
   providedSymbols: ProvidedSymbolsConfig,
-  extraOptions: { mayHaveResult: boolean; } = { mayHaveResult: false },
+  extraOptions: { mayHaveResult: boolean } = { mayHaveResult: false },
 ): Promise<JsSrc | TranspileError> {
   const env = EnvF.init(
     await State.transpileModule(transpileOptions),
