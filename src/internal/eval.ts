@@ -1,9 +1,6 @@
 import { Env, TranspileRepl } from "./types.js";
 import { Block, Form } from "../types.js";
-import {
-  transpileBlockCore,
-  transpileStatement,
-} from "./transpile.js";
+import { transpileBlockCore, transpileStatement } from "./transpile.js";
 import { _cu$eval } from "./isolated-eval.js";
 
 import { ParseError } from "../grammar.js";
