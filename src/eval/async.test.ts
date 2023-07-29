@@ -10,13 +10,14 @@ import { standardModuleRoot } from "../definitions";
 describe("evalForm", () => {
   function setUpReplOptions(): ReplOptions {
     const modulePaths: ModulePaths = new Map();
+    modulePaths.set("base", `${standardModuleRoot}/base.js`);
     modulePaths.set("async", "../../dist/src/lib/async.js");
 
     return {
       transpileOptions: { srcPath: __filename },
       providedSymbols: {
         modulePaths,
-        builtinModulePaths: [`${standardModuleRoot}/base.js`],
+        implicitStatements: "(importAnyOf base)",
         jsTopLevels: ["Promise"],
       },
     };

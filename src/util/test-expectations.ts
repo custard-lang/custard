@@ -16,6 +16,7 @@ export function testEvalFormOf({
   setUpReplOptions,
 }: {
   src: string;
+  // TODO: Remove. Use implicitStatements of ProvidedSymbolsConfig instead
   preludeSrc?: string | undefined;
   expected: any;
   only?: true | undefined;

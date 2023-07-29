@@ -7,9 +7,9 @@ import {
   defaultTranspileOptions,
   TranspileError,
 } from "../internal/types.js";
+import * as ProvidedSymbolsConfigF from "../provided-symbols-config.js";
 import * as EnvF from "./env.js";
 import { transpileRepl } from "./transpile-state.js";
-import * as ScopeF from "./scope.js";
 
 function inScope(env: Env, f: () => void): void {
   EnvF.push(env);
@@ -19,8 +19,8 @@ function inScope(env: Env, f: () => void): void {
 
 async function subjectEnv(): Promise<Env> {
   return EnvF.init(
-    ScopeF.init(),
     await transpileRepl(defaultTranspileOptions()),
+    ProvidedSymbolsConfigF.empty(),
   );
 }
 

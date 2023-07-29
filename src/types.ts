@@ -18,7 +18,6 @@ export {
   showSymbolAccess,
   ProvidedSymbolsConfig,
   Definitions,
-  provideNoModules,
   type ModulePaths,
   type TranspileOptions,
   defaultTranspileOptions,

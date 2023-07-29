@@ -1,18 +1,18 @@
 import { Worker } from "node:worker_threads";
 
+import { implicitlyImporting } from "./provided-symbols-config.js";
 import {
   defaultTranspileOptions,
   FilePath,
   Form,
   ProvidedSymbolsConfig,
-  provideNoModules,
   TranspileOptions,
 } from "./types.js";
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-assignment */
 
 // FIXME: How can I resolve the path to the .js file?
-//        __filename points to the .ts file (perhaps by vite).
+//        __filename and import.meta.url points to the .ts file (perhaps by vite).
 const worker = new Worker("./dist/src/internal/worker.js");
 let lastContextId = 0;
 
@@ -133,6 +133,6 @@ export function replOptionsFromBuiltinModulePath(
 ): ReplOptions {
   return {
     transpileOptions: defaultTranspileOptions(),
-    providedSymbols: provideNoModules(builtinModulePath),
+    providedSymbols: implicitlyImporting(builtinModulePath),
   };
 }

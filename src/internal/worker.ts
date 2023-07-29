@@ -9,10 +9,9 @@ import { transpileRepl } from "./transpile-state.js";
 
 import type { Env, TranspileRepl } from "./types.js";
 import { TranspileError } from "./types.js";
-import { evalBlock, evalForm } from "./eval.js";
-import { fromProvidedSymbolsConfig } from "../definitions.js";
+import { evalBlock, evalForm, evalString } from "./eval.js";
 
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
+/* eslint-disable @typescript-eslint/no-non-null-assertion, @typescript-eslint/no-unsafe-assignment */
 
 const envs: Map<ContextId, Env<TranspileRepl>> = new Map();
 
@@ -23,30 +22,25 @@ parentPort!.on("message", async (message: Command) => {
     switch (message.command) {
       case "initContext":
         const { providedSymbols, contextId, transpileOptions } = message;
-        const rI = await fromProvidedSymbolsConfig(providedSymbols);
+        const newEnv = EnvF.init(
+          await transpileRepl(transpileOptions),
+          providedSymbols,
+        );
+        const rI = await evalString(providedSymbols.implicitStatements, newEnv);
         if (rI instanceof TranspileError) {
           parentPort!.postMessage(rI);
         } else {
-          envs.set(
-            contextId,
-            EnvF.init(
-              fromDefinitions(rI),
-              await transpileRepl(transpileOptions),
-              providedSymbols.modulePaths,
-            ),
-          );
+          envs.set(contextId, newEnv);
           parentPort!.postMessage(null);
         }
         break;
       case "evalForm":
         // TODO: Implement our custom serializer so that postMessage can transfer.
-        /* eslint-disable-next-line @typescript-eslint/no-unsafe-assignment */
         const rF = await evalForm(message.form, envs.get(message.contextId)!);
         parentPort!.postMessage(rF);
         break;
       case "evalBlock":
         // TODO: Implement our custom serializer so that postMessage can transfer.
-        /* eslint-disable-next-line @typescript-eslint/no-unsafe-assignment */
         const rB = await evalBlock(message.block, envs.get(message.contextId)!);
         parentPort!.postMessage(rB);
         break;

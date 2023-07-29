@@ -1,5 +1,6 @@
 import { concatJsModules, jsModuleOfBody } from "./transpile.js";
-import { Definitions, Id, JsModule, Scope, Writer } from "./types.js";
+import { _cu$import, importAnyOf } from "./transpile/module.js";
+import { aConst, Definitions, Id, JsModule, Scope, Writer } from "./types.js";
 
 export function init(): Scope {
   return {
@@ -17,6 +18,7 @@ export function initAsync(): Scope {
   };
 }
 
+// TODO: delete because unused.
 export function fromDefinitions(definitions: Definitions): Scope {
   return {
     isAsync: false,
@@ -52,4 +54,15 @@ export function tmpVarOf(
       jsModuleOfBody(";\n"),
     ),
   };
+}
+
+export function addPrimitives(scope: Scope): void {
+  set(scope, "import", _cu$import);
+  set(scope, "importAnyOf", importAnyOf);
+}
+
+export function addConsts(scope: Scope, ids: Id[]): void {
+  for (const id of ids) {
+    set(scope, id, aConst());
+  }
 }

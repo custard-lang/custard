@@ -3,16 +3,19 @@ import { testEvalBlockOf } from "./util/test-expectations";
 
 import { ReplOptions } from "./repl";
 import { standardModuleRoot } from "./definitions";
+import { ModulePaths } from "./types";
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/restrict-template-expressions */
 
 describe("evalBlock", () => {
   function setUpReplOptions(): ReplOptions {
+    const modulePaths: ModulePaths = new Map();
+    modulePaths.set("base", `${standardModuleRoot}/base.js`);
     return {
       transpileOptions: { srcPath: __filename },
       providedSymbols: {
-        modulePaths: new Map(),
-        builtinModulePaths: [`${standardModuleRoot}/base.js`],
+        modulePaths,
+        implicitStatements: "(importAnyOf base)",
         jsTopLevels: ["structuredClone"],
       },
     };

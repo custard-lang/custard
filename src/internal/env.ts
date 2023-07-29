@@ -1,11 +1,9 @@
 import * as path from "node:path";
 
 import {
-  Scope,
   isRecursiveConst,
   TranspileError,
   Writer,
-  ModulePaths,
   FilePath,
   Id,
   isNamespace,
@@ -14,6 +12,8 @@ import {
   isCuSymbol,
   isPropertyAccess,
   JsModule,
+  Scope,
+  ProvidedSymbolsConfig,
 } from "./types.js";
 import type { Env, TranspileState } from "./types.js";
 import * as References from "./references.js";
@@ -27,12 +27,14 @@ import { escapeRegExp } from "../util/regexp.js";
 const TOP_LEVEL_OFFSET = 2;
 
 export function init<State extends TranspileState>(
-  initial: Scope,
   state: State,
-  modulePaths: ModulePaths = new Map(),
+  { modulePaths, jsTopLevels }: ProvidedSymbolsConfig,
 ): Env<State> {
+  const importedScope = ScopeF.initAsync();
+  ScopeF.addPrimitives(importedScope);
+  ScopeF.addConsts(importedScope, jsTopLevels);
   return {
-    scopes: [ScopeF.initAsync(), initial],
+    scopes: [ScopeF.initAsync(), importedScope],
     references: References.init(),
     modules: modulePaths,
     transpileState: state,
@@ -173,7 +175,7 @@ export type FindModuleResult = {
 export function findModule(
   env: Env,
   id: Id,
-): FindModuleResult | undefined | TranspileError {
+): FindModuleResult | undefined {
   const {
     modules,
     transpileState: { src, srcPath },
@@ -195,6 +197,10 @@ export function findModule(
         ? uncanonicalPath
         : uncanonicalPath.replace(new RegExp(escapeRegExp(path.sep), "g"), "/"),
   };
+}
+
+export function getTopLevelScope({ scopes }: Env): Scope {
+  return assertNonNull(scopes[scopes.length - 1], "Empty scopes in an env!");
 }
 
 export function isAtTopLevel({ scopes }: Env): boolean {

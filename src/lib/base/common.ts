@@ -1,4 +1,5 @@
 import * as EnvF from "../../internal/env.js";
+import * as Module from "../../internal/transpile/module.js";
 import {
   asCall,
   concatJsModules,
@@ -26,12 +27,9 @@ import {
   isKeyValues,
   KeyValues,
   JsModule,
+  isMarkedDirectStatementWriter,
 } from "../../internal/types.js";
 
-import * as Iteration from "./iteration.js";
-import * as Unbounded from "./iteration/unbounded.js";
-import * as Safe from "./safe.js";
-import * as Module from "./module.js";
 import {
   pseudoTopLevelAssignment,
   pseudoTopLevelReference,
@@ -154,31 +152,31 @@ export function transpilingForVariableDeclaration(
 ): MarkedDirectWriter {
   return transpilingForAssignment(
     formId,
-    async (env: Env, id: CuSymbol | KeyValues, exp: JsModule) => {
+    async (env: Env, sym: CuSymbol | KeyValues, exp: JsModule) => {
       let r: undefined | TranspileError;
-      function tryToSet(id: CuSymbol): undefined | TranspileError {
-        if (EnvF.isDefinedInThisScope(env, id.v)) {
+      function tryToSet(sym: CuSymbol): undefined | TranspileError {
+        if (EnvF.isDefinedInThisScope(env, sym.v)) {
           return new TranspileError(
-            `Variable ${JSON.stringify(id.v)} is already defined!`,
+            `Variable ${JSON.stringify(sym.v)} is already defined!`,
           );
         }
-        const r = EnvF.set(env, id.v, newWriter());
+        const r = EnvF.set(env, sym.v, newWriter());
         if (r instanceof TranspileError) {
           return r;
         }
       }
 
       if (EnvF.isAtReplTopLevel(env)) {
-        if (isCuSymbol(id)) {
-          r = tryToSet(id);
+        if (isCuSymbol(sym)) {
+          r = tryToSet(sym);
           if (r instanceof TranspileError) {
             return r;
           }
-          return pseudoTopLevelAssignment(id, exp);
+          return pseudoTopLevelAssignment(sym.v, exp);
         }
         const { id: tmpVar, statement } = EnvF.tmpVarOf(env, exp);
         let src = statement;
-        for (const kvOrSym of id.v) {
+        for (const kvOrSym of sym.v) {
           if (isCuSymbol(kvOrSym)) {
             r = tryToSet(kvOrSym);
             if (r instanceof TranspileError) {
@@ -188,7 +186,7 @@ export function transpilingForVariableDeclaration(
             src = concatJsModules(
               src,
               jsModuleOfBody("\n"),
-              pseudoTopLevelAssignment(kvOrSym, jsModuleOfBody(expDotId)),
+              pseudoTopLevelAssignment(kvOrSym.v, jsModuleOfBody(expDotId)),
               jsModuleOfBody(";"),
             );
             continue;
@@ -221,22 +219,22 @@ export function transpilingForVariableDeclaration(
           src = concatJsModules(
             src,
             jsModuleOfBody("\n"),
-            pseudoTopLevelAssignment(v, expDotId),
+            pseudoTopLevelAssignment(v.v, expDotId),
           );
         }
         return src;
       }
 
       let assignee: JsModule;
-      if (isCuSymbol(id)) {
-        r = tryToSet(id);
+      if (isCuSymbol(sym)) {
+        r = tryToSet(sym);
         if (r instanceof TranspileError) {
           return r;
         }
-        assignee = jsModuleOfBody(id.v);
-      } else if (isKeyValues(id)) {
+        assignee = jsModuleOfBody(sym.v);
+      } else if (isKeyValues(sym)) {
         assignee = jsModuleOfBody("{");
-        for (const kvOrSym of id.v) {
+        for (const kvOrSym of sym.v) {
           if (isCuSymbol(kvOrSym)) {
             r = tryToSet(kvOrSym);
             if (r instanceof TranspileError) {
@@ -245,7 +243,7 @@ export function transpilingForVariableDeclaration(
             assignee = extendBody(assignee, `${kvOrSym.v},`);
             continue;
           }
-          const [k, v] = id.v;
+          const [k, v] = sym.v;
           const kSrc = await transpileExpression(k, env);
           if (kSrc instanceof TranspileError) {
             return kSrc;
@@ -270,7 +268,7 @@ export function transpilingForVariableDeclaration(
         assignee = extendBody(assignee, "", "}");
       } else {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-        return expectNever(id);
+        return expectNever(sym);
       }
       return buildStatement(assignee, exp);
     },
@@ -282,18 +280,18 @@ export function transpilingForVariableMutation(
   whenTopRepl: (jsExp: JsSrc) => JsSrc,
   otherwise: (jsExp: JsSrc) => JsSrc,
 ): MarkedDirectWriter {
-  return markAsDirectWriter((env: Env, id: Form, another?: Form) => {
+  return markAsDirectWriter((env: Env, sym: Form, another?: Form) => {
     if (another !== undefined) {
       return new TranspileError(`\`${formId}\` must receive only one symbol!`);
     }
 
-    if (!isCuSymbol(id)) {
+    if (!isCuSymbol(sym)) {
       return new TranspileError(
         `The argument to \`${formId}\` must be a name of a variable!`,
       );
     }
 
-    const r = EnvF.findWithIsAtTopLevel(env, id.v);
+    const r = EnvF.findWithIsAtTopLevel(env, sym.v);
     // TODO: Support namespace?
     if (r === undefined || !isVar(r.writer)) {
       return new TranspileError(
@@ -303,11 +301,11 @@ export function transpilingForVariableMutation(
 
     if (EnvF.writerIsAtReplTopLevel(env, r)) {
       return pseudoTopLevelAssignment(
-        id,
-        jsModuleOfBody(whenTopRepl(pseudoTopLevelReference(id))),
+        sym.v,
+        jsModuleOfBody(whenTopRepl(pseudoTopLevelReference(sym.v))),
       );
     }
-    return jsModuleOfBody(otherwise(id.v));
+    return jsModuleOfBody(otherwise(sym.v));
   });
 }
 

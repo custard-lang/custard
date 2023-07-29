@@ -1,21 +1,20 @@
 import { extendBody } from "./transpile.js";
-import { CuSymbol, JsModule, JsSrc, PropertyAccess } from "./types.js";
+import { Id, JsModule, JsSrc, PropertyAccess } from "./types.js";
 
 // _cu$ is the reserved prefix of Custard
 export const CU_ENV = "_cu$env";
 
 export function pseudoTopLevelAssignment(
-  id: CuSymbol,
+  id: Id,
   exp: JsModule,
 ): JsModule {
-  const prefix = `void _cu$env.transpileState.topLevelValues.set(${JSON.stringify(
-    id.v,
-  )},`;
+  const idJson = JSON.stringify(id);
+  const prefix = `void _cu$env.transpileState.topLevelValues.set(${idJson},`;
   return extendBody(exp, prefix, ")");
 }
 
-export function pseudoTopLevelReference(id: CuSymbol): JsSrc {
-  return `_cu$env.transpileState.topLevelValues.get(${JSON.stringify(id.v)})`;
+export function pseudoTopLevelReference(id: Id): JsSrc {
+  return `_cu$env.transpileState.topLevelValues.get(${JSON.stringify(id)})`;
 }
 
 export function pseudoTopLevelReferenceToPropertyAccess(

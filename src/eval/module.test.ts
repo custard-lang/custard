@@ -11,11 +11,12 @@ describe("evalBlock", () => {
   function setUpReplOptions(): ReplOptions {
     const modulePaths: ModulePaths = new Map();
     modulePaths.set("a", "../../test-assets/a.mjs");
+    modulePaths.set("base", `${standardModuleRoot}/base.js`);
     return {
       transpileOptions: { srcPath: __filename },
       providedSymbols: {
         modulePaths,
-        builtinModulePaths: [`${standardModuleRoot}/base.js`],
+        implicitStatements: "(import base)",
         jsTopLevels: [],
       },
     };

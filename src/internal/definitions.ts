@@ -1,3 +1,8 @@
+import * as path from "node:path";
+
+import * as MapU from "../util/map.js";
+import { pathOfImportMetaUrl } from "../util/path.js";
+
 import {
   aConst,
   Definitions,
@@ -6,26 +11,39 @@ import {
   TranspileError,
 } from "./types.js";
 
-// Path to the `lib` directory from this module.
-export const standardModuleRoot = "../lib";
+// Path to the `lib` directory in the dist/ from this module.
+export const standardModuleRoot = [
+  path.dirname(
+    path.dirname(
+      path.dirname(
+        pathOfImportMetaUrl(import.meta.url),
+      ),
+    ),
+  ),
+  "dist",
+  "src",
+  "lib",
+].join("/");
+
 
 export async function loadModulePaths(
   paths: FilePath[],
 ): Promise<Definitions | TranspileError> {
   const definitions: Definitions = new Map();
   for (const path of paths) {
-    const r = await loadModulePathInto(path, definitions);
+    const r = await loadModulePath(path);
     if (r instanceof TranspileError) {
       return r;
     }
+    MapU.mergeFromTo(r, definitions);
   }
   return definitions;
 }
 
-export async function loadModulePathInto(
+export async function loadModulePath(
   path: FilePath,
-  definitions: Definitions,
-): Promise<undefined | TranspileError> {
+): Promise<Definitions | TranspileError> {
+  const definitions: Definitions = new Map();
   // TODO: Parse JavaScript source to avoid unsafe execution.
   const mod = (await import(path)) as Record<string, unknown>;
   for (const [id, def] of Object.entries(mod)) {
@@ -42,4 +60,5 @@ export async function loadModulePathInto(
     }
     definitions.set(id, aConst());
   }
+  return definitions;
 }

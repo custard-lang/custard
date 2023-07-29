@@ -3,6 +3,7 @@ import { describe, expect, test } from "vitest";
 import { assertNonError } from "../../util/error";
 
 import * as EnvF from "../env";
+import * as ProvidedSymbolsConfigF from "../../provided-symbols-config.js";
 import { readBlock } from "../../reader";
 import { transpileBlock } from "../transpile";
 import { transpileModule } from "../transpile-state";
@@ -23,17 +24,15 @@ describe("transpileBlock", () => {
   const subject = async (
     src: string,
   ): Promise<[JsModule | TranspileError, Env]> => {
-    const modules: ModulePaths = new Map();
-    modules.set("a", "../../../test-assets/a.mjs");
+    const modulePaths: ModulePaths = new Map();
+    modulePaths.set("a", "../../../test-assets/a.mjs");
 
     const env = EnvF.init(
-      fromDefinitions(
-        assertNonError(
-          await loadModulePaths([`${standardModuleRoot}/base.js`]),
-        ),
-      ),
       await transpileModule({ srcPath: __filename }),
-      modules,
+      {
+        ...ProvidedSymbolsConfigF.empty(),
+        modulePaths,
+      },
     );
     const jsSrc = await transpileBlock(assertNonError(readBlock(src)), env);
     return [jsSrc, env];

@@ -247,7 +247,7 @@ export const assign = transpilingForAssignment(
         );
       }
       if (EnvF.writerIsAtReplTopLevel(env, r)) {
-        return pseudoTopLevelAssignment(sym, e);
+        return pseudoTopLevelAssignment(sym.v, e);
       }
       return concatJsModules(jsModuleOfBody(`${sym.v}=`), e);
     }

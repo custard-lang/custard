@@ -5,9 +5,10 @@ import * as fs from "node:fs/promises";
 
 import { defaultProvidedSymbolsConfig } from "./default-provided-symbols.js";
 import { ParseError } from "./grammar.js";
+import { implicitlyImporting } from "./provided-symbols-config.js";
 import { readBlock } from "./reader.js";
 import { transpileModule } from "./transpile.js";
-import { Block, ProvidedSymbolsConfig, provideNoModules } from "./types.js";
+import { Block, ProvidedSymbolsConfig } from "./types.js";
 import { Repl } from "./repl.js";
 import { evalBlock } from "./eval.js";
 import { standardModuleRoot } from "./definitions.js";
@@ -51,9 +52,8 @@ const result = program
 
   const replOptions = {
     transpileOptions: { srcPath: providedSymbolsPath },
-    providedSymbols: provideNoModules(
+    providedSymbols: implicitlyImporting(
       `${standardModuleRoot}/base/safe.js`,
-      `${standardModuleRoot}/base/module.js`,
     ),
   };
   const providedSymbolsConfig = await Repl.using(replOptions, (repl) => {

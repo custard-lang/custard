@@ -87,7 +87,8 @@ export function showSymbolAccess(sym: CuSymbol | PropertyAccess): string {
 }
 
 export type ProvidedSymbolsConfig = {
-  builtinModulePaths: FilePath[];
+  // TODO: quoteされたFormにする。最終的にはProvidedSymbolsConfig全体を専用のマクロで設定する仕様に
+  implicitStatements: string;
   modulePaths: ModulePaths;
   jsTopLevels: Id[];
 };
@@ -95,21 +96,11 @@ export type ProvidedSymbolsConfig = {
 export const ProvidedSymbolsConfig: s.Spec<ProvidedSymbolsConfig> = s.withId(
   "ProvidedSymbolsConfig",
   s.record({
-    builtinModulePaths: s.array(s.string),
+    implicitStatements: s.string,
     modulePaths: s.map(s.string, s.string),
     jsTopLevels: s.array(s.string),
   }),
 );
-
-export function provideNoModules(
-  ...builtinModulePaths: FilePath[]
-): ProvidedSymbolsConfig {
-  return {
-    builtinModulePaths,
-    modulePaths: new Map(),
-    jsTopLevels: [],
-  };
-}
 
 export type ModulePaths = Map<Id, FilePath>;
 

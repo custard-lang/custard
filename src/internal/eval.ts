@@ -3,11 +3,14 @@ import { Block, Form } from "../types.js";
 import {
   appendJsStatement,
   transpileBlock,
+  transpileBlockCore,
   transpileStatement,
 } from "./transpile.js";
 import { _cu$eval } from "./isolated-eval.js";
 
 import { isNonExpressionCall } from "../lib/base/common.js";
+import { ParseError } from "../grammar.js";
+import { readBlock } from "../reader.js";
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-return */
 
@@ -37,31 +40,29 @@ export async function evalBlock(
   forms: Block,
   env: Env<TranspileRepl>,
 ): Promise<any | Error> {
-  const jsMod = await transpileBlock(forms.slice(0, -1), env);
+  const jsMod = await transpileBlockCore(
+    forms,
+    env,
+    { mayHaveResult: true }
+  );
   if (jsMod instanceof Error) {
     return jsMod;
   }
 
-  const lastForm = forms[forms.length - 1];
-  const lastIsNonExpression = isNonExpressionCall(env, lastForm);
-
-  const last = await transpileStatement(lastForm, env);
-  if (last instanceof Error) {
-    return last;
-  }
-
   try {
-    if (lastIsNonExpression) {
-      return await _cu$eval(
-        {
-          ...appendJsStatement(jsMod, last),
-          lastExpression: "",
-        },
-        env,
-      );
-    }
-    return await _cu$eval({ ...jsMod, lastExpression: last.body }, env);
+    return await _cu$eval(jsMod, env);
   } catch (e) {
     return e;
   }
+}
+
+export async function evalString(
+  formsString: string,
+  env: Env<TranspileRepl>,
+): Promise<any | Error> {
+  const forms = readBlock(formsString);
+  if (forms instanceof ParseError) {
+    return forms;
+  }
+  return evalBlock(forms, env);
 }

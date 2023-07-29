@@ -21,6 +21,7 @@ import {
   CuSymbol,
   JsModule,
   JsSrc,
+  JsModuleWithResult,
 } from "../internal/types.js";
 import {
   CU_ENV,
@@ -29,7 +30,11 @@ import {
 } from "./cu-env.js";
 import { Env } from "./types.js";
 import * as EnvF from "./env.js";
+import { readBlock } from "../reader.js";
+import { ParseError } from "../grammar.js";
+import { isNonExpressionCall } from "../lib/base/common.js";
 
+// TODO: 廃止
 export async function transpileStatement(
   ast: Form,
   env: Env,
@@ -168,7 +173,7 @@ async function transpileExpressionWithNextCall(
           }
           if (EnvF.writerIsAtReplTopLevel(env, r)) {
             return [
-              jsModuleOfBody(pseudoTopLevelReference(ast)),
+              jsModuleOfBody(pseudoTopLevelReference(ast.v)),
               { writer: r.writer, sym: ast },
             ];
           }
@@ -228,7 +233,7 @@ async function transpileKeyValues(
         return f;
       }
       if (EnvF.writerIsAtReplTopLevel(env, f)) {
-        kvSrc = jsModuleOfBody(`${kv.v}: ${pseudoTopLevelReference(kv)}`);
+        kvSrc = jsModuleOfBody(`${kv.v}: ${pseudoTopLevelReference(kv.v)}`);
       } else {
         kvSrc = jsModuleOfBody(kv.v);
       }
@@ -261,16 +266,73 @@ async function transpileKeyValues(
 export async function transpileBlock(
   forms: Block,
   env: Env,
+  extraOptions: { mayHaveResult: boolean; } = { mayHaveResult: false },
 ): Promise<JsModule | TranspileError> {
+  const jsSrc = await transpileBlockCore(forms, env, extraOptions);
+
+  if (jsSrc instanceof TranspileError){
+    return jsSrc;
+  }
+  const { imports, body, lastExpression } = jsSrc;
+  if (lastExpression !== "") {
+    return {
+      imports,
+      body: `${body}export default ${lastExpression}`,
+    }
+  }
+
+  return {
+    imports,
+    body,
+  };
+}
+
+export async function transpileBlockCore(
+  forms: Block,
+  env: Env,
+  extraOptions: { mayHaveResult: boolean; } = { mayHaveResult: false },
+): Promise<JsModuleWithResult | TranspileError> {
   let jsSrc = emptyJsModule();
-  for (const form of forms) {
-    const s = await transpileStatement(form, env);
+  for (const form of forms.slice(0, -1)) {
+    const s = await transpileExpression(form, env);
     if (s instanceof Error) {
       return s;
     }
     jsSrc = appendJsStatement(jsSrc, s);
   }
-  return jsSrc;
+
+  const lastForm = forms[forms.length - 1];
+  const last = await transpileExpression(lastForm, env);
+  if (last instanceof Error) {
+    return last;
+  }
+
+  const lastIsExpression = !isNonExpressionCall(env, lastForm);
+  if (lastIsExpression && extraOptions.mayHaveResult) {
+    return {
+      ...jsSrc,
+      imports: `${jsSrc.imports}${last.imports}`,
+      lastExpression: last.body,
+    };
+  }
+
+  jsSrc = appendJsStatement(jsSrc, last);
+
+  return {
+    ...jsSrc,
+    lastExpression: "",
+  };
+}
+
+export async function transpileString(
+  formsString: string,
+  env: Env,
+): Promise<JsModule | Error> {
+  const forms = readBlock(formsString);
+  if (forms instanceof ParseError) {
+    return forms;
+  }
+  return transpileBlock(forms, env);
 }
 
 export function asCall(form: Form): [Id, ...Form[]] | undefined {
@@ -312,7 +374,10 @@ export function appendJsStatement(
   jsExpression: JsModule,
 ): JsModule {
   return {
-    imports: `${jsBlock.imports}${jsExpression.imports};\n`,
+    imports:
+      jsExpression.imports
+        ? `${jsBlock.imports}${jsExpression.imports};\n`
+        : jsBlock.imports,
     body: `${jsBlock.body}${jsExpression.body};\n`,
   };
 }
@@ -350,6 +415,6 @@ export function jsModuleOfImports(imports: JsSrc): JsModule {
   return { imports, body: "" };
 }
 
-function emptyJsModule(): JsModule {
+export function emptyJsModule(): JsModule {
   return { imports: "", body: "" };
 }
