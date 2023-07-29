@@ -7,7 +7,6 @@ import * as ProvidedSymbolsConfigF from "../../provided-symbols-config.js";
 import { readBlock } from "../../reader";
 import { transpileBlock } from "../transpile";
 import { transpileModule } from "../transpile-state";
-import { fromDefinitions } from "../scope";
 import {
   Env,
   isNamespace,
@@ -15,10 +14,6 @@ import {
   ModulePaths,
   TranspileError,
 } from "../types";
-import {
-  loadModulePaths,
-  standardModuleRoot,
-} from "../../internal/definitions";
 
 describe("transpileBlock", () => {
   const subject = async (

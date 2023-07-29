@@ -8,7 +8,6 @@ import { ModulePaths } from "../types";
 import { standardModuleRoot } from "../definitions";
 import { evalForm } from "../eval";
 import { readStr } from "../reader";
-import { evalModule } from "../util/eval";
 import { withNewPath } from "../test/tmp-file";
 import { writeAndEval } from "../test/eval";
 
