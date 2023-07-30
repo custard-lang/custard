@@ -109,7 +109,10 @@ export const _cu$for = markAsDirectWriter(
       );
     }
 
-    const initialStatementSrc = await transpileExpression(initialStatement, env);
+    const initialStatementSrc = await transpileExpression(
+      initialStatement,
+      env,
+    );
     if (initialStatementSrc instanceof TranspileError) {
       return initialStatementSrc;
     }

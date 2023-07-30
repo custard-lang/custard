@@ -21,7 +21,9 @@ export type LiteralObject = {
 };
 
 export function isLiteralObject(v: Form): v is LiteralObject {
-  return v !== undefined && (v as Record<string, unknown>).t === "LiteralObject";
+  return (
+    v !== undefined && (v as Record<string, unknown>).t === "LiteralObject"
+  );
 }
 
 // TODO: Perhaps key should be either an Atom or Call;
