@@ -10,14 +10,11 @@ import { evalBlock, evalForm } from "./eval";
 
 export function testEvalFormOf({
   src,
-  preludeSrc,
   expected,
   only,
   setUpReplOptions,
 }: {
   src: string;
-  // TODO: Remove. Use implicitStatements of ProvidedSymbolsConfig instead
-  preludeSrc?: string | undefined;
   expected: any;
   only?: true | undefined;
   setUpReplOptions: () => Awaitable<ReplOptions>;
@@ -25,11 +22,6 @@ export function testEvalFormOf({
   const t = only ? test.only : test;
   t(`\`${src}\` => ${expected}`, async () => {
     await Repl.using(await setUpReplOptions(), async (repl) => {
-      if (preludeSrc) {
-        assertNonError(
-          await evalBlock(assertNonError(readBlock(preludeSrc)), repl),
-        );
-      }
       const result = await evalForm(assertNonError(readStr(src)), repl);
       if (!(expected instanceof Error) && result instanceof Error) {
         throw result;
@@ -41,13 +33,11 @@ export function testEvalFormOf({
 
 export function testEvalBlockOf({
   src,
-  preludeSrc,
   expected,
   only,
   setUpReplOptions,
 }: {
   src: string;
-  preludeSrc?: string | undefined;
   expected: any;
   only?: true | undefined;
   setUpReplOptions: () => Awaitable<ReplOptions>;
@@ -55,11 +45,6 @@ export function testEvalBlockOf({
   const t = only ? test.only : test;
   t(`\`${src}\` => ${expected}`, async () => {
     await Repl.using(await setUpReplOptions(), async (repl) => {
-      if (preludeSrc) {
-        assertNonError(
-          await evalBlock(assertNonError(readBlock(preludeSrc)), repl),
-        );
-      }
       const result = await evalBlock(assertNonError(readBlock(src)), repl);
       if (!(expected instanceof Error) && result instanceof Error) {
         throw result;
