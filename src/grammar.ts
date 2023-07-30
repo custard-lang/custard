@@ -3,7 +3,7 @@ import {
   Form,
   CuArray,
   Atom,
-  KeyValues,
+  LiteralObject,
   KeyValue,
   CuSymbol,
   isCuSymbol,
@@ -61,13 +61,13 @@ function literalArray(s: Scanner): LiteralArray | ParseError {
   };
 }
 
-function object(s: Scanner): KeyValues | ParseError {
+function object(s: Scanner): LiteralObject | ParseError {
   const v = untilClose(s, "}", keyValueOrSymbol);
   if (v instanceof ParseError) {
     return v;
   }
   return {
-    t: "KeyValues",
+    t: "LiteralObject",
     v,
   };
 }

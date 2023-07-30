@@ -25,9 +25,9 @@ export function prStr(form: Form): string {
       return form.v;
     case "PropertyAccess":
       return form.v.join(".");
-    case "KeyValues":
+    case "LiteralObject":
       // TODO
-      throw new Error("KeyValues not yet implemented");
+      throw new Error("LiteralObject not yet implemented");
     case "LiteralArray":
       // TODO
       throw new Error("LiteralArray not yet implemented");

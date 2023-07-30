@@ -137,7 +137,7 @@ describe("readStr", () => {
   describe("Object", () => {
     test('`{ a: 1.0 bc: "def" }`', () => {
       expect(readStr('{ a: 1.0 bc: "def" }')).toEqual({
-        t: "KeyValues",
+        t: "LiteralObject",
         v: [
           [cuSymbol("a"), 1.0],
           [cuSymbol("bc"), "def"],
@@ -149,12 +149,12 @@ describe("readStr", () => {
       expect(
         readStr('{ a: { aa: ( 1.1 2.1 3.3 ) ab: 3.0 } bc: "def" }'),
       ).toEqual({
-        t: "KeyValues",
+        t: "LiteralObject",
         v: [
           [
             cuSymbol("a"),
             {
-              t: "KeyValues",
+              t: "LiteralObject",
               v: [
                 [cuSymbol("aa"), [1.1, 2.1, 3.3]],
                 [cuSymbol("ab"), 3.0],

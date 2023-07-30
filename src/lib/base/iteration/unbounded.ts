@@ -5,7 +5,6 @@ import {
   jsModuleOfBody,
   transpileBlock,
   transpileExpression,
-  transpileStatement,
 } from "../../../internal/transpile.js";
 import {
   Env,
@@ -110,7 +109,7 @@ export const _cu$for = markAsDirectWriter(
       );
     }
 
-    const initialStatementSrc = await transpileStatement(initialStatement, env);
+    const initialStatementSrc = await transpileExpression(initialStatement, env);
     if (initialStatementSrc instanceof TranspileError) {
       return initialStatementSrc;
     }

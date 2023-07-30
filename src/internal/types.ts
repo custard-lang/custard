@@ -9,20 +9,19 @@ import * as s from "../lib/spec.js";
 
 export type Block = Form[];
 
-export type Form = CuArray | LiteralArray | KeyValues | Atom;
+export type Form = CuArray | LiteralArray | LiteralObject | Atom;
 
 export type LiteralArray = { t: "LiteralArray"; v: CuArray };
 
 export type CuArray = Form[];
 
-// TODO: rename into LiteralObject
-export type KeyValues = {
-  t: "KeyValues";
+export type LiteralObject = {
+  t: "LiteralObject";
   v: (KeyValue | CuSymbol)[];
 };
 
-export function isKeyValues(v: Form): v is KeyValues {
-  return v !== undefined && (v as Record<string, unknown>).t === "KeyValues";
+export function isLiteralObject(v: Form): v is LiteralObject {
+  return v !== undefined && (v as Record<string, unknown>).t === "LiteralObject";
 }
 
 // TODO: Perhaps key should be either an Atom or Call;

@@ -11,7 +11,7 @@ import {
   isCuSymbol,
   TranspileError,
   markAsDirectWriter,
-  KeyValues,
+  LiteralObject,
   JsModule,
 } from "../../internal/types.js";
 import {
@@ -237,7 +237,7 @@ export const not = transpiling1("not", (a: JsModule) =>
 
 export const assign = transpilingForAssignment(
   "assign",
-  async (env: Env, id: CuSymbol | KeyValues, exp: JsModule) => {
+  async (env: Env, id: CuSymbol | LiteralObject, exp: JsModule) => {
     function assignStatement(
       sym: CuSymbol,
       e: JsModule,

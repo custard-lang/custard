@@ -16,7 +16,7 @@ import {
   isNamespace,
   isMarkedFunctionWithEnv,
   isMarkedDirectWriter,
-  KeyValues,
+  LiteralObject,
   PropertyAccess,
   CuSymbol,
   JsModule,
@@ -33,14 +33,6 @@ import * as EnvF from "./env.js";
 import { readBlock } from "../reader.js";
 import { ParseError } from "../grammar.js";
 import { isStatement } from "../lib/base/common.js";
-
-// TODO: 廃止
-export async function transpileStatement(
-  ast: Form,
-  env: Env,
-): Promise<JsModule | TranspileError> {
-  return await transpileExpression(ast, env);
-}
 
 export async function transpileExpression(
   ast: Form,
@@ -206,8 +198,8 @@ async function transpileExpressionWithNextCall(
             ),
             undefined,
           ];
-        case "KeyValues":
-          const kvSrc = await transpileKeyValues(ast, env);
+        case "LiteralObject":
+          const kvSrc = await transpileLiteralObject(ast, env);
           if (kvSrc instanceof TranspileError) {
             return kvSrc;
           }
@@ -220,8 +212,8 @@ async function transpileExpressionWithNextCall(
   }
 }
 
-async function transpileKeyValues(
-  ast: KeyValues,
+async function transpileLiteralObject(
+  ast: LiteralObject,
   env: Env,
 ): Promise<JsModule | TranspileError> {
   let objectContents = emptyJsModule();

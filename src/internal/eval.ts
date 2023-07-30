@@ -1,6 +1,6 @@
 import { Env, TranspileRepl } from "./types.js";
 import { Block, Form } from "../types.js";
-import { transpileBlockCore, transpileStatement } from "./transpile.js";
+import { transpileBlockCore, transpileExpression } from "./transpile.js";
 import { _cu$eval } from "./isolated-eval.js";
 
 import { ParseError } from "../grammar.js";
@@ -12,7 +12,7 @@ export async function evalForm(
   ast: Form,
   env: Env<TranspileRepl>,
 ): Promise<any | Error> {
-  const jsMod = await transpileStatement(ast, env);
+  const jsMod = await transpileExpression(ast, env);
   if (jsMod instanceof Error) {
     return jsMod;
   }

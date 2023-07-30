@@ -2,7 +2,7 @@ export {
   Form,
   Block,
   CuArray,
-  KeyValues,
+  LiteralObject,
   KeyValue,
   Atom,
   LiteralArray,

@@ -5,7 +5,6 @@ import {
   extendBody,
   jsModuleOfBody,
   transpileExpression,
-  transpileStatement,
 } from "../../internal/transpile.js";
 import {
   Env,
@@ -23,8 +22,8 @@ import {
   TranspileError,
   Writer,
   isVar,
-  isKeyValues,
-  KeyValues,
+  isLiteralObject,
+  LiteralObject,
   JsModule,
   isMarkedDirectStatementWriter,
   DirectWriterKind,
@@ -105,7 +104,7 @@ export function transpilingForAssignment(
   formId: Id,
   f: (
     env: Env,
-    id: CuSymbol | KeyValues,
+    id: CuSymbol | LiteralObject,
     exp: JsModule,
   ) => Promise<JsModule | TranspileError>,
   kind: DirectWriterKind = "statement",
@@ -117,7 +116,7 @@ export function transpilingForAssignment(
           `The number of arguments to \`${formId}\` must be 2!`,
         );
       }
-      if (!isCuSymbol(id) && !isKeyValues(id)) {
+      if (!isCuSymbol(id) && !isLiteralObject(id)) {
         return new TranspileError(
           `${JSON.stringify(id)} is must be a symbol or key values of symbols!`,
         );
@@ -140,7 +139,7 @@ export function transpilingForVariableDeclaration(
 ): MarkedDirectWriter {
   return transpilingForAssignment(
     formId,
-    async (env: Env, sym: CuSymbol | KeyValues, exp: JsModule) => {
+    async (env: Env, sym: CuSymbol | LiteralObject, exp: JsModule) => {
       let r: undefined | TranspileError;
       function tryToSet(sym: CuSymbol): undefined | TranspileError {
         if (EnvF.isDefinedInThisScope(env, sym.v)) {
@@ -220,7 +219,7 @@ export function transpilingForVariableDeclaration(
           return r;
         }
         assignee = jsModuleOfBody(sym.v);
-      } else if (isKeyValues(sym)) {
+      } else if (isLiteralObject(sym)) {
         assignee = jsModuleOfBody("{");
         for (const kvOrSym of sym.v) {
           if (isCuSymbol(kvOrSym)) {
@@ -357,7 +356,7 @@ export async function buildFn(
 
   const lastI = block.length - 1;
   for (let i = 0; i < lastI; ++i) {
-    const src = await transpileStatement(block[i], env);
+    const src = await transpileExpression(block[i], env);
     if (src instanceof TranspileError) {
       return src;
     }
@@ -376,7 +375,7 @@ export async function buildFn(
       `The last statement in a \`${formId}\` must be an expression! But \`${id}\` is a statement!`,
     );
   }
-  const lastSrc = await transpileStatement(lastStatement, env);
+  const lastSrc = await transpileExpression(lastStatement, env);
   if (lastSrc instanceof TranspileError) {
     return lastSrc;
   }
@@ -403,7 +402,7 @@ export async function buildProcedure(
   }
 
   for (let i = 0; i < block.length; ++i) {
-    const src = await transpileStatement(block[i], env);
+    const src = await transpileExpression(block[i], env);
     if (src instanceof TranspileError) {
       return src;
     }
