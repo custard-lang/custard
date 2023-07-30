@@ -3,7 +3,7 @@ import { describe } from "vitest";
 import { ReplOptions } from "../repl";
 import { ModulePaths } from "../types";
 import { standardModuleRoot } from "../definitions";
-import { testEvalBlockOf } from "../util/test-expectations";
+import { testEvalBlockOf } from "../test";
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/restrict-template-expressions */
 

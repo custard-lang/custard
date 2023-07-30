@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { testEvalFormOf } from "../util/test-expectations";
+import { testEvalFormOf } from "../test";
 
 import { assertNonError } from "../util/error";
 

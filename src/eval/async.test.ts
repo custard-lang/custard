@@ -1,5 +1,5 @@
 import { describe } from "vitest";
-import { testEvalFormOf } from "../util/test-expectations";
+import { testEvalFormOf } from "../test";
 
 import { ReplOptions } from "../repl";
 import { ModulePaths, TranspileError } from "../types";

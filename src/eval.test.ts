@@ -1,5 +1,5 @@
 import { describe } from "vitest";
-import { testEvalBlockOf } from "./util/test-expectations";
+import { testEvalBlockOf } from "./test";
 
 import { ReplOptions } from "./repl";
 import { standardModuleRoot } from "./definitions";

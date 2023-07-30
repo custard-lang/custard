@@ -1,10 +1,10 @@
 import { test, expect, Awaitable } from "vitest";
 
-import { assertNonError } from "./error";
+import { assertNonError } from "./util/error";
 
-import { Repl, ReplOptions } from "../repl";
-import { readBlock, readStr } from "../reader";
-import { evalBlock, evalForm } from "../eval";
+import { Repl, ReplOptions } from "./repl";
+import { readBlock, readStr } from "./reader";
+import { evalBlock, evalForm } from "./eval";
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/restrict-template-expressions, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-assignment */
 
