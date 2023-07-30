@@ -1,5 +1,4 @@
 import * as EnvF from "../../internal/env.js";
-import * as Module from "../../internal/transpile/module.js";
 import {
   asCall,
   concatJsModules,
@@ -28,6 +27,7 @@ import {
   KeyValues,
   JsModule,
   isMarkedDirectStatementWriter,
+  DirectWriterKind,
 } from "../../internal/types.js";
 
 import {
@@ -41,22 +41,8 @@ export function isNonExpressionCall(env: Env, form: Form): form is Call {
   if (call === undefined) {
     return false;
   }
-  const nonExpressions: (Writer | undefined)[] = [
-    Safe._cu$const,
-    Safe._cu$let,
-    Safe._cu$return,
-    Safe.incrementF,
-    Safe.decrementF,
-    Safe.when,
-    Unbounded._cu$while,
-    Unbounded._cu$for,
-    Unbounded.forEach,
-    Unbounded.recursive,
-    Iteration._cu$break,
-    Iteration._cu$continue,
-    Module._cu$import,
-  ];
-  return nonExpressions.includes(EnvF.find(env, call[0]));
+  const w = EnvF.find(env, call[0]);
+  return w !== undefined && isMarkedDirectStatementWriter(w);
 }
 
 export function transpiling1Unmarked(
@@ -122,6 +108,7 @@ export function transpilingForAssignment(
     id: CuSymbol | KeyValues,
     exp: JsModule,
   ) => Promise<JsModule | TranspileError>,
+  kind: DirectWriterKind = "statement",
 ): MarkedDirectWriter {
   return markAsDirectWriter(
     async (env: Env, id: Form, v: Form, another?: Form) => {
@@ -142,6 +129,7 @@ export function transpilingForAssignment(
       }
       return await f(env, id, exp);
     },
+    kind,
   );
 }
 
@@ -306,7 +294,7 @@ export function transpilingForVariableMutation(
       );
     }
     return jsModuleOfBody(otherwise(sym.v));
-  });
+  }, "statement");
 }
 
 function functionPrelude(

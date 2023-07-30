@@ -73,6 +73,7 @@ export const _cu$return = markAsDirectWriter(
         );
     }
   },
+  "statement",
 );
 
 export const when = markAsDirectWriter(
@@ -103,6 +104,7 @@ export const when = markAsDirectWriter(
       jsModuleOfBody("\n}"),
     );
   },
+  "statement",
 );
 
 export const incrementF = transpilingForVariableMutation(
@@ -292,6 +294,7 @@ export const assign = transpilingForAssignment(
     }
     return src;
   },
+  "expression",
 );
 
 export const scope = buildScope("", "scope");

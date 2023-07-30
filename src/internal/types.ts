@@ -208,12 +208,22 @@ export type DirectWriter = (
 export type MarkedDirectWriter = IsWriter & {
   readonly t: 5;
   readonly call: DirectWriter;
+  readonly isStatement: boolean;
 };
-export function markAsDirectWriter(call: DirectWriter): MarkedDirectWriter {
-  return asWriter({ t: 5, call });
+export type DirectWriterKind = "statement" | "expression";
+export function markAsDirectWriter(
+  call: DirectWriter,
+  kind: DirectWriterKind = "expression",
+): MarkedDirectWriter {
+  return asWriter({ t: 5, call, isStatement: kind === "statement" });
 }
 export function isMarkedDirectWriter(x: Writer): x is MarkedDirectWriter {
   return x.t === 5;
+}
+export function isMarkedDirectStatementWriter(
+  x: Writer,
+): x is MarkedDirectWriter {
+  return x.t === 5 && x.isStatement;
 }
 
 export type FunctionWithEnv = (env: Env, ...rest: any[]) => any | Error;

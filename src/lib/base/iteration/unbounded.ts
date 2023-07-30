@@ -68,6 +68,7 @@ export const _cu$while = markAsDirectWriter(
       jsModuleOfBody("}"),
     );
   },
+  "statement",
 );
 
 export const _cu$for = markAsDirectWriter(
@@ -139,6 +140,7 @@ export const _cu$for = markAsDirectWriter(
       jsModuleOfBody("}"),
     );
   },
+  "statement",
 );
 
 export const forEach = markAsDirectWriter(
@@ -196,6 +198,7 @@ export const forEach = markAsDirectWriter(
       jsModuleOfBody(`}`),
     );
   },
+  "statement",
 );
 
 export const recursive = markAsDirectWriter(
@@ -230,4 +233,5 @@ export const recursive = markAsDirectWriter(
 
     return await transpileBlock(consts, env);
   },
+  "statement",
 );

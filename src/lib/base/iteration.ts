@@ -21,5 +21,6 @@ function transpilingControlStatement(id: Id): MarkedDirectWriter {
       }
       return jsModuleOfBody(id);
     },
+    "statement",
   );
 }
