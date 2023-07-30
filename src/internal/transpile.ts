@@ -32,7 +32,7 @@ import { Env } from "./types.js";
 import * as EnvF from "./env.js";
 import { readBlock } from "../reader.js";
 import { ParseError } from "../grammar.js";
-import { isNonExpressionCall } from "../lib/base/common.js";
+import { isStatement } from "../lib/base/common.js";
 
 // TODO: 廃止
 export async function transpileStatement(
@@ -307,7 +307,7 @@ export async function transpileBlockCore(
     return last;
   }
 
-  const lastIsExpression = !isNonExpressionCall(env, lastForm);
+  const lastIsExpression = !isStatement(env, lastForm);
   if (lastIsExpression && extraOptions.mayHaveResult) {
     return {
       ...jsSrc,

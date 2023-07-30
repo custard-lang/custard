@@ -20,7 +20,7 @@ import {
   JsModule,
 } from "../../../internal/types.js";
 
-import { isNonExpressionCall } from "../common.js";
+import { isStatement } from "../common.js";
 import { _cu$const } from "../safe.js";
 
 export * from "../iteration.js";
@@ -40,7 +40,7 @@ export const _cu$while = markAsDirectWriter(
       return new TranspileError("No statements given to a `while` statement!");
     }
 
-    if (isNonExpressionCall(env, bool)) {
+    if (isStatement(env, bool)) {
       const id = showSymbolAccess(bool[0]);
       return new TranspileError(
         `The conditional expression in a \`for\` must be an expression! But \`${id}\` is a statement!`,
@@ -103,7 +103,7 @@ export const _cu$for = markAsDirectWriter(
       return new TranspileError("No statements given to a `for` statement!");
     }
 
-    if (isNonExpressionCall(env, bool)) {
+    if (isStatement(env, bool)) {
       const id = showSymbolAccess(bool[0]);
       return new TranspileError(
         `The conditional expression in a \`for\` must be an expression! But \`${id}\` is a statement!`,

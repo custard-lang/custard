@@ -36,7 +36,7 @@ import {
 } from "../../internal/cu-env.js";
 import { expectNever } from "../../util/error.js";
 
-export function isNonExpressionCall(env: Env, form: Form): form is Call {
+export function isStatement(env: Env, form: Form): form is Call {
   const call = asCall(form);
   if (call === undefined) {
     return false;
@@ -370,7 +370,7 @@ export async function buildFn(
   }
 
   const lastStatement = block[lastI];
-  if (isNonExpressionCall(env, lastStatement)) {
+  if (isStatement(env, lastStatement)) {
     const id = showSymbolAccess(lastStatement[0]);
     return new TranspileError(
       `The last statement in a \`${formId}\` must be an expression! But \`${id}\` is a statement!`,
