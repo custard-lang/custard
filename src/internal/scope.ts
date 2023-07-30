@@ -1,6 +1,6 @@
 import { concatJsModules, jsModuleOfBody } from "./transpile.js";
 import { _cu$import, importAnyOf } from "./transpile/module.js";
-import { aConst, Definitions, Id, JsModule, Scope, Writer } from "./types.js";
+import { aConst, Id, JsModule, Scope, Writer } from "./types.js";
 
 export function init(): Scope {
   return {
@@ -14,15 +14,6 @@ export function initAsync(): Scope {
   return {
     isAsync: true,
     definitions: new Map(),
-    temporaryVariablesCount: 0,
-  };
-}
-
-// TODO: delete because unused.
-export function fromDefinitions(definitions: Definitions): Scope {
-  return {
-    isAsync: false,
-    definitions,
     temporaryVariablesCount: 0,
   };
 }

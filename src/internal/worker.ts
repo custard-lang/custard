@@ -2,7 +2,6 @@ import { parentPort } from "node:worker_threads";
 
 import { expectNever } from "../util/error.js";
 
-import { fromDefinitions } from "./scope.js";
 import * as EnvF from "./env.js";
 import type { Command, ContextId } from "../repl.js";
 import { transpileRepl } from "./transpile-state.js";
