@@ -7,16 +7,11 @@ import { pid } from "node:process";
 import { threadId } from "node:worker_threads";
 
 import { FilePath } from "../types";
-import { pathOfImportMetaUrl } from "../util/path";
+import { projectRootFromImportMetaUrl } from "../util/path";
 
 let count = 0;
 
-const tmpDir = path.join(
-  path.dirname(
-    path.dirname(path.dirname(pathOfImportMetaUrl(import.meta.url))),
-  ),
-  "tmp",
-);
+const tmpDir = [projectRootFromImportMetaUrl(import.meta.url), "tmp"].join("/");
 
 export type SrcAndDestPaths = {
   src: FilePath;

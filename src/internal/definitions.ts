@@ -1,7 +1,5 @@
-import * as path from "node:path";
-
 import * as MapU from "../util/map.js";
-import { pathOfImportMetaUrl } from "../util/path.js";
+import { projectRootFromImportMetaUrl } from "../util/path.js";
 
 import {
   aConst,
@@ -13,9 +11,7 @@ import {
 
 // Path to the `lib` directory in the dist/ from this module.
 export const standardModuleRoot = [
-  path.dirname(
-    path.dirname(path.dirname(pathOfImportMetaUrl(import.meta.url))),
-  ),
+  projectRootFromImportMetaUrl(import.meta.url),
   "dist",
   "src",
   "lib",
