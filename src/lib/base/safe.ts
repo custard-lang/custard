@@ -35,6 +35,8 @@ import {
   transpilingForVariableMutation,
 } from "./common.js";
 
+export { standardModuleRoot } from "../../definitions.js";
+
 export const _cu$const = transpilingForVariableDeclaration(
   "const",
   (assignee: JsModule, exp: JsModule) =>

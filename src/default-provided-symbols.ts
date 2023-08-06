@@ -3,7 +3,7 @@ export const defaultProvidedSymbolsConfig = `
 (modulePaths.set "async" "./lib/async.js")
 {
   modulePaths,
-  builtinModulePaths: [(text standardRoot "/base.js")],
+  builtinModulePaths: [(text standardModuleRoot "/base.js")],
   jsTopLevels: ["console"],
 }
 `;
