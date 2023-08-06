@@ -241,6 +241,14 @@ export function isMarkedFunctionWithEnv(x: Writer): x is MarkedFunctionWithEnv {
   return x.t === 6;
 }
 
+export type ProvidedConst = IsWriter & { readonly t: 7 };
+export function aProvidedConst(): ProvidedConst {
+  return asWriter({ t: 7 });
+}
+export function isProvidedConst(x: Writer): x is ProvidedConst {
+  return x.t === 7;
+}
+
 export type Writer =
   | ContextualKeyword
   | Var
@@ -248,7 +256,18 @@ export type Writer =
   | RecursiveConst
   | Namespace
   | MarkedDirectWriter
-  | MarkedFunctionWithEnv;
+  | MarkedFunctionWithEnv
+  | ProvidedConst;
+
+export type CanBePseudoTopLevelReferenced =
+  | Var
+  | Const
+  | RecursiveConst
+  | Namespace
+
+export function canBePseudoTopLevelReferenced(x: Writer): x is CanBePseudoTopLevelReferenced {
+  return isVar(x) || isConst(x) || isRecursiveConst(x) || isNamespace(x);
+}
 
 export type References = {
   readonly referenceById: Map<Id, Ref[]>;

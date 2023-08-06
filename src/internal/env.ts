@@ -14,6 +14,7 @@ import {
   JsModule,
   Scope,
   ProvidedSymbolsConfig,
+  canBePseudoTopLevelReferenced,
 } from "./types.js";
 import type { Env, TranspileState } from "./types.js";
 import * as References from "./references.js";
@@ -24,17 +25,17 @@ import { escapeRegExp } from "../util/regexp.js";
 
 // To distinguish jsTopLevels and the top level scope of the code,
 // assign the second scope as the top level.
-const TOP_LEVEL_OFFSET = 2;
+const TOP_LEVEL_OFFSET = 1;
 
 export function init<State extends TranspileState>(
   state: State,
   { modulePaths, jsTopLevels }: ProvidedSymbolsConfig,
 ): Env<State> {
-  const importedScope = ScopeF.initAsync();
-  ScopeF.addPrimitives(importedScope);
-  ScopeF.addConsts(importedScope, jsTopLevels);
+  const topLevelScope = ScopeF.initAsync();
+  ScopeF.addPrimitives(topLevelScope);
+  ScopeF.addProvidedConsts(topLevelScope, jsTopLevels);
   return {
-    scopes: [ScopeF.initAsync(), importedScope],
+    scopes: [topLevelScope],
     references: References.init(),
     modules: modulePaths,
     transpileState: state,
@@ -51,7 +52,7 @@ export function find(env: Env, id: Id): Writer | undefined {
 
 export type WriterWithIsAtTopLevel = {
   readonly writer: Writer;
-  readonly isAtTopLevel: boolean;
+  readonly mayBeAtPseudoTopLevel: boolean;
 };
 
 export function findWithIsAtTopLevel(
@@ -62,7 +63,7 @@ export function findWithIsAtTopLevel(
   for (const [i, frame] of scopes.entries()) {
     const writer = ScopeF.get(frame, id);
     if (writer !== undefined) {
-      return { writer, isAtTopLevel: i === topLevelI };
+      return { writer, mayBeAtPseudoTopLevel: i === topLevelI && canBePseudoTopLevelReferenced(writer) };
     }
   }
   return undefined;
@@ -79,7 +80,7 @@ export function referTo(
       if (writer !== undefined) {
         const scopePath = references.currentScope.slice(i);
         References.add(references, { id, scopePath });
-        return { writer, isAtTopLevel: i === topLevelI };
+        return { writer, mayBeAtPseudoTopLevel: i === topLevelI && canBePseudoTopLevelReferenced(writer) };
       }
     }
     return new TranspileError(
@@ -116,9 +117,9 @@ export function referTo(
         lastW = subW;
         continue;
       }
-      return { writer: subW, isAtTopLevel: r.isAtTopLevel };
+      return { writer: subW, mayBeAtPseudoTopLevel: r.mayBeAtPseudoTopLevel };
     }
-    return { writer: lastW, isAtTopLevel: r.isAtTopLevel };
+    return { writer: lastW, mayBeAtPseudoTopLevel: r.mayBeAtPseudoTopLevel };
   }
   return expectNever(symLike) as WriterWithIsAtTopLevel;
 }
@@ -196,8 +197,8 @@ export function findModule(env: Env, id: Id): FindModuleResult | undefined {
   };
 }
 
-export function getTopLevelScope({ scopes }: Env): Scope {
-  return assertNonNull(scopes[scopes.length - 1], "Empty scopes in an env!");
+export function getCurrentScope({ scopes }: Env): Scope {
+  return assertNonNull(scopes[0], "Empty scopes in an env!");
 }
 
 export function isAtTopLevel({ scopes }: Env): boolean {
@@ -212,7 +213,7 @@ export function writerIsAtReplTopLevel(
   env: Env,
   r: WriterWithIsAtTopLevel,
 ): boolean {
-  return r.isAtTopLevel && env.transpileState.mode === "repl";
+  return r.mayBeAtPseudoTopLevel && env.transpileState.mode === "repl";
 }
 
 export function tmpVarOf(

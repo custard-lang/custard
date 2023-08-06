@@ -4,10 +4,10 @@ import * as EnvF from "../../internal/env.js";
 import { loadModulePath } from "../definitions.js";
 import {
   aNamespace,
+  canBePseudoTopLevelReferenced,
   CuArray,
   Env,
   Id,
-  isConst,
   isCuSymbol,
   JsModule,
   markAsDirectWriter,
@@ -76,7 +76,6 @@ export const _cu$import = markAsDirectWriter(
 );
 
 // TODO: refactor
-// TODO: Set as prefixed const instead of importing all IDs at once
 export const importAnyOf = markAsDirectWriter(
   async (env: Env, ...forms: CuArray): Promise<JsModule | TranspileError> => {
     if (forms.length !== 1) {
@@ -101,26 +100,26 @@ export const importAnyOf = markAsDirectWriter(
       return r1;
     }
 
-    MapU.mergeFromTo(r1, EnvF.getTopLevelScope(env).definitions);
+    MapU.mergeFromTo(r1, EnvF.getCurrentScope(env).definitions);
 
     const ids: Id[] = [];
     for (const [id, w] of r1) {
-      if (isConst(w)) {
+      if (canBePseudoTopLevelReferenced(w)) {
         ids.push(id);
       }
     }
 
-    const awaitImport = jsModuleOfBody(
-      `await import(${JSON.stringify(foundModule.url)})`,
-    );
+    const awaitImport = `await import(${JSON.stringify(foundModule.url)})`;
     if (EnvF.isAtTopLevel(env)) {
       switch (env.transpileState.mode) {
         case "repl":
           let jsModule = emptyJsModule();
           for (const id of ids) {
+            // TODO: Use tmp variable to avoid calling `import` multiple times
+            const awaitImportDotId = `(${awaitImport}).${id}`;
             jsModule = concatJsModules(
               jsModule,
-              pseudoTopLevelAssignment(id, awaitImport),
+              pseudoTopLevelAssignment(id, jsModuleOfBody(awaitImportDotId)),
             );
           }
           return jsModule;
@@ -131,7 +130,7 @@ export const importAnyOf = markAsDirectWriter(
           );
       }
     }
-    return extendBody(awaitImport, `const {${ids.join(", ")}}=`);
+    return jsModuleOfBody(`const {${ids.join(", ")}}=${awaitImport}`);
   },
   "statement",
 );

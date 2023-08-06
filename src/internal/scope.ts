@@ -1,6 +1,6 @@
 import { concatJsModules, jsModuleOfBody } from "./transpile.js";
 import { _cu$import, importAnyOf } from "./transpile/module.js";
-import { aConst, Id, JsModule, Scope, Writer } from "./types.js";
+import { aProvidedConst, Id, JsModule, Scope, Writer } from "./types.js";
 
 export function init(): Scope {
   return {
@@ -52,8 +52,8 @@ export function addPrimitives(scope: Scope): void {
   set(scope, "importAnyOf", importAnyOf);
 }
 
-export function addConsts(scope: Scope, ids: Id[]): void {
+export function addProvidedConsts(scope: Scope, ids: Id[]): void {
   for (const id of ids) {
-    set(scope, id, aConst());
+    set(scope, id, aProvidedConst());
   }
 }

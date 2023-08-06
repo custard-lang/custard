@@ -5,12 +5,9 @@ import {
   Form,
   Id,
   isContextualKeyword,
-  isVar,
   isCuSymbol,
   TranspileError,
   Writer,
-  isConst,
-  isRecursiveConst,
   isPropertyAccess,
   showSymbolAccess,
   isNamespace,
@@ -22,6 +19,8 @@ import {
   JsModule,
   JsSrc,
   JsModuleWithResult,
+  canBePseudoTopLevelReferenced,
+  isProvidedConst,
 } from "../internal/types.js";
 import {
   CU_ENV,
@@ -106,7 +105,7 @@ async function transpileExpressionWithNextCall(
       );
     }
 
-    if (isVar(writer) || isConst(writer) || isRecursiveConst(writer)) {
+    if (canBePseudoTopLevelReferenced(writer) || isProvidedConst(writer)) {
       const argsSrc = await transpileJoinWithComma(args, env);
       if (argsSrc instanceof TranspileError) {
         return argsSrc;
