@@ -74,7 +74,8 @@ const result = program
       console.error("Error when parsing the source file.");
       throw block;
     }
-    const destPath = `${path.basename(srcPath, path.extname(srcPath))}.js`;
+    const sp = path.parse(srcPath);
+    const destPath = path.join(`${sp.dir}`, `${sp.name}.js`);
     const transpiled = await transpileModule(
       block,
       { srcPath },
