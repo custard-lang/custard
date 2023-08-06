@@ -14,6 +14,7 @@ import {
 // FIXME: How can I resolve the path to the .js file?
 //        __filename and import.meta.url points to the .ts file (perhaps by vite).
 const worker = new Worker("./dist/src/internal/worker.js");
+worker.unref();
 let lastContextId = 0;
 
 export class Repl {
