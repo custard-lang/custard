@@ -263,9 +263,11 @@ export type CanBePseudoTopLevelReferenced =
   | Var
   | Const
   | RecursiveConst
-  | Namespace
+  | Namespace;
 
-export function canBePseudoTopLevelReferenced(x: Writer): x is CanBePseudoTopLevelReferenced {
+export function canBePseudoTopLevelReferenced(
+  x: Writer,
+): x is CanBePseudoTopLevelReferenced {
   return isVar(x) || isConst(x) || isRecursiveConst(x) || isNamespace(x);
 }
 

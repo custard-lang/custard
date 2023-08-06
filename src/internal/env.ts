@@ -63,7 +63,11 @@ export function findWithIsAtTopLevel(
   for (const [i, frame] of scopes.entries()) {
     const writer = ScopeF.get(frame, id);
     if (writer !== undefined) {
-      return { writer, mayBeAtPseudoTopLevel: i === topLevelI && canBePseudoTopLevelReferenced(writer) };
+      return {
+        writer,
+        mayBeAtPseudoTopLevel:
+          i === topLevelI && canBePseudoTopLevelReferenced(writer),
+      };
     }
   }
   return undefined;
@@ -80,7 +84,11 @@ export function referTo(
       if (writer !== undefined) {
         const scopePath = references.currentScope.slice(i);
         References.add(references, { id, scopePath });
-        return { writer, mayBeAtPseudoTopLevel: i === topLevelI && canBePseudoTopLevelReferenced(writer) };
+        return {
+          writer,
+          mayBeAtPseudoTopLevel:
+            i === topLevelI && canBePseudoTopLevelReferenced(writer),
+        };
       }
     }
     return new TranspileError(
