@@ -340,6 +340,7 @@ export function asCall(form: Form): [Id, ...Form[]] | undefined {
   }
 }
 
+// TODO: accept only expression form (not a statement)
 export async function transpileJoinWithComma(
   xs: Form[],
   env: Env,
