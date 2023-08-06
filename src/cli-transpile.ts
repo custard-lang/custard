@@ -86,7 +86,7 @@ const result = program
     }
     await fs.writeFile(destPath, transpiled, "utf-8");
     if (opts.verbose) {
-      console.info("Done.");
+      console.info("Transpiled to", destPath);
     }
   }
 })();
