@@ -51,7 +51,7 @@ export async function evalString(
   env: Env<TranspileRepl>,
 ): Promise<any | Error> {
   const forms = readBlock(formsString);
-  if (forms instanceof ParseError) {
+  if (ParseError.is(forms)) {
     return forms;
   }
   return evalBlock(forms, env);

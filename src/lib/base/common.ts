@@ -58,7 +58,7 @@ export function transpiling1Unmarked(
     ...unused: Form[]
   ): Promise<JsModule | TranspileError> => {
     const ra = await transpileExpression(a, env);
-    if (ra instanceof TranspileError) {
+    if (TranspileError.is(ra)) {
       return ra;
     }
 
@@ -85,12 +85,12 @@ export function transpiling2(
   return markAsDirectWriter(
     async (env: Env, a: Form, b: Form): Promise<JsModule | TranspileError> => {
       const ra = await transpileExpression(a, env);
-      if (ra instanceof TranspileError) {
+      if (TranspileError.is(ra)) {
         return ra;
       }
 
       const rb = await transpileExpression(b, env);
-      if (rb instanceof TranspileError) {
+      if (TranspileError.is(rb)) {
         return rb;
       }
 
@@ -123,7 +123,7 @@ export function transpilingForAssignment(
       }
 
       const exp = await transpileExpression(v, env);
-      if (exp instanceof TranspileError) {
+      if (TranspileError.is(exp)) {
         return exp;
       }
       return await f(env, id, exp);
@@ -148,7 +148,7 @@ export function transpilingForVariableDeclaration(
           );
         }
         const r = EnvF.set(env, sym.v, newWriter());
-        if (r instanceof TranspileError) {
+        if (TranspileError.is(r)) {
           return r;
         }
       }
@@ -156,7 +156,7 @@ export function transpilingForVariableDeclaration(
       if (EnvF.isAtReplTopLevel(env)) {
         if (isCuSymbol(sym)) {
           r = tryToSet(sym);
-          if (r instanceof TranspileError) {
+          if (TranspileError.is(r)) {
             return r;
           }
           return pseudoTopLevelAssignment(sym.v, exp);
@@ -166,7 +166,7 @@ export function transpilingForVariableDeclaration(
         for (const kvOrSym of sym.v) {
           if (isCuSymbol(kvOrSym)) {
             r = tryToSet(kvOrSym);
-            if (r instanceof TranspileError) {
+            if (TranspileError.is(r)) {
               return r;
             }
             const expDotId = `${tmpVar}.${kvOrSym.v}`;
@@ -186,7 +186,7 @@ export function transpilingForVariableDeclaration(
           } else {
             // TODO: expect k is an LiteralArray
             const kSrc = await transpileExpression(k, env);
-            if (kSrc instanceof TranspileError) {
+            if (TranspileError.is(kSrc)) {
               return kSrc;
             }
             expDotId = extendBody(kSrc, tmpVar);
@@ -200,7 +200,7 @@ export function transpilingForVariableDeclaration(
             );
           }
           r = tryToSet(v);
-          if (r instanceof TranspileError) {
+          if (TranspileError.is(r)) {
             return r;
           }
           src = concatJsModules(
@@ -215,7 +215,7 @@ export function transpilingForVariableDeclaration(
       let assignee: JsModule;
       if (isCuSymbol(sym)) {
         r = tryToSet(sym);
-        if (r instanceof TranspileError) {
+        if (TranspileError.is(r)) {
           return r;
         }
         assignee = jsModuleOfBody(sym.v);
@@ -224,7 +224,7 @@ export function transpilingForVariableDeclaration(
         for (const kvOrSym of sym.v) {
           if (isCuSymbol(kvOrSym)) {
             r = tryToSet(kvOrSym);
-            if (r instanceof TranspileError) {
+            if (TranspileError.is(r)) {
               return r;
             }
             assignee = extendBody(assignee, `${kvOrSym.v},`);
@@ -232,7 +232,7 @@ export function transpilingForVariableDeclaration(
           }
           const [k, v] = sym.v;
           const kSrc = await transpileExpression(k, env);
-          if (kSrc instanceof TranspileError) {
+          if (TranspileError.is(kSrc)) {
             return kSrc;
           }
           if (!isCuSymbol(v)) {
@@ -243,7 +243,7 @@ export function transpilingForVariableDeclaration(
             );
           }
           r = tryToSet(v);
-          if (r instanceof TranspileError) {
+          if (TranspileError.is(r)) {
             return r;
           }
           assignee = concatJsModules(
@@ -328,7 +328,7 @@ function functionPrelude(
       );
     }
     const r = EnvF.set(env, arg.v, aVar());
-    if (r instanceof TranspileError) {
+    if (TranspileError.is(r)) {
       return r;
     }
     argNames.push(arg.v);
@@ -350,14 +350,14 @@ export async function buildFn(
   isAsync = false,
 ): Promise<JsModule | TranspileError> {
   let result = functionPrelude(env, formId, args, block, isAsync);
-  if (result instanceof TranspileError) {
+  if (TranspileError.is(result)) {
     return result;
   }
 
   const lastI = block.length - 1;
   for (let i = 0; i < lastI; ++i) {
     const src = await transpileExpression(block[i], env);
-    if (src instanceof TranspileError) {
+    if (TranspileError.is(src)) {
       return src;
     }
     result = concatJsModules(
@@ -376,7 +376,7 @@ export async function buildFn(
     );
   }
   const lastSrc = await transpileExpression(lastStatement, env);
-  if (lastSrc instanceof TranspileError) {
+  if (TranspileError.is(lastSrc)) {
     return lastSrc;
   }
   result = concatJsModules(
@@ -397,13 +397,13 @@ export async function buildProcedure(
   isAsync = false,
 ): Promise<JsModule | TranspileError> {
   let result = functionPrelude(env, formId, args, block, isAsync);
-  if (result instanceof TranspileError) {
+  if (TranspileError.is(result)) {
     return result;
   }
 
   for (let i = 0; i < block.length; ++i) {
     const src = await transpileExpression(block[i], env);
-    if (src instanceof TranspileError) {
+    if (TranspileError.is(src)) {
       return src;
     }
     result = concatJsModules(
@@ -427,7 +427,7 @@ export function buildScope(
       // EnvF.push(env);
 
       const funcSrc = await buildFn(env, id, [], block, isAsync);
-      if (funcSrc instanceof TranspileError) {
+      if (TranspileError.is(funcSrc)) {
         return funcSrc;
       }
       // EnvF.pop(env);

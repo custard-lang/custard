@@ -38,7 +38,7 @@ export async function transpileExpression(
   env: Env,
 ): Promise<JsModule | TranspileError> {
   const r = await transpileExpressionWithNextCall(ast, env);
-  if (r instanceof TranspileError) {
+  if (TranspileError.is(r)) {
     return r;
   }
   return r[0];
@@ -66,7 +66,7 @@ async function transpileExpressionWithNextCall(
       funcForm,
       env,
     );
-    if (funcSrcAndNextCall instanceof TranspileError) {
+    if (TranspileError.is(funcSrcAndNextCall)) {
       return funcSrcAndNextCall;
     }
 
@@ -74,7 +74,7 @@ async function transpileExpressionWithNextCall(
 
     if (nc === undefined) {
       const argsSrc = await transpileJoinWithComma(args, env);
-      if (argsSrc instanceof TranspileError) {
+      if (TranspileError.is(argsSrc)) {
         return argsSrc;
       }
       return [
@@ -107,7 +107,7 @@ async function transpileExpressionWithNextCall(
 
     if (canBePseudoTopLevelReferenced(writer) || isProvidedConst(writer)) {
       const argsSrc = await transpileJoinWithComma(args, env);
-      if (argsSrc instanceof TranspileError) {
+      if (TranspileError.is(argsSrc)) {
         return argsSrc;
       }
       return [
@@ -122,7 +122,7 @@ async function transpileExpressionWithNextCall(
     }
     if (isMarkedFunctionWithEnv(writer)) {
       const argsSrc = await transpileJoinWithComma(args, env);
-      if (argsSrc instanceof TranspileError) {
+      if (TranspileError.is(argsSrc)) {
         return argsSrc;
       }
       return [
@@ -139,7 +139,7 @@ async function transpileExpressionWithNextCall(
     if (isMarkedDirectWriter(writer)) {
       const srcP = writer.call(env, ...args);
       const src = srcP instanceof Promise ? await srcP : srcP;
-      return src instanceof TranspileError ? src : [src, undefined];
+      return TranspileError.is(src) ? src : [src, undefined];
     }
 
     return expectNever(writer) as JsModuleAndNextCall;
@@ -159,7 +159,7 @@ async function transpileExpressionWithNextCall(
       switch (ast.t) {
         case "Symbol":
           r = EnvF.referTo(env, ast);
-          if (r instanceof TranspileError) {
+          if (TranspileError.is(r)) {
             return r;
           }
           if (EnvF.writerIsAtReplTopLevel(env, r)) {
@@ -171,7 +171,7 @@ async function transpileExpressionWithNextCall(
           return [jsModuleOfBody(ast.v), { writer: r.writer, sym: ast }];
         case "PropertyAccess":
           r = EnvF.referTo(env, ast);
-          if (r instanceof TranspileError) {
+          if (TranspileError.is(r)) {
             return r;
           }
           if (EnvF.writerIsAtReplTopLevel(env, r)) {
@@ -186,7 +186,7 @@ async function transpileExpressionWithNextCall(
           ];
         case "LiteralArray":
           const elementsSrc = await transpileJoinWithComma(ast.v, env);
-          if (elementsSrc instanceof TranspileError) {
+          if (TranspileError.is(elementsSrc)) {
             return elementsSrc;
           }
           return [
@@ -199,7 +199,7 @@ async function transpileExpressionWithNextCall(
           ];
         case "LiteralObject":
           const kvSrc = await transpileLiteralObject(ast, env);
-          if (kvSrc instanceof TranspileError) {
+          if (TranspileError.is(kvSrc)) {
             return kvSrc;
           }
           return [kvSrc, undefined];
@@ -220,7 +220,7 @@ async function transpileLiteralObject(
     let kvSrc: JsModule;
     if (isCuSymbol(kv)) {
       const f = EnvF.referTo(env, kv);
-      if (f instanceof TranspileError) {
+      if (TranspileError.is(f)) {
         return f;
       }
       if (EnvF.writerIsAtReplTopLevel(env, f)) {
@@ -234,12 +234,12 @@ async function transpileLiteralObject(
       const kSrc = isCuSymbol(k)
         ? jsModuleOfBody(k.v)
         : await transpileExpression(k, env);
-      if (kSrc instanceof TranspileError) {
+      if (TranspileError.is(kSrc)) {
         return kSrc;
       }
 
       const vSrc = await transpileExpression(v, env);
-      if (vSrc instanceof TranspileError) {
+      if (TranspileError.is(vSrc)) {
         return vSrc;
       }
 
@@ -261,7 +261,7 @@ export async function transpileBlock(
 ): Promise<JsModule | TranspileError> {
   const jsSrc = await transpileBlockCore(forms, env, extraOptions);
 
-  if (jsSrc instanceof TranspileError) {
+  if (TranspileError.is(jsSrc)) {
     return jsSrc;
   }
   const { imports, body, lastExpression } = jsSrc;
@@ -320,7 +320,7 @@ export async function transpileString(
   env: Env,
 ): Promise<JsModule | Error> {
   const forms = readBlock(formsString);
-  if (forms instanceof ParseError) {
+  if (ParseError.is(forms)) {
     return forms;
   }
   return transpileBlock(forms, env);
@@ -349,7 +349,7 @@ export async function transpileJoinWithComma(
   const lastI = xs.length - 1;
   for (const [i, x] of xs.entries()) {
     const r = await transpileExpression(x, env);
-    if (r instanceof TranspileError) {
+    if (TranspileError.is(r)) {
       return r;
     }
     if (i === lastI) {

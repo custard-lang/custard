@@ -47,14 +47,14 @@ export const _cu$while = markAsDirectWriter(
     }
 
     const boolSrc = await transpileExpression(bool, env);
-    if (boolSrc instanceof TranspileError) {
+    if (TranspileError.is(boolSrc)) {
       return boolSrc;
     }
 
     EnvF.pushInherited(env);
 
     const statementsSrc = await transpileBlock(rest, env);
-    if (statementsSrc instanceof TranspileError) {
+    if (TranspileError.is(statementsSrc)) {
       return statementsSrc;
     }
 
@@ -113,19 +113,19 @@ export const _cu$for = markAsDirectWriter(
       initialStatement,
       env,
     );
-    if (initialStatementSrc instanceof TranspileError) {
+    if (TranspileError.is(initialStatementSrc)) {
       return initialStatementSrc;
     }
     const boolSrc = await transpileExpression(bool, env);
-    if (boolSrc instanceof TranspileError) {
+    if (TranspileError.is(boolSrc)) {
       return boolSrc;
     }
     const finalSrc = await transpileExpression(final, env);
-    if (finalSrc instanceof TranspileError) {
+    if (TranspileError.is(finalSrc)) {
       return finalSrc;
     }
     const statementsSrc = await transpileBlock(rest, env);
-    if (statementsSrc instanceof TranspileError) {
+    if (TranspileError.is(statementsSrc)) {
       return statementsSrc;
     }
 
@@ -176,17 +176,17 @@ export const forEach = markAsDirectWriter(
     }
 
     const iterableSrc = await transpileExpression(iterable, env);
-    if (iterableSrc instanceof TranspileError) {
+    if (TranspileError.is(iterableSrc)) {
       return iterableSrc;
     }
 
     const r = EnvF.set(env, id.v, aConst());
-    if (r instanceof TranspileError) {
+    if (TranspileError.is(r)) {
       return r;
     }
 
     const statementsSrc = await transpileBlock(statements, env);
-    if (statementsSrc instanceof TranspileError) {
+    if (TranspileError.is(statementsSrc)) {
       return statementsSrc;
     }
 
@@ -228,7 +228,7 @@ export const recursive = markAsDirectWriter(
         return new TranspileError(`${JSON.stringify(id)} is not a symbol!`);
       }
       const r = EnvF.set(env, id.v, aRecursiveConst());
-      if (r instanceof TranspileError) {
+      if (TranspileError.is(r)) {
         return r;
       }
     }

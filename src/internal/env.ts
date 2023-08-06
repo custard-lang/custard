@@ -105,7 +105,7 @@ export function referTo(
     const r = byId(
       assertNonNull(id, "Assertion failed: empty PropertyAccess!"),
     );
-    if (r instanceof TranspileError || !isNamespace(r.writer)) {
+    if (TranspileError.is(r) || !isNamespace(r.writer)) {
       return r;
     }
 

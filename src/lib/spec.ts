@@ -22,6 +22,12 @@ export class ValidationError extends Error {
   ) {
     super(`Expected: ${expected}, Actual: ${actual} (at ${path.join("/")})`);
   }
+
+  // NOTE: Use this instead of instanceof to avoid https://github.com/vitejs/vite/issues/9528
+  _cu$isValidationError = true;
+  static is(e: unknown): e is ValidationError {
+    return (e as Record<string, unknown>)?._cu$isValidationError === true;
+  }
 }
 
 export const withId = <T>(id: SpecId, spec: Spec<T>): Spec<T> => ({
@@ -68,7 +74,7 @@ export const record = <T>(keyAndSpecs: {
         }
         /* eslint-disable-next-line @typescript-eslint/no-unsafe-assignment */
         const r = s.validate(v, [...path, k]);
-        if (r instanceof ValidationError) {
+        if (ValidationError.is(r)) {
           return r;
         }
         /* eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
@@ -101,7 +107,7 @@ export const array = <T>(elementSpec: Spec<T>): Spec<T[]> => {
       const result: T[] = [];
       for (const [i, element] of x.entries()) {
         const r = elementSpec.validate(element, [...path, i]);
-        if (r instanceof ValidationError) {
+        if (ValidationError.is(r)) {
           return r;
         }
         result.push(r);
@@ -134,12 +140,12 @@ export const map = <K, V>(
       const result = new Map<K, V>();
       for (const [key, val] of x.entries()) {
         const keyR = keySpec.validate(key, path);
-        if (keyR instanceof ValidationError) {
+        if (ValidationError.is(keyR)) {
           return keyR;
         }
 
         const valR = valueSpec.validate(val, [...path, key]);
-        if (valR instanceof ValidationError) {
+        if (ValidationError.is(valR)) {
           return valR;
         }
 

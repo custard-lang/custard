@@ -36,7 +36,7 @@ function print(exp: any): string {
 
 async function readEvaluatePrint(str: string, repl: Repl): Promise<void> {
   const r0 = read(str);
-  if (r0 instanceof ParseError) {
+  if (ParseError.is(r0)) {
     console.error(r0);
     return;
   }

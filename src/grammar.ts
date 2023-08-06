@@ -31,6 +31,12 @@ export function buildTokenRegex(): RegExp {
 
 export class ParseError extends Error {
   override name = "ParseError";
+
+  // NOTE: Use this instead of instanceof to avoid https://github.com/vitejs/vite/issues/9528
+  _cu$isParseError = true;
+  static is(e: unknown): e is ParseError {
+    return (e as Record<string, unknown>)?._cu$isParseError === true;
+  }
 }
 
 export function form(s: Scanner): Form | ParseError {
@@ -52,7 +58,7 @@ function list(s: Scanner): CuArray | ParseError {
 
 function literalArray(s: Scanner): LiteralArray | ParseError {
   const v = untilClose(s, "]", form);
-  if (v instanceof ParseError) {
+  if (ParseError.is(v)) {
     return v;
   }
   return {
@@ -63,7 +69,7 @@ function literalArray(s: Scanner): LiteralArray | ParseError {
 
 function object(s: Scanner): LiteralObject | ParseError {
   const v = untilClose(s, "}", keyValueOrSymbol);
-  if (v instanceof ParseError) {
+  if (ParseError.is(v)) {
     return v;
   }
   return {
@@ -74,14 +80,14 @@ function object(s: Scanner): LiteralObject | ParseError {
 
 function keyValueOrSymbol(s: Scanner): KeyValue | CuSymbol | ParseError {
   const key = form(s);
-  if (key instanceof ParseError) {
+  if (ParseError.is(key)) {
     return key;
   }
   if (s.peek() === ":") {
     // eslint-disable-next-line no-ignore-returned-union/no-ignore-returned-union
     s.next(); // drop colon
     const value = form(s);
-    if (value instanceof ParseError) {
+    if (ParseError.is(value)) {
       return value;
     }
     return [key, value];
@@ -111,7 +117,7 @@ function untilClose<Result>(
       break;
     }
     const f = symbol(s);
-    if (f instanceof ParseError) {
+    if (ParseError.is(f)) {
       return f;
     }
     result.push(f);

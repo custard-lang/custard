@@ -128,6 +128,12 @@ export type JsSrc = string;
 
 export class TranspileError extends Error {
   override name = "TranspileError";
+
+  // NOTE: Use this instead of instanceof to avoid https://github.com/vitejs/vite/issues/9528
+  _cu$isTranspileError = true;
+  static is(e: unknown): e is TranspileError {
+    return !!(e as Record<string, unknown>)?._cu$isTranspileError;
+  }
 }
 
 export type Call = [CuSymbol | PropertyAccess, ...Form[]];
@@ -147,13 +153,15 @@ export type Scope = {
 
 export type Definitions = Map<Id, Writer>;
 
-const IsWriterKey: unique symbol = Symbol("IsWriterKey");
+// NOTE: I give up defining this as a unique symbol due to
+// vite's behavior similar to https://github.com/vitejs/vite/issues/9528
+const IsWriterKey = "_cu$IsWriter";
 type IsWriter = { [IsWriterKey]: true };
 function asWriter<T extends Record<string, unknown>>(x: T): IsWriter & T {
   return { ...x, [IsWriterKey]: true };
 }
 export function isWriter(x: unknown): x is Writer {
-  return !!(x as Record<symbol, unknown>)[IsWriterKey];
+  return !!(x as Record<string, unknown>)[IsWriterKey];
 }
 
 export type ContextualKeyword = IsWriter & {

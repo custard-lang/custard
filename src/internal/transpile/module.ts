@@ -40,19 +40,19 @@ export const _cu$import = markAsDirectWriter(
         `No module \`${id.v}\` registered in the Module Paths`,
       );
     }
-    if (foundModule instanceof TranspileError) {
+    if (TranspileError.is(foundModule)) {
       return foundModule;
     }
 
     const r1 = await loadModulePath(foundModule.url);
-    if (r1 instanceof TranspileError) {
+    if (TranspileError.is(r1)) {
       return r1;
     }
     const ns = aNamespace();
     MapU.mergeFromTo(r1, ns.definitions);
 
     const r2 = EnvF.set(env, id.v, ns);
-    if (r2 instanceof TranspileError) {
+    if (TranspileError.is(r2)) {
       return r2;
     }
 
@@ -96,7 +96,7 @@ export const importAnyOf = markAsDirectWriter(
     }
 
     const r1 = await loadModulePath(foundModule.url);
-    if (r1 instanceof TranspileError) {
+    if (TranspileError.is(r1)) {
       return r1;
     }
 

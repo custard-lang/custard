@@ -5,7 +5,7 @@ import { Block, Form } from "./types.js";
 export function readStr(input: string): Form | ParseError {
   const s = new Scanner(buildTokenRegex(), input);
   const parsed = form(s);
-  if (parsed instanceof ParseError) {
+  if (ParseError.is(parsed)) {
     return parsed;
   }
   const left = s.next();
@@ -21,7 +21,7 @@ export function readBlock(input: string): Block | ParseError {
   let f: Form | ParseError;
   while (!s.isAtEof()) {
     f = form(s);
-    if (f instanceof ParseError) {
+    if (ParseError.is(f)) {
       return f;
     }
     result.push(f);

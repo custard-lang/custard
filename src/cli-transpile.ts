@@ -46,7 +46,7 @@ const result = program
       throw e;
     }
   }
-  if (providedSymbolsBlock instanceof ParseError) {
+  if (ParseError.is(providedSymbolsBlock)) {
     throw providedSymbolsBlock;
   }
 
@@ -58,7 +58,7 @@ const result = program
     const r = ProvidedSymbolsConfig.validate(
       await evalBlock(providedSymbolsBlock as Block, repl),
     );
-    if (r instanceof ValidationError) {
+    if (ValidationError.is(r)) {
       console.error("Error when validating the provided symbols config.");
       throw r;
     }

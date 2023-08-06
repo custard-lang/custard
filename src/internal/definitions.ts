@@ -23,7 +23,7 @@ export async function loadModulePaths(
   const definitions: Definitions = new Map();
   for (const path of paths) {
     const r = await loadModulePath(path);
-    if (r instanceof TranspileError) {
+    if (TranspileError.is(r)) {
       return r;
     }
     MapU.mergeFromTo(r, definitions);

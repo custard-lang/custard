@@ -1,4 +1,6 @@
 import { Worker } from "node:worker_threads";
+import { Env, TranspileError, TranspileRepl } from "./internal/types.js";
+import * as EnvF from "./internal/env.js";
 
 import { implicitlyImporting } from "./provided-symbols-config.js";
 import {
@@ -8,6 +10,8 @@ import {
   ProvidedSymbolsConfig,
   TranspileOptions,
 } from "./types.js";
+import { transpileRepl } from "./internal/transpile-state.js";
+import { evalBlock, evalForm, evalString } from "./internal/eval.js";
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-assignment */
 
@@ -19,23 +23,19 @@ let lastContextId = 0;
 
 export class Repl {
   private _contextId = lastContextId++;
-  private constructor() {
-    // All properties are filled. Nothing to do.
-  }
+  private constructor(private _env: Env<TranspileRepl>) {}
 
   static async start(options: ReplOptions): Promise<Repl> {
-    const instance = new this();
-
-    const r = await _postCommand({
-      command: "initContext",
-      contextId: instance._contextId,
-      ...options,
-    });
-    if (r instanceof Error) {
+    const { providedSymbols, transpileOptions } = options;
+    const newEnv = EnvF.init(
+      await transpileRepl(transpileOptions),
+      providedSymbols,
+    );
+    const r = await evalString(providedSymbols.implicitStatements, newEnv);
+    if (r instanceof TranspileError) {
       throw r;
     }
-
-    return instance;
+    return new this(newEnv);
   }
 
   static async using<Result>(
@@ -51,30 +51,14 @@ export class Repl {
   }
 
   async evalForm(form: Form): Promise<any | Error> {
-    return await _postCommand({
-      command: "evalForm",
-      contextId: this._contextId,
-      form,
-    });
+    return await evalForm(form, this._env);
   }
 
   async evalBlock(block: Form[]): Promise<any | Error> {
-    return await _postCommand({
-      command: "evalBlock",
-      contextId: this._contextId,
-      block,
-    });
+    return await evalBlock(block, this._env);
   }
 
-  async exit(): Promise<void> {
-    const r = await _postCommand({
-      command: "dropContext",
-      contextId: this._contextId,
-    });
-    if (r instanceof Error) {
-      throw r;
-    }
-  }
+  async exit(): Promise<void> {}
 }
 
 async function _postCommand(command: Command): Promise<any> {

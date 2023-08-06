@@ -22,10 +22,10 @@ export async function transpileModule(
   );
   const r0 = await transpileString(providedSymbols.implicitStatements, env);
   if (r0 instanceof Error) {
-    return r0;
+    return r0 as TranspileError;
   }
   const r1 = await transpileBlock(ast, env, extraOptions);
-  if (r1 instanceof TranspileError) {
+  if (TranspileError.is(r1)) {
     return r1;
   }
   return `${r0.imports}\n${r1.imports}\n${r1.body}`;

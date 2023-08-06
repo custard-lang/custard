@@ -65,7 +65,7 @@ export const _cu$return = markAsDirectWriter(
         return jsModuleOfBody("return");
       case 1:
         const argSrc = await transpileExpression(args[0], env);
-        if (argSrc instanceof TranspileError) {
+        if (TranspileError.is(argSrc)) {
           return argSrc;
         }
         return extendBody(argSrc, "return ");
@@ -91,11 +91,11 @@ export const when = markAsDirectWriter(
       return new TranspileError("No statements given to a `when` statement!");
     }
     const boolSrc = await transpileExpression(bool, env);
-    if (boolSrc instanceof TranspileError) {
+    if (TranspileError.is(boolSrc)) {
       return boolSrc;
     }
     const statementsSrc = await transpileBlock(rest, env);
-    if (statementsSrc instanceof TranspileError) {
+    if (TranspileError.is(statementsSrc)) {
       return statementsSrc;
     }
     return concatJsModules(
@@ -266,7 +266,7 @@ export const assign = transpilingForAssignment(
           kvOrSym,
           jsModuleOfBody(`${tmpVar}.${kvOrSym.v}`),
         );
-        if (assignment instanceof TranspileError) {
+        if (TranspileError.is(assignment)) {
           return assignment;
         }
         src = concatJsModules(src, assignment, jsModuleOfBody("\n"));
@@ -284,12 +284,12 @@ export const assign = transpilingForAssignment(
         assignment = assignStatement(v, jsModuleOfBody(`${tmpVar}.${k.v}`));
       } else {
         const kSrc = await transpileExpression(k, env);
-        if (kSrc instanceof TranspileError) {
+        if (TranspileError.is(kSrc)) {
           return kSrc;
         }
         assignment = assignStatement(v, extendBody(kSrc, tmpVar));
       }
-      if (assignment instanceof TranspileError) {
+      if (TranspileError.is(assignment)) {
         return assignment;
       }
       src = concatJsModules(src, assignment, jsModuleOfBody("\n"));
@@ -308,7 +308,7 @@ export const _cu$if = markAsDirectWriter(
     ...rest: Form[]
   ): Promise<JsModule | TranspileError> => {
     const boolSrc = await transpileExpression(bool, env);
-    if (boolSrc instanceof TranspileError) {
+    if (TranspileError.is(boolSrc)) {
       return boolSrc;
     }
 
@@ -345,12 +345,12 @@ export const _cu$if = markAsDirectWriter(
     }
 
     const ifTrueSrc = await transpileJoinWithComma(trueForms, env);
-    if (ifTrueSrc instanceof TranspileError) {
+    if (TranspileError.is(ifTrueSrc)) {
       return ifTrueSrc;
     }
 
     const ifFalseSrc = await transpileJoinWithComma(falseForms, env);
-    if (ifFalseSrc instanceof TranspileError) {
+    if (TranspileError.is(ifFalseSrc)) {
       return ifFalseSrc;
     }
 
@@ -391,7 +391,7 @@ export const procedure = markAsDirectWriter(
 export const array = markAsDirectWriter(
   async (env: Env, ...args: Form[]): Promise<JsModule | TranspileError> => {
     const argsSrc = await transpileJoinWithComma(args, env);
-    if (argsSrc instanceof TranspileError) {
+    if (TranspileError.is(argsSrc)) {
       return argsSrc;
     }
     return extendBody(argsSrc, "[", "]");
@@ -409,7 +409,7 @@ export const text = markAsDirectWriter(
         continue;
       }
       const r = await transpileExpression(arg, env);
-      if (r instanceof TranspileError) {
+      if (TranspileError.is(r)) {
         return r;
       }
       result = concatJsModules(
@@ -433,7 +433,7 @@ export const Map = markAsDirectWriter(
     if (args.length === 1) {
       const [arg] = args;
       const argSrc = await transpileExpression(arg, env);
-      if (argSrc instanceof TranspileError) {
+      if (TranspileError.is(argSrc)) {
         return argSrc;
       }
       return extendBody(argSrc, "new Map(", ")");
