@@ -54,15 +54,15 @@ const result = program
     transpileOptions: { srcPath: providedSymbolsPath },
     providedSymbols: implicitlyImporting(`${standardModuleRoot}/base/safe.js`),
   };
-  const providedSymbolsConfig = await Repl.using(replOptions, (repl) => {
+  const providedSymbolsConfig = await Repl.using(replOptions, async (repl) => {
     const r = ProvidedSymbolsConfig.validate(
-      evalBlock(providedSymbolsBlock as Block, repl),
+      await evalBlock(providedSymbolsBlock as Block, repl),
     );
     if (r instanceof ValidationError) {
       console.error("Error when validating the provided symbols config.");
       throw r;
     }
-    return Promise.resolve(r);
+    return r;
   });
 
   for (const srcPath of result.args) {
