@@ -1,20 +1,20 @@
 import { describe } from "vitest";
 import { testEvalFormOf } from "../test";
 
-import { ReplOptions } from "../repl";
 import { ModulePaths, TranspileError } from "../types";
 import { standardModuleRoot } from "../definitions";
+import type { Config } from "../test";
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/restrict-template-expressions */
 
 describe("evalForm", () => {
-  function setUpReplOptions(): ReplOptions {
+  function setUpConfig(): Config {
     const modulePaths: ModulePaths = new Map();
     modulePaths.set("base", `${standardModuleRoot}/base.js`);
     modulePaths.set("async", "../../dist/src/lib/async.js");
 
     return {
-      transpileOptions: { srcPath: __filename },
+      options: { srcPath: __filename },
       providedSymbols: {
         modulePaths,
         implicitStatements: "(importAnyOf base)(import async)",
@@ -27,17 +27,17 @@ describe("evalForm", () => {
     testEvalFormOf({
       src: "(async.scope (plusF 4.1 5.2))",
       expected: 9.3,
-      setUpReplOptions,
+      setUpConfig,
     });
     testEvalFormOf({
       src: "(async.scope (async.await (Promise.resolve 5)))",
       expected: 5,
-      setUpReplOptions,
+      setUpConfig,
     });
     testEvalFormOf({
       src: "(async.scope (forEach _unused [] (async.await (Promise.resolve 0))) (async.await (Promise.resolve 10)))",
       expected: 10,
-      setUpReplOptions,
+      setUpConfig,
     });
   });
 
@@ -45,12 +45,12 @@ describe("evalForm", () => {
     testEvalFormOf({
       src: "((async.fn (x) (plusF x 5.2)) 4.1)",
       expected: 9.3,
-      setUpReplOptions,
+      setUpConfig,
     });
     testEvalFormOf({
       src: "((async.fn () (while false (async.await (Promise.resolve 0))) (async.await (Promise.resolve 10))))",
       expected: 10,
-      setUpReplOptions,
+      setUpConfig,
     });
   });
 
@@ -58,12 +58,12 @@ describe("evalForm", () => {
     testEvalFormOf({
       src: "((async.procedure (x) (plusF x 5.2)) 4.1)",
       expected: undefined,
-      setUpReplOptions,
+      setUpConfig,
     });
     testEvalFormOf({
       src: "((async.procedure () (for (let i 0) false true (async.await (Promise.resolve 0))) (return (async.await (Promise.resolve 10)))))",
       expected: 10,
-      setUpReplOptions,
+      setUpConfig,
     });
   });
 
@@ -71,14 +71,14 @@ describe("evalForm", () => {
     testEvalFormOf({
       src: "(async.await (Promise.resolve 5))",
       expected: 5,
-      setUpReplOptions,
+      setUpConfig,
     });
     testEvalFormOf({
       src: "(scope (async.await (Promise.resolve 5)))",
       expected: new TranspileError(
         "`await` in a non-async function or scope is not allowed.",
       ),
-      setUpReplOptions,
+      setUpConfig,
     });
   });
 });

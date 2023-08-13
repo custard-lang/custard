@@ -1,18 +1,17 @@
 import { describe } from "vitest";
-import { testEvalBlockOf } from "./test";
+import { Config, testEvalBlockOf } from "./test";
 
-import { ReplOptions } from "./repl";
 import { standardModuleRoot } from "./definitions";
 import { ModulePaths } from "./types";
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/restrict-template-expressions */
 
 describe("evalBlock", () => {
-  function setUpReplOptions(): ReplOptions {
+  function setUpConfig(): Config {
     const modulePaths: ModulePaths = new Map();
     modulePaths.set("base", `${standardModuleRoot}/base.js`);
     return {
-      transpileOptions: { srcPath: __filename },
+      options: { srcPath: __filename },
       providedSymbols: {
         modulePaths,
         implicitStatements: "(importAnyOf base)",
@@ -25,13 +24,13 @@ describe("evalBlock", () => {
     testEvalBlockOf({
       src: "(const a { p: 1 }) (notEquals a (structuredClone a))",
       expected: true,
-      setUpReplOptions,
+      setUpConfig,
     });
 
     testEvalBlockOf({
       src: "(const a { p: 1 }) (const b (structuredClone a)) (equals a.p b.p)",
       expected: true,
-      setUpReplOptions,
+      setUpConfig,
     });
   });
 });

@@ -1,15 +1,1 @@
-import { Repl } from "./repl.js";
-import { Block, Form } from "./types.js";
-
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-return */
-
-export async function evalForm(form: Form, repl: Repl): Promise<any | Error> {
-  return await repl.evalForm(form);
-}
-
-export async function evalBlock(
-  block: Block,
-  repl: Repl,
-): Promise<any | Error> {
-  return await repl.evalBlock(block);
-}
+export { evalBlock, evalForm } from "./internal/eval.js";

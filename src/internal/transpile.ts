@@ -2,25 +2,23 @@ import { assertNonNull, expectNever } from "../util/error.js";
 
 import {
   Block,
+  canBePseudoTopLevelReferenced,
+  CuSymbol,
   Form,
   Id,
   isContextualKeyword,
   isCuSymbol,
-  TranspileError,
-  Writer,
-  isPropertyAccess,
-  showSymbolAccess,
-  isNamespace,
-  isMarkedFunctionWithEnv,
   isMarkedDirectWriter,
+  isMarkedFunctionWithEnv,
+  isNamespace,
+  isPropertyAccess,
+  isProvidedConst,
+  JsSrc,
   LiteralObject,
   PropertyAccess,
-  CuSymbol,
-  JsModule,
-  JsSrc,
-  JsModuleWithResult,
-  canBePseudoTopLevelReferenced,
-  isProvidedConst,
+  showSymbolAccess,
+  TranspileError,
+  Writer,
 } from "../internal/types.js";
 import {
   CU_ENV,
@@ -36,7 +34,7 @@ import { isStatement } from "../lib/base/common.js";
 export async function transpileExpression(
   ast: Form,
   env: Env,
-): Promise<JsModule | TranspileError> {
+): Promise<JsSrc | TranspileError> {
   const r = await transpileExpressionWithNextCall(ast, env);
   if (TranspileError.is(r)) {
     return r;
@@ -49,12 +47,12 @@ type NextCall = {
   sym: CuSymbol | PropertyAccess;
 };
 
-type JsModuleAndNextCall = [JsModule, NextCall | undefined];
+type JsSrcAndNextCall = [JsSrc, NextCall | undefined];
 
 async function transpileExpressionWithNextCall(
   ast: Form,
   env: Env,
-): Promise<JsModuleAndNextCall | TranspileError> {
+): Promise<JsSrcAndNextCall | TranspileError> {
   if (ast instanceof Array) {
     if (ast.length === 0) {
       return new TranspileError("Invalid function call: empty");
@@ -77,16 +75,7 @@ async function transpileExpressionWithNextCall(
       if (TranspileError.is(argsSrc)) {
         return argsSrc;
       }
-      return [
-        concatJsModules(
-          jsModuleOfBody("("),
-          funcSrc,
-          jsModuleOfBody(")("),
-          argsSrc,
-          jsModuleOfBody(")"),
-        ),
-        undefined,
-      ];
+      return [concatJsSrcs("(", funcSrc, ")(", argsSrc, ")"), undefined];
     }
 
     const { writer, sym } = nc;
@@ -110,15 +99,7 @@ async function transpileExpressionWithNextCall(
       if (TranspileError.is(argsSrc)) {
         return argsSrc;
       }
-      return [
-        concatJsModules(
-          funcSrc,
-          jsModuleOfBody("("),
-          argsSrc,
-          jsModuleOfBody(")"),
-        ),
-        undefined,
-      ];
+      return [concatJsSrcs(funcSrc, "(", argsSrc, ")"), undefined];
     }
     if (isMarkedFunctionWithEnv(writer)) {
       const argsSrc = await transpileJoinWithComma(args, env);
@@ -126,12 +107,7 @@ async function transpileExpressionWithNextCall(
         return argsSrc;
       }
       return [
-        concatJsModules(
-          funcSrc,
-          jsModuleOfBody(`.call(${CU_ENV},`),
-          argsSrc,
-          jsModuleOfBody(")"),
-        ),
+        concatJsSrcs(funcSrc, `.call(${CU_ENV},`, argsSrc, ")"),
         undefined,
       ];
     }
@@ -142,19 +118,19 @@ async function transpileExpressionWithNextCall(
       return TranspileError.is(src) ? src : [src, undefined];
     }
 
-    return expectNever(writer) as JsModuleAndNextCall;
+    return expectNever(writer) as JsSrcAndNextCall;
   }
 
   let r: EnvF.WriterWithIsAtTopLevel | TranspileError;
   switch (typeof ast) {
     case "string":
-      return [jsModuleOfBody(JSON.stringify(ast)), undefined];
+      return [JSON.stringify(ast), undefined];
     case "undefined":
-      return [jsModuleOfBody("void 0"), undefined];
+      return ["void 0", undefined];
     case "number":
-      return [jsModuleOfBody(`${ast}`), undefined];
+      return [`${ast}`, undefined];
     case "boolean":
-      return [jsModuleOfBody(ast ? "!0" : "!1"), undefined];
+      return [ast ? "!0" : "!1", undefined];
     case "object":
       switch (ast.t) {
         case "Symbol":
@@ -164,11 +140,11 @@ async function transpileExpressionWithNextCall(
           }
           if (EnvF.writerIsAtReplTopLevel(env, r)) {
             return [
-              jsModuleOfBody(pseudoTopLevelReference(ast.v)),
+              pseudoTopLevelReference(ast.v),
               { writer: r.writer, sym: ast },
             ];
           }
-          return [jsModuleOfBody(ast.v), { writer: r.writer, sym: ast }];
+          return [ast.v, { writer: r.writer, sym: ast }];
         case "PropertyAccess":
           r = EnvF.referTo(env, ast);
           if (TranspileError.is(r)) {
@@ -176,27 +152,17 @@ async function transpileExpressionWithNextCall(
           }
           if (EnvF.writerIsAtReplTopLevel(env, r)) {
             return [
-              jsModuleOfBody(pseudoTopLevelReferenceToPropertyAccess(ast)),
+              pseudoTopLevelReferenceToPropertyAccess(ast),
               { writer: r.writer, sym: ast },
             ];
           }
-          return [
-            jsModuleOfBody(ast.v.join(".")),
-            { writer: r.writer, sym: ast },
-          ];
+          return [ast.v.join("."), { writer: r.writer, sym: ast }];
         case "LiteralArray":
           const elementsSrc = await transpileJoinWithComma(ast.v, env);
           if (TranspileError.is(elementsSrc)) {
             return elementsSrc;
           }
-          return [
-            concatJsModules(
-              jsModuleOfBody("["),
-              elementsSrc,
-              jsModuleOfBody("]"),
-            ),
-            undefined,
-          ];
+          return [concatJsSrcs("[", elementsSrc, "]"), undefined];
         case "LiteralObject":
           const kvSrc = await transpileLiteralObject(ast, env);
           if (TranspileError.is(kvSrc)) {
@@ -204,36 +170,34 @@ async function transpileExpressionWithNextCall(
           }
           return [kvSrc, undefined];
         case "Integer32":
-          return [jsModuleOfBody(`${ast.v}`), undefined];
+          return [`${ast.v}`, undefined];
       }
     default:
-      return expectNever(ast) as JsModuleAndNextCall;
+      return expectNever(ast) as JsSrcAndNextCall;
   }
 }
 
 async function transpileLiteralObject(
   ast: LiteralObject,
   env: Env,
-): Promise<JsModule | TranspileError> {
-  let objectContents = emptyJsModule();
+): Promise<JsSrc | TranspileError> {
+  let objectContents = "";
   for (const kv of ast.v) {
-    let kvSrc: JsModule;
+    let kvSrc: JsSrc;
     if (isCuSymbol(kv)) {
       const f = EnvF.referTo(env, kv);
       if (TranspileError.is(f)) {
         return f;
       }
       if (EnvF.writerIsAtReplTopLevel(env, f)) {
-        kvSrc = jsModuleOfBody(`${kv.v}: ${pseudoTopLevelReference(kv.v)}`);
+        kvSrc = `${kv.v}: ${pseudoTopLevelReference(kv.v)}`;
       } else {
-        kvSrc = jsModuleOfBody(kv.v);
+        kvSrc = kv.v;
       }
     } else {
       const [k, v] = kv;
       // TODO: only CuSymbol and LiteralArray with only one element should be valid.
-      const kSrc = isCuSymbol(k)
-        ? jsModuleOfBody(k.v)
-        : await transpileExpression(k, env);
+      const kSrc = isCuSymbol(k) ? k.v : await transpileExpression(k, env);
       if (TranspileError.is(kSrc)) {
         return kSrc;
       }
@@ -243,53 +207,43 @@ async function transpileLiteralObject(
         return vSrc;
       }
 
-      kvSrc = concatJsModules(kSrc, jsModuleOfBody(": "), vSrc);
+      kvSrc = concatJsSrcs(kSrc, ": ", vSrc);
     }
-    objectContents = concatJsModules(
-      objectContents,
-      kvSrc,
-      jsModuleOfBody(","),
-    );
+    objectContents = concatJsSrcs(objectContents, kvSrc, ",");
   }
-  return extendBody(objectContents, "{", "}");
+  return `{${objectContents}}`;
 }
 
 export async function transpileBlock(
   forms: Block,
   env: Env,
   extraOptions: { mayHaveResult: boolean } = { mayHaveResult: false },
-): Promise<JsModule | TranspileError> {
+): Promise<JsSrc | TranspileError> {
   const jsSrc = await transpileBlockCore(forms, env, extraOptions);
 
   if (TranspileError.is(jsSrc)) {
     return jsSrc;
   }
-  const { imports, body, lastExpression } = jsSrc;
+  const [body, lastExpression] = jsSrc;
   if (lastExpression !== "") {
-    return {
-      imports,
-      body: `${body}export default ${lastExpression}`,
-    };
+    return `${body}export default ${lastExpression}`;
   }
 
-  return {
-    imports,
-    body,
-  };
+  return body;
 }
 
 export async function transpileBlockCore(
   forms: Block,
   env: Env,
   extraOptions: { mayHaveResult: boolean } = { mayHaveResult: false },
-): Promise<JsModuleWithResult | TranspileError> {
-  let jsSrc = emptyJsModule();
+): Promise<[JsSrc, JsSrc] | TranspileError> {
+  let jsSrc = "";
   for (const form of forms.slice(0, -1)) {
     const s = await transpileExpression(form, env);
     if (s instanceof Error) {
       return s;
     }
-    jsSrc = appendJsStatement(jsSrc, s);
+    jsSrc = `${jsSrc}${s};\n`;
   }
 
   const lastForm = forms[forms.length - 1];
@@ -300,25 +254,18 @@ export async function transpileBlockCore(
 
   const lastIsExpression = !isStatement(env, lastForm);
   if (lastIsExpression && extraOptions.mayHaveResult) {
-    return {
-      ...jsSrc,
-      imports: `${jsSrc.imports}${last.imports}`,
-      lastExpression: last.body,
-    };
+    return [jsSrc, last];
   }
 
-  jsSrc = appendJsStatement(jsSrc, last);
+  jsSrc = `${jsSrc}${last};\n`;
 
-  return {
-    ...jsSrc,
-    lastExpression: "",
-  };
+  return [jsSrc, ""];
 }
 
 export async function transpileString(
   formsString: string,
   env: Env,
-): Promise<JsModule | Error> {
+): Promise<JsSrc | Error> {
   const forms = readBlock(formsString);
   if (ParseError.is(forms)) {
     return forms;
@@ -344,8 +291,8 @@ export function asCall(form: Form): [Id, ...Form[]] | undefined {
 export async function transpileJoinWithComma(
   xs: Form[],
   env: Env,
-): Promise<JsModule | TranspileError> {
-  let result = emptyJsModule();
+): Promise<JsSrc | TranspileError> {
+  let result = "";
   const lastI = xs.length - 1;
   for (const [i, x] of xs.entries()) {
     const r = await transpileExpression(x, env);
@@ -353,59 +300,17 @@ export async function transpileJoinWithComma(
       return r;
     }
     if (i === lastI) {
-      result = concatJsModules(result, r);
+      result = concatJsSrcs(result, r);
     } else {
-      result = concatJsModules(result, r, jsModuleOfBody(","));
+      result = concatJsSrcs(result, r, ",");
     }
   }
   return result;
 }
 
-export function appendJsStatement(
-  jsBlock: JsModule,
-  jsExpression: JsModule,
-): JsModule {
-  return {
-    imports: jsExpression.imports
-      ? `${jsBlock.imports}${jsExpression.imports};\n`
-      : jsBlock.imports,
-    body: `${jsBlock.body}${jsExpression.body};\n`,
-  };
-}
-
-export function concatJsModules(
-  a: JsModule,
-  b: JsModule,
-  ...left: JsModule[]
-): JsModule {
-  function plus(x: JsModule, y: JsModule): JsModule {
-    return {
-      imports: `${x.imports}${y.imports}`,
-      body: `${x.body}${y.body}`,
-    };
+export function concatJsSrcs(a: JsSrc, b: JsSrc, ...left: JsSrc[]): JsSrc {
+  function plus(x: JsSrc, y: JsSrc): JsSrc {
+    return `${x}${y}`;
   }
   return left.reduce(plus, plus(a, b));
-}
-
-export function extendBody(
-  jsExpression: JsModule,
-  prefix: JsSrc = "",
-  suffix: JsSrc = "",
-): JsModule {
-  return {
-    ...jsExpression,
-    body: `${prefix}${jsExpression.body}${suffix}`,
-  };
-}
-
-export function jsModuleOfBody(body: JsSrc): JsModule {
-  return { imports: "", body };
-}
-
-export function jsModuleOfImports(imports: JsSrc): JsModule {
-  return { imports, body: "" };
-}
-
-export function emptyJsModule(): JsModule {
-  return { imports: "", body: "" };
 }

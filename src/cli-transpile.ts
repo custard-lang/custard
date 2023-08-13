@@ -9,10 +9,10 @@ import { implicitlyImporting } from "./provided-symbols-config.js";
 import { readBlock } from "./reader.js";
 import { transpileModule } from "./transpile.js";
 import { Block, ProvidedSymbolsConfig } from "./types.js";
-import { Repl } from "./repl.js";
 import { evalBlock } from "./eval.js";
 import { standardModuleRoot } from "./definitions.js";
 import { ValidationError } from "./lib/spec.js";
+import { initializeForRepl } from "./env.js";
 
 const result = program
   .option(
@@ -23,7 +23,6 @@ const result = program
   .option("-v, --verbose", "Enable verbose output.")
   .parse();
 
-/* eslint-disable-next-line @typescript-eslint/no-floating-promises */
 (async () => {
   let providedSymbolsBlock: Block | ParseError;
   const opts = result.opts();
@@ -50,20 +49,20 @@ const result = program
     throw providedSymbolsBlock;
   }
 
-  const replOptions = {
-    transpileOptions: { srcPath: providedSymbolsPath },
-    providedSymbols: implicitlyImporting(`${standardModuleRoot}/base/safe.js`),
-  };
-  const providedSymbolsConfig = await Repl.using(replOptions, async (repl) => {
-    const r = ProvidedSymbolsConfig.validate(
-      await evalBlock(providedSymbolsBlock as Block, repl),
-    );
-    if (ValidationError.is(r)) {
-      console.error("Error when validating the provided symbols config.");
-      throw r;
-    }
-    return r;
-  });
+  const env = await initializeForRepl(
+    { srcPath: providedSymbolsPath },
+    implicitlyImporting(`${standardModuleRoot}/base/safe.js`),
+  );
+  if (env instanceof Error) {
+    throw env;
+  }
+  const providedSymbolsConfig = ProvidedSymbolsConfig.validate(
+    await evalBlock(providedSymbolsBlock, env),
+  );
+  if (ValidationError.is(providedSymbolsConfig)) {
+    console.error("Error when validating the provided symbols config.");
+    throw providedSymbolsConfig;
+  }
 
   for (const srcPath of result.args) {
     if (opts.verbose) {

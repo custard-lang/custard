@@ -4,15 +4,16 @@
 import { evalModule } from "../util/eval.js";
 
 import { CU_ENV } from "./cu-env.js";
-import { Env, JsModuleWithResult } from "./types.js";
+import { Env, JsSrc } from "./types.js";
 
 // See cu-env.ts for details of the `_CU$` prefix.
 export const _cu$eval = async (
-  { imports, body, lastExpression }: JsModuleWithResult,
+  body: JsSrc,
+  lastExpression: JsSrc,
   env: Env,
 ): Promise<any> => {
   // https://gist.github.com/tomhodgins/0e5a98610a1da2a98049614a4f170734
-  let f = `${imports}export default async (${CU_ENV}) => {${body}`;
+  let f = `export default async (${CU_ENV}) => {${body}`;
   if (lastExpression !== "") {
     f = `${f}return ${lastExpression}`;
   }

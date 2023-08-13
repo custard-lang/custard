@@ -213,7 +213,7 @@ export function isNamespace(x: Writer): x is Namespace {
 export type DirectWriter = (
   env: Env,
   ...forms: CuArray
-) => Awaitable<JsModule | TranspileError>;
+) => Awaitable<JsSrc | TranspileError>;
 export type MarkedDirectWriter = IsWriter & {
   readonly t: 5;
   readonly call: DirectWriter;
@@ -298,6 +298,7 @@ export type TranspileRepl = TranspileOptions & {
 export type TranspileModule = TranspileOptions & {
   mode: "module";
   src: Stats;
+  importsSrc: JsSrc;
 };
 
 export type Ref = {

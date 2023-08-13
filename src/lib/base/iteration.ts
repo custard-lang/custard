@@ -1,9 +1,8 @@
-import { jsModuleOfBody } from "../../internal/transpile.js";
 import {
   Env,
   Form,
   Id,
-  JsModule,
+  JsSrc,
   markAsDirectWriter,
   MarkedDirectWriter,
   TranspileError,
@@ -14,12 +13,12 @@ export const _cu$continue = transpilingControlStatement("continue");
 
 function transpilingControlStatement(id: Id): MarkedDirectWriter {
   return markAsDirectWriter(
-    (_env: Env, ...rest: Form[]): JsModule | TranspileError => {
+    (_env: Env, ...rest: Form[]): JsSrc | TranspileError => {
       if (rest.length > 0) {
         // TODO: Support label
         return new TranspileError(`\`${id}\` doesn't accept any arguments!`);
       }
-      return jsModuleOfBody(id);
+      return id;
     },
     "statement",
   );

@@ -11,7 +11,7 @@ import {
   CuSymbol,
   isCuSymbol,
   isPropertyAccess,
-  JsModule,
+  JsSrc,
   Scope,
   ProvidedSymbolsConfig,
   canBePseudoTopLevelReferenced,
@@ -226,7 +226,7 @@ export function writerIsAtReplTopLevel(
 
 export function tmpVarOf(
   { scopes }: Env<TranspileState>,
-  exp: JsModule,
-): { statement: JsModule; id: Id } {
+  exp: JsSrc,
+): { statement: JsSrc; id: Id } {
   return ScopeF.tmpVarOf(scopes[0], exp);
 }

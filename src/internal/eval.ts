@@ -8,23 +8,17 @@ import { readBlock } from "../reader.js";
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-return */
 
+// TODO: Delete
 export async function evalForm(
   ast: Form,
   env: Env<TranspileRepl>,
 ): Promise<any | Error> {
-  const jsMod = await transpileExpression(ast, env);
-  if (jsMod instanceof Error) {
-    return jsMod;
+  const jsSrc = await transpileExpression(ast, env);
+  if (jsSrc instanceof Error) {
+    return jsSrc;
   }
   try {
-    return await _cu$eval(
-      {
-        imports: jsMod.imports,
-        body: "",
-        lastExpression: jsMod.body,
-      },
-      env,
-    );
+    return await _cu$eval("", jsSrc, env);
   } catch (e) {
     return e;
   }
@@ -40,7 +34,7 @@ export async function evalBlock(
   }
 
   try {
-    return await _cu$eval(jsMod, env);
+    return await _cu$eval(jsMod[0], jsMod[1], env);
   } catch (e) {
     return e;
   }

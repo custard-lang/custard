@@ -18,5 +18,10 @@ export async function transpileRepl(
 export async function transpileModule(
   options: TranspileOptions,
 ): Promise<TranspileModule> {
-  return { ...options, mode: "module", src: await stat(options.srcPath) };
+  return {
+    ...options,
+    mode: "module",
+    src: await stat(options.srcPath),
+    importsSrc: "",
+  };
 }

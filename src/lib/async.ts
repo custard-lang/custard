@@ -1,12 +1,11 @@
 import * as EnvF from "../internal/env.js";
-import { extendBody } from "../internal/transpile.js";
 import {
   Env,
   Form,
   markAsDirectWriter,
   TranspileError,
 } from "../internal/types.js";
-import { JsModule } from "../types.js";
+import { JsSrc } from "../types.js";
 import {
   buildFn,
   buildProcedure,
@@ -21,9 +20,11 @@ export const _cu$await = markAsDirectWriter(
         "`await` in a non-async function or scope is not allowed.",
       );
     }
-    return transpiling1Unmarked("await", (s: JsModule) =>
-      extendBody(s, "await "),
-    )(env, a, ...unused);
+    return transpiling1Unmarked("await", (s: JsSrc) => `await ${s}`)(
+      env,
+      a,
+      ...unused,
+    );
   },
 );
 
@@ -32,12 +33,12 @@ export const fn = markAsDirectWriter(
     env: Env,
     args: Form,
     ...block: Form[]
-  ): Promise<JsModule | TranspileError> => {
+  ): Promise<JsSrc | TranspileError> => {
     const funcSrc = await buildFn(env, "fn", args, block, true);
     if (TranspileError.is(funcSrc)) {
       return funcSrc;
     }
-    return extendBody(funcSrc, "async ");
+    return `async ${funcSrc}`;
   },
 );
 
@@ -46,12 +47,12 @@ export const procedure = markAsDirectWriter(
     env: Env,
     args: Form,
     ...block: Form[]
-  ): Promise<JsModule | TranspileError> => {
+  ): Promise<JsSrc | TranspileError> => {
     const funcSrc = await buildProcedure(env, "procedure", args, block, true);
     if (TranspileError.is(funcSrc)) {
       return funcSrc;
     }
-    return extendBody(funcSrc, "async ");
+    return `async ${funcSrc}`;
   },
 );
 

@@ -8,9 +8,10 @@ import { readBlock } from "../../reader";
 import { transpileBlock } from "../transpile";
 import { transpileModule } from "../transpile-state";
 import {
+  Block,
   Env,
   isNamespace,
-  JsModule,
+  JsSrc,
   ModulePaths,
   TranspileError,
 } from "../types";
@@ -18,7 +19,7 @@ import {
 describe("transpileBlock", () => {
   const subject = async (
     src: string,
-  ): Promise<[JsModule | TranspileError, Env]> => {
+  ): Promise<[JsSrc | TranspileError, Env]> => {
     const modulePaths: ModulePaths = new Map();
     modulePaths.set("a", "../../../test-assets/a.mjs");
 
@@ -26,7 +27,10 @@ describe("transpileBlock", () => {
       ...ProvidedSymbolsConfigF.empty(),
       modulePaths,
     });
-    const jsSrc = await transpileBlock(assertNonError(readBlock(src)), env);
+    const jsSrc = await transpileBlock(
+      assertNonError(readBlock(src)) as Block,
+      env,
+    );
     return [jsSrc, env];
   };
 
@@ -34,13 +38,11 @@ describe("transpileBlock", () => {
     describe("given an id registered in the ModulePaths", () => {
       test("adds identifiers in the module, and returns imports in JavaScript", async () => {
         const [jsMod, env] = await subject("(import a)");
-        const { imports, body, ...other } = assertNonError(jsMod);
-        expect(assertNonError(imports).trim()).toEqual(
+        const src = assertNonError(jsMod) as JsSrc;
+        expect(src.trim()).toEqual(
           'import * as a from "../../../test-assets/a.mjs";',
         );
-        expect(assertNonError(body).trim().replace(/;/g, "")).toEqual("");
         expect(EnvF.find(env, "a")).toSatisfy(isNamespace);
-        expect(other).toEqual({});
       });
     });
 

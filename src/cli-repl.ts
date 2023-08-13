@@ -70,8 +70,6 @@ async function loop(env: Env<TranspileRepl>): Promise<void> {
   }
 }
 
-// I don't need top-level `await` here!
-// eslint-disable-next-line @typescript-eslint/no-floating-promises
 (async () => {
   await loop(
     assertNonError(
