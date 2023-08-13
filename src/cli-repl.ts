@@ -51,7 +51,6 @@ function finalize() {
 async function loop(repl: Repl): Promise<void> {
   try {
     while (true) {
-      // FIXME: Stop at EOF
       const answer = await rl.question("custard> ");
       if (!answer) {
         finalize();
