@@ -41,6 +41,13 @@ module.exports = {
     "import/no-unresolved": "off",
     "no-ignore-returned-union/no-ignore-returned-union": "error",
     "@typescript-eslint/no-namespace": "off",
+    "@typescript-eslint/no-misused-promises": "error",
+    "@typescript-eslint/no-floating-promises": [
+      "error",
+      {
+        ignoreIIFE: true,
+      },
+    ],
     "@typescript-eslint/no-unused-vars": [
       "warn",
       {

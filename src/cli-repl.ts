@@ -4,12 +4,15 @@ import * as readline from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
 
 import { readStr } from "./reader.js";
-import { Form } from "./types.js";
+import { Env, Form } from "./types.js";
 import { ParseError } from "./grammar.js";
 import { prStr } from "./printer.js";
 import { evalForm } from "./eval.js";
-import { Repl, replOptionsFromBuiltinModulePath } from "./repl.js";
 import { standardModuleRoot } from "./definitions.js";
+import { defaultTranspileOptions, TranspileRepl } from "./internal/types.js";
+import { initializeForRepl } from "./env.js";
+import { implicitlyImporting } from "./provided-symbols-config.js";
+import { assertNonError } from "./util/error.js";
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-return */
 
@@ -21,8 +24,8 @@ function read(str: string): Form | ParseError {
 }
 
 // EVAL
-async function evalCustard(ast: Form, repl: Repl): Promise<any> {
-  return await evalForm(ast, repl);
+async function evalCustard(ast: Form, env: Env<TranspileRepl>): Promise<any> {
+  return await evalForm(ast, env);
 }
 
 // PRINT
@@ -34,13 +37,16 @@ function print(exp: any): string {
   return prStr(exp);
 }
 
-async function readEvaluatePrint(str: string, repl: Repl): Promise<void> {
+async function readEvaluatePrint(
+  str: string,
+  env: Env<TranspileRepl>,
+): Promise<void> {
   const r0 = read(str);
   if (ParseError.is(r0)) {
     console.error(r0);
     return;
   }
-  console.log(print(await evalCustard(r0, repl)));
+  console.log(print(await evalCustard(r0, env)));
 }
 
 function finalize() {
@@ -48,7 +54,7 @@ function finalize() {
   input.destroy();
 }
 
-async function loop(repl: Repl): Promise<void> {
+async function loop(env: Env<TranspileRepl>): Promise<void> {
   try {
     while (true) {
       const answer = await rl.question("custard> ");
@@ -56,7 +62,7 @@ async function loop(repl: Repl): Promise<void> {
         finalize();
         break;
       }
-      await readEvaluatePrint(answer, repl);
+      await readEvaluatePrint(answer, env);
     }
   } catch (err) {
     finalize();
@@ -66,7 +72,13 @@ async function loop(repl: Repl): Promise<void> {
 
 // I don't need top-level `await` here!
 // eslint-disable-next-line @typescript-eslint/no-floating-promises
-Repl.using(
-  replOptionsFromBuiltinModulePath(`${standardModuleRoot}/base.js`),
-  loop,
-);
+(async () => {
+  await loop(
+    assertNonError(
+      await initializeForRepl(
+        defaultTranspileOptions(),
+        implicitlyImporting(`${standardModuleRoot}/base.js`),
+      ),
+    ),
+  );
+})();
