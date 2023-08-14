@@ -1,0 +1,8 @@
+(const modulePaths (Map))
+(modulePaths.set "meta" "./lib/meta.js")
+(modulePaths.set "async" "./lib/async.js")
+{
+  modulePaths,
+  implicitStatements: "",
+  jsTopLevels: ["console"],
+}
