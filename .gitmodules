@@ -1,0 +1,3 @@
+[submodule "editor/vim"]
+	path = editor/vim
+	url = https://github.com/igrep/vim-custard
