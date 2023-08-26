@@ -106,10 +106,7 @@ async function transpileExpressionWithNextCall(
       if (TranspileError.is(argsSrc)) {
         return argsSrc;
       }
-      return [
-        `${funcSrc}.call(${CU_ENV},${argsSrc})`,
-        undefined,
-      ];
+      return [`${funcSrc}.call(${CU_ENV},${argsSrc})`, undefined];
     }
 
     if (isMarkedDirectWriter(writer)) {
