@@ -75,7 +75,7 @@ async function transpileExpressionWithNextCall(
       if (TranspileError.is(argsSrc)) {
         return argsSrc;
       }
-      return [concatJsSrcs("(", funcSrc, ")(", argsSrc, ")"), undefined];
+      return [`(${funcSrc})(${argsSrc})`, undefined];
     }
 
     const { writer, sym } = nc;
@@ -99,7 +99,7 @@ async function transpileExpressionWithNextCall(
       if (TranspileError.is(argsSrc)) {
         return argsSrc;
       }
-      return [concatJsSrcs(funcSrc, "(", argsSrc, ")"), undefined];
+      return [`${funcSrc}(${argsSrc})`, undefined];
     }
     if (isMarkedFunctionWithEnv(writer)) {
       const argsSrc = await transpileJoinWithComma(args, env);
@@ -107,7 +107,7 @@ async function transpileExpressionWithNextCall(
         return argsSrc;
       }
       return [
-        concatJsSrcs(funcSrc, `.call(${CU_ENV},`, argsSrc, ")"),
+        `${funcSrc}.call(${CU_ENV},${argsSrc})`,
         undefined,
       ];
     }
@@ -162,7 +162,7 @@ async function transpileExpressionWithNextCall(
           if (TranspileError.is(elementsSrc)) {
             return elementsSrc;
           }
-          return [concatJsSrcs("[", elementsSrc, "]"), undefined];
+          return [`[${elementsSrc}]`, undefined];
         case "LiteralObject":
           const kvSrc = await transpileLiteralObject(ast, env);
           if (TranspileError.is(kvSrc)) {
@@ -207,9 +207,9 @@ async function transpileLiteralObject(
         return vSrc;
       }
 
-      kvSrc = concatJsSrcs(kSrc, ": ", vSrc);
+      kvSrc = `${kSrc}:${vSrc}`;
     }
-    objectContents = concatJsSrcs(objectContents, kvSrc, ",");
+    objectContents = `${objectContents}${kvSrc},`;
   }
   return `{${objectContents}}`;
 }
@@ -300,17 +300,10 @@ export async function transpileJoinWithComma(
       return r;
     }
     if (i === lastI) {
-      result = concatJsSrcs(result, r);
+      result = `${result}${r}`;
     } else {
-      result = concatJsSrcs(result, r, ",");
+      result = `${result}${r},`;
     }
   }
   return result;
-}
-
-export function concatJsSrcs(a: JsSrc, b: JsSrc, ...left: JsSrc[]): JsSrc {
-  function plus(x: JsSrc, y: JsSrc): JsSrc {
-    return `${x}${y}`;
-  }
-  return left.reduce(plus, plus(a, b));
 }
