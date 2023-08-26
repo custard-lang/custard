@@ -1,12 +1,18 @@
 import * as path from "node:path";
 
-import { FilePath, ProvidedSymbolsConfig } from "./types.js";
+import { FilePath, Id, ProvidedSymbolsConfig } from "./types.js";
 
-export function implicitlyImporting(
-  ...builtinModulePaths: FilePath[]
-): ProvidedSymbolsConfig {
+export function build({
+  builtinModulePaths,
+  otherModulePaths,
+  jsTopLevels,
+}: {
+  builtinModulePaths: FilePath[];
+  otherModulePaths: Map<Id, FilePath>;
+  jsTopLevels: Id[];
+}): ProvidedSymbolsConfig {
   let implicitStatements = "";
-  const modulePaths: Map<string, string> = new Map();
+  const modulePaths: Map<string, string> = new Map(otherModulePaths);
 
   for (const modulePath of builtinModulePaths) {
     const moduleName = path.basename(modulePath, path.extname(modulePath));
@@ -17,8 +23,18 @@ export function implicitlyImporting(
   return {
     implicitStatements,
     modulePaths,
-    jsTopLevels: [],
+    jsTopLevels,
   };
+}
+
+export function implicitlyImporting(
+  ...builtinModulePaths: FilePath[]
+): ProvidedSymbolsConfig {
+  return build({
+    builtinModulePaths,
+    otherModulePaths: new Map(),
+    jsTopLevels: [],
+  });
 }
 
 export function empty(): ProvidedSymbolsConfig {

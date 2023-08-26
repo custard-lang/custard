@@ -1,0 +1,41 @@
+import { describe } from "vitest";
+import { Config, testEvalBlockOf, testEvalFormOf } from "../test";
+
+import { defaultTranspileOptions } from "../types";
+import { standardModuleRoot } from "../definitions";
+import * as ProvidedSymbolsConfig from "../provided-symbols-config";
+
+function setUpConfig(): Config {
+  return {
+    options: defaultTranspileOptions(),
+    providedSymbols: ProvidedSymbolsConfig.build({
+      builtinModulePaths: [
+        `${standardModuleRoot}/base.js`,
+        `${standardModuleRoot}/js.js`,
+      ],
+      otherModulePaths: new Map(),
+      jsTopLevels: ["Date", "Object"],
+    }),
+  };
+}
+
+describe("evalForm", () => {
+  testEvalFormOf({
+    src: "(instanceof (new Date) Date)",
+    expected: true,
+    setUpConfig,
+  });
+  testEvalFormOf({
+    src: "(instanceof (new Object) Date)",
+    expected: false,
+    setUpConfig,
+  });
+});
+
+describe("evalBlock", () => {
+  testEvalBlockOf({
+    src: "(const bd (new Date 2022 3 16)) (bd.getYear)",
+    expected: 122,
+    setUpConfig,
+  });
+});
