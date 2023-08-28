@@ -14,6 +14,7 @@ function setUpConfig(): Config {
         `${standardModuleRoot}/js.js`,
       ],
       otherModulePaths: new Map(),
+      implicitStatements: "",
       jsTopLevels: ["Date", "Object"],
     }),
   };
