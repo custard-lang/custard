@@ -1,9 +1,10 @@
 export const defaultProvidedSymbolsConfig = `
 (const modulePaths (Map))
-(modulePaths.set "async" "./lib/async.js")
+(modulePaths.set "base" (text standardModuleRoot "/base.js"))
+(modulePaths.set "async" (text standardModuleRoot "/async.js"))
 {
   modulePaths,
-  builtinModulePaths: [(text standardModuleRoot "/base.js")],
+  implicitStatements: "(importAnyOf base)",
   jsTopLevels: ["console"],
 }
 `;
