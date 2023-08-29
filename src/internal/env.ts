@@ -22,6 +22,7 @@ import * as ScopeF from "./scope.js";
 import { isDeeperThanOrEqual, isShallowerThan } from "./scope-path.js";
 import { assertNonNull, expectNever } from "../util/error.js";
 import { escapeRegExp } from "../util/regexp.js";
+import { looksNodeLibraryPath } from "../util/path.js";
 
 // To distinguish jsTopLevels and the top level scope of the code,
 // assign the second scope as the top level.
@@ -189,6 +190,13 @@ export function findModule(env: Env, id: Id): FindModuleResult | undefined {
   const modPath = modules.get(id);
   if (modPath === undefined) {
     return;
+  }
+
+  if (looksNodeLibraryPath(modPath)) {
+    return {
+      url: modPath,
+      relativePath: modPath,
+    };
   }
 
   // If src is a directory, srcPath should be the absolute path to cwd.

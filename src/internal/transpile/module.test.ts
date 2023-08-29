@@ -22,6 +22,7 @@ describe("transpileBlock", () => {
   ): Promise<[JsSrc | TranspileError, Env]> => {
     const modulePaths: ModulePaths = new Map();
     modulePaths.set("a", "../../../test-assets/a.mjs");
+    modulePaths.set("typescript", "typescript");
 
     const env = EnvF.init(await transpileModule({ srcPath: __filename }), {
       ...ProvidedSymbolsConfigF.empty(),
@@ -36,13 +37,20 @@ describe("transpileBlock", () => {
 
   describe("(import id)", () => {
     describe("given an id registered in the ModulePaths", () => {
-      test("adds identifiers in the module, and returns imports in JavaScript", async () => {
+      test("adds identifiers in the module, and returns an import for a relative path in JavaScript", async () => {
         const [jsMod, env] = await subject("(import a)");
         const src = assertNonError(jsMod) as JsSrc;
         expect(src.trim()).toEqual(
           'import * as a from "../../../test-assets/a.mjs";',
         );
         expect(EnvF.find(env, "a")).toSatisfy(isNamespace);
+      });
+
+      test("adds identifiers in the module, and returns an import for a node library in JavaScript", async () => {
+        const [jsMod, env] = await subject("(import typescript)");
+        const src = assertNonError(jsMod) as JsSrc;
+        expect(src.trim()).toEqual('import * as typescript from "typescript";');
+        expect(EnvF.find(env, "typescript")).toSatisfy(isNamespace);
       });
     });
 

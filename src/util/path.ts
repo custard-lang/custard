@@ -15,3 +15,7 @@ export function projectRootFromImportMetaUrl(importMetaUrl: string): string {
 function dropLeadingSlashOnWindows(pathname: string): string {
   return os.platform() === "win32" ? pathname.slice(1) : pathname;
 }
+
+export function looksNodeLibraryPath(modPath: string): boolean {
+  return !path.isAbsolute(modPath) && !/^\.\.?\//.test(modPath);
+}
