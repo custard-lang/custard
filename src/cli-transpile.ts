@@ -51,7 +51,10 @@ const result = program
 
   const env = await initializeForRepl(
     { srcPath: providedSymbolsPath },
-    implicitlyImporting(`${standardModuleRoot}/base/safe.js`),
+    {
+      from: providedSymbolsPath,
+      ...implicitlyImporting(`${standardModuleRoot}/base/safe.js`),
+    },
   );
   if (env instanceof Error) {
     throw env;
@@ -78,7 +81,10 @@ const result = program
     const transpiled = await transpileModule(
       block,
       { srcPath },
-      providedSymbolsConfig,
+      {
+        from: providedSymbolsPath,
+        ...providedSymbolsConfig,
+      },
     );
     if (transpiled instanceof Error) {
       console.error("Error when transpiling the source file.");

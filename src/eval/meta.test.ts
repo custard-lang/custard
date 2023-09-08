@@ -4,13 +4,14 @@ import { Config, testEvalFormOf } from "../test";
 
 import { assertNonError } from "../util/error";
 
-import { Form, ModulePaths } from "../types";
+import { FilePath, Form, JsSrc, ModulePaths } from "../types";
 import { standardModuleRoot } from "../definitions";
 import { evalForm } from "../eval";
 import { readStr } from "../reader";
 import { withNewPath } from "../test/tmp-file";
 import { writeAndEval } from "../test/eval";
 import { initializeForRepl } from "../env";
+import { fileOfImportMetaUrl } from "../util/path";
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/restrict-template-expressions */
 
@@ -21,9 +22,11 @@ describe("evalForm", () => {
     modulePaths.set("meta", "../../dist/src/lib/meta.js");
     modulePaths.set("async", "../../dist/src/lib/async.js");
 
+    const srcPath = fileOfImportMetaUrl(import.meta.url);
     return {
-      options: { srcPath: __filename },
+      options: { srcPath },
       providedSymbols: {
+        from: srcPath,
         modulePaths,
         implicitStatements: "(importAnyOf base)(import meta)(import async)",
         jsTopLevels: [],
@@ -51,7 +54,10 @@ describe("evalForm", () => {
 
   describe("meta.transpileModule", () => {
     const basePathJson = JSON.stringify(`${standardModuleRoot}/base.js`);
-    const proviedSymbolsSrc = `{ modulePaths: (Map [["base" ${basePathJson}]]), implicitStatements: "(importAnyOf base)", jsTopLevels: [] }`;
+    const proviedSymbolsSrcFrom = (src: FilePath): JsSrc => {
+      const fromSrc = JSON.stringify(src);
+      return `{ modulePaths: (Map [["base" ${basePathJson}]]), implicitStatements: "(importAnyOf base)", jsTopLevels: [], from: ${fromSrc} }`;
+    };
     const extraOptionsSrc = `{ mayHaveResult: true }`;
 
     test("transpiled source code can be `eval`ed as a JavaScript code 1.", async () => {
@@ -62,6 +68,7 @@ describe("evalForm", () => {
 
       await withNewPath(async ({ src, dest }) => {
         const transpileOptionsSrc = `{ srcPath: ${JSON.stringify(src)} }`;
+        const proviedSymbolsSrc = proviedSymbolsSrcFrom(src);
         const srcCode = `(async.await (meta.transpileModule (meta.readString "(plusF 4.1 5.2)") ${transpileOptionsSrc} ${proviedSymbolsSrc} ${extraOptionsSrc}))`;
         const result = assertNonError(
           await evalForm(assertNonError(readStr(srcCode)) as Form, env),
@@ -78,6 +85,7 @@ describe("evalForm", () => {
 
       await withNewPath(async ({ src, dest }) => {
         const transpileOptionsSrc = `{ srcPath: ${JSON.stringify(src)} }`;
+        const proviedSymbolsSrc = proviedSymbolsSrcFrom(src);
         const srcCode = `(async.await (meta.transpileModule (meta.readString "(const x 9.2) (let y 0.1) (plusF x y)") ${transpileOptionsSrc} ${proviedSymbolsSrc} ${extraOptionsSrc}))`;
         const result = assertNonError(
           await evalForm(assertNonError(readStr(srcCode)) as Form, env),

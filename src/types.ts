@@ -18,6 +18,7 @@ export {
   isPropertyAccess,
   showSymbolAccess,
   ProvidedSymbolsConfig,
+  CompleteProvidedSymbolsConfig,
   Definitions,
   type ModulePaths,
   type TranspileOptions,

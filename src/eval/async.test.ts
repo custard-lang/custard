@@ -4,6 +4,7 @@ import { testEvalFormOf } from "../test";
 import { ModulePaths, TranspileError } from "../types";
 import { standardModuleRoot } from "../definitions";
 import type { Config } from "../test";
+import { fileOfImportMetaUrl } from "../util/path";
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/restrict-template-expressions */
 
@@ -13,9 +14,12 @@ describe("evalForm", () => {
     modulePaths.set("base", `${standardModuleRoot}/base.js`);
     modulePaths.set("async", "../../dist/src/lib/async.js");
 
+    const srcPath = fileOfImportMetaUrl(import.meta.url);
+
     return {
-      options: { srcPath: __filename },
+      options: { srcPath },
       providedSymbols: {
+        from: srcPath,
         modulePaths,
         implicitStatements: "(importAnyOf base)(import async)",
         jsTopLevels: ["Promise"],

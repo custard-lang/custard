@@ -3,6 +3,7 @@ import { Config, testEvalBlockOf } from "./test";
 
 import { standardModuleRoot } from "./definitions";
 import { ModulePaths } from "./types";
+import { fileOfImportMetaUrl } from "./util/path";
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/restrict-template-expressions */
 
@@ -10,9 +11,13 @@ describe("evalBlock", () => {
   function setUpConfig(): Config {
     const modulePaths: ModulePaths = new Map();
     modulePaths.set("base", `${standardModuleRoot}/base.js`);
+
+    const srcPath = fileOfImportMetaUrl(import.meta.url);
+
     return {
-      options: { srcPath: __filename },
+      options: { srcPath },
       providedSymbols: {
+        from: srcPath,
         modulePaths,
         implicitStatements: "(importAnyOf base)",
         jsTopLevels: ["structuredClone"],

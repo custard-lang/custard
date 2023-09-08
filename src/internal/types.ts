@@ -94,6 +94,10 @@ export type ProvidedSymbolsConfig = {
   jsTopLevels: Id[];
 };
 
+export type CompleteProvidedSymbolsConfig = ProvidedSymbolsConfig & {
+  from: FilePath;
+};
+
 export const ProvidedSymbolsConfig: s.Spec<ProvidedSymbolsConfig> = s.withId(
   "ProvidedSymbolsConfig",
   s.record({

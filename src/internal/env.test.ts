@@ -7,9 +7,9 @@ import {
   defaultTranspileOptions,
   TranspileError,
 } from "../internal/types.js";
-import * as ProvidedSymbolsConfigF from "../provided-symbols-config.js";
 import * as EnvF from "./env.js";
 import { transpileRepl } from "./transpile-state.js";
+import { fileOfImportMetaUrl } from "../util/path.js";
 
 function inScope(env: Env, f: () => void): void {
   EnvF.push(env);
@@ -18,10 +18,12 @@ function inScope(env: Env, f: () => void): void {
 }
 
 async function subjectEnv(): Promise<Env> {
-  return EnvF.init(
-    await transpileRepl(defaultTranspileOptions()),
-    ProvidedSymbolsConfigF.empty(),
-  );
+  return EnvF.init(await transpileRepl(defaultTranspileOptions()), {
+    from: fileOfImportMetaUrl(import.meta.url),
+    implicitStatements: "",
+    modulePaths: new Map(),
+    jsTopLevels: [],
+  });
 }
 
 describe("Interactions of the functions in EnvF", () => {

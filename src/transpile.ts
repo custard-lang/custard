@@ -1,7 +1,7 @@
 import type {
   Block,
   JsSrc,
-  ProvidedSymbolsConfig,
+  CompleteProvidedSymbolsConfig,
   TranspileOptions,
 } from "./types.js";
 import { TranspileError } from "./types.js";
@@ -12,7 +12,7 @@ import { initializeForModule } from "./env.js";
 export async function transpileModule(
   ast: Block,
   transpileOptions: TranspileOptions,
-  providedSymbols: ProvidedSymbolsConfig,
+  providedSymbols: CompleteProvidedSymbolsConfig,
   extraOptions: { mayHaveResult: boolean } = { mayHaveResult: false },
 ): Promise<JsSrc | Error> {
   const env = await initializeForModule(transpileOptions, providedSymbols);

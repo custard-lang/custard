@@ -4,19 +4,24 @@ import { Config, testEvalBlockOf, testEvalFormOf } from "../test";
 import { defaultTranspileOptions } from "../types";
 import { standardModuleRoot } from "../definitions";
 import * as ProvidedSymbolsConfig from "../provided-symbols-config";
+import { fileOfImportMetaUrl } from "../util/path";
 
 function setUpConfig(): Config {
+  const providedSymbols = ProvidedSymbolsConfig.build({
+    builtinModulePaths: [
+      `${standardModuleRoot}/base.js`,
+      `${standardModuleRoot}/js.js`,
+    ],
+    otherModulePaths: new Map(),
+    implicitStatements: "",
+    jsTopLevels: ["Date", "Object"],
+  });
   return {
     options: defaultTranspileOptions(),
-    providedSymbols: ProvidedSymbolsConfig.build({
-      builtinModulePaths: [
-        `${standardModuleRoot}/base.js`,
-        `${standardModuleRoot}/js.js`,
-      ],
-      otherModulePaths: new Map(),
-      implicitStatements: "",
-      jsTopLevels: ["Date", "Object"],
-    }),
+    providedSymbols: {
+      from: fileOfImportMetaUrl(import.meta.url),
+      ...providedSymbols,
+    },
   };
 }
 

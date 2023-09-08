@@ -1,4 +1,3 @@
-import * as MapU from "../util/map.js";
 import { projectRootFromImportMetaUrl } from "../util/path.js";
 
 import {
@@ -16,20 +15,6 @@ export const standardModuleRoot = [
   "src",
   "lib",
 ].join("/");
-
-export async function loadModulePaths(
-  paths: FilePath[],
-): Promise<Definitions | TranspileError> {
-  const definitions: Definitions = new Map();
-  for (const path of paths) {
-    const r = await loadModulePath(path);
-    if (TranspileError.is(r)) {
-      return r;
-    }
-    MapU.mergeFromTo(r, definitions);
-  }
-  return definitions;
-}
 
 export async function loadModulePath(
   path: FilePath,

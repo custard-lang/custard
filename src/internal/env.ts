@@ -13,8 +13,8 @@ import {
   isPropertyAccess,
   JsSrc,
   Scope,
-  ProvidedSymbolsConfig,
   canBePseudoTopLevelReferenced,
+  CompleteProvidedSymbolsConfig,
 } from "./types.js";
 import type { Env, TranspileState } from "./types.js";
 import * as References from "./references.js";
@@ -22,7 +22,7 @@ import * as ScopeF from "./scope.js";
 import { isDeeperThanOrEqual, isShallowerThan } from "./scope-path.js";
 import { assertNonNull, expectNever } from "../util/error.js";
 import { escapeRegExp } from "../util/regexp.js";
-import { looksNodeLibraryPath } from "../util/path.js";
+import { resolveModulePaths } from "../provided-symbols-config.js";
 
 // To distinguish jsTopLevels and the top level scope of the code,
 // assign the second scope as the top level.
@@ -30,15 +30,15 @@ const TOP_LEVEL_OFFSET = 1;
 
 export function init<State extends TranspileState>(
   state: State,
-  { modulePaths, jsTopLevels }: ProvidedSymbolsConfig,
+  providedSymbolsConfig: CompleteProvidedSymbolsConfig,
 ): Env<State> {
   const topLevelScope = ScopeF.initAsync();
   ScopeF.addPrimitives(topLevelScope);
-  ScopeF.addProvidedConsts(topLevelScope, jsTopLevels);
+  ScopeF.addProvidedConsts(topLevelScope, providedSymbolsConfig.jsTopLevels);
   return {
     scopes: [topLevelScope],
     references: References.init(),
-    modules: modulePaths,
+    modules: resolveModulePaths(providedSymbolsConfig),
     transpileState: state,
   };
 }
@@ -187,25 +187,20 @@ export function findModule(env: Env, id: Id): FindModuleResult | undefined {
     modules,
     transpileState: { src, srcPath },
   } = env;
-  const modPath = modules.get(id);
-  if (modPath === undefined) {
+  const modFullPath = modules.get(id);
+  if (modFullPath === undefined) {
     return;
-  }
-
-  if (looksNodeLibraryPath(modPath)) {
-    return {
-      url: modPath,
-      relativePath: modPath,
-    };
   }
 
   // If src is a directory, srcPath should be the absolute path to cwd.
   const currentFileDir = src.isDirectory() ? srcPath : path.dirname(srcPath);
-  const fullPath = path.resolve(currentFileDir, modPath);
-  const uncanonicalPath = path.relative(path.resolve(currentFileDir), fullPath);
+  const uncanonicalPath = path.relative(
+    path.resolve(currentFileDir),
+    modFullPath,
+  );
 
   return {
-    url: `file://${fullPath}`,
+    url: `file://${modFullPath}`,
     relativePath:
       path.sep === "/"
         ? uncanonicalPath

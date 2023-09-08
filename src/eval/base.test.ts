@@ -4,13 +4,17 @@ import { Config, testEvalBlockOf, testEvalFormOf } from "../test";
 import { defaultTranspileOptions, TranspileError } from "../types";
 import { standardModuleRoot } from "../definitions";
 import { implicitlyImporting } from "../provided-symbols-config";
+import { fileOfImportMetaUrl } from "../util/path";
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/restrict-template-expressions, @typescript-eslint/no-unsafe-assignment */
 
 function setUpConfig(): Config {
   return {
     options: defaultTranspileOptions(),
-    providedSymbols: implicitlyImporting(`${standardModuleRoot}/base.js`),
+    providedSymbols: {
+      from: fileOfImportMetaUrl(import.meta.url),
+      ...implicitlyImporting(`${standardModuleRoot}/base.js`),
+    },
   };
 }
 

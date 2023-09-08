@@ -1,4 +1,8 @@
-import type { Env, ProvidedSymbolsConfig, TranspileOptions } from "./types.js";
+import type {
+  Env,
+  CompleteProvidedSymbolsConfig,
+  TranspileOptions,
+} from "./types.js";
 
 import { init } from "./internal/env.js";
 import { transpileString } from "./internal/transpile.js";
@@ -8,7 +12,7 @@ import { evalString } from "./internal/eval.js";
 
 export async function initializeForModule(
   options: TranspileOptions,
-  providedSymbols: ProvidedSymbolsConfig,
+  providedSymbols: CompleteProvidedSymbolsConfig,
 ): Promise<Env<TranspileModule> | Error> {
   const state = await transpileModule(options);
   const env = init(state, providedSymbols);
@@ -25,7 +29,7 @@ export async function initializeForModule(
 
 export async function initializeForRepl(
   options: TranspileOptions,
-  providedSymbols: ProvidedSymbolsConfig,
+  providedSymbols: CompleteProvidedSymbolsConfig,
 ): Promise<Env<TranspileRepl> | Error> {
   const state = await transpileRepl(options);
   const env = init(state, providedSymbols);

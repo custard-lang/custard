@@ -15,6 +15,7 @@ import {
   ModulePaths,
   TranspileError,
 } from "../types";
+import { fileOfImportMetaUrl } from "../../util/path";
 
 describe("transpileBlock", () => {
   const subject = async (
@@ -22,11 +23,21 @@ describe("transpileBlock", () => {
   ): Promise<[JsSrc | TranspileError, Env]> => {
     const modulePaths: ModulePaths = new Map();
     modulePaths.set("a", "../../../test-assets/a.mjs");
-    modulePaths.set("typescript", "typescript");
+    modulePaths.set(
+      "typescript",
+      "../../../node_modules/typescript/lib/typescript.js",
+    );
+    const providedSymbolsConfig = ProvidedSymbolsConfigF.build({
+      builtinModulePaths: [],
+      otherModulePaths: modulePaths,
+      implicitStatements: "",
+      jsTopLevels: [],
+    });
 
-    const env = EnvF.init(await transpileModule({ srcPath: __filename }), {
-      ...ProvidedSymbolsConfigF.empty(),
-      modulePaths,
+    const srcPath = fileOfImportMetaUrl(import.meta.url);
+    const env = EnvF.init(await transpileModule({ srcPath }), {
+      from: srcPath,
+      ...providedSymbolsConfig,
     });
     const jsSrc = await transpileBlock(
       assertNonError(readBlock(src)) as Block,
@@ -49,7 +60,9 @@ describe("transpileBlock", () => {
       test("adds identifiers in the module, and returns an import for a node library in JavaScript", async () => {
         const [jsMod, env] = await subject("(import typescript)");
         const src = assertNonError(jsMod) as JsSrc;
-        expect(src.trim()).toEqual('import * as typescript from "typescript";');
+        expect(src.trim()).toEqual(
+          'import * as typescript from "../../../node_modules/typescript/lib/typescript.js";',
+        );
         expect(EnvF.find(env, "typescript")).toSatisfy(isNamespace);
       });
     });

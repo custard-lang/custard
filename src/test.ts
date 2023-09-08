@@ -6,7 +6,12 @@ import type { Awaitable } from "./util/types";
 import { readBlock, readStr } from "./reader";
 import { evalBlock, evalForm } from "./eval";
 import { initializeForRepl } from "./env";
-import { Block, Form, ProvidedSymbolsConfig, TranspileOptions } from "./types";
+import {
+  Block,
+  Form,
+  CompleteProvidedSymbolsConfig,
+  TranspileOptions,
+} from "./types";
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/restrict-template-expressions, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-assignment */
 
@@ -67,5 +72,5 @@ export function testEvalBlockOf({
 
 export type Config = {
   options: TranspileOptions;
-  providedSymbols: ProvidedSymbolsConfig;
+  providedSymbols: CompleteProvidedSymbolsConfig;
 };
