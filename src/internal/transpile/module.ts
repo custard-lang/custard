@@ -71,7 +71,9 @@ export const importAnyOf = markAsDirectWriter(
     }
     const [moduleId] = forms;
     if (!isCuSymbol(moduleId)) {
-      return new TranspileError("The argument of `importAnyOf` must be a Symbol.");
+      return new TranspileError(
+        "The argument of `importAnyOf` must be a Symbol.",
+      );
     }
 
     const foundModule = EnvF.findModule(env, moduleId.v);
