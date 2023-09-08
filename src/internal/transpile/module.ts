@@ -66,12 +66,12 @@ export const importAnyOf = markAsDirectWriter(
   async (env: Env, ...forms: CuArray): Promise<JsSrc | TranspileError> => {
     if (forms.length !== 1) {
       return new TranspileError(
-        "The number of arguments of `import` must be 1.",
+        "The number of arguments of `importAnyOf` must be 1.",
       );
     }
     const [moduleId] = forms;
     if (!isCuSymbol(moduleId)) {
-      return new TranspileError("The argument of `import` must be a Symbol.");
+      return new TranspileError("The argument of `importAnyOf` must be a Symbol.");
     }
 
     const foundModule = EnvF.findModule(env, moduleId.v);
