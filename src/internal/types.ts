@@ -165,7 +165,7 @@ function asWriter<T extends Record<string, unknown>>(x: T): IsWriter & T {
   return { ...x, [IsWriterKey]: true };
 }
 export function isWriter(x: unknown): x is Writer {
-  return !!(x as Record<string, unknown>)[IsWriterKey];
+  return x != null && !!(x as Record<string, unknown>)[IsWriterKey];
 }
 
 export type ContextualKeyword = IsWriter & {
