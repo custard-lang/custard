@@ -77,7 +77,7 @@ const result = program
       throw block;
     }
     const sp = path.parse(srcPath);
-    const destPath = path.join(`${sp.dir}`, `${sp.name}.js`);
+    const destPath = path.join(`${sp.dir}`, `${sp.name}.mjs`);
     const transpiled = await transpileModule(
       block,
       { srcPath },
