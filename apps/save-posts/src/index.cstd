@@ -1,0 +1,16 @@
+(const agent (new atproto.default.BskyAgent { service: "https://bsky.social/"}))
+
+(const
+  password
+  (async.await
+    (read.default { prompt: "Pass: ", silent: true })))
+(async.await
+  (agent.login
+    { identifier: "igreque.info", password }))
+
+(console.log
+  (JSON.stringify
+    (async.await
+      (agent.getAuthorFeed { actor: "igreque.info" , limit: 100, }))
+    undefined
+    2))

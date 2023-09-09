@@ -1,0 +1,11 @@
+(const modulePaths (Map))
+(modulePaths.set "base" (text standardModuleRoot "/base.js"))
+(modulePaths.set "async" (text standardModuleRoot "/async.js"))
+(modulePaths.set "js" (text standardModuleRoot "/js.js"))
+(modulePaths.set "atproto" "./node_modules/@atproto/api/dist/index.js")
+(modulePaths.set "read" "./node_modules/read/lib/read.js")
+{
+  modulePaths,
+  implicitStatements: "(importAnyOf base)(importAnyOf js)(import async)(import atproto)(import read)",
+  jsTopLevels: ["console", "JSON"],
+}
