@@ -1,6 +1,8 @@
 import * as path from "node:path";
 import * as fs from "node:fs";
 
+import { isAbsoluteUrl } from "./util/path.js";
+
 import { FilePath, Id, ProvidedSymbolsConfig } from "./types.js";
 import {
   CompleteProvidedSymbolsConfig,
@@ -40,7 +42,9 @@ export function resolveModulePaths({
   const fromDir = fs.statSync(from).isDirectory() ? from : path.dirname(from);
   const result: ModulePaths = new Map();
   for (const [moduleName, modulePath] of modulePaths) {
-    const moduleFullPath = path.resolve(fromDir, modulePath);
+    const moduleFullPath = isAbsoluteUrl(modulePath)
+      ? modulePath
+      : path.resolve(fromDir, modulePath);
     result.set(moduleName, moduleFullPath);
   }
   return result;

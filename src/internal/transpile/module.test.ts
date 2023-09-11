@@ -27,6 +27,7 @@ describe("transpileBlock", () => {
       "typescript",
       "../../../node_modules/typescript/lib/typescript.js",
     );
+    modulePaths.set("fs", "node:fs/promises");
     const providedSymbolsConfig = ProvidedSymbolsConfigF.build({
       builtinModulePaths: [],
       otherModulePaths: modulePaths,
@@ -64,6 +65,13 @@ describe("transpileBlock", () => {
           'import * as typescript from "../../../node_modules/typescript/lib/typescript.js";',
         );
         expect(EnvF.find(env, "typescript")).toSatisfy(isNamespace);
+      });
+
+      test("adds identifiers in the module, and returns an import for a node library in Node.js", async () => {
+        const [jsMod, env] = await subject("(import fs)");
+        const src = assertNonError(jsMod) as JsSrc;
+        expect(src.trim()).toEqual('import * as fs from "node:fs/promises";');
+        expect(EnvF.find(env, "fs")).toSatisfy(isNamespace);
       });
     });
 

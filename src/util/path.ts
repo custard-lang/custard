@@ -24,3 +24,7 @@ export function dirOfImportMetaUrl(importMetaUrl: string): string {
 function dropLeadingSlashOnWindows(pathname: string): string {
   return os.platform() === "win32" ? pathname.slice(1) : pathname;
 }
+
+export function isAbsoluteUrl(pathname: string): boolean {
+  return /^(?:node|file):/.test(pathname);
+}

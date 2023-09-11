@@ -23,6 +23,7 @@ import { isDeeperThanOrEqual, isShallowerThan } from "./scope-path.js";
 import { assertNonNull, expectNever } from "../util/error.js";
 import { escapeRegExp } from "../util/regexp.js";
 import { resolveModulePaths } from "../provided-symbols-config.js";
+import { isAbsoluteUrl } from "../util/path.js";
 
 // To distinguish jsTopLevels and the top level scope of the code,
 // assign the second scope as the top level.
@@ -190,6 +191,13 @@ export function findModule(env: Env, id: Id): FindModuleResult | undefined {
   const modFullPath = modules.get(id);
   if (modFullPath === undefined) {
     return;
+  }
+
+  if (isAbsoluteUrl(modFullPath)) {
+    return {
+      url: modFullPath,
+      relativePath: modFullPath,
+    };
   }
 
   // If src is a directory, srcPath should be the absolute path to cwd.
