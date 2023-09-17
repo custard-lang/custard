@@ -64,8 +64,9 @@ export function transpiling1Unmarked(
 export function transpiling1(
   formId: Id,
   f: (a: JsSrc) => JsSrc,
+  kind: DirectWriterKind = "expression",
 ): MarkedDirectWriter {
-  return markAsDirectWriter(transpiling1Unmarked(formId, f));
+  return markAsDirectWriter(transpiling1Unmarked(formId, f), kind);
 }
 
 export function transpiling2(

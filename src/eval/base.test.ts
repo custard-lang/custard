@@ -882,4 +882,76 @@ describe("evalBlock", () => {
       setUpConfig,
     });
   });
+
+  describe("handling exceptions", () => {
+    testEvalBlockOf({
+      src: "(try)",
+      expected: new TranspileError(
+        "Nither `catch` nor `finally` given to a `try` statement!",
+      ),
+      setUpConfig,
+    });
+
+    testEvalBlockOf({
+      src: "(try (const x 1))",
+      expected: new TranspileError(
+        "Nither `catch` nor `finally` given to a `try` statement!",
+      ),
+      setUpConfig,
+    });
+
+    testEvalBlockOf({
+      src: "(try (const x 1) catch)",
+      expected: new TranspileError(
+        "No variable name of the caught exception given to a `catch` clause!",
+      ),
+      setUpConfig,
+    });
+    testEvalBlockOf({
+      src: "(try (const x 1) catch finally (const y 2))",
+      expected: new TranspileError(
+        "No variable name of the caught exception given to a `catch` clause!",
+      ),
+      setUpConfig,
+    });
+    testEvalBlockOf({
+      src: "(try (const x 1) catch (const y 2))",
+      expected: new TranspileError(
+        "No variable name of the caught exception given to a `catch` clause!",
+      ),
+      setUpConfig,
+    });
+    testEvalBlockOf({
+      src: "(try (const x 1) catch (const y 2) finally (const y 2))",
+      expected: new TranspileError(
+        "No variable name of the caught exception given to a `catch` clause!",
+      ),
+      setUpConfig,
+    });
+
+    testEvalBlockOf({
+      src: "(try (const x 1) catch e (const y 2) catch e1 (const z 9) finally (const y 2))",
+      expected: new TranspileError("`catch` clause specified more than once"),
+      setUpConfig,
+    });
+    testEvalBlockOf({
+      src: "(try (const x 1) catch e (const y 2) finally (const z 9) finally (const y 2))",
+      expected: new TranspileError("`finally` clause specified more than once"),
+      setUpConfig,
+    });
+
+    testEvalBlockOf({
+      src: "(try (const x 1) finally (const z 3) catch e (const y 2))",
+      expected: new TranspileError(
+        "A `finally` clause must be followed by a `catch` clause!",
+      ),
+      setUpConfig,
+    });
+
+    testEvalBlockOf({
+      src: '(let x 1) (let y 10) (try (try (throw "thrown") finally (assign x 2)) catch _ (assign y 20)) [x, y]',
+      expected: [2, 20],
+      setUpConfig,
+    });
+  });
 });

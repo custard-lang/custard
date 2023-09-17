@@ -7,6 +7,7 @@ import {
   CuSymbol,
   Env,
   Form,
+  Id,
   isConst,
   isCuSymbol,
   JsSrc,
@@ -45,8 +46,6 @@ export const _cu$let = transpilingForVariableDeclaration(
   (assignee: JsSrc, exp: JsSrc) => `let ${assignee}=${exp}`,
   aVar,
 );
-
-export const _cu$else = aContextualKeyword("if");
 
 export const _cu$return = markAsDirectWriter(
   async (env: Env, ...args: Form[]): Promise<JsSrc | TranspileError> => {
@@ -200,6 +199,7 @@ export const _cu$if = markAsDirectWriter(
       return boolSrc;
     }
 
+    // TODO: forms must be non-statements
     const trueForms: Form[] = [];
     const falseForms: Form[] = [];
     let elseIsFound = false;
@@ -244,6 +244,148 @@ export const _cu$if = markAsDirectWriter(
 
     return `(${boolSrc}?(${ifTrueSrc}):(${ifFalseSrc}))`;
   },
+);
+
+export const _cu$else = aContextualKeyword("if");
+
+// TODO: refactor with a feature to define syntax
+export const _cu$try = markAsDirectWriter(
+  async (env: Env, ...statements: Form[]): Promise<JsSrc | TranspileError> => {
+    let trys: JsSrc = "";
+    let catchs: JsSrc = "";
+    let finallys: JsSrc = "";
+
+    const initial = 0;
+    const catchFound = 1;
+    const finallyFound = 2;
+    type State = typeof initial | typeof catchFound | typeof finallyFound;
+    let state: State = initial;
+    let catchVarName: Id | undefined = undefined;
+
+    EnvF.push(env);
+    for (const form of statements) {
+      let isCatch = false;
+      let isFinally = false;
+      let transpiled: JsSrc | TranspileError;
+      if (isCuSymbol(form)) {
+        isCatch = EnvF.find(env, form.v) === _cu$catch;
+        isFinally = EnvF.find(env, form.v) === _cu$finally;
+      }
+      switch (state) {
+        case initial:
+          if (isCatch) {
+            EnvF.pop(env);
+            state = catchFound;
+            continue;
+          }
+          if (isFinally) {
+            EnvF.pop(env);
+            state = finallyFound;
+            continue;
+          }
+          transpiled = await transpileExpression(form, env);
+          if (TranspileError.is(transpiled)) {
+            return transpiled;
+          }
+          trys = `${trys};\n${transpiled}`;
+          break;
+        case catchFound:
+          if (isCatch) {
+            return new TranspileError(
+              "`catch` clause specified more than once",
+            );
+          }
+
+          if (catchVarName === undefined) {
+            if (isFinally) {
+              return new TranspileError(
+                "No variable name of the caught exception given to a `catch` clause!",
+              );
+            }
+            if (isCuSymbol(form)) {
+              EnvF.push(env);
+              const r = EnvF.set(env, form.v, aConst());
+              if (TranspileError.is(r)) {
+                return r;
+              }
+              catchVarName = form.v;
+              continue;
+            }
+            return new TranspileError(
+              "No variable name of the caught exception given to a `catch` clause!",
+            );
+          }
+
+          if (isFinally) {
+            EnvF.pop(env);
+            state = finallyFound;
+            continue;
+          }
+
+          transpiled = await transpileExpression(form, env);
+          if (TranspileError.is(transpiled)) {
+            return transpiled;
+          }
+          catchs = `${catchs};\n${transpiled}`;
+          break;
+        case finallyFound:
+          if (isCatch) {
+            return new TranspileError(
+              "A `finally` clause must be followed by a `catch` clause!",
+            );
+          }
+          if (isFinally) {
+            return new TranspileError(
+              "`finally` clause specified more than once",
+            );
+          }
+
+          if (finallys === "") {
+            EnvF.push(env);
+          }
+
+          transpiled = await transpileExpression(form, env);
+          if (TranspileError.is(transpiled)) {
+            return transpiled;
+          }
+          finallys = `${finallys};\n${transpiled}`;
+          break;
+      }
+    }
+
+    EnvF.pop(env);
+
+    if (state === initial) {
+      return new TranspileError(
+        "Nither `catch` nor `finally` given to a `try` statement!",
+      );
+    }
+
+    let result = `try {${trys}}`;
+    if (catchVarName !== undefined) {
+      result = `${result}catch(${catchVarName}){${catchs}}`;
+    } else if (state === catchFound) {
+      return new TranspileError(
+        "No variable name of the caught exception given to a `catch` clause!",
+      );
+    }
+
+    if (state === finallyFound) {
+      result = `${result}finally{${finallys}}`;
+    }
+    return result;
+  },
+  "statement",
+);
+
+export const _cu$catch = aContextualKeyword("try");
+
+export const _cu$finally = aContextualKeyword("try");
+
+export const _cu$throw = transpiling1(
+  "throw",
+  (a: JsSrc) => `throw ${a}`,
+  "statement",
 );
 
 export const fn = markAsDirectWriter(
