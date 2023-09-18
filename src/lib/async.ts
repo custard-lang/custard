@@ -34,7 +34,7 @@ export const fn = markAsDirectWriter(
     args: Form,
     ...block: Form[]
   ): Promise<JsSrc | TranspileError> => {
-    const funcSrc = await buildFn(env, "fn", args, block, true);
+    const funcSrc = await buildFn(env, args, block, true);
     if (TranspileError.is(funcSrc)) {
       return funcSrc;
     }
@@ -48,7 +48,7 @@ export const procedure = markAsDirectWriter(
     args: Form,
     ...block: Form[]
   ): Promise<JsSrc | TranspileError> => {
-    const funcSrc = await buildProcedure(env, "procedure", args, block, true);
+    const funcSrc = await buildProcedure(env, args, block, true);
     if (TranspileError.is(funcSrc)) {
       return funcSrc;
     }
@@ -56,4 +56,4 @@ export const procedure = markAsDirectWriter(
   },
 );
 
-export const scope = buildScope("async ", "scope", true);
+export const scope = buildScope("async ", true);

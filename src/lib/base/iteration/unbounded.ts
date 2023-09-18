@@ -33,9 +33,6 @@ export const _cu$while = markAsDirectWriter(
         "No conditional expression given to a `while` statement!",
       );
     }
-    if (rest.length < 1) {
-      return new TranspileError("No statements given to a `while` statement!");
-    }
 
     if (isStatement(env, bool)) {
       const id = showSymbolAccess(bool[0]);
@@ -88,10 +85,6 @@ export const _cu$for = markAsDirectWriter(
       return new TranspileError(
         "No final expression given to a `for` statement!",
       );
-    }
-
-    if (rest.length < 1) {
-      return new TranspileError("No statements given to a `for` statement!");
     }
 
     if (isStatement(env, bool)) {
@@ -149,11 +142,6 @@ export const forEach = markAsDirectWriter(
     if (iterable === undefined) {
       return new TranspileError(
         "No iterable expression given to a `forEach` statement!",
-      );
-    }
-    if (statements.length < 1) {
-      return new TranspileError(
-        "No statements given to a `forEach` statement!",
       );
     }
 

@@ -116,9 +116,12 @@ describe("evalForm", () => {
     testEvalFormOf({ src: "( (fn () 3) 2 )", expected: 3, setUpConfig });
     testEvalFormOf({
       src: "((fn ()))",
-      expected: new TranspileError(
-        "`fn` must receive at least one expression!",
-      ),
+      expected: undefined,
+      setUpConfig,
+    });
+    testEvalFormOf({
+      src: "((fn () (const y 3)))",
+      expected: undefined,
       setUpConfig,
     });
     testEvalFormOf({
@@ -140,30 +143,22 @@ describe("evalForm", () => {
   describe("(scope e x p r s)", () => {
     testEvalFormOf({
       src: "(scope)",
-      expected: new TranspileError(
-        "`scope` must receive at least one expression!",
-      ),
+      expected: undefined,
       setUpConfig,
     });
     testEvalFormOf({
       src: "(scope (const y 3))",
-      expected: new TranspileError(
-        "The last statement in a `scope` must be an expression! But `const` is a statement!",
-      ),
+      expected: undefined,
       setUpConfig,
     });
     testEvalFormOf({
       src: "(scope (let x 7) (let y 7))",
-      expected: new TranspileError(
-        "The last statement in a `scope` must be an expression! But `let` is a statement!",
-      ),
+      expected: undefined,
       setUpConfig,
     });
     testEvalFormOf({
       src: "(scope (forEach x [1 2 3]))",
-      expected: new TranspileError(
-        "The last statement in a `scope` must be an expression! But `forEach` is a statement!",
-      ),
+      expected: undefined,
       setUpConfig,
     });
     testEvalFormOf({
@@ -173,16 +168,12 @@ describe("evalForm", () => {
     });
     testEvalFormOf({
       src: "(scope (return 904))",
-      expected: new TranspileError(
-        "The last statement in a `scope` must be an expression! But `return` is a statement!",
-      ),
+      expected: 904,
       setUpConfig,
     });
     testEvalFormOf({
-      src: "(scope (recursive const x = 1))",
-      expected: new TranspileError(
-        "The last statement in a `scope` must be an expression! But `recursive` is a statement!",
-      ),
+      src: "(scope (recursive (const x 1)))",
+      expected: undefined,
       setUpConfig,
     });
     testEvalFormOf({
@@ -548,33 +539,31 @@ describe("evalBlock", () => {
 
     testEvalBlockOf({
       src: "(const f (fn (x) (return 904))) (f 9)",
-      expected: new TranspileError(
-        "The last statement in a `fn` must be an expression! But `return` is a statement!",
-      ),
+      expected: 904,
       setUpConfig,
     });
 
     testEvalBlockOf({
       src: "(const f (fn (x) (when x x))) (f 9)",
-      expected: new TranspileError(
-        "The last statement in a `fn` must be an expression! But `when` is a statement!",
-      ),
+      expected: undefined,
+      setUpConfig,
+    });
+
+    testEvalBlockOf({
+      src: "(const f (fn (x) (when x (return x)))) (f 9)",
+      expected: 9,
       setUpConfig,
     });
 
     testEvalBlockOf({
       src: "(const f (fn (x) (incrementF x))) (f 9)",
-      expected: new TranspileError(
-        "The last statement in a `fn` must be an expression! But `incrementF` is a statement!",
-      ),
+      expected: undefined,
       setUpConfig,
     });
 
     testEvalBlockOf({
       src: "(const f (fn (x) (decrementF x))) (f 9)",
-      expected: new TranspileError(
-        "The last statement in a `fn` must be an expression! But `decrementF` is a statement!",
-      ),
+      expected: undefined,
       setUpConfig,
     });
   });
@@ -612,9 +601,7 @@ describe("evalBlock", () => {
     });
     testEvalBlockOf({
       src: "(when true)",
-      expected: new TranspileError(
-        "No statements given to a `when` statement!",
-      ),
+      expected: undefined,
       setUpConfig,
     });
   });
@@ -639,9 +626,7 @@ describe("evalBlock", () => {
     });
     testEvalBlockOf({
       src: "(while false)",
-      expected: new TranspileError(
-        "No statements given to a `while` statement!",
-      ),
+      expected: undefined,
       setUpConfig,
     });
   });
@@ -679,8 +664,8 @@ describe("evalBlock", () => {
       setUpConfig,
     });
     testEvalBlockOf({
-      src: "(for (let x 0) false (addF x))",
-      expected: new TranspileError("No statements given to a `for` statement!"),
+      src: "(for (let x 0) false (plusF x 1))",
+      expected: undefined,
       setUpConfig,
     });
   });
@@ -789,9 +774,7 @@ describe("evalBlock", () => {
     });
     testEvalBlockOf({
       src: "(forEach v [1 2 3])",
-      expected: new TranspileError(
-        "No statements given to a `forEach` statement!",
-      ),
+      expected: undefined,
       setUpConfig,
     });
     testEvalBlockOf({

@@ -17,7 +17,6 @@ import {
   LiteralObject,
   markAsDirectWriter,
   MarkedDirectWriter,
-  showSymbolAccess,
   TranspileError,
   Writer,
 } from "../../internal/types.js";
@@ -275,9 +274,7 @@ export function transpilingForVariableMutation(
 
 function functionPrelude(
   env: Env,
-  formId: Id,
   args: Form,
-  block: Block,
   isAsync: boolean,
 ): JsSrc | TranspileError {
   if (!(args instanceof Array)) {
@@ -285,11 +282,6 @@ function functionPrelude(
       `Arguments for a function must be an array of symbols! But actually ${JSON.stringify(
         args,
       )}`,
-    );
-  }
-  if (block.length < 1) {
-    return new TranspileError(
-      `\`${formId}\` must receive at least one expression!`,
     );
   }
 
@@ -321,12 +313,11 @@ function functionPostlude(env: Env, src: JsSrc): JsSrc {
 
 export async function buildFn(
   env: Env,
-  formId: Id,
   args: Form,
   block: Block,
   isAsync = false,
 ): Promise<JsSrc | TranspileError> {
-  let result = functionPrelude(env, formId, args, block, isAsync);
+  let result = functionPrelude(env, args, isAsync);
   if (TranspileError.is(result)) {
     return result;
   }
@@ -341,28 +332,24 @@ export async function buildFn(
   }
 
   const lastStatement = block[lastI];
-  if (isStatement(env, lastStatement)) {
-    const id = showSymbolAccess(lastStatement[0]);
-    return new TranspileError(
-      `The last statement in a \`${formId}\` must be an expression! But \`${id}\` is a statement!`,
-    );
-  }
   const lastSrc = await transpileExpression(lastStatement, env);
   if (TranspileError.is(lastSrc)) {
     return lastSrc;
   }
-  result = `${result}  return ${lastSrc};\n`;
-  return functionPostlude(env, result);
+
+  if (isStatement(env, lastStatement)) {
+    return functionPostlude(env, `${result}  ${lastSrc};\n  return;\n`);
+  }
+  return functionPostlude(env, `${result}  return ${lastSrc};\n`);
 }
 
 export async function buildProcedure(
   env: Env,
-  formId: Id,
   args: Form,
   block: Block,
   isAsync = false,
 ): Promise<JsSrc | TranspileError> {
-  let result = functionPrelude(env, formId, args, block, isAsync);
+  let result = functionPrelude(env, args, isAsync);
   if (TranspileError.is(result)) {
     return result;
   }
@@ -380,18 +367,14 @@ export async function buildProcedure(
 
 export function buildScope(
   prefix: string,
-  id: Id,
   isAsync = false,
 ): MarkedDirectWriter {
   return markAsDirectWriter(
     async (env: Env, ...block: Block): Promise<JsSrc | TranspileError> => {
-      // EnvF.push(env);
-
-      const funcSrc = await buildFn(env, id, [], block, isAsync);
+      const funcSrc = await buildFn(env, [], block, isAsync);
       if (TranspileError.is(funcSrc)) {
         return funcSrc;
       }
-      // EnvF.pop(env);
       return `${`(${prefix}`}${funcSrc})()`;
     },
   );

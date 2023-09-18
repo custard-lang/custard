@@ -76,9 +76,6 @@ export const when = markAsDirectWriter(
     if (bool === undefined) {
       return new TranspileError("No expressions given to a `when` statement!");
     }
-    if (rest.length < 1) {
-      return new TranspileError("No statements given to a `when` statement!");
-    }
     const boolSrc = await transpileExpression(bool, env);
     if (TranspileError.is(boolSrc)) {
       return boolSrc;
@@ -186,7 +183,7 @@ export const assign = transpilingForAssignment(
   "expression",
 );
 
-export const scope = buildScope("", "scope");
+export const scope = buildScope("");
 
 export const _cu$if = markAsDirectWriter(
   async (
@@ -394,7 +391,7 @@ export const fn = markAsDirectWriter(
     args: Form,
     ...block: Form[]
   ): Promise<JsSrc | TranspileError> => {
-    return await buildFn(env, "fn", args, block);
+    return await buildFn(env, args, block);
   },
 );
 
@@ -404,7 +401,7 @@ export const procedure = markAsDirectWriter(
     args: Form,
     ...block: Form[]
   ): Promise<JsSrc | TranspileError> => {
-    return await buildProcedure(env, "procedure", args, block);
+    return await buildProcedure(env, args, block);
   },
 );
 
