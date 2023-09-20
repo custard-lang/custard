@@ -18,7 +18,7 @@ function inScope(env: Env, f: () => void): void {
 }
 
 async function subjectEnv(): Promise<Env> {
-  return EnvF.init(await transpileRepl(defaultTranspileOptions()), {
+  return EnvF.init(transpileRepl(await defaultTranspileOptions()), {
     from: fileOfImportMetaUrl(import.meta.url),
     implicitStatements: "",
     modulePaths: new Map(),

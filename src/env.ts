@@ -14,7 +14,7 @@ export async function initializeForModule(
   options: TranspileOptions,
   providedSymbols: CompleteProvidedSymbolsConfig,
 ): Promise<Env<TranspileModule> | Error> {
-  const state = await transpileModule(options);
+  const state = transpileModule(options);
   const env = init(state, providedSymbols);
   const imports = await transpileString(
     providedSymbols.implicitStatements,
@@ -31,7 +31,7 @@ export async function initializeForRepl(
   options: TranspileOptions,
   providedSymbols: CompleteProvidedSymbolsConfig,
 ): Promise<Env<TranspileRepl> | Error> {
-  const state = await transpileRepl(options);
+  const state = transpileRepl(options);
   const env = init(state, providedSymbols);
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const r = await evalString(providedSymbols.implicitStatements, env);

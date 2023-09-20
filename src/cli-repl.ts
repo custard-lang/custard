@@ -73,7 +73,7 @@ async function loop(env: Env<TranspileRepl>): Promise<void> {
 (async () => {
   await loop(
     assertNonError(
-      await initializeForRepl(defaultTranspileOptions(), {
+      await initializeForRepl(await defaultTranspileOptions(), {
         from: process.cwd(),
         ...implicitlyImporting(`${standardModuleRoot}/base.js`),
       }),

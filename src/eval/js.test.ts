@@ -6,7 +6,7 @@ import { standardModuleRoot } from "../definitions";
 import * as ProvidedSymbolsConfig from "../provided-symbols-config";
 import { fileOfImportMetaUrl } from "../util/path";
 
-function setUpConfig(): Config {
+async function setUpConfig(): Promise<Config> {
   const providedSymbols = ProvidedSymbolsConfig.build({
     builtinModulePaths: [
       `${standardModuleRoot}/base.js`,
@@ -17,7 +17,7 @@ function setUpConfig(): Config {
     jsTopLevels: ["Date", "Object"],
   });
   return {
-    options: defaultTranspileOptions(),
+    options: await defaultTranspileOptions(),
     providedSymbols: {
       from: fileOfImportMetaUrl(import.meta.url),
       ...providedSymbols,

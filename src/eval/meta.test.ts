@@ -4,7 +4,13 @@ import { Config, testEvalFormOf } from "../test";
 
 import { assertNonError } from "../util/error";
 
-import { FilePath, Form, JsSrc, ModulePaths } from "../types";
+import {
+  FilePath,
+  Form,
+  JsSrc,
+  ModulePaths,
+  transpileOptionsFromPath,
+} from "../types";
 import { standardModuleRoot } from "../definitions";
 import { evalForm } from "../eval";
 import { readStr } from "../reader";
@@ -16,7 +22,7 @@ import { fileOfImportMetaUrl } from "../util/path";
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/restrict-template-expressions */
 
 describe("evalForm", () => {
-  function setUpConfig(): Config {
+  async function setUpConfig(): Promise<Config> {
     const modulePaths: ModulePaths = new Map();
     modulePaths.set("base", `${standardModuleRoot}/base.js`);
     modulePaths.set("meta", "../../dist/src/lib/meta.js");
@@ -24,7 +30,7 @@ describe("evalForm", () => {
 
     const srcPath = fileOfImportMetaUrl(import.meta.url);
     return {
-      options: { srcPath },
+      options: await transpileOptionsFromPath(srcPath),
       providedSymbols: {
         from: srcPath,
         modulePaths,
@@ -61,13 +67,15 @@ describe("evalForm", () => {
     const extraOptionsSrc = `{ mayHaveResult: true }`;
 
     test("transpiled source code can be `eval`ed as a JavaScript code 1.", async () => {
-      const { options, providedSymbols } = setUpConfig();
+      const { options, providedSymbols } = await setUpConfig();
       const env = assertNonError(
         await initializeForRepl(options, providedSymbols),
       );
 
       await withNewPath(async ({ src, dest }) => {
-        const transpileOptionsSrc = `{ srcPath: ${JSON.stringify(src)} }`;
+        const transpileOptionsSrc = `(async.await (meta.transpileOptionsFromPath ${JSON.stringify(
+          src,
+        )}))`;
         const proviedSymbolsSrc = proviedSymbolsSrcFrom(src);
         const srcCode = `(async.await (meta.transpileModule (meta.readString "(plusF 4.1 5.2)") ${transpileOptionsSrc} ${proviedSymbolsSrc} ${extraOptionsSrc}))`;
         const result = assertNonError(
@@ -78,13 +86,15 @@ describe("evalForm", () => {
     });
 
     test("transpiled source code can be `eval`ed as a JavaScript code 2.", async () => {
-      const { options, providedSymbols } = setUpConfig();
+      const { options, providedSymbols } = await setUpConfig();
       const env = assertNonError(
         await initializeForRepl(options, providedSymbols),
       );
 
       await withNewPath(async ({ src, dest }) => {
-        const transpileOptionsSrc = `{ srcPath: ${JSON.stringify(src)} }`;
+        const transpileOptionsSrc = `(async.await (meta.transpileOptionsFromPath ${JSON.stringify(
+          src,
+        )}))`;
         const proviedSymbolsSrc = proviedSymbolsSrcFrom(src);
         const srcCode = `(async.await (meta.transpileModule (meta.readString "(const x 9.2) (let y 0.1) (plusF x y)") ${transpileOptionsSrc} ${proviedSymbolsSrc} ${extraOptionsSrc}))`;
         const result = assertNonError(

@@ -23,6 +23,7 @@ export {
   type ModulePaths,
   type TranspileOptions,
   defaultTranspileOptions,
+  transpileOptionsFromPath,
   Id,
   FilePath,
   JsSrc,
