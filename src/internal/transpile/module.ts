@@ -27,7 +27,7 @@ export const _cu$import = markAsDirectWriter(
       return new TranspileError("The argument of `import` must be a Symbol.");
     }
 
-    const foundModule = EnvF.findModule(env, id.v);
+    const foundModule = await EnvF.findModule(env, id.v);
     if (foundModule === undefined) {
       return new TranspileError(
         `No module \`${id.v}\` registered in the Module Paths`,
@@ -76,7 +76,7 @@ export const importAnyOf = markAsDirectWriter(
       );
     }
 
-    const foundModule = EnvF.findModule(env, moduleId.v);
+    const foundModule = await EnvF.findModule(env, moduleId.v);
     if (foundModule === undefined) {
       return new TranspileError(
         `No module \`${moduleId.v}\` registered in the Module Paths`,

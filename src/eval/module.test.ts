@@ -1,6 +1,6 @@
 import { describe } from "vitest";
 
-import { ModulePaths, transpileOptionsFromPath } from "../types";
+import { ModulePaths } from "../types";
 import { standardModuleRoot } from "../definitions";
 import { testEvalBlockOf } from "../test";
 import type { Config } from "../test";
@@ -9,13 +9,13 @@ import { fileOfImportMetaUrl } from "../util/path";
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/restrict-template-expressions */
 
 describe("evalBlock", () => {
-  async function setUpConfig(): Promise<Config> {
+  function setUpConfig(): Config {
     const modulePaths: ModulePaths = new Map();
     modulePaths.set("a", "../../test-assets/a.mjs");
     modulePaths.set("base", `${standardModuleRoot}/base.js`);
     const srcPath = fileOfImportMetaUrl(import.meta.url);
     return {
-      options: await transpileOptionsFromPath(srcPath),
+      options: { srcPath },
       providedSymbols: {
         from: srcPath,
         modulePaths,

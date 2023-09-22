@@ -8,11 +8,7 @@ import { ParseError } from "./grammar.js";
 import { implicitlyImporting } from "./provided-symbols-config.js";
 import { readBlock } from "./reader.js";
 import { transpileModule } from "./transpile.js";
-import {
-  Block,
-  ProvidedSymbolsConfig,
-  transpileOptionsFromPath,
-} from "./types.js";
+import { Block, ProvidedSymbolsConfig } from "./types.js";
 import { evalBlock } from "./eval.js";
 import { standardModuleRoot } from "./definitions.js";
 import { ValidationError } from "./lib/spec.js";
@@ -54,7 +50,7 @@ const result = program
   }
 
   const env = await initializeForRepl(
-    await transpileOptionsFromPath(providedSymbolsPath),
+    { srcPath: providedSymbolsPath },
     {
       from: providedSymbolsPath,
       ...implicitlyImporting(`${standardModuleRoot}/base/safe.js`),
@@ -84,7 +80,7 @@ const result = program
     const destPath = path.join(`${sp.dir}`, `${sp.name}.mjs`);
     const transpiled = await transpileModule(
       block,
-      await transpileOptionsFromPath(srcPath),
+      { srcPath },
       {
         from: providedSymbolsPath,
         ...providedSymbolsConfig,

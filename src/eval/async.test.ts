@@ -1,11 +1,7 @@
 import { describe } from "vitest";
 import { testEvalFormOf } from "../test";
 
-import {
-  ModulePaths,
-  TranspileError,
-  transpileOptionsFromPath,
-} from "../types";
+import { ModulePaths, TranspileError } from "../types";
 import { standardModuleRoot } from "../definitions";
 import type { Config } from "../test";
 import { fileOfImportMetaUrl } from "../util/path";
@@ -13,7 +9,7 @@ import { fileOfImportMetaUrl } from "../util/path";
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/restrict-template-expressions */
 
 describe("evalForm", () => {
-  async function setUpConfig(): Promise<Config> {
+  function setUpConfig(): Config {
     const modulePaths: ModulePaths = new Map();
     modulePaths.set("base", `${standardModuleRoot}/base.js`);
     modulePaths.set("async", "../../dist/src/lib/async.js");
@@ -21,7 +17,7 @@ describe("evalForm", () => {
     const srcPath = fileOfImportMetaUrl(import.meta.url);
 
     return {
-      options: await transpileOptionsFromPath(srcPath),
+      options: { srcPath },
       providedSymbols: {
         from: srcPath,
         modulePaths,

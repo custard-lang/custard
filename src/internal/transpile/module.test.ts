@@ -14,7 +14,6 @@ import {
   JsSrc,
   ModulePaths,
   TranspileError,
-  transpileOptionsFromPath,
 } from "../types";
 import { fileOfImportMetaUrl } from "../../util/path";
 
@@ -37,13 +36,10 @@ describe("transpileBlock", () => {
     });
 
     const srcPath = fileOfImportMetaUrl(import.meta.url);
-    const env = EnvF.init(
-      transpileModule(await transpileOptionsFromPath(srcPath)),
-      {
-        from: srcPath,
-        ...providedSymbolsConfig,
-      },
-    );
+    const env = EnvF.init(transpileModule({ srcPath }), {
+      from: srcPath,
+      ...providedSymbolsConfig,
+    });
     const jsSrc = await transpileBlock(
       assertNonError(readBlock(src)) as Block,
       env,

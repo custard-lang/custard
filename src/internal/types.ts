@@ -1,6 +1,3 @@
-import type { Stats } from "node:fs";
-import { stat } from "node:fs/promises";
-
 import { expectNever } from "../util/error.js";
 import { Awaitable } from "../util/types.js";
 
@@ -111,18 +108,11 @@ export const ProvidedSymbolsConfig: s.Spec<ProvidedSymbolsConfig> = s.withId(
 export type ModulePaths = Map<Id, FilePath>;
 
 export type TranspileOptions = {
-  src: Stats;
   srcPath: FilePath;
 };
 
-export async function defaultTranspileOptions(): Promise<TranspileOptions> {
-  return await transpileOptionsFromPath(process.cwd());
-}
-
-export async function transpileOptionsFromPath(
-  srcPath: FilePath,
-): Promise<TranspileOptions> {
-  return { srcPath, src: await stat(srcPath) };
+export function defaultTranspileOptions(): TranspileOptions {
+  return { srcPath: process.cwd() };
 }
 
 export type Id = string;

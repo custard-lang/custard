@@ -24,6 +24,7 @@ import { assertNonNull, expectNever } from "../util/error.js";
 import { escapeRegExp } from "../util/regexp.js";
 import { resolveModulePaths } from "../provided-symbols-config.js";
 import { isAbsoluteUrl } from "../util/path.js";
+import { stat } from "node:fs/promises";
 
 // To distinguish jsTopLevels and the top level scope of the code,
 // assign the second scope as the top level.
@@ -183,10 +184,13 @@ export type FindModuleResult = {
   relativePath: FilePath;
 };
 
-export function findModule(env: Env, id: Id): FindModuleResult | undefined {
+export async function findModule(
+  env: Env,
+  id: Id,
+): Promise<FindModuleResult | undefined> {
   const {
     modules,
-    transpileState: { src, srcPath },
+    transpileState: { srcPath },
   } = env;
   const modFullPath = modules.get(id);
   if (modFullPath === undefined) {
@@ -200,7 +204,7 @@ export function findModule(env: Env, id: Id): FindModuleResult | undefined {
     };
   }
 
-  // If src is a directory, srcPath should be the absolute path to cwd.
+  const src = await stat(srcPath);
   const currentFileDir = src.isDirectory() ? srcPath : path.dirname(srcPath);
   const uncanonicalPath = path.relative(
     path.resolve(currentFileDir),

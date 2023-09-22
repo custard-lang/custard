@@ -8,9 +8,9 @@ import { fileOfImportMetaUrl } from "../util/path";
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/restrict-template-expressions, @typescript-eslint/no-unsafe-assignment */
 
-async function setUpConfig(): Promise<Config> {
+function setUpConfig(): Config {
   return {
-    options: await defaultTranspileOptions(),
+    options: defaultTranspileOptions(),
     providedSymbols: {
       from: fileOfImportMetaUrl(import.meta.url),
       ...implicitlyImporting(`${standardModuleRoot}/base.js`),

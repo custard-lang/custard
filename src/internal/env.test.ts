@@ -17,8 +17,8 @@ function inScope(env: Env, f: () => void): void {
   EnvF.pop(env);
 }
 
-async function subjectEnv(): Promise<Env> {
-  return EnvF.init(transpileRepl(await defaultTranspileOptions()), {
+function subjectEnv(): Env {
+  return EnvF.init(transpileRepl(defaultTranspileOptions()), {
     from: fileOfImportMetaUrl(import.meta.url),
     implicitStatements: "",
     modulePaths: new Map(),
@@ -27,8 +27,8 @@ async function subjectEnv(): Promise<Env> {
 }
 
 describe("Interactions of the functions in EnvF", () => {
-  test("referTo returns the set variable, and logs the reference to the variable", async () => {
-    const env = await subjectEnv();
+  test("referTo returns the set variable, and logs the reference to the variable", () => {
+    const env = subjectEnv();
 
     // Scope 0
     const v0_0v = aVar();
@@ -467,8 +467,8 @@ describe("Interactions of the functions in EnvF", () => {
   });
 
   describe("set returns an error if the variable is referred to as an outer variable", () => {
-    test("1: the variable is recursively referred", async () => {
-      const env = await subjectEnv();
+    test("1: the variable is recursively referred", () => {
+      const env = subjectEnv();
 
       expect(EnvF.set(env, "v0", aVar())).toBeUndefined();
 
@@ -485,8 +485,8 @@ describe("Interactions of the functions in EnvF", () => {
       });
     });
 
-    test("2: the variable is recursively referred in the inner scope", async () => {
-      const env = await subjectEnv();
+    test("2: the variable is recursively referred in the inner scope", () => {
+      const env = subjectEnv();
 
       expect(EnvF.set(env, "v0", aVar())).toBeUndefined();
 
@@ -505,8 +505,8 @@ describe("Interactions of the functions in EnvF", () => {
       });
     });
 
-    test("3: the variable is back-referred", async () => {
-      const env = await subjectEnv();
+    test("3: the variable is back-referred", () => {
+      const env = subjectEnv();
 
       expect(EnvF.set(env, "v0", aVar())).toBeUndefined();
 
@@ -536,8 +536,8 @@ describe("Interactions of the functions in EnvF", () => {
       });
     });
 
-    test("4: the variable is back-referred in the inner scope", async () => {
-      const env = await subjectEnv();
+    test("4: the variable is back-referred in the inner scope", () => {
+      const env = subjectEnv();
 
       expect(EnvF.set(env, "v0", aVar())).toBeUndefined();
 
@@ -572,8 +572,8 @@ describe("Interactions of the functions in EnvF", () => {
     });
   });
 
-  test("set returns undefined if the variable is referred to *not* actually as an outer variable", async () => {
-    const env = await subjectEnv();
+  test("set returns undefined if the variable is referred to *not* actually as an outer variable", () => {
+    const env = subjectEnv();
 
     expect(EnvF.set(env, "v0", aVar())).toBeUndefined();
 
