@@ -4,10 +4,12 @@ import {
   Block,
   canBePseudoTopLevelReferenced,
   CuSymbol,
+  DynamicVar,
   Form,
   Id,
   isContextualKeyword,
   isCuSymbol,
+  isDynamicVar,
   isMarkedDirectWriter,
   isMarkedFunctionWithEnv,
   isNamespace,
@@ -94,7 +96,11 @@ async function transpileExpressionWithNextCall(
       );
     }
 
-    if (canBePseudoTopLevelReferenced(writer) || isProvidedConst(writer)) {
+    if (
+      canBePseudoTopLevelReferenced(writer) ||
+      isProvidedConst(writer) ||
+      isDynamicVar(writer)
+    ) {
       const argsSrc = await transpileJoinWithComma(args, env);
       if (TranspileError.is(argsSrc)) {
         return argsSrc;
@@ -118,6 +124,17 @@ async function transpileExpressionWithNextCall(
     return expectNever(writer) as JsSrcAndNextCall;
   }
 
+  async function expandDynamicVar(
+    dynVar: DynamicVar,
+  ): Promise<TranspileError | JsSrcAndNextCall> {
+    const arw = dynVar.call(env);
+    const rw = arw instanceof Promise ? await arw : arw;
+    if (TranspileError.is(rw)) {
+      return rw;
+    }
+    return [rw, undefined];
+  }
+
   let r: EnvF.WriterWithIsAtTopLevel | TranspileError;
   switch (typeof ast) {
     case "string":
@@ -135,6 +152,9 @@ async function transpileExpressionWithNextCall(
           if (TranspileError.is(r)) {
             return r;
           }
+          if (isDynamicVar(r.writer)) {
+            return await expandDynamicVar(r.writer);
+          }
           if (EnvF.writerIsAtReplTopLevel(env, r)) {
             return [
               pseudoTopLevelReference(ast.v),
@@ -146,6 +166,9 @@ async function transpileExpressionWithNextCall(
           r = EnvF.referTo(env, ast);
           if (TranspileError.is(r)) {
             return r;
+          }
+          if (isDynamicVar(r.writer)) {
+            return await expandDynamicVar(r.writer);
           }
           if (EnvF.writerIsAtReplTopLevel(env, r)) {
             return [

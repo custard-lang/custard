@@ -1,20 +1,23 @@
 import { describe } from "vitest";
 import { Config, testEvalBlockOf, testEvalFormOf } from "../test";
+import * as path from "node:path";
 
-import { defaultTranspileOptions, TranspileError } from "../types";
+import { defaultTranspileOptions, FilePath, TranspileError } from "../types";
 import { standardModuleRoot } from "../definitions";
 import { implicitlyImporting } from "../provided-symbols-config";
 import { fileOfImportMetaUrl } from "../util/path";
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/restrict-template-expressions, @typescript-eslint/no-unsafe-assignment */
 
+const providedSymbols = {
+  from: fileOfImportMetaUrl(import.meta.url),
+  ...implicitlyImporting(`${standardModuleRoot}/base.js`),
+};
+
 function setUpConfig(): Config {
   return {
     options: defaultTranspileOptions(),
-    providedSymbols: {
-      from: fileOfImportMetaUrl(import.meta.url),
-      ...implicitlyImporting(`${standardModuleRoot}/base.js`),
-    },
+    providedSymbols,
   };
 }
 
@@ -389,6 +392,49 @@ describe("evalForm", () => {
       src: '{ a: 1 [(scope "b")]: 3 [(plusF 1 1)]: 2 }',
       expected: { a: 1, b: 3, "2": 2 },
       setUpConfig,
+    });
+  });
+
+  function setUpConfigOfTranspileOptions(srcPath: FilePath): () => Config {
+    return () => ({
+      options: { srcPath },
+      providedSymbols,
+    });
+  }
+
+  describe("cu$thisFile", () => {
+    const thisFilePath = fileOfImportMetaUrl(import.meta.url);
+    const thisFilePathRelative = path.relative(process.cwd(), thisFilePath);
+    testEvalFormOf({
+      src: "cu$thisFile",
+      // Use path.resolve to make sure that the separators are backslashes in Windows.
+      expected: path.resolve(thisFilePath),
+      setUpConfig: setUpConfigOfTranspileOptions(thisFilePathRelative),
+    });
+
+    testEvalFormOf({
+      src: "cu$thisFile",
+      expected: new TranspileError(
+        `${process.cwd()} is a directory! \`cu$thisFile\` is only allowed in a file`,
+      ),
+      setUpConfig: setUpConfigOfTranspileOptions("."),
+    });
+  });
+
+  describe("cu$directoryOfThisFile", () => {
+    const thisFilePath = fileOfImportMetaUrl(import.meta.url);
+    const thisFilePathRelative = path.relative(process.cwd(), thisFilePath);
+    testEvalFormOf({
+      src: "cu$directoryOfThisFile",
+      // Use path.resolve to make sure that the separators are backslashes in Windows.
+      expected: path.resolve(path.dirname(thisFilePath)),
+      setUpConfig: setUpConfigOfTranspileOptions(thisFilePathRelative),
+    });
+
+    testEvalFormOf({
+      src: "cu$directoryOfThisFile",
+      expected: process.cwd(),
+      setUpConfig: setUpConfigOfTranspileOptions("."),
     });
   });
 });

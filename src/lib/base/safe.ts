@@ -1,3 +1,6 @@
+import * as fs from "node:fs/promises";
+import * as path from "node:path";
+
 import * as EnvF from "../../internal/env.js";
 import {
   aConst,
@@ -13,6 +16,7 @@ import {
   JsSrc,
   LiteralObject,
   markAsDirectWriter,
+  markAsDynamicVar,
   TranspileError,
 } from "../../internal/types.js";
 import {
@@ -451,5 +455,31 @@ export const Map = markAsDirectWriter(
       return `new Map(${argSrc})`;
     }
     return "new Map()";
+  },
+);
+
+export const cu$thisFile = markAsDynamicVar(
+  async ({
+    transpileState: { srcPath },
+  }: Env): Promise<JsSrc | TranspileError> => {
+    const srcFullPath = path.resolve(srcPath);
+    if ((await fs.stat(srcFullPath)).isDirectory()) {
+      return new TranspileError(
+        `${srcFullPath} is a directory! \`cu$thisFile\` is only allowed in a file`,
+      );
+    }
+    return JSON.stringify(srcFullPath);
+  },
+);
+
+export const cu$directoryOfThisFile = markAsDynamicVar(
+  async ({
+    transpileState: { srcPath },
+  }: Env): Promise<JsSrc | TranspileError> => {
+    const srcFullPath = path.resolve(srcPath);
+    if ((await fs.stat(srcFullPath)).isDirectory()) {
+      return JSON.stringify(srcFullPath);
+    }
+    return JSON.stringify(path.dirname(srcFullPath));
   },
 );

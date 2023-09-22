@@ -259,6 +259,21 @@ export function isProvidedConst(x: Writer): x is ProvidedConst {
   return x.t === 7;
 }
 
+export type DynamicVarFunction = (
+  env: Env,
+) => Awaitable<JsSrc | TranspileError>;
+
+export type DynamicVar = IsWriter & { readonly t: 8; call: DynamicVarFunction };
+export function aDynamicVar(call: DynamicVarFunction): DynamicVar {
+  return asWriter({ t: 8, call });
+}
+export function isDynamicVar(x: Writer): x is DynamicVar {
+  return x.t === 8;
+}
+export function markAsDynamicVar(call: DynamicVarFunction): DynamicVar {
+  return asWriter({ t: 8, call });
+}
+
 export type Writer =
   | ContextualKeyword
   | Var
@@ -267,7 +282,8 @@ export type Writer =
   | Namespace
   | MarkedDirectWriter
   | MarkedFunctionWithEnv
-  | ProvidedConst;
+  | ProvidedConst
+  | DynamicVar;
 
 export type CanBePseudoTopLevelReferenced =
   | Var
