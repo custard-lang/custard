@@ -407,8 +407,7 @@ describe("evalForm", () => {
     const thisFilePathRelative = path.relative(process.cwd(), thisFilePath);
     testEvalFormOf({
       src: "cu$thisFile",
-      // Use path.resolve to make sure that the separators are backslashes in Windows.
-      expected: path.resolve(thisFilePath),
+      expected: path.normalize(thisFilePath),
       setUpConfig: setUpConfigOfTranspileOptions(thisFilePathRelative),
     });
 
@@ -426,8 +425,7 @@ describe("evalForm", () => {
     const thisFilePathRelative = path.relative(process.cwd(), thisFilePath);
     testEvalFormOf({
       src: "cu$directoryOfThisFile",
-      // Use path.resolve to make sure that the separators are backslashes in Windows.
-      expected: path.resolve(path.dirname(thisFilePath)),
+      expected: path.normalize(path.dirname(thisFilePath)),
       setUpConfig: setUpConfigOfTranspileOptions(thisFilePathRelative),
     });
 
