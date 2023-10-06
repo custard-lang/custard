@@ -263,7 +263,7 @@ export const _cu$try = markAsDirectWriter(
     let state: State = initial;
     let catchVarName: Id | undefined = undefined;
 
-    EnvF.push(env);
+    EnvF.pushInherited(env);
     for (const form of statements) {
       let isCatch = false;
       let isFinally = false;
@@ -304,7 +304,7 @@ export const _cu$try = markAsDirectWriter(
               );
             }
             if (isCuSymbol(form)) {
-              EnvF.push(env);
+              EnvF.pushInherited(env);
               const r = EnvF.set(env, form.v, aConst());
               if (TranspileError.is(r)) {
                 return r;
@@ -342,7 +342,7 @@ export const _cu$try = markAsDirectWriter(
           }
 
           if (finallys === "") {
-            EnvF.push(env);
+            EnvF.pushInherited(env);
           }
 
           transpiled = await transpileExpression(form, env);
