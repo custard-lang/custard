@@ -22,6 +22,24 @@ function setUpConfig(): Config {
 }
 
 describe("evalForm", () => {
+  describe("`note`", () => {
+    testEvalFormOf({
+      src: '(note "This is a comment")',
+      expected: undefined,
+      setUpConfig,
+    });
+    testEvalFormOf({
+      src: '(note "This is a comment" 1 2 3)',
+      expected: undefined,
+      setUpConfig,
+    });
+    testEvalFormOf({
+      src: '[(note "This is a comment")]',
+      expected: [undefined],
+      setUpConfig,
+    });
+  });
+
   testEvalFormOf({
     src: "( plusF 2.0 (timesF 3.0 4.0) )",
     expected: 14,
@@ -438,6 +456,19 @@ describe("evalForm", () => {
 });
 
 describe("evalBlock", () => {
+  describe("`annotate`", () => {
+    testEvalBlockOf({
+      src: '{ a: (annotate "This is a comment" 10) }',
+      expected: { a: 10 },
+      setUpConfig,
+    });
+    testEvalBlockOf({
+      src: '(annotate "comment" { this: "is also", a: "comment" } (const f (fn () 9))) (f)',
+      expected: 9,
+      setUpConfig,
+    });
+  });
+
   describe("(const|let|assign id expression)", () => {
     testEvalBlockOf({
       src: "(const x (timesF 3 3))(plusF x 2)",

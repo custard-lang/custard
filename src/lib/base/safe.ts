@@ -39,6 +39,16 @@ import {
 
 export { standardModuleRoot } from "../../definitions.js";
 
+export const note = markAsDirectWriter(
+  (_env: Env, ..._args: Form[]): Promise<JsSrc> => Promise.resolve("void 0"),
+);
+
+export const annotate = markAsDirectWriter(
+  async (env: Env, ...args: Form[]): Promise<JsSrc | TranspileError> => {
+    return await transpileExpression(args[args.length - 1], env);
+  },
+);
+
 export const _cu$const = transpilingForVariableDeclaration(
   "const",
   (assignee: JsSrc, exp: JsSrc) => `const ${assignee}=${exp}`,
