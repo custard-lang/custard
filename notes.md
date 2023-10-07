@@ -120,3 +120,10 @@ Elmを少し参考に
     - <https://twitter.com/mizchi/status/1675017326868176896>
         - nodeのライブラリ作ったり読んだりしてて思うのは、複雑なライブラリの内部は徹底的に非同期を排した作りにして外からステップ実行できるようにしないと、内部キャッシュのライフサイクル管理できなくなる
 - [ ] providedSymbolsConfig.modulePaths における `npm:`の解釈
+- [ ] `if`文にやっぱ`else`は要るかな...
+- [ ] `Var`・`Const`といった略語の廃止
+- [ ] eslintの更新・`interface`の利用
+- [ ] `try`/`catch`/`finally`を簡単に使える式
+    - 式を使う場面とそれ以外とで結果を変える機能がやっぱ必要ね。それがあれば`annotate`や`note`ももっと使いやすくなる
+        - それ以前に、やっぱ最適化する部分とわけないと限界があるんじゃないか？
+- [ ] バグ: (directWriter.property) should be error
