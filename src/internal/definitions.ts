@@ -2,9 +2,10 @@ import { projectRootFromImportMetaUrl } from "../util/path.js";
 
 import {
   aConst,
-  Definitions,
+  aNamespace,
   FilePath,
   isWriter,
+  Namespace,
   TranspileError,
 } from "./types.js";
 
@@ -16,25 +17,32 @@ export const standardModuleRoot = [
   "lib",
 ].join("/");
 
-export async function loadModulePath(
+export async function loadModule(
   path: FilePath,
-): Promise<Definitions | TranspileError> {
-  const definitions: Definitions = new Map();
+): Promise<Namespace | TranspileError> {
   // TODO: Parse JavaScript source to avoid unsafe execution.
   const mod = (await import(path)) as Record<string, unknown>;
+  return asNamespace(mod, path);
+}
+
+export function asNamespace(
+  mod: Record<string, unknown>,
+  p: FilePath,
+): Namespace | TranspileError {
+  const ns = aNamespace();
   for (const [id, def] of Object.entries(mod)) {
     const unprefixed = id.replace(/^_cu\$/, "");
     if (isWriter(def)) {
-      definitions.set(unprefixed, def);
+      ns.definitions.set(unprefixed, def);
       continue;
     }
 
     if (unprefixed !== id) {
       return new TranspileError(
-        `Prefixed ${id} defined in ${path} should be a Custard's JavaScript Writer.`,
+        `Prefixed ${id} defined in ${p} should be a Custard's JavaScript Writer.`,
       );
     }
-    definitions.set(id, aConst());
+    ns.definitions.set(id, aConst());
   }
-  return definitions;
+  return ns;
 }

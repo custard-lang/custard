@@ -419,16 +419,6 @@ export const procedure = markAsDirectWriter(
   },
 );
 
-export const array = markAsDirectWriter(
-  async (env: Env, ...args: Form[]): Promise<JsSrc | TranspileError> => {
-    const argsSrc = await transpileJoinWithComma(args, env);
-    if (TranspileError.is(argsSrc)) {
-      return argsSrc;
-    }
-    return `[${argsSrc}]`;
-  },
-);
-
 export const text = markAsDirectWriter(
   async (env: Env, ...args: Form[]): Promise<JsSrc | TranspileError> => {
     const esc = (s: string): string => s.replace(/[$`]/g, "\\$&");

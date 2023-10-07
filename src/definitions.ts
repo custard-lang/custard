@@ -1,1 +1,5 @@
-export { standardModuleRoot, loadModulePath } from "./internal/definitions.js";
+export {
+  standardModuleRoot,
+  loadModule,
+  asNamespace,
+} from "./internal/definitions.js";

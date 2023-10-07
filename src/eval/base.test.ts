@@ -453,6 +453,30 @@ describe("evalForm", () => {
       setUpConfig: setUpConfigOfTranspileOptions("."),
     });
   });
+
+  describe("array", () => {
+    testEvalFormOf({
+      src: "(array.first [0, 1, 2])",
+      expected: 0,
+      setUpConfig,
+    });
+    testEvalFormOf({
+      src: "(array.first [])",
+      expected: undefined,
+      setUpConfig,
+    });
+
+    testEvalFormOf({
+      src: "(array.last [0, 1, 2])",
+      expected: 2,
+      setUpConfig,
+    });
+    testEvalFormOf({
+      src: "(array.last [])",
+      expected: undefined,
+      setUpConfig,
+    });
+  });
 });
 
 describe("evalBlock", () => {

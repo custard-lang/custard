@@ -1,9 +1,8 @@
 import * as MapU from "../../util/map.js";
 
 import * as EnvF from "../../internal/env.js";
-import { loadModulePath } from "../definitions.js";
+import { loadModule } from "../definitions.js";
 import {
-  aNamespace,
   canBePseudoTopLevelReferenced,
   CuArray,
   Env,
@@ -34,16 +33,14 @@ export const _cu$import = markAsDirectWriter(
       );
     }
 
-    const r1 = await loadModulePath(foundModule.url);
-    if (TranspileError.is(r1)) {
-      return r1;
+    const ns = await loadModule(foundModule.url);
+    if (TranspileError.is(ns)) {
+      return ns;
     }
-    const ns = aNamespace();
-    MapU.mergeFromTo(r1, ns.definitions);
 
-    const r2 = EnvF.set(env, id.v, ns);
-    if (TranspileError.is(r2)) {
-      return r2;
+    const r = EnvF.set(env, id.v, ns);
+    if (TranspileError.is(r)) {
+      return r;
     }
 
     const awaitImport = `await import(${JSON.stringify(foundModule.url)})`;
@@ -83,15 +80,14 @@ export const importAnyOf = markAsDirectWriter(
       );
     }
 
-    const r1 = await loadModulePath(foundModule.url);
-    if (TranspileError.is(r1)) {
-      return r1;
+    const ns = await loadModule(foundModule.url);
+    if (TranspileError.is(ns)) {
+      return ns;
     }
-
-    MapU.mergeFromTo(r1, EnvF.getCurrentScope(env).definitions);
+    MapU.mergeFromTo(ns.definitions, EnvF.getCurrentScope(env).definitions);
 
     const ids: Id[] = [];
-    for (const [id, w] of r1) {
+    for (const [id, w] of ns.definitions) {
       if (canBePseudoTopLevelReferenced(w)) {
         ids.push(id);
       }
