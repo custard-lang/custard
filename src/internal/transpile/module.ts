@@ -108,15 +108,15 @@ export const importAnyOf = markAsDirectWriter(
             jsModule = `${jsModule}${pseudoTopLevelAssignment(
               id,
               awaitImportDotId,
-            )}`;
+            )};\n`;
           }
           return jsModule;
         case "module":
           const modulePathJson = JSON.stringify(foundModule.relativePath);
-          return `import {${ids.join(", ")}} from ${modulePathJson}`;
+          return `import{${ids.join(", ")}}from${modulePathJson};\n`;
       }
     }
-    return `const {${ids.join(", ")}}=${awaitImport}`;
+    return `const{${ids.join(", ")}}=${awaitImport};\n`;
   },
   "statement",
 );
