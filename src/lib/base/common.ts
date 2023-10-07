@@ -279,7 +279,7 @@ function functionPrelude(
 ): JsSrc | TranspileError {
   if (!(args instanceof Array)) {
     return new TranspileError(
-      `Arguments for a function must be an array of symbols! But actually ${JSON.stringify(
+      `Arguments for a function must be a list of symbols! But actually ${JSON.stringify(
         args,
       )}`,
     );
@@ -291,7 +291,7 @@ function functionPrelude(
   for (const arg of args) {
     if (!isCuSymbol(arg)) {
       return new TranspileError(
-        `Arguments for a function must be an array of symbols! But actually ${JSON.stringify(
+        `Arguments for a function must be a list of symbols! But actually ${JSON.stringify(
           args,
         )}`,
       );

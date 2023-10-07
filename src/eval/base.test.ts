@@ -148,14 +148,14 @@ describe("evalForm", () => {
     testEvalFormOf({
       src: "( (fn x x) 1 )",
       expected: new TranspileError(
-        'Arguments for a function must be an array of symbols! But actually {"t":"Symbol","v":"x"}',
+        'Arguments for a function must be a list of symbols! But actually {"t":"Symbol","v":"x"}',
       ),
       setUpConfig,
     });
     testEvalFormOf({
       src: "( (fn (x 1) x) 1 )",
       expected: new TranspileError(
-        'Arguments for a function must be an array of symbols! But actually [{"t":"Symbol","v":"x"},{"t":"Integer32","v":1}]',
+        'Arguments for a function must be a list of symbols! But actually [{"t":"Symbol","v":"x"},{"t":"Integer32","v":1}]',
       ),
       setUpConfig,
     });
