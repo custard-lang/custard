@@ -476,6 +476,12 @@ describe("evalForm", () => {
       expected: undefined,
       setUpConfig,
     });
+
+    testEvalFormOf({
+      src: "(array.map [2, 3, 5] (fn (x) (timesF x 2)))",
+      expected: [4, 6, 10],
+      setUpConfig,
+    });
   });
 });
 
@@ -1033,6 +1039,14 @@ describe("evalBlock", () => {
     testEvalBlockOf({
       src: '(let x 1) (let y 10) (try (try (throw "thrown") finally (assign x 2)) catch _ (assign y 20)) [x, y]',
       expected: [2, 20],
+      setUpConfig,
+    });
+  });
+
+  describe("array", () => {
+    testEvalBlockOf({
+      src: "(const a [])(array.push a 2)(array.push a 3)(array.push a 5) a",
+      expected: [2, 3, 5],
       setUpConfig,
     });
   });

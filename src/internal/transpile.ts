@@ -163,6 +163,7 @@ async function transpileExpressionWithNextCall(
           }
           return [ast.v, { writer: r.writer, sym: ast }];
         case "PropertyAccess":
+          // TODO: Properly Access inside Namespace
           r = EnvF.referTo(env, ast);
           if (TranspileError.is(r)) {
             return r;

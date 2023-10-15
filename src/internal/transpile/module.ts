@@ -1,5 +1,3 @@
-import * as MapU from "../../util/map.js";
-
 import * as EnvF from "../../internal/env.js";
 import { loadModule } from "../definitions.js";
 import {
@@ -8,6 +6,7 @@ import {
   Env,
   Id,
   isCuSymbol,
+  isWriter,
   JsSrc,
   markAsDirectWriter,
   TranspileError,
@@ -84,11 +83,11 @@ export const importAnyOf = markAsDirectWriter(
     if (TranspileError.is(ns)) {
       return ns;
     }
-    MapU.mergeFromTo(ns.definitions, EnvF.getCurrentScope(env).definitions);
+    EnvF.mergeNamespaceIntoCurrentScope(env, ns);
 
     const ids: Id[] = [];
-    for (const [id, w] of ns.definitions) {
-      if (canBePseudoTopLevelReferenced(w)) {
+    for (const [id, w] of Object.entries(ns)) {
+      if (!isWriter(w) || canBePseudoTopLevelReferenced(w)) {
         ids.push(id);
       }
     }

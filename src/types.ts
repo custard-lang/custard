@@ -19,7 +19,7 @@ export {
   showSymbolAccess,
   ProvidedSymbolsConfig,
   CompleteProvidedSymbolsConfig,
-  Definitions,
+  type Namespace,
   type ModulePaths,
   type TranspileOptions,
   defaultTranspileOptions,

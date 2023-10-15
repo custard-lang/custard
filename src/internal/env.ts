@@ -15,6 +15,9 @@ import {
   Scope,
   canBePseudoTopLevelReferenced,
   CompleteProvidedSymbolsConfig,
+  Namespace,
+  aConst,
+  isWriter,
 } from "./types.js";
 import type { Env, TranspileState } from "./types.js";
 import * as References from "./references.js";
@@ -55,7 +58,7 @@ export function find(env: Env, id: Id): Writer | undefined {
 
 export type WriterWithIsAtTopLevel = {
   readonly writer: Writer;
-  readonly mayBeAtPseudoTopLevel: boolean;
+  readonly canBeAtPseudoTopLevel: boolean;
 };
 
 export function findWithIsAtTopLevel(
@@ -68,7 +71,7 @@ export function findWithIsAtTopLevel(
     if (writer !== undefined) {
       return {
         writer,
-        mayBeAtPseudoTopLevel:
+        canBeAtPseudoTopLevel:
           i === topLevelI && canBePseudoTopLevelReferenced(writer),
       };
     }
@@ -89,7 +92,7 @@ export function referTo(
         References.add(references, { id, scopePath });
         return {
           writer,
-          mayBeAtPseudoTopLevel:
+          canBeAtPseudoTopLevel:
             i === topLevelI && canBePseudoTopLevelReferenced(writer),
         };
       }
@@ -112,25 +115,29 @@ export function referTo(
       return r;
     }
 
-    let { definitions: scope } = r.writer;
+    let module = r.writer;
     let lastW: Writer = r.writer;
+    const { canBeAtPseudoTopLevel } = r;
     for (const [i, part] of restIds.entries()) {
-      const subW = scope.get(part);
-      if (subW === undefined) {
+      const subW = module[part];
+      if (subW == null) {
         return new TranspileError(
           `\`${part}\` is not defined in \`${symLike.v
             .slice(0, i - 1)
             .join(".")}\`!`,
         );
       }
-      if (isNamespace(subW)) {
-        scope = subW.definitions;
-        lastW = subW;
-        continue;
+      if (isWriter(subW)) {
+        if (isNamespace(subW)) {
+          module = subW;
+          lastW = subW;
+          continue;
+        }
+        return { writer: subW, canBeAtPseudoTopLevel };
       }
-      return { writer: subW, mayBeAtPseudoTopLevel: r.mayBeAtPseudoTopLevel };
+      return { writer: aConst(), canBeAtPseudoTopLevel };
     }
-    return { writer: lastW, mayBeAtPseudoTopLevel: r.mayBeAtPseudoTopLevel };
+    return { writer: lastW, canBeAtPseudoTopLevel };
   }
   return expectNever(symLike) as WriterWithIsAtTopLevel;
 }
@@ -224,6 +231,16 @@ export function getCurrentScope({ scopes }: Env): Scope {
   return assertNonNull(scopes[0], "Empty scopes in an env!");
 }
 
+export function mergeNamespaceIntoCurrentScope(
+  { scopes }: Env,
+  ns: Namespace,
+): void {
+  const { definitions } = assertNonNull(scopes[0], "Empty scopes in an env!");
+  for (const [id, v] of Object.entries(ns)) {
+    definitions.set(id, isWriter(v) ? v : aConst());
+  }
+}
+
 export function isAtTopLevel({ scopes }: Env): boolean {
   return scopes.length <= TOP_LEVEL_OFFSET;
 }
@@ -236,7 +253,7 @@ export function writerIsAtReplTopLevel(
   env: Env,
   r: WriterWithIsAtTopLevel,
 ): boolean {
-  return r.mayBeAtPseudoTopLevel && env.transpileState.mode === "repl";
+  return r.canBeAtPseudoTopLevel && env.transpileState.mode === "repl";
 }
 
 export function tmpVarOf(

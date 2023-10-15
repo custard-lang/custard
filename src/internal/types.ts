@@ -149,129 +149,137 @@ export type Env<State = TranspileState> = {
 
 export type Scope = {
   isAsync: boolean;
-  definitions: Definitions;
+  definitions: ModuleMap;
   temporaryVariablesCount: number;
 };
 
-export type Definitions = Map<Id, Writer>;
-
 // NOTE: I give up defining this as a unique symbol due to
 // vite's behavior similar to https://github.com/vitejs/vite/issues/9528
-const IsWriterKey = "_cu$IsWriter";
-type IsWriter = { [IsWriterKey]: true };
-function asWriter<T extends Record<string, unknown>>(x: T): IsWriter & T {
-  return { ...x, [IsWriterKey]: true };
-}
-export function isWriter(x: unknown): x is Writer {
-  return x != null && !!(x as Record<string, unknown>)[IsWriterKey];
+const WriterKindKey = "_cu$WriterKind";
+export interface AnyWriter<K extends number> {
+  readonly [WriterKindKey]: K;
 }
 
-export type ContextualKeyword = IsWriter & {
-  readonly t: 0;
+export function isWriter(x: unknown): x is Writer {
+  return (
+    x != null &&
+    typeof x === "object" &&
+    WriterKindKey in (x as Record<string, unknown>)
+  );
+}
+
+export interface ContextualKeyword extends AnyWriter<0> {
   readonly companion: Id;
-};
+}
 export function aContextualKeyword(companion: Id): ContextualKeyword {
-  return asWriter({ t: 0, companion });
+  return { [WriterKindKey]: 0, companion };
 }
 export function isContextualKeyword(x: Writer): x is ContextualKeyword {
-  return x.t === 0;
+  return x[WriterKindKey] === 0;
 }
 
-export type Var = IsWriter & { readonly t: 1 };
+export type Var = AnyWriter<1>;
 export function aVar(): Var {
-  return asWriter({ t: 1 });
+  return { [WriterKindKey]: 1 };
 }
 export function isVar(x: Writer): x is Var {
-  return x.t === 1;
+  return x[WriterKindKey] === 1;
 }
 
-export type Const = IsWriter & { readonly t: 2 };
+export type Const = AnyWriter<2>;
 export function aConst(): Const {
-  return asWriter({ t: 2 });
+  return { [WriterKindKey]: 2 };
 }
 export function isConst(x: Writer): x is Const {
-  return x.t === 2;
+  return x[WriterKindKey] === 2;
 }
 
-export type RecursiveConst = IsWriter & { readonly t: 3 };
+export type RecursiveConst = AnyWriter<3>;
 export function aRecursiveConst(): RecursiveConst {
-  return asWriter({ t: 3 });
+  return { [WriterKindKey]: 3 };
 }
 export function isRecursiveConst(x: Writer): x is RecursiveConst {
-  return x.t === 3;
+  return x[WriterKindKey] === 3;
 }
 
-export type Namespace = IsWriter & {
-  readonly t: 4;
-  readonly definitions: Definitions;
-};
+export type Module = { [id: Id]: Writer | unknown };
+
+export type ModuleMap = Map<Id, Writer>;
+
+export type Namespace = AnyWriter<4> & Module;
 export function aNamespace(): Namespace {
-  return asWriter({ t: 4, definitions: new Map() });
+  return Object.create(null, {
+    [WriterKindKey]: {
+      value: 4,
+      enumerable: false,
+      writable: false,
+    },
+  }) as Namespace;
 }
 export function isNamespace(x: Writer): x is Namespace {
-  return x.t === 4;
+  return x[WriterKindKey] === 4;
 }
 
 export type DirectWriter = (
   env: Env,
   ...forms: CuArray
 ) => Awaitable<JsSrc | TranspileError>;
-export type MarkedDirectWriter = IsWriter & {
-  readonly t: 5;
+export interface MarkedDirectWriter extends AnyWriter<5> {
   readonly call: DirectWriter;
   readonly isStatement: boolean;
-};
+}
 export type DirectWriterKind = "statement" | "expression";
 export function markAsDirectWriter(
   call: DirectWriter,
   kind: DirectWriterKind = "expression",
 ): MarkedDirectWriter {
-  return asWriter({ t: 5, call, isStatement: kind === "statement" });
+  return { [WriterKindKey]: 5, call, isStatement: kind === "statement" };
 }
 export function isMarkedDirectWriter(x: Writer): x is MarkedDirectWriter {
-  return x.t === 5;
+  return x[WriterKindKey] === 5;
 }
 export function isMarkedDirectStatementWriter(
   x: Writer,
 ): x is MarkedDirectWriter {
-  return x.t === 5 && x.isStatement;
+  return isMarkedDirectWriter(x) && x.isStatement;
 }
 
 export type FunctionWithEnv = (env: Env, ...rest: any[]) => any | Error;
-export type MarkedFunctionWithEnv = IsWriter & {
-  readonly t: 6;
+export interface MarkedFunctionWithEnv extends AnyWriter<6> {
   readonly call: FunctionWithEnv;
-};
+}
 export function markAsFunctionWithEnv(
   call: FunctionWithEnv,
 ): MarkedFunctionWithEnv {
-  return asWriter({ t: 6, call });
+  return { [WriterKindKey]: 6, call };
 }
 export function isMarkedFunctionWithEnv(x: Writer): x is MarkedFunctionWithEnv {
-  return x.t === 6;
+  return x[WriterKindKey] === 6;
 }
 
-export type ProvidedConst = IsWriter & { readonly t: 7 };
+export type ProvidedConst = AnyWriter<7>;
 export function aProvidedConst(): ProvidedConst {
-  return asWriter({ t: 7 });
+  return { [WriterKindKey]: 7 };
 }
 export function isProvidedConst(x: Writer): x is ProvidedConst {
-  return x.t === 7;
+  return x[WriterKindKey] === 7;
 }
 
 export type DynamicVarFunction = (
   env: Env,
 ) => Awaitable<JsSrc | TranspileError>;
 
-export type DynamicVar = IsWriter & { readonly t: 8; call: DynamicVarFunction };
+export interface DynamicVar extends AnyWriter<8> {
+  call: DynamicVarFunction;
+}
 export function aDynamicVar(call: DynamicVarFunction): DynamicVar {
-  return asWriter({ t: 8, call });
+  return { [WriterKindKey]: 8, call };
 }
 export function isDynamicVar(x: Writer): x is DynamicVar {
-  return x.t === 8;
+  return x[WriterKindKey] === 8;
 }
 export function markAsDynamicVar(call: DynamicVarFunction): DynamicVar {
-  return asWriter({ t: 8, call });
+  return { [WriterKindKey]: 8, call };
 }
 
 export type Writer =

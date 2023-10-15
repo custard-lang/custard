@@ -1,7 +1,6 @@
 import { projectRootFromImportMetaUrl } from "../util/path.js";
 
 import {
-  aConst,
   aNamespace,
   FilePath,
   isWriter,
@@ -32,17 +31,12 @@ export function asNamespace(
   const ns = aNamespace();
   for (const [id, def] of Object.entries(mod)) {
     const unprefixed = id.replace(/^_cu\$/, "");
-    if (isWriter(def)) {
-      ns.definitions.set(unprefixed, def);
-      continue;
-    }
-
-    if (unprefixed !== id) {
+    if (unprefixed !== id && !isWriter(def)) {
       return new TranspileError(
         `Prefixed ${id} defined in ${p} should be a Custard's JavaScript Writer.`,
       );
     }
-    ns.definitions.set(id, aConst());
+    ns[unprefixed] = def;
   }
   return ns;
 }
