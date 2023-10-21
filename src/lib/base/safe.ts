@@ -18,7 +18,7 @@ import {
   markAsDirectWriter,
   markAsDynamicVar,
   TranspileError,
-} from "../../internal/types.js";
+} from "../../types.js";
 import {
   transpileBlock,
   transpileExpression,
@@ -132,6 +132,8 @@ export const isGreaterThan = transpiling2((a: JsSrc, b: JsSrc) => `${a}>${b}`);
 export const isGreaterThanOrEquals = transpiling2(
   (a: JsSrc, b: JsSrc) => `${a}>=${b}`,
 );
+
+export const isNone = transpiling1("none", (a: JsSrc) => `${a}==null`);
 
 export const and = transpiling2((a: JsSrc, b: JsSrc) => `${a}&&${b}`);
 export const or = transpiling2((a: JsSrc, b: JsSrc) => `${a}||${b}`);

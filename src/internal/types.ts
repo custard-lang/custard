@@ -33,7 +33,7 @@ export type Atom =
   | Float64
   | CuString
   | Bool
-  | Undefined
+  | None
   | CuSymbol
   | PropertyAccess;
 
@@ -48,7 +48,7 @@ export type CuString = string;
 
 export type Bool = boolean;
 
-export type Undefined = undefined;
+export type None = undefined;
 
 export type CuSymbol = {
   t: "Symbol";

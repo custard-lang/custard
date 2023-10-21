@@ -203,7 +203,7 @@ describe("evalForm", () => {
       setUpConfig,
     });
     testEvalFormOf({
-      src: "(scope (return undefined) 1)",
+      src: "(scope (return none) 1)",
       expected: undefined,
       setUpConfig,
     });
@@ -311,6 +311,54 @@ describe("evalForm", () => {
       src: "(scope (const x 123) (isGreaterThanOrEquals x 122))",
       expected: true,
       setUpConfig,
+    });
+  });
+
+  describe("(isNone x)", () => {
+    function setUpConfigWithJs(): Config {
+      const config = setUpConfig();
+      return {
+        ...config,
+        providedSymbols: {
+          ...config.providedSymbols,
+          ...implicitlyImporting(
+            `${standardModuleRoot}/base.js`,
+            `${standardModuleRoot}/js.js`,
+          ),
+        },
+      };
+    }
+
+    testEvalFormOf({
+      src: "(isNone null)",
+      expected: true,
+      setUpConfig: setUpConfigWithJs,
+    });
+    testEvalFormOf({
+      src: "(isNone  undefined)",
+      expected: true,
+      setUpConfig: setUpConfigWithJs,
+    });
+
+    testEvalFormOf({
+      src: "(isNone 0)",
+      expected: false,
+      setUpConfig: setUpConfigWithJs,
+    });
+    testEvalFormOf({
+      src: '(isNone "")',
+      expected: false,
+      setUpConfig: setUpConfigWithJs,
+    });
+    testEvalFormOf({
+      src: "(isNone [])",
+      expected: false,
+      setUpConfig: setUpConfigWithJs,
+    });
+    testEvalFormOf({
+      src: "(isNone {})",
+      expected: false,
+      setUpConfig: setUpConfigWithJs,
     });
   });
 

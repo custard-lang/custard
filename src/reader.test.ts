@@ -62,8 +62,8 @@ describe("readStr", () => {
     test("`false ` -> `false`", () => {
       expect(readStr("false ")).toEqual(false);
     });
-    test("` undefined ` -> `undefined`", () => {
-      expect(readStr("undefined ")).toEqual(undefined);
+    test("` none ` -> `undefined`", () => {
+      expect(readStr("none ")).toEqual(undefined);
     });
   });
 
@@ -81,8 +81,8 @@ describe("readStr", () => {
         { t: "Integer32", v: 789 },
       ]);
     });
-    test('`( pl.us 2 (m 3 4) undefined  "foo" )` -> `(pl.us 2 (m 3 4) undefined "foo")`', () => {
-      expect(readStr('( pl.us 2 (m 3 4) undefined  "foo" )')).toEqual([
+    test('`( pl.us 2 (m 3 4) none  "foo" )` -> `(pl.us 2 (m 3 4) undefined "foo")`', () => {
+      expect(readStr('( pl.us 2 (m 3 4) none  "foo" )')).toEqual([
         { t: "PropertyAccess", v: ["pl", "us"] },
         { t: "Integer32", v: 2 },
         [
@@ -116,8 +116,8 @@ describe("readStr", () => {
         ],
       });
     });
-    test('`[ pl.us 2 (m 3 4) undefined  "foo" ]` -> `[pl.us 2 (m 3 4) undefined "foo"]`', () => {
-      expect(readStr('[ pl.us 2 (m 3 4) undefined  "foo" ]')).toEqual({
+    test('`[ pl.us 2 (m 3 4) none  "foo" ]` -> `[pl.us 2 (m 3 4) undefined "foo"]`', () => {
+      expect(readStr('[ pl.us 2 (m 3 4) none  "foo" ]')).toEqual({
         t: "LiteralArray",
         v: [
           { t: "PropertyAccess", v: ["pl", "us"] },

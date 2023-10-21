@@ -2,9 +2,17 @@ import {
   transpileExpression,
   transpileJoinWithComma,
 } from "../internal/transpile.js";
-import { markAsDirectWriter } from "../internal/types.js";
-import { Env, Form, JsSrc, TranspileError } from "../types.js";
+import type { Env, Form, JsSrc } from "../types.js";
+import {
+  markAsDirectWriter,
+  markAsDynamicVar,
+  TranspileError,
+} from "../types.js";
 import { transpiling2 } from "./base/common.js";
+
+export const _cu$null = markAsDynamicVar(() => "null");
+
+export const _cu$undefined = markAsDynamicVar(() => "void 0");
 
 export const _cu$instanceof = transpiling2(
   (a: JsSrc, b: JsSrc) => `${a} instanceof ${b}`,
