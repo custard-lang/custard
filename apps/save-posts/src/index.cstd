@@ -1,16 +1,72 @@
 (const agent (new atproto.default.BskyAgent { service: "https://bsky.social/"}))
 
+(const myDid "did:plc:ccikl4jnjjzzap7ifyvce7d7")
+
 (const
   password
   (async.await
     (read.default { prompt: "Pass: ", silent: true })))
+
+(annotate
+  "Break line after the prompt"
+  (console.log "\n"))
+
 (async.await
   (agent.login
-    { identifier: "igreque.info", password }))
+    { identifier: myDid, password }))
 
-(console.log
-  (JSON.stringify
-    (async.await
-      (agent.getAuthorFeed { actor: "igreque.info" , limit: 100, }))
-    undefined
-    2))
+(const
+  lastState
+  (async.await
+    (async.scope
+      (try
+        (return
+          (JSON.parse
+            (async.await
+              (fs.readFile
+                (path.join cu$directoryOfThisFile ".." "state.json")))))
+        catch e
+        (when (notEquals e.code "ENOENT") (throw e)))
+      (return { indexedAt: 0 }))))
+(const savedIndexedAt (new Date lastState.indexedAt))
+
+(console.log { savedIndexedAt })
+
+(const
+  isNotYetSaved
+  (fn (p)
+    (const indexedAt (new Date p.indexedAt))
+    (isGreaterThan indexedAt savedIndexedAt)))
+
+(const
+  config
+  (async.await
+    (async.scope
+      (JSON.parse
+        (async.await
+          (fs.readFile
+            (path.join cu$directoryOfThisFile ".." "save-posts-config.json")))))))
+
+(let cursor undefined)
+(const
+  posts
+  (async.await
+    (async.scope
+      (const result [])
+      (while true
+        (const
+          res
+          (async.await
+            (agent.getAuthorFeed { actor: myDid, limit: 100, cursor })))
+        (assign cursor res.data.cursor)
+        (console.log { cursor })
+        (forEach p res.data.feed
+          (when (not (isNotYetSaved p.post))
+            (return result))
+          (array.push result p.post))
+        (when (isNone cursor)
+          (return result))))))
+
+(const latestPost (array.first posts))
+(console.log (JSON.stringify posts null 2))
+(console.log latestPost.indexedAt)

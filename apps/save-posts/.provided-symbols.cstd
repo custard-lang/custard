@@ -4,8 +4,12 @@
 (modulePaths.set "js" (text standardModuleRoot "/js.js"))
 (modulePaths.set "atproto" "./node_modules/@atproto/api/dist/index.js")
 (modulePaths.set "read" "./node_modules/read/lib/read.js")
+
+(modulePaths.set "fs" "node:fs/promises")
+(modulePaths.set "path" "node:path")
+
 {
   modulePaths,
-  implicitStatements: "(importAnyOf base)(importAnyOf js)(import async)(import atproto)(import read)",
-  jsTopLevels: ["console", "JSON"],
+  implicitStatements: "(importAnyOf base)(importAnyOf js)(import async)(import atproto)(import read)(import fs)(import path)",
+  jsTopLevels: ["console", "JSON", "Date"],
 }
