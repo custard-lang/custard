@@ -16,6 +16,20 @@
     { identifier: myDid, password }))
 
 (const
+  config
+  (async.await
+    (async.scope
+      (JSON.parse
+        (async.await
+          (fs.readFile
+            (path.join
+              cu$directoryOfThisFile
+              ".."
+              "save-posts-config.json")))))))
+
+(const statePath (path.join config.outDirectory "state.json"))
+
+(const
   lastState
   (async.await
     (async.scope
@@ -23,8 +37,7 @@
         (return
           (JSON.parse
             (async.await
-              (fs.readFile
-                (path.join cu$directoryOfThisFile ".." "state.json")))))
+              (fs.readFile statePath))))
         catch e
         (when (notEquals e.code "ENOENT") (throw e)))
       (return { indexedAt: 0 }))))
@@ -38,16 +51,7 @@
     (const indexedAt (new Date p.indexedAt))
     (isGreaterThan indexedAt savedIndexedAt)))
 
-(const
-  config
-  (async.await
-    (async.scope
-      (JSON.parse
-        (async.await
-          (fs.readFile
-            (path.join cu$directoryOfThisFile ".." "save-posts-config.json")))))))
-
-(let cursor undefined)
+(let cursor none)
 (const
   posts
   (async.await
@@ -68,5 +72,19 @@
           (return result))))))
 
 (const latestPost (array.first posts))
-(console.log (JSON.stringify posts null 2))
-(console.log latestPost.indexedAt)
+
+(when (isGreaterThanOrEquals posts.length 1)
+  (const
+    outName
+    (text (latestPost.indexedAt.replaceAll ":" "_") ".json"))
+  (const
+    outJson (JSON.stringify posts none 2))
+  (console.log "Saving" posts.length "posts on" outName)
+  (async.await
+    (fs.writeFile (path.join config.outDirectory outName) outJson))
+
+  (const lastIndexedAt latestPost.indexedAt)
+  (async.await
+    (fs.writeFile
+      statePath
+      (JSON.stringify { indexedAt: lastIndexedAt } none 2))))
