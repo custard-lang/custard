@@ -115,28 +115,30 @@ export const decrementF = transpilingForVariableMutation(
   (jsSrc) => `${jsSrc}--`,
 );
 
-export const plusF = transpiling2((a: JsSrc, b: JsSrc) => `${a}+${b}`);
-export const minusF = transpiling2((a: JsSrc, b: JsSrc) => `(${a}-${b})`);
-export const timesF = transpiling2((a: JsSrc, b: JsSrc) => `${a}*${b}`);
-export const dividedByF = transpiling2((a: JsSrc, b: JsSrc) => `${a}/${b}`);
+export const plusF = transpiling2("plusF", (a: JsSrc, b: JsSrc) => `${a}+${b}`);
+export const minusF = transpiling2("minusF", (a: JsSrc, b: JsSrc) => `(${a}-${b})`);
+export const timesF = transpiling2("timesF", (a: JsSrc, b: JsSrc) => `${a}*${b}`);
+export const dividedByF = transpiling2("dividedByF", (a: JsSrc, b: JsSrc) => `${a}/${b}`);
 
 // TODO: If one of the argument is null, use == or !=
-export const equals = transpiling2((a: JsSrc, b: JsSrc) => `${a}===${b}`);
-export const notEquals = transpiling2((a: JsSrc, b: JsSrc) => `${a}!==${b}`);
+export const equals = transpiling2("equalsF", (a: JsSrc, b: JsSrc) => `${a}===${b}`);
+export const notEquals = transpiling2("notEqualsF", (a: JsSrc, b: JsSrc) => `${a}!==${b}`);
 
-export const isLessThan = transpiling2((a: JsSrc, b: JsSrc) => `${a}<${b}`);
+export const isLessThan = transpiling2("isLessThan", (a: JsSrc, b: JsSrc) => `${a}<${b}`);
 export const isLessThanOrEquals = transpiling2(
+  "isLessThanOrEquals",
   (a: JsSrc, b: JsSrc) => `${a}<=${b}`,
 );
-export const isGreaterThan = transpiling2((a: JsSrc, b: JsSrc) => `${a}>${b}`);
+export const isGreaterThan = transpiling2("isGreaterThan", (a: JsSrc, b: JsSrc) => `${a}>${b}`);
 export const isGreaterThanOrEquals = transpiling2(
+  "isGreaterThanOrEquals",
   (a: JsSrc, b: JsSrc) => `${a}>=${b}`,
 );
 
-export const isNone = transpiling1("none", (a: JsSrc) => `${a}==null`);
+export const isNone = transpiling1("isNone", (a: JsSrc) => `${a}==null`);
 
-export const and = transpiling2((a: JsSrc, b: JsSrc) => `${a}&&${b}`);
-export const or = transpiling2((a: JsSrc, b: JsSrc) => `${a}||${b}`);
+export const and = transpiling2("and", (a: JsSrc, b: JsSrc) => `${a}&&${b}`);
+export const or = transpiling2("or", (a: JsSrc, b: JsSrc) => `${a}||${b}`);
 export const not = transpiling1("not", (a: JsSrc) => `!(${a})`);
 
 export const assign = transpilingForAssignment(

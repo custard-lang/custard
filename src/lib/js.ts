@@ -15,6 +15,7 @@ export const _cu$null = markAsDynamicVar(() => "null");
 export const _cu$undefined = markAsDynamicVar(() => "void 0");
 
 export const _cu$instanceof = transpiling2(
+  "js.instanceof",
   (a: JsSrc, b: JsSrc) => `${a} instanceof ${b}`,
 );
 

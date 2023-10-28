@@ -69,10 +69,11 @@ export function transpiling1(
 }
 
 export function transpiling2(
-  f: (a: JsSrc, b: JsSrc) => JsSrc,
+  formId: Id,
+  f: (a: JsSrc, b: JsSrc, ...unused: Form[]) => JsSrc,
 ): MarkedDirectWriter {
   return markAsDirectWriter(
-    async (env: Env, a: Form, b: Form): Promise<JsSrc | TranspileError> => {
+    async (env: Env, a: Form, b: Form, ...unused: Form[]): Promise<JsSrc | TranspileError> => {
       const ra = await transpileExpression(a, env);
       if (TranspileError.is(ra)) {
         return ra;
@@ -81,6 +82,12 @@ export function transpiling2(
       const rb = await transpileExpression(b, env);
       if (TranspileError.is(rb)) {
         return rb;
+      }
+
+      if (unused.length > 0) {
+        return new TranspileError(
+          `\`${formId}\` must receive exactly one expression!`,
+        );
       }
 
       return f(ra, rb);

@@ -504,6 +504,35 @@ describe("evalForm", () => {
 
   describe("array", () => {
     testEvalFormOf({
+      src: "(array.at [0, 1, 2] 0)",
+      expected: 0,
+      setUpConfig,
+    });
+    testEvalFormOf({
+      src: "(array.at [] 0)",
+      expected: undefined,
+      setUpConfig,
+    });
+    testEvalFormOf({
+      src: "(array.at [0, 1, 2] 1)",
+      expected: 1,
+      setUpConfig,
+    });
+    testEvalFormOf({
+      src: "(array.at [0] 1)",
+      expected: undefined,
+      setUpConfig,
+    });
+
+    testEvalFormOf({
+      src: "(array.at [0] 1 2)",
+      expected: new TranspileError(
+        "`array.at` must receive exactly one expression!",
+      ),
+      setUpConfig,
+    });
+
+    testEvalFormOf({
       src: "(array.first [0, 1, 2])",
       expected: 0,
       setUpConfig,
