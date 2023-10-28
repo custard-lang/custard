@@ -73,7 +73,12 @@ export function transpiling2(
   f: (a: JsSrc, b: JsSrc, ...unused: Form[]) => JsSrc,
 ): MarkedDirectWriter {
   return markAsDirectWriter(
-    async (env: Env, a: Form, b: Form, ...unused: Form[]): Promise<JsSrc | TranspileError> => {
+    async (
+      env: Env,
+      a: Form,
+      b: Form,
+      ...unused: Form[]
+    ): Promise<JsSrc | TranspileError> => {
       const ra = await transpileExpression(a, env);
       if (TranspileError.is(ra)) {
         return ra;

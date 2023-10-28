@@ -1,7 +1,10 @@
 import type { JsSrc } from "../../types.js";
 import { transpiling1, transpiling2 } from "./common.js";
 
-export const at = transpiling2("array.at", (a: JsSrc, b: JsSrc) => `${a}[${b}]`);
+export const at = transpiling2(
+  "array.at",
+  (a: JsSrc, b: JsSrc) => `${a}[${b}]`,
+);
 
 export const first = transpiling1("array.first", (a: JsSrc) => `${a}[0]`);
 
