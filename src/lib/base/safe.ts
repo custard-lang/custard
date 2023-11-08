@@ -222,7 +222,7 @@ export const assign = transpilingForAssignment(
   "expression",
 );
 
-export const scope = buildScope("");
+export const scope = buildScope("scope", "");
 
 export const _cu$if = markAsDirectWriter(
   async (
@@ -430,7 +430,7 @@ export const fn = markAsDirectWriter(
     args: Form,
     ...block: Form[]
   ): Promise<JsSrc | TranspileError> => {
-    return await buildFn(env, args, block);
+    return await buildFn("fn", env, args, block);
   },
 );
 
@@ -440,7 +440,7 @@ export const procedure = markAsDirectWriter(
     args: Form,
     ...block: Form[]
   ): Promise<JsSrc | TranspileError> => {
-    return await buildProcedure(env, args, block);
+    return await buildProcedure("procedure", env, args, block);
   },
 );
 

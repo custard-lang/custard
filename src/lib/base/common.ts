@@ -25,7 +25,6 @@ import {
   pseudoTopLevelAssignment,
   pseudoTopLevelReference,
 } from "../../internal/cu-env.js";
-import { expectNever } from "../../util/error.js";
 
 export function isStatement(env: Env, form: Form): form is Call {
   const call = asCall(form);
@@ -142,21 +141,10 @@ export function transpilingForVariableDeclaration(
     formId,
     async (env: Env, sym: CuSymbol | LiteralObject, exp: JsSrc) => {
       let r: undefined | TranspileError;
-      function tryToSet(sym: CuSymbol): undefined | TranspileError {
-        if (EnvF.isDefinedInThisScope(env, sym.v)) {
-          return new TranspileError(
-            `Variable ${JSON.stringify(sym.v)} is already defined!`,
-          );
-        }
-        const r = EnvF.set(env, sym.v, newWriter());
-        if (TranspileError.is(r)) {
-          return r;
-        }
-      }
 
       if (EnvF.isAtReplTopLevel(env)) {
         if (isCuSymbol(sym)) {
-          r = tryToSet(sym);
+          r = tryToSet(sym, env, newWriter);
           if (TranspileError.is(r)) {
             return r;
           }
@@ -166,7 +154,7 @@ export function transpilingForVariableDeclaration(
         let src = statement;
         for (const kvOrSym of sym.v) {
           if (isCuSymbol(kvOrSym)) {
-            r = tryToSet(kvOrSym);
+            r = tryToSet(kvOrSym, env, newWriter);
             if (TranspileError.is(r)) {
               return r;
             }
@@ -189,13 +177,12 @@ export function transpilingForVariableDeclaration(
           }
 
           if (!isCuSymbol(v)) {
+            const vJson = JSON.stringify(v);
             return new TranspileError(
-              `${formId}'s assignee must be a symbol, but ${JSON.stringify(
-                v,
-              )} is not!`,
+              `${formId}'s assignee must be a symbol, but ${vJson} is not!`,
             );
           }
-          r = tryToSet(v);
+          r = tryToSet(v, env, newWriter);
           if (TranspileError.is(r)) {
             return r;
           }
@@ -203,51 +190,84 @@ export function transpilingForVariableDeclaration(
         }
         return src;
       }
-
-      let assignee: JsSrc;
-      if (isCuSymbol(sym)) {
-        r = tryToSet(sym);
-        if (TranspileError.is(r)) {
-          return r;
-        }
-        assignee = sym.v;
-      } else if (isLiteralObject(sym)) {
-        assignee = "{";
-        for (const kvOrSym of sym.v) {
-          if (isCuSymbol(kvOrSym)) {
-            r = tryToSet(kvOrSym);
-            if (TranspileError.is(r)) {
-              return r;
-            }
-            assignee = `${`${kvOrSym.v},`}${assignee}`;
-            continue;
-          }
-          const [k, v] = sym.v;
-          const kSrc = await transpileExpression(k, env);
-          if (TranspileError.is(kSrc)) {
-            return kSrc;
-          }
-          if (!isCuSymbol(v)) {
-            return new TranspileError(
-              `${formId}'s assignee must be a symbol, but ${JSON.stringify(
-                v,
-              )} is not!`,
-            );
-          }
-          r = tryToSet(v);
-          if (TranspileError.is(r)) {
-            return r;
-          }
-          assignee = `${assignee}${kSrc}:${v.v},`;
-        }
-        assignee = `${assignee}}`;
-      } else {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-        return expectNever(sym);
+      const assignee = transpileAssignee(formId, env, sym, newWriter);
+      if (TranspileError.is(assignee)) {
+        return assignee;
       }
       return buildStatement(assignee, exp);
     },
   );
+}
+
+export function transpileAssignee(
+  formId: Id,
+  env: Env,
+  sym: Form,
+  newWriter: () => Writer,
+): JsSrc | TranspileError {
+  if (isCuSymbol(sym)) {
+    const r = tryToSet(sym, env, newWriter);
+    if (TranspileError.is(r)) {
+      return r;
+    }
+    return sym.v;
+  } else if (isLiteralObject(sym)) {
+    let assignee = "{";
+    for (const kvOrSym of sym.v) {
+      if (isCuSymbol(kvOrSym)) {
+        const r0 = tryToSet(kvOrSym, env, newWriter);
+        if (TranspileError.is(r0)) {
+          return r0;
+        }
+        assignee = `${assignee}${`${kvOrSym.v},`}`;
+        continue;
+      }
+
+      const [k, v] = kvOrSym;
+      if (!isCuSymbol(k)) {
+        const vJson = JSON.stringify(v);
+        return new TranspileError(
+          `${formId}'s assignee must be a symbol, but ${vJson} is not!`,
+        );
+      }
+
+      if (!isCuSymbol(v)) {
+        const vJson = JSON.stringify(v);
+        return new TranspileError(
+          `${formId}'s assignee must be a symbol, but ${vJson} is not!`,
+        );
+      }
+
+      const r1 = tryToSet(v, env, newWriter);
+      if (TranspileError.is(r1)) {
+        return r1;
+      }
+
+      assignee = `${assignee}${k.v}:${v.v},`;
+    }
+    return `${assignee}}`;
+  } else {
+    const symJson = JSON.stringify(sym);
+    return new TranspileError(
+      `${formId}'s assignee must be a symbol or an object literal, but ${symJson} is not!`,
+    );
+  }
+}
+
+function tryToSet(
+  sym: CuSymbol,
+  env: Env,
+  newWriter: () => Writer,
+): undefined | TranspileError {
+  if (EnvF.isDefinedInThisScope(env, sym.v)) {
+    return new TranspileError(
+      `Variable ${JSON.stringify(sym.v)} is already defined!`,
+    );
+  }
+  const r = EnvF.set(env, sym.v, newWriter());
+  if (TranspileError.is(r)) {
+    return r;
+  }
 }
 
 export function transpilingForVariableMutation(
@@ -285,6 +305,7 @@ export function transpilingForVariableMutation(
 }
 
 function functionPrelude(
+  formId: Id,
   env: Env,
   args: Form,
   isAsync: boolean,
@@ -299,23 +320,16 @@ function functionPrelude(
 
   EnvF.push(env, isAsync);
 
-  const argNames = [];
+  const argPatterns: JsSrc[] = [];
   for (const arg of args) {
-    if (!isCuSymbol(arg)) {
-      return new TranspileError(
-        `Arguments for a function must be a list of symbols! But actually ${JSON.stringify(
-          args,
-        )}`,
-      );
+    const argSrc = transpileAssignee(formId, env, arg, aVar);
+    if (TranspileError.is(argSrc)) {
+      return argSrc;
     }
-    const r = EnvF.set(env, arg.v, aVar());
-    if (TranspileError.is(r)) {
-      return r;
-    }
-    argNames.push(arg.v);
+    argPatterns.push(argSrc);
   }
 
-  return `(${argNames.join(", ")}) => {\n`;
+  return `(${argPatterns.join(", ")}) => {\n`;
 }
 
 function functionPostlude(env: Env, src: JsSrc): JsSrc {
@@ -324,12 +338,13 @@ function functionPostlude(env: Env, src: JsSrc): JsSrc {
 }
 
 export async function buildFn(
+  formId: Id,
   env: Env,
   args: Form,
   block: Block,
   isAsync = false,
 ): Promise<JsSrc | TranspileError> {
-  let result = functionPrelude(env, args, isAsync);
+  let result = functionPrelude(formId, env, args, isAsync);
   if (TranspileError.is(result)) {
     return result;
   }
@@ -356,12 +371,13 @@ export async function buildFn(
 }
 
 export async function buildProcedure(
+  formId: Id,
   env: Env,
   args: Form,
   block: Block,
   isAsync = false,
 ): Promise<JsSrc | TranspileError> {
-  let result = functionPrelude(env, args, isAsync);
+  let result = functionPrelude(formId, env, args, isAsync);
   if (TranspileError.is(result)) {
     return result;
   }
@@ -378,12 +394,13 @@ export async function buildProcedure(
 }
 
 export function buildScope(
+  formId: Id,
   prefix: string,
   isAsync = false,
 ): MarkedDirectWriter {
   return markAsDirectWriter(
     async (env: Env, ...block: Block): Promise<JsSrc | TranspileError> => {
-      const funcSrc = await buildFn(env, [], block, isAsync);
+      const funcSrc = await buildFn(formId, env, [], block, isAsync);
       if (TranspileError.is(funcSrc)) {
         return funcSrc;
       }

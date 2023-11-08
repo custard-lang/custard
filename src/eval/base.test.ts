@@ -134,6 +134,21 @@ describe("evalForm", () => {
       expected: 5,
       setUpConfig,
     });
+    testEvalFormOf({
+      src: "( (fn (x y) (plusF x y)) 2 5 )",
+      expected: 7,
+      setUpConfig,
+    });
+    testEvalFormOf({
+      src: "( (fn ({ x, y }) (plusF x y)) { x: 1, y: 9 } )",
+      expected: 10,
+      setUpConfig,
+    });
+    testEvalFormOf({
+      src: "( (fn ({ x: v1, y: v2 }) (minusF v1 v2)) { x: 1, y: 9 } )",
+      expected: -8,
+      setUpConfig,
+    });
     testEvalFormOf({ src: "( (fn () 3) 2 )", expected: 3, setUpConfig });
     testEvalFormOf({
       src: "((fn ()))",
@@ -155,8 +170,13 @@ describe("evalForm", () => {
     testEvalFormOf({
       src: "( (fn (x 1) x) 1 )",
       expected: new TranspileError(
-        'Arguments for a function must be a list of symbols! But actually [{"t":"Symbol","v":"x"},{"t":"Integer32","v":1}]',
+        `fn's assignee must be a symbol or an object literal, but {"t":"Integer32","v":1} is not!`,
       ),
+      setUpConfig,
+    });
+    testEvalFormOf({
+      src: "( (fn (x x) x) 1 )",
+      expected: new TranspileError('Variable "x" is already defined!'),
       setUpConfig,
     });
   });
@@ -942,6 +962,16 @@ describe("evalBlock", () => {
     testEvalBlockOf({
       src: "(let x 0)(forEach v [1 2 3] (assign x (plusF x v))) x",
       expected: 6,
+      setUpConfig,
+    });
+    testEvalBlockOf({
+      src: "(let x 0)(forEach { x: v1, y: v2 } [{ x: 1, y: 1 } { x: 2, y: 2 } { x: 3, y: 3 }] (assign x (plusF (plusF x v1) v2))) x",
+      expected: 12,
+      setUpConfig,
+    });
+    testEvalBlockOf({
+      src: "(let x 0)(forEach { v1, v2 } [{ v1: 1, v2: 1 } { v1: 2, v2: 2 } { v1: 3, v2: 3 }] (assign x (plusF (plusF x v1) v2))) x",
+      expected: 12,
       setUpConfig,
     });
     testEvalBlockOf({

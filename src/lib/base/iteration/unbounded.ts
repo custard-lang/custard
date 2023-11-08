@@ -17,7 +17,7 @@ import {
   TranspileError,
 } from "../../../internal/types.js";
 
-import { isStatement } from "../common.js";
+import { isStatement, transpileAssignee } from "../common.js";
 import { _cu$const } from "../safe.js";
 
 export * from "../iteration.js";
@@ -134,11 +134,12 @@ export const forEach = markAsDirectWriter(
         "No variable name given to a `forEach` statement!",
       );
     }
-    if (!isCuSymbol(id)) {
-      return new TranspileError(
-        "The first argument to `for` must be a symbol!",
-      );
+
+    const assignee = transpileAssignee("forEach", env, id, aConst);
+    if (TranspileError.is(assignee)) {
+      return assignee;
     }
+
     if (iterable === undefined) {
       return new TranspileError(
         "No iterable expression given to a `forEach` statement!",
@@ -150,11 +151,6 @@ export const forEach = markAsDirectWriter(
       return iterableSrc;
     }
 
-    const r = EnvF.set(env, id.v, aConst());
-    if (TranspileError.is(r)) {
-      return r;
-    }
-
     const statementsSrc = await transpileBlock(statements, env);
     if (TranspileError.is(statementsSrc)) {
       return statementsSrc;
@@ -162,7 +158,7 @@ export const forEach = markAsDirectWriter(
 
     EnvF.pop(env);
 
-    return `for(const ${id.v} of ${iterableSrc}){${statementsSrc}}`;
+    return `for(const ${assignee} of ${iterableSrc}){${statementsSrc}}`;
   },
   "statement",
 );
