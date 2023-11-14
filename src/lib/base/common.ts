@@ -211,7 +211,8 @@ export function transpileAssignee(
       return r;
     }
     return sym.v;
-  } else if (isLiteralObject(sym)) {
+  }
+  if (isLiteralObject(sym)) {
     let assignee = "{";
     for (const kvOrSym of sym.v) {
       if (isCuSymbol(kvOrSym)) {
@@ -246,12 +247,11 @@ export function transpileAssignee(
       assignee = `${assignee}${k.v}:${v.v},`;
     }
     return `${assignee}}`;
-  } else {
-    const symJson = JSON.stringify(sym);
-    return new TranspileError(
-      `${formId}'s assignee must be a symbol or an object literal, but ${symJson} is not!`,
-    );
   }
+  const symJson = JSON.stringify(sym);
+  return new TranspileError(
+    `${formId}'s assignee must be a symbol or an object literal, but ${symJson} is not!`,
+  );
 }
 
 function tryToSet(
