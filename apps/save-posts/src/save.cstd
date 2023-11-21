@@ -58,6 +58,7 @@
     (async.scope
       (const result [])
       (while true
+        (note "TODO: check the result")
         (const
           res
           (async.await
