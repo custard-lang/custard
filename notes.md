@@ -125,3 +125,4 @@ Elmを少し参考に
 - [ ] public APIの整理: 特に src/types.ts
 - [ ] 配列のdestructuring: `let/const/assign`, `fn`, `forEach`
 - [ ] rest構文: 関数の引数、配列リテラル、オブジェクトリテラル
+- [ ] 入れ子のdestructuring
