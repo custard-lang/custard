@@ -1,0 +1,186 @@
+(const myDid "did:plc:ccikl4jnjjzzap7ifyvce7d7")
+
+(const
+  urlOfUri
+  (fn (uri)
+    (const
+      re
+      (new
+        RegExp "at://(did:plc:[^/]*)/app\\.bsky\\.feed\\.post/([^/]*)"))
+    (const md (re.exec uri))
+    (text
+      "https:///bsky.app/profile/"
+      (array.at md 1)
+      "/post/"
+      (array.at md 2))))
+
+(const endOfPost "\n\n----\n\n")
+
+(const
+  linkToPost
+  (fn (p)
+    (text "[こちらのPost](" (urlOfUri p.uri) ")")))
+
+
+(const
+  escapeMarkdown
+  (fn (t)
+    (string.replace
+      t
+      (annotate
+        "Ref." "https://pandoc-doc-ja.readthedocs.io/ja/latest/users-guide.html#backslash-escapes"
+        (new RegExp "[\\\\`*_{}\\[\\]()>#+-\\.!\n]|(?:  +)" "g"))
+      (fn (m)
+        (when (string.includes "\\`*_{}[]()>#+-.!" m)
+          (return (text "\\" m)))
+        (when (equals "\n" m)
+          (return "<br/>"))
+
+        (when (string.startsWith "  " m)
+          (return (string.repeat "&nbsp;" m.length)))
+        (return m)))))
+
+
+(const
+  bodyParagraph
+  (fn ({ record })
+
+    (const
+      applyFacetFeature
+      (fn (feat content)
+        (when (equals feat.$type "app.bsky.richtext.facet#link")
+          (return (text "[" content "](" feat.uri ")")))
+        (when (equals feat.$type "app.bsky.richtext.facet#mention")
+          (note "Do nothing")
+          (return content))
+        (console.warn "Unknown facet feature:" feat.$type)
+        content))
+
+    (const
+      applyFacet
+      (fn (facet content)
+        (when (isNone facet)
+          (return content))
+        (let result content)
+        (forEach feat facet.features
+          (assign result (applyFacetFeature feat result)))
+        result))
+
+    (const
+      rt
+      (new
+        atproto.default.RichText
+        { text: record.text, facets: record.facets }))
+    (let result "")
+    (forEach { text: t, facet } (rt.segments)
+      (assign
+        result
+        (text result (applyFacet facet (escapeMarkdown t)))))
+    (text result "\n\n")))
+
+(const
+  attachmentParagraph
+  (fn (p)
+
+    (when (isNone p.embed)
+      (return ""))
+
+    (when (equals p.embed.$type "app.bsky.embed.record#view")
+      (when (equals p.embed.record.author.did myDid)
+        (return
+          (text
+            "\n\n"
+            "再投稿:\n\n"
+            "> ["
+            (escapeMarkdown p.embed.record.value.text)
+            "]("
+            (urlOfUri p.embed.record.uri)
+            ")"
+            )))
+      (return
+        (text
+          "\n\n"
+          "再投稿: "
+          "[こちらの他の人の投稿]("
+          (urlOfUri p.embed.record.uri)
+          ")"
+          )))
+
+    (const
+      imageParagraph
+      (fn ({ thumb, fullsize, alt, aspectRatio })
+        (text
+          "\n\n"
+          "<a href=\"" fullsize "\">"
+          "<img src=\"" thumb "\" style=\"aspect-ratio: " aspectRatio.width " / " aspectRatio.height "\"/>"
+          "</a>")))
+
+    (when (equals p.embed.$type "app.bsky.embed.images#view")
+      (let result "")
+      (forEach i p.embed.images
+        (assign result (imageParagraph i)))
+      (return result))
+
+    (when (equals p.embed.$type "app.bsky.embed.external#view")
+      (note "Ignored")
+      (return ""))
+
+    (console.warn "Unknown embed type:" p.embed.$type)
+    (return "")))
+
+(const
+  replyParagraph
+  (fn (p)
+    (if (isNone p.record.reply)
+      ""
+      else
+      (text
+        "\n\n"
+        (linkToPost p.record.reply.parent) "への返信"))))
+
+(const
+  dateParagraph
+  (fn (p)
+    (text
+      "\n\n"
+      "<small>"
+      "日時: "
+      (date.format
+        (new Date p.record.createdAt)
+        "yyyy/MM/dd（E） H:m:s"
+        { locale: dateLocale.ja })
+      "</small>")))
+
+(const
+  formatPublicPost
+  (fn (p)
+    (text
+      (bodyParagraph p)
+      (attachmentParagraph p)
+      (replyParagraph p)
+      (dateParagraph p)
+      endOfPost
+      )))
+
+(const
+  formatPrivatePost
+  (fn (p)
+    (text
+      (linkToPost p) "のRepost"
+      (dateParagraph p)
+      endOfPost)))
+
+(const
+  formatPost
+  (fn (p)
+    (when (equals p.author.did myDid)
+      (return (formatPublicPost p)))
+    (formatPrivatePost p)))
+
+(forEach inF (process.argv.slice 2)
+  (const inFPath (path.parse inF))
+  (const outF (text inFPath.dir "/" inFPath.name ".md"))
+  (const outFile (async.await (fs.open outF "w")))
+  (forEach p (JSON.parse (async.await (fs.readFile inF "utf-8")))
+    (outFile.write (formatPost p)))
+  (async.await (outFile.close)))

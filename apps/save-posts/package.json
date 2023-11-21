@@ -17,6 +17,7 @@
   "homepage": "https://github.com/igrep/custard#readme",
   "dependencies": {
     "@atproto/api": "^0.6.3",
+    "date-fns": "^2.30.0",
     "read": "^2.1.0"
   }
 }

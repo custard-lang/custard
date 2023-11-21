@@ -2,14 +2,17 @@
 (modulePaths.set "base" (text standardModuleRoot "/base.js"))
 (modulePaths.set "async" (text standardModuleRoot "/async.js"))
 (modulePaths.set "js" (text standardModuleRoot "/js.js"))
-(modulePaths.set "atproto" "./node_modules/@atproto/api/dist/index.js")
-(modulePaths.set "read" "./node_modules/read/lib/read.js")
-
 (modulePaths.set "fs" "node:fs/promises")
 (modulePaths.set "path" "node:path")
 
+(modulePaths.set "atproto" "./node_modules/@atproto/api/dist/index.js")
+(modulePaths.set "read" "./node_modules/read/lib/read.js")
+
+(modulePaths.set "date" "./node_modules/date-fns/index.js")
+(modulePaths.set "dateLocale" "./node_modules/date-fns/locale/index.js")
+
 {
   modulePaths,
-  implicitStatements: "(importAnyOf base)(importAnyOf js)(import async)(import atproto)(import read)(import fs)(import path)",
-  jsTopLevels: ["console", "JSON", "Date"],
+  implicitStatements: "(importAnyOf base)(importAnyOf js)(import async)(import atproto)(import read)(import fs)(import path)(import date)(import dateLocale)",
+  jsTopLevels: ["console" "JSON" "Date" "process" "RegExp"],
 }
