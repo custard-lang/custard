@@ -975,11 +975,6 @@ describe("evalBlock", () => {
       setUpConfig,
     });
     testEvalBlockOf({
-      src: "(let v 0)(scope (let x 2) (forEach v [1 2 3] (assign x (plusF x v))) x)",
-      expected: 8,
-      setUpConfig,
-    });
-    testEvalBlockOf({
       src: "(let x 0)(let v 0)(forEach x [7 8 9] (assign v (plusF x v))) v",
       expected: 24,
       setUpConfig,
@@ -1002,6 +997,29 @@ describe("evalBlock", () => {
         "No variable name given to a `forEach` statement!",
       ),
       setUpConfig,
+    });
+
+    describe("inside a `scope`", () => {
+      testEvalBlockOf({
+        src: "(let v 0)(scope (let x 2) (forEach v [1 2 3] (assign x (plusF x v))) x)",
+        expected: 8,
+        setUpConfig,
+      });
+      testEvalBlockOf({
+        src: "(let x 0)(scope (forEach v [1 2 3] (assign x (plusF x v)))) x",
+        expected: 6,
+        setUpConfig,
+      });
+      testEvalBlockOf({
+        src: "(let x 0)(scope (forEach { x: v1, y: v2 } [{ x: 1, y: 1 } { x: 2, y: 2 } { x: 3, y: 3 }] (assign x (plusF (plusF x v1) v2)))) x",
+        expected: 12,
+        setUpConfig,
+      });
+      testEvalBlockOf({
+        src: "(let x 0)(scope (forEach { v1, v2 } [{ v1: 1, v2: 1 } { v1: 2, v2: 2 } { v1: 3, v2: 3 }] (assign x (plusF (plusF x v1) v2)))) x",
+        expected: 12,
+        setUpConfig,
+      });
     });
   });
 
