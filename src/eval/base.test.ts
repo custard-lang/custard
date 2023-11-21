@@ -438,8 +438,8 @@ describe("evalForm", () => {
 
   describe("(text f o r m s)", () => {
     testEvalFormOf({
-      src: '(text "$ " false "` " 1)',
-      expected: "$ false` 1",
+      src: '(text "$ " false "` \\\\" 1)',
+      expected: "$ false` \\1",
       setUpConfig,
     });
     testEvalFormOf({

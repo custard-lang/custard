@@ -446,7 +446,7 @@ export const procedure = markAsDirectWriter(
 
 export const text = markAsDirectWriter(
   async (env: Env, ...args: Form[]): Promise<JsSrc | TranspileError> => {
-    const esc = (s: string): string => s.replace(/[$`]/g, "\\$&");
+    const esc = (s: string): string => s.replace(/[$`\\]/g, "\\$&");
 
     let result = "`";
     for (const arg of args) {
