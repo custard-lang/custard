@@ -131,11 +131,11 @@ export const dividedByF = transpiling2(
 
 // TODO: If one of the argument is null, use == or !=
 export const equals = transpiling2(
-  "equalsF",
+  "equals",
   (a: JsSrc, b: JsSrc) => `${a}===${b}`,
 );
 export const notEquals = transpiling2(
-  "notEqualsF",
+  "notEquals",
   (a: JsSrc, b: JsSrc) => `${a}!==${b}`,
 );
 
