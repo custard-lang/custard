@@ -37,7 +37,11 @@ export function isExportableStatement(env: Env, form: Form): form is Call {
   return isCallOf(env, form, isMarkedDirectStatementWriter);
 }
 
-function isCallOf(env: Env, form: Form, p: (w: Writer) => boolean): form is Call {
+function isCallOf(
+  env: Env,
+  form: Form,
+  p: (w: Writer) => boolean,
+): form is Call {
   const call = asCall(form);
   if (call === undefined) {
     return false;
