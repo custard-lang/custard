@@ -1,4 +1,4 @@
-import { _cu$import, importAnyOf } from "./transpile/module.js";
+import { _cu$export, _cu$import, importAnyOf } from "./transpile/module.js";
 import { aProvidedConst, Id, JsSrc, Scope, Writer } from "./types.js";
 
 export function init(): Scope {
@@ -45,6 +45,7 @@ export function tmpVarOf(
 export function addPrimitives(scope: Scope): void {
   set(scope, "import", _cu$import);
   set(scope, "importAnyOf", importAnyOf);
+  set(scope, "export", _cu$export);
 }
 
 export function addProvidedConsts(scope: Scope, ids: Id[]): void {

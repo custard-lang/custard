@@ -5,8 +5,10 @@ import {
   Block,
   Call,
   CuSymbol,
-  DirectWriterKind,
+  ordinaryExpression,
+  DirectWriterKindFlags,
   Env,
+  exportableStatement,
   Form,
   Id,
   isCuSymbol,
@@ -17,6 +19,7 @@ import {
   LiteralObject,
   markAsDirectWriter,
   MarkedDirectWriter,
+  ordinaryStatement,
   TranspileError,
   Writer,
 } from "../../internal/types.js";
@@ -27,12 +30,21 @@ import {
 } from "../../internal/cu-env.js";
 
 export function isStatement(env: Env, form: Form): form is Call {
+  return isCallOf(env, form, isMarkedDirectStatementWriter);
+}
+
+export function isExportableStatement(env: Env, form: Form): form is Call {
+  return isCallOf(env, form, isMarkedDirectStatementWriter);
+}
+
+function isCallOf(env: Env, form: Form, p: (w: Writer) => boolean): form is Call {
   const call = asCall(form);
   if (call === undefined) {
     return false;
   }
   const w = EnvF.find(env, call[0]);
-  return w !== undefined && isMarkedDirectStatementWriter(w);
+  // TODO: More helpful error if the writer is not found
+  return w !== undefined && p(w);
 }
 
 export function transpiling1Unmarked(
@@ -62,7 +74,7 @@ export function transpiling1Unmarked(
 export function transpiling1(
   formId: Id,
   f: (a: JsSrc) => JsSrc,
-  kind: DirectWriterKind = "expression",
+  kind: DirectWriterKindFlags = ordinaryExpression,
 ): MarkedDirectWriter {
   return markAsDirectWriter(transpiling1Unmarked(formId, f), kind);
 }
@@ -107,7 +119,7 @@ export function transpilingForAssignment(
     id: CuSymbol | LiteralObject,
     exp: JsSrc,
   ) => Promise<JsSrc | TranspileError>,
-  kind: DirectWriterKind = "statement",
+  kind: DirectWriterKindFlags = exportableStatement,
 ): MarkedDirectWriter {
   return markAsDirectWriter(
     async (env: Env, id: Form, v: Form, another?: Form) => {
@@ -301,7 +313,7 @@ export function transpilingForVariableMutation(
       );
     }
     return otherwise(sym.v);
-  }, "statement");
+  }, ordinaryStatement);
 }
 
 function functionPrelude(

@@ -226,14 +226,39 @@ export type DirectWriter = (
 ) => Awaitable<JsSrc | TranspileError>;
 export interface MarkedDirectWriter extends AnyWriter<5> {
   readonly call: DirectWriter;
-  readonly isStatement: boolean;
+  readonly kind: DirectWriterKindFlags;
 }
-export type DirectWriterKind = "statement" | "expression";
+
+// I'm not really sure the best type to represent
+// how DirectWriter's are classified.
+// Another plan:
+//   DirectWriterKind = EXPRESSION | STATEMENT | EXPORTABLE.
+// where EXPRESSION < STATEMENT < EXPORTABLE.
+export type DirectWriterKindFlags = {
+  statement: boolean;
+  exportable: boolean;
+};
+
+export const ordinaryExpression = {
+  statement: false,
+  exportable: false,
+};
+
+export const ordinaryStatement = {
+  statement: true,
+  exportable: false,
+};
+
+export const exportableStatement = {
+  statement: true,
+  exportable: true,
+};
+
 export function markAsDirectWriter(
   call: DirectWriter,
-  kind: DirectWriterKind = "expression",
+  kind: DirectWriterKindFlags = ordinaryExpression,
 ): MarkedDirectWriter {
-  return { [WriterKindKey]: 5, call, isStatement: kind === "statement" };
+  return { [WriterKindKey]: 5, call, kind };
 }
 export function isMarkedDirectWriter(x: Writer): x is MarkedDirectWriter {
   return x[WriterKindKey] === 5;
@@ -241,7 +266,12 @@ export function isMarkedDirectWriter(x: Writer): x is MarkedDirectWriter {
 export function isMarkedDirectStatementWriter(
   x: Writer,
 ): x is MarkedDirectWriter {
-  return isMarkedDirectWriter(x) && x.isStatement;
+  return isMarkedDirectWriter(x) && x.kind.statement;
+}
+export function isMarkedDirectExportableStatementWriter(
+  x: Writer,
+): x is MarkedDirectWriter {
+  return isMarkedDirectWriter(x) && x.kind.exportable;
 }
 
 export type FunctionWithEnv = (env: Env, ...rest: any[]) => any | Error;

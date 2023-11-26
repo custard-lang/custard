@@ -16,12 +16,14 @@ import {
   TranspileError,
 } from "../types";
 import { fileOfImportMetaUrl } from "../../util/path";
+import { standardModuleRoot } from "../definitions";
 
 describe("transpileBlock", () => {
   const subject = async (
     src: string,
   ): Promise<[JsSrc | TranspileError, Env]> => {
     const modulePaths: ModulePaths = new Map();
+    modulePaths.set("base", `${standardModuleRoot}/base.js`);
     modulePaths.set("a", "../../../test-assets/a.mjs");
     modulePaths.set(
       "typescript",
@@ -85,6 +87,38 @@ describe("transpileBlock", () => {
         );
         expect(EnvF.find(env, "a")).toBeUndefined();
       });
+    });
+  });
+
+  describe("export id or declarations", () => {
+    test("can export several from const/let declarations", async () => {
+      const [jsMod, _env] = await subject("(importAnyOf base)(export (const a 1) (const b 2) (let c 3))");
+      const src = assertNonError(jsMod) as JsSrc;
+      const imports = 'import{array, standardModuleRoot, string}from"../../../dist/src/lib/base.js";\n;\n';
+      expect(src.trim()).toEqual(
+        `${imports}export const a=1;\nexport const b=2;\nexport let c=3;\n;`,
+      );
+    });
+
+    test("returns an error if an export is not a const/let declaration", async () => {
+      const [r, _env] = await subject("(importAnyOf base)(export (fn () none))");
+      expect(r).toEqual(
+        new TranspileError("The arguments of `export` must be a const/let declaration."),
+      );
+    });
+
+    test("returns an error if no declarations are provided", async () => {
+      const [r, _env] = await subject("(export)");
+      expect(r).toEqual(
+        new TranspileError("The number of arguments of `export` must be at least 1."),
+      );
+    });
+
+    test("returns an error if used in a non-top-level", async () => {
+      const [r, _env] = await subject("(importAnyOf base)(fn () (export (const a 1)))");
+      expect(r).toEqual(
+        new TranspileError("`export` must be used at the top level."),
+      );
     });
   });
 });

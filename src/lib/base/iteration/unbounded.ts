@@ -13,6 +13,7 @@ import {
   isCuSymbol,
   JsSrc,
   markAsDirectWriter,
+  ordinaryStatement,
   showSymbolAccess,
   TranspileError,
 } from "../../../internal/types.js";
@@ -56,7 +57,7 @@ export const _cu$while = markAsDirectWriter(
     EnvF.pop(env);
     return `while(${boolSrc}){${statementsSrc}}`;
   },
-  "statement",
+  ordinaryStatement,
 );
 
 export const _cu$for = markAsDirectWriter(
@@ -117,7 +118,7 @@ export const _cu$for = markAsDirectWriter(
     EnvF.pop(env);
     return `for(${initialStatementSrc};${boolSrc};${finalSrc}){${statementsSrc}}`;
   },
-  "statement",
+  ordinaryStatement,
 );
 
 export const forEach = markAsDirectWriter(
@@ -160,7 +161,7 @@ export const forEach = markAsDirectWriter(
 
     return `for(const ${assignee} of ${iterableSrc}){${statementsSrc}}`;
   },
-  "statement",
+  ordinaryStatement,
 );
 
 export const recursive = markAsDirectWriter(
@@ -195,5 +196,5 @@ export const recursive = markAsDirectWriter(
 
     return await transpileBlock(consts, env);
   },
-  "statement",
+  ordinaryStatement,
 );

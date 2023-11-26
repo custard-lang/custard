@@ -3,6 +3,14 @@ import * as path from "node:path";
 
 import * as EnvF from "../../internal/env.js";
 import {
+  transpileBlock,
+  transpileExpression,
+  transpileJoinWithComma,
+} from "../../internal/transpile.js";
+import { pseudoTopLevelAssignment } from "../../internal/cu-env.js";
+import { ordinaryExpression, ordinaryStatement } from "../../internal/types.js";
+
+import {
   aConst,
   aContextualKeyword,
   aVar,
@@ -19,13 +27,6 @@ import {
   markAsDynamicVar,
   TranspileError,
 } from "../../types.js";
-import {
-  transpileBlock,
-  transpileExpression,
-  transpileJoinWithComma,
-} from "../../internal/transpile.js";
-import { pseudoTopLevelAssignment } from "../../internal/cu-env.js";
-
 import {
   buildFn,
   buildProcedure,
@@ -78,7 +79,7 @@ export const _cu$return = markAsDirectWriter(
         );
     }
   },
-  "statement",
+  ordinaryStatement,
 );
 
 export const when = markAsDirectWriter(
@@ -100,7 +101,7 @@ export const when = markAsDirectWriter(
     }
     return `if(${boolSrc}){\n${statementsSrc}\n}`;
   },
-  "statement",
+  ordinaryStatement,
 );
 
 export const incrementF = transpilingForVariableMutation(
@@ -219,7 +220,7 @@ export const assign = transpilingForAssignment(
     }
     return src;
   },
-  "expression",
+  ordinaryExpression,
 );
 
 export const scope = buildScope("scope", "");
@@ -411,7 +412,7 @@ export const _cu$try = markAsDirectWriter(
     }
     return result;
   },
-  "statement",
+  ordinaryStatement,
 );
 
 export const _cu$catch = aContextualKeyword("try");
@@ -421,7 +422,7 @@ export const _cu$finally = aContextualKeyword("try");
 export const _cu$throw = transpiling1(
   "throw",
   (a: JsSrc) => `throw ${a}`,
-  "statement",
+  ordinaryStatement,
 );
 
 export const fn = markAsDirectWriter(

@@ -19,7 +19,7 @@ describe("evalBlock", () => {
       providedSymbols: {
         from: srcPath,
         modulePaths,
-        implicitStatements: "(import base)",
+        implicitStatements: "(importAnyOf base)",
         jsTopLevels: [],
       },
     };
@@ -28,6 +28,12 @@ describe("evalBlock", () => {
   testEvalBlockOf({
     src: "(import a) a.a",
     expected: "Module A",
+    setUpConfig,
+  });
+
+  testEvalBlockOf({
+    src: "(export (const b 1) (const c (plusF b 1))) c",
+    expected: 2,
     setUpConfig,
   });
 });

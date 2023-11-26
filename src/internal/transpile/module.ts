@@ -1,17 +1,22 @@
-import * as EnvF from "../../internal/env.js";
+import * as EnvF from "../env.js";
 import { loadModule } from "../definitions.js";
 import {
   canBePseudoTopLevelReferenced,
   CuArray,
   Env,
+  exportableStatement,
   Id,
   isCuSymbol,
   isWriter,
   JsSrc,
   markAsDirectWriter,
+  ordinaryStatement,
   TranspileError,
 } from "../../internal/types.js";
-import { pseudoTopLevelAssignment } from "../../internal/cu-env.js";
+import { pseudoTopLevelAssignment } from "../cu-env.js";
+import { transpileExpression } from "../transpile.js";
+
+import { isExportableStatement } from "../../lib/base/common.js";
 
 export const _cu$import = markAsDirectWriter(
   async (env: Env, ...forms: CuArray): Promise<JsSrc | TranspileError> => {
@@ -54,7 +59,7 @@ export const _cu$import = markAsDirectWriter(
     }
     return `${`const ${id.v}=`}${awaitImport}`;
   },
-  "statement",
+  ordinaryStatement,
 );
 
 // TODO: refactor
@@ -113,5 +118,40 @@ export const importAnyOf = markAsDirectWriter(
     }
     return `const{${ids.join(", ")}}=${awaitImport};\n`;
   },
-  "statement",
+  ordinaryStatement,
+);
+
+export const _cu$export = markAsDirectWriter(
+  async (env: Env, ...forms: CuArray): Promise<JsSrc | TranspileError> => {
+    if (forms.length === 0) {
+      return new TranspileError(
+        "The number of arguments of `export` must be at least 1.",
+      );
+    }
+
+    if (!EnvF.isAtTopLevel(env)) {
+      return new TranspileError("`export` must be used at the top level.");
+    }
+
+    let result = "";
+    for (const form of forms) {
+      if (!isExportableStatement(env, form)) {
+        return new TranspileError(
+          "The arguments of `export` must be a const/let declaration.",
+        );
+      }
+      const r = await transpileExpression(form, env);
+      if (TranspileError.is(r)) {
+        return r;
+      }
+
+      if (env.transpileState.mode === "module") {
+        result = `${result}export ${r};\n`;
+      } else {
+        result = `${result}${r};\n`;
+      }
+    }
+    return result;
+  },
+  exportableStatement,
 );

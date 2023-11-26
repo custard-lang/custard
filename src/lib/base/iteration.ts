@@ -5,6 +5,7 @@ import {
   JsSrc,
   markAsDirectWriter,
   MarkedDirectWriter,
+  ordinaryStatement,
   TranspileError,
 } from "../../internal/types.js";
 
@@ -20,6 +21,6 @@ function transpilingControlStatement(id: Id): MarkedDirectWriter {
       }
       return id;
     },
-    "statement",
+    ordinaryStatement,
   );
 }
