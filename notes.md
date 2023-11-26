@@ -78,11 +78,15 @@ Elmを少し参考に
 
 - `(import base)`: `base`だけをqualified import
 - `(import { base })`: `base`だけをqualified import （1つ目と同じ）
+- `(import { base, anotherBase })`: `base`と`anotherBase`をqualified import
 - `(import { base: alias })`: `base`を`alias`としてqualified import
+- `(import { base: alias, anotherBase: anotherAlias })`: `base`と`alias`として、`anotherBase`を`anotherAlias`としてqualified import
 - `(import base {f1 f2})`: `base`にある`f1`と`f2`だけをimport
 - `(import base {f1: a1 f2: a2})`: `base`にある`f1`・`f2`だけをそれぞれ`a1`・`a2`としてimport
 
-- `import`の数だけコードの量が増えちゃうのは好ましくないし、やっぱrepl top-levelでの`import`は`_cu$env`がいいかな
+## `export`の構文
+
+`import`の類推でいけるかと思ったけどちょっと難しそう。`import`の仕様が既に変わっているのでちょっと整合性がとれないかも... と思ったけどそうでもないか？`exportFrom`というのを普通の`export`とは別に出せば良いのであって
 
 # TODO
 
@@ -126,3 +130,4 @@ Elmを少し参考に
 - [ ] 配列のdestructuring: `let/const/assign`, `fn`, `forEach`
 - [ ] rest構文: 関数の引数、配列リテラル、オブジェクトリテラル
 - [ ] 入れ子のdestructuring
+- [ ] exportのvalidation: 複数同じ名前をexportしないように。普通の`export`は`default`を受け付けない（代わりに`exportDefault`を使えという
