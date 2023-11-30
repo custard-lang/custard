@@ -1,5 +1,5 @@
 import * as EnvF from "../../internal/env.js";
-import { asCall, transpileExpression } from "../../internal/transpile.js";
+import { asCall, transpileBlock, transpileExpression } from "../../internal/transpile.js";
 import {
   aVar,
   Block,
@@ -23,6 +23,7 @@ import {
   TranspileError,
   Writer,
   ScopeOptions,
+  aConst,
 } from "../../internal/types.js";
 
 import {
@@ -451,5 +452,53 @@ export function buildScope(
       }
       return `${`(${prefix}`}${funcSrc})()`;
     },
+  );
+}
+
+
+export function buildForEach(
+  build: (assignee: JsSrc, iterableSrc: JsSrc, statementsSrc: JsSrc) => JsSrc,
+): MarkedDirectWriter {
+  return markAsDirectWriter(
+    async (
+      env: Env,
+      id: Form,
+      iterable: Form,
+      ...statements: Block
+    ): Promise<JsSrc | TranspileError> => {
+      EnvF.pushInherited(env);
+
+      if (id === undefined) {
+        return new TranspileError(
+          "No variable name given to a `forEach` statement!",
+        );
+      }
+
+      const assignee = transpileAssignee("forEach", env, id, aConst);
+      if (TranspileError.is(assignee)) {
+        return assignee;
+      }
+
+      if (iterable === undefined) {
+        return new TranspileError(
+          "No iterable expression given to a `forEach` statement!",
+        );
+      }
+
+      const iterableSrc = await transpileExpression(iterable, env);
+      if (TranspileError.is(iterableSrc)) {
+        return iterableSrc;
+      }
+
+      const statementsSrc = await transpileBlock(statements, env);
+      if (TranspileError.is(statementsSrc)) {
+        return statementsSrc;
+      }
+
+      EnvF.pop(env);
+
+      return build(assignee, iterableSrc, statementsSrc);
+    },
+    ordinaryStatement,
   );
 }

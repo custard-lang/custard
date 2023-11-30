@@ -18,7 +18,7 @@ import {
   TranspileError,
 } from "../../../internal/types.js";
 
-import { isStatement, transpileAssignee } from "../common.js";
+import { buildForEach, isStatement, transpileAssignee } from "../common.js";
 import { _cu$const } from "../safe.js";
 
 export * from "../iteration.js";
@@ -121,47 +121,9 @@ export const _cu$for = markAsDirectWriter(
   ordinaryStatement,
 );
 
-export const forEach = markAsDirectWriter(
-  async (
-    env: Env,
-    id: Form,
-    iterable: Form,
-    ...statements: Block
-  ): Promise<JsSrc | TranspileError> => {
-    EnvF.pushInherited(env);
-
-    if (id === undefined) {
-      return new TranspileError(
-        "No variable name given to a `forEach` statement!",
-      );
-    }
-
-    const assignee = transpileAssignee("forEach", env, id, aConst);
-    if (TranspileError.is(assignee)) {
-      return assignee;
-    }
-
-    if (iterable === undefined) {
-      return new TranspileError(
-        "No iterable expression given to a `forEach` statement!",
-      );
-    }
-
-    const iterableSrc = await transpileExpression(iterable, env);
-    if (TranspileError.is(iterableSrc)) {
-      return iterableSrc;
-    }
-
-    const statementsSrc = await transpileBlock(statements, env);
-    if (TranspileError.is(statementsSrc)) {
-      return statementsSrc;
-    }
-
-    EnvF.pop(env);
-
-    return `for(const ${assignee} of ${iterableSrc}){${statementsSrc}}`;
-  },
-  ordinaryStatement,
+export const forEach = buildForEach(
+  (assignee: JsSrc, iterableSrc: JsSrc, statementsSrc: JsSrc): JsSrc =>
+    `for(const ${assignee} of ${iterableSrc}){${statementsSrc}}`,
 );
 
 export const recursive = markAsDirectWriter(

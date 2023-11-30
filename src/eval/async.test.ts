@@ -1,5 +1,5 @@
 import { describe } from "vitest";
-import { testEvalFormOf } from "../test";
+import { testEvalBlockOf, testEvalFormOf } from "../test";
 
 import { ModulePaths, TranspileError } from "../types";
 import { standardModuleRoot } from "../definitions";
@@ -82,6 +82,14 @@ describe("evalForm", () => {
       expected: new TranspileError(
         "`await` in a non-async function or scope is not allowed.",
       ),
+      setUpConfig,
+    });
+  });
+
+  describe("async.forEach", () => {
+    testEvalBlockOf({
+      src: "(let r 1) (async.forEach x ((async.generatorFn () (yield (async.await (Promise.resolve 0))))) (assign r (timesF r x))) r",
+      expected: 0,
       setUpConfig,
     });
   });

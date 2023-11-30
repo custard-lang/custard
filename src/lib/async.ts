@@ -9,6 +9,7 @@ import {
 import { JsSrc } from "../types.js";
 import {
   buildFn,
+  buildForEach,
   buildProcedure,
   buildScope,
   transpiling1Unmarked,
@@ -102,3 +103,8 @@ export const generatorProcedure = markAsDirectWriter(
 );
 
 export const scope = buildScope("scope", "async ", defaultAsyncScopeOptions);
+
+export const forEach = buildForEach(
+  (assignee: JsSrc, iterableSrc: JsSrc, statementsSrc: JsSrc): JsSrc =>
+    `for await (const ${assignee} of ${iterableSrc}){${statementsSrc}}`,
+);
