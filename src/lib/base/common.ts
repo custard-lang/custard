@@ -1,5 +1,9 @@
 import * as EnvF from "../../internal/env.js";
-import { asCall, transpileBlock, transpileExpression } from "../../internal/transpile.js";
+import {
+  asCall,
+  transpileBlock,
+  transpileExpression,
+} from "../../internal/transpile.js";
 import {
   aVar,
   Block,
@@ -454,7 +458,6 @@ export function buildScope(
     },
   );
 }
-
 
 export function buildForEach(
   build: (assignee: JsSrc, iterableSrc: JsSrc, statementsSrc: JsSrc) => JsSrc,
