@@ -1,17 +1,17 @@
 import { _cu$export, _cu$import, importAnyOf } from "./transpile/module.js";
-import { aProvidedConst, Id, JsSrc, Scope, Writer } from "./types.js";
+import {
+  aProvidedConst,
+  Id,
+  JsSrc,
+  Scope,
+  ScopeOptions,
+  Writer,
+} from "./types.js";
 
-export function init(): Scope {
+export function init(options: ScopeOptions): Scope {
   return {
-    isAsync: false,
-    definitions: new Map(),
-    temporaryVariablesCount: 0,
-  };
-}
-
-export function initAsync(): Scope {
-  return {
-    isAsync: true,
+    isAsync: options.isAsync,
+    isGenerator: options.isGenerator,
     definitions: new Map(),
     temporaryVariablesCount: 0,
   };

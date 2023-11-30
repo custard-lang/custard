@@ -149,9 +149,16 @@ export type Env<State = TranspileState> = {
 
 export type Scope = {
   isAsync: boolean;
+  isGenerator: boolean;
   definitions: ModuleMap;
   temporaryVariablesCount: number;
 };
+
+export type ScopeOptions = Pick<Scope, "isAsync" | "isGenerator">;
+
+export const defaultScopeOptions = { isAsync: false, isGenerator: false };
+
+export const defaultAsyncScopeOptions = { isAsync: true, isGenerator: false };
 
 // NOTE: I give up defining this as a unique symbol due to
 // vite's behavior similar to https://github.com/vitejs/vite/issues/9528

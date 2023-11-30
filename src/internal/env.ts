@@ -18,6 +18,9 @@ import {
   Namespace,
   aConst,
   isWriter,
+  ScopeOptions,
+  defaultScopeOptions,
+  defaultAsyncScopeOptions,
 } from "./types.js";
 import type { Env, TranspileState } from "./types.js";
 import * as References from "./references.js";
@@ -37,7 +40,7 @@ export function init<State extends TranspileState>(
   state: State,
   providedSymbolsConfig: CompleteProvidedSymbolsConfig,
 ): Env<State> {
-  const topLevelScope = ScopeF.initAsync();
+  const topLevelScope = ScopeF.init(defaultAsyncScopeOptions);
   ScopeF.addPrimitives(topLevelScope);
   ScopeF.addProvidedConsts(topLevelScope, providedSymbolsConfig.jsTopLevels);
   return {
@@ -151,6 +154,10 @@ export function isInAsyncContext(env: Env): boolean {
   return env.scopes[0].isAsync || isAtTopLevel(env);
 }
 
+export function isInGeneratorContext({ scopes: [current] }: Env): boolean {
+  return current.isGenerator;
+}
+
 export function set(
   { scopes, references: { referenceById, currentScope } }: Env,
   id: Id,
@@ -171,13 +178,17 @@ export function set(
   ScopeF.set(scopes[0], id, writer);
 }
 
-export function push({ scopes, references }: Env, isAsync = false): void {
+export function push(
+  { scopes, references }: Env,
+  scopeOptions: ScopeOptions = defaultScopeOptions,
+): void {
   References.appendNewScope(references);
-  scopes.unshift(isAsync ? ScopeF.initAsync() : ScopeF.init());
+  scopes.unshift(ScopeF.init(scopeOptions));
 }
 
 export function pushInherited(env: Env): void {
-  push(env, env.scopes[0].isAsync);
+  const { isAsync, isGenerator } = env.scopes[0];
+  push(env, { isAsync, isGenerator });
 }
 
 export function pop({ scopes, references }: Env): void {
@@ -227,8 +238,8 @@ export async function findModule(
   };
 }
 
-export function getCurrentScope({ scopes }: Env): Scope {
-  return assertNonNull(scopes[0], "Empty scopes in an env!");
+export function getCurrentScope({ scopes: [current] }: Env): Scope {
+  return current;
 }
 
 export function mergeNamespaceIntoCurrentScope(

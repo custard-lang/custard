@@ -1,5 +1,6 @@
 import * as EnvF from "../internal/env.js";
 import {
+  defaultAsyncScopeOptions,
   Env,
   Form,
   markAsDirectWriter,
@@ -34,11 +35,15 @@ export const fn = markAsDirectWriter(
     args: Form,
     ...block: Form[]
   ): Promise<JsSrc | TranspileError> => {
-    const funcSrc = await buildFn("async.fn", env, args, block, true);
-    if (TranspileError.is(funcSrc)) {
-      return funcSrc;
-    }
-    return `async ${funcSrc}`;
+    return await buildFn(
+      "async.fn",
+      env,
+      args,
+      block,
+      defaultAsyncScopeOptions,
+      "async",
+      "=>",
+    );
   },
 );
 
@@ -48,18 +53,52 @@ export const procedure = markAsDirectWriter(
     args: Form,
     ...block: Form[]
   ): Promise<JsSrc | TranspileError> => {
-    const funcSrc = await buildProcedure(
+    return await buildProcedure(
       "async.procedure",
       env,
       args,
       block,
-      true,
+      defaultAsyncScopeOptions,
+      "async",
+      "=>",
     );
-    if (TranspileError.is(funcSrc)) {
-      return funcSrc;
-    }
-    return `async ${funcSrc}`;
   },
 );
 
-export const scope = buildScope("scope", "async ", true);
+export const generatorFn = markAsDirectWriter(
+  async (
+    env: Env,
+    args: Form,
+    ...block: Form[]
+  ): Promise<JsSrc | TranspileError> => {
+    return await buildFn(
+      "async.generatorFn",
+      env,
+      args,
+      block,
+      { isAsync: true, isGenerator: true },
+      "async function*",
+      "",
+    );
+  },
+);
+
+export const generatorProcedure = markAsDirectWriter(
+  async (
+    env: Env,
+    args: Form,
+    ...block: Form[]
+  ): Promise<JsSrc | TranspileError> => {
+    return await buildProcedure(
+      "async.generatorProcedure",
+      env,
+      args,
+      block,
+      { isAsync: true, isGenerator: true },
+      "async function*",
+      "",
+    );
+  },
+);
+
+export const scope = buildScope("scope", "async ", defaultAsyncScopeOptions);

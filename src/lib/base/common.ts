@@ -22,6 +22,7 @@ import {
   ordinaryStatement,
   TranspileError,
   Writer,
+  ScopeOptions,
 } from "../../internal/types.js";
 
 import {
@@ -324,7 +325,9 @@ function functionPrelude(
   formId: Id,
   env: Env,
   args: Form,
-  isAsync: boolean,
+  scopeOptions: ScopeOptions,
+  beforeArguments: JsSrc,
+  afterArguments: JsSrc,
 ): JsSrc | TranspileError {
   if (!(args instanceof Array)) {
     return new TranspileError(
@@ -334,7 +337,7 @@ function functionPrelude(
     );
   }
 
-  EnvF.push(env, isAsync);
+  EnvF.push(env, scopeOptions);
 
   const argPatterns: JsSrc[] = [];
   for (const arg of args) {
@@ -345,7 +348,7 @@ function functionPrelude(
     argPatterns.push(argSrc);
   }
 
-  return `(${argPatterns.join(", ")}) => {\n`;
+  return `${beforeArguments}(${argPatterns.join(", ")})${afterArguments}{\n`;
 }
 
 function functionPostlude(env: Env, src: JsSrc): JsSrc {
@@ -358,9 +361,18 @@ export async function buildFn(
   env: Env,
   args: Form,
   block: Block,
-  isAsync = false,
+  scopeOptions: ScopeOptions,
+  beforeArguments: JsSrc,
+  afterArguments: JsSrc,
 ): Promise<JsSrc | TranspileError> {
-  let result = functionPrelude(formId, env, args, isAsync);
+  let result = functionPrelude(
+    formId,
+    env,
+    args,
+    scopeOptions,
+    beforeArguments,
+    afterArguments,
+  );
   if (TranspileError.is(result)) {
     return result;
   }
@@ -391,9 +403,18 @@ export async function buildProcedure(
   env: Env,
   args: Form,
   block: Block,
-  isAsync = false,
+  scopeOptions: ScopeOptions,
+  beforeArguments: JsSrc,
+  afterArguments: JsSrc,
 ): Promise<JsSrc | TranspileError> {
-  let result = functionPrelude(formId, env, args, isAsync);
+  let result = functionPrelude(
+    formId,
+    env,
+    args,
+    scopeOptions,
+    beforeArguments,
+    afterArguments,
+  );
   if (TranspileError.is(result)) {
     return result;
   }
@@ -412,11 +433,19 @@ export async function buildProcedure(
 export function buildScope(
   formId: Id,
   prefix: string,
-  isAsync = false,
+  scopeOptions: ScopeOptions,
 ): MarkedDirectWriter {
   return markAsDirectWriter(
     async (env: Env, ...block: Block): Promise<JsSrc | TranspileError> => {
-      const funcSrc = await buildFn(formId, env, [], block, isAsync);
+      const funcSrc = await buildFn(
+        formId,
+        env,
+        [],
+        block,
+        scopeOptions,
+        "",
+        "=>",
+      );
       if (TranspileError.is(funcSrc)) {
         return funcSrc;
       }

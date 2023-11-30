@@ -8,7 +8,11 @@ import {
   transpileJoinWithComma,
 } from "../../internal/transpile.js";
 import { pseudoTopLevelAssignment } from "../../internal/cu-env.js";
-import { ordinaryExpression, ordinaryStatement } from "../../internal/types.js";
+import {
+  defaultScopeOptions,
+  ordinaryExpression,
+  ordinaryStatement,
+} from "../../internal/types.js";
 
 import {
   aConst,
@@ -32,6 +36,7 @@ import {
   buildProcedure,
   buildScope,
   transpiling1,
+  transpiling1Unmarked,
   transpiling2,
   transpilingForAssignment,
   transpilingForVariableDeclaration,
@@ -223,7 +228,7 @@ export const assign = transpilingForAssignment(
   ordinaryExpression,
 );
 
-export const scope = buildScope("scope", "");
+export const scope = buildScope("scope", "", defaultScopeOptions);
 
 export const _cu$if = markAsDirectWriter(
   async (
@@ -431,7 +436,7 @@ export const fn = markAsDirectWriter(
     args: Form,
     ...block: Form[]
   ): Promise<JsSrc | TranspileError> => {
-    return await buildFn("fn", env, args, block);
+    return await buildFn("fn", env, args, block, defaultScopeOptions, "", "=>");
   },
 );
 
@@ -441,8 +446,72 @@ export const procedure = markAsDirectWriter(
     args: Form,
     ...block: Form[]
   ): Promise<JsSrc | TranspileError> => {
-    return await buildProcedure("procedure", env, args, block);
+    return await buildProcedure(
+      "procedure",
+      env,
+      args,
+      block,
+      defaultScopeOptions,
+      "",
+      "=>",
+    );
   },
+);
+
+export const generatorFn = markAsDirectWriter(
+  async (
+    env: Env,
+    args: Form,
+    ...block: Form[]
+  ): Promise<JsSrc | TranspileError> => {
+    return await buildFn(
+      "generatorFn",
+      env,
+      args,
+      block,
+      { isAsync: false, isGenerator: true },
+      "function*",
+      "",
+    );
+  },
+);
+
+export const generatorProcedure = markAsDirectWriter(
+  async (
+    env: Env,
+    args: Form,
+    ...block: Form[]
+  ): Promise<JsSrc | TranspileError> => {
+    return await buildProcedure(
+      "generatorProcedure",
+      env,
+      args,
+      block,
+      { isAsync: false, isGenerator: true },
+      "function*",
+      "",
+    );
+  },
+);
+
+export const _cu$yield = markAsDirectWriter(
+  async (
+    env: Env,
+    a: Form,
+    ...unused: Form[]
+  ): Promise<JsSrc | TranspileError> => {
+    if (!EnvF.isInGeneratorContext(env)) {
+      return new TranspileError(
+        "`yield` must be used in a generator function!",
+      );
+    }
+    return transpiling1Unmarked("yield", (s: JsSrc) => `yield ${s}`)(
+      env,
+      a,
+      ...unused,
+    );
+  },
+  ordinaryStatement,
 );
 
 export const text = markAsDirectWriter(

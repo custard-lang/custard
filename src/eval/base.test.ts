@@ -783,6 +783,24 @@ describe("evalBlock", () => {
     });
   });
 
+  describe("(generatorFn (a r g s) f o r m s)", () => {
+    testEvalBlockOf({
+      src: "(const g (generatorFn () (yield 1) (yield 2) (yield 3))) (let r 0) (forEach n (g) (assign r (plusF r n))) r",
+      expected: 6,
+      setUpConfig,
+    });
+  });
+
+  describe("(yield form)", () => {
+    testEvalBlockOf({
+      src: "(yield 1)",
+      expected: new TranspileError(
+        "`yield` must be used in a generator function!",
+      ),
+      setUpConfig,
+    });
+  });
+
   describe("(when bool f o r m s)", () => {
     testEvalBlockOf({
       src: "(let x -2) (when true (let y 905) (assign x (plusF x y))) x",
