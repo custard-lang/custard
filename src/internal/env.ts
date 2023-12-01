@@ -150,8 +150,8 @@ export function isDefinedInThisScope({ scopes }: Env, id: Id): boolean {
   return w !== undefined && !isRecursiveConst(w);
 }
 
-export function isInAsyncContext(env: Env): boolean {
-  return env.scopes[0].isAsync || isAtTopLevel(env);
+export function isInAsyncContext({ scopes: [current] }: Env): boolean {
+  return current.isAsync;
 }
 
 export function isInGeneratorContext({ scopes: [current] }: Env): boolean {
