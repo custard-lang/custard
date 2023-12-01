@@ -105,7 +105,7 @@ Elmを少し参考に
 - [ ] `if`など、文を受け取らないformで`isNonExpressionCall`なformを使ったときのエラー
     - `incrementF`とかが危ない
 - [ ] `break`, `continue`が使える箇所のvalidation, test
-- [ ] `comment`マクロ: 空のソースコードを出力。`null`も返さない
+- [ ] `annotate`マクロの修正: 二つ目以降の引数をflattenして返すようにする
 - [ ] tail call optimizationは、マクロ機能を付けた後、`recursive`を拡張するついでにやろう
     - それでもやっぱ難しいと感じたらやめよう
     - [ ] エッジケースっちゃエッジケースだけど、`(recursive (const x x))`は恐らくエラーになっちゃうのでついでに直す
