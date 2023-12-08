@@ -5,7 +5,6 @@ import {
   transpileExpression,
 } from "../../../internal/transpile.js";
 import {
-  aConst,
   aRecursiveConst,
   Block,
   Env,
@@ -18,7 +17,7 @@ import {
   TranspileError,
 } from "../../../internal/types.js";
 
-import { buildForEach, isStatement, transpileAssignee } from "../common.js";
+import { buildForEach, isStatement } from "../common.js";
 import { _cu$const } from "../safe.js";
 
 export * from "../iteration.js";
@@ -121,9 +120,12 @@ export const _cu$for = markAsDirectWriter(
   ordinaryStatement,
 );
 
-export const forEach = buildForEach(
-  (assignee: JsSrc, iterableSrc: JsSrc, statementsSrc: JsSrc): JsSrc =>
-    `for(const ${assignee} of ${iterableSrc}){${statementsSrc}}`,
+export const forEach = markAsDirectWriter(
+  buildForEach(
+    (assignee: JsSrc, iterableSrc: JsSrc, statementsSrc: JsSrc): JsSrc =>
+      `for(const ${assignee} of ${iterableSrc}){${statementsSrc}}`,
+  ),
+  ordinaryStatement,
 );
 
 export const recursive = markAsDirectWriter(

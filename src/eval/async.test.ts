@@ -71,6 +71,14 @@ describe("evalForm", () => {
     });
   });
 
+  describe("async.generatorFn", () => {
+    testEvalBlockOf({
+      src: "(const f (async.generatorFn (xs) (async.forEach x xs (yield x)))) (let r 0) (async.forEach x (f [1]) (assign r (plusF r x))) r",
+      expected: 1,
+      setUpConfig,
+    });
+  });
+
   describe("async.await", () => {
     testEvalFormOf({
       src: "(async.await (Promise.resolve 5))",
@@ -80,7 +88,7 @@ describe("evalForm", () => {
     testEvalFormOf({
       src: "(scope (async.await (Promise.resolve 5)))",
       expected: new TranspileError(
-        "`await` in a non-async function or scope is not allowed.",
+        "`async.await` in a non-async function or scope is not allowed.",
       ),
       setUpConfig,
     });
@@ -90,6 +98,13 @@ describe("evalForm", () => {
     testEvalBlockOf({
       src: "(let r 1) (async.forEach x ((async.generatorFn () (yield (async.await (Promise.resolve 0))))) (assign r (timesF r x))) r",
       expected: 0,
+      setUpConfig,
+    });
+    testEvalBlockOf({
+      src: "(scope (async.forEach x ((async.generatorFn () (yield (async.await (Promise.resolve 0)))))))",
+      expected: new TranspileError(
+        "`async.forEach` in a non-async function or scope is not allowed.",
+      ),
       setUpConfig,
     });
   });

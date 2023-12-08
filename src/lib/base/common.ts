@@ -28,6 +28,8 @@ import {
   Writer,
   ScopeOptions,
   aConst,
+  isMarkedDirectExportableStatementWriter,
+  DirectWriter,
 } from "../../internal/types.js";
 
 import {
@@ -40,7 +42,7 @@ export function isStatement(env: Env, form: Form): form is Call {
 }
 
 export function isExportableStatement(env: Env, form: Form): form is Call {
-  return isCallOf(env, form, isMarkedDirectStatementWriter);
+  return isCallOf(env, form, isMarkedDirectExportableStatementWriter);
 }
 
 function isCallOf(
@@ -308,11 +310,10 @@ export function transpilingForVariableMutation(
       );
     }
 
-    const r = EnvF.findWithIsAtTopLevel(env, sym.v);
-    // TODO: Support namespace?
+    const r = EnvF.findWithIsAtTopLevel(env, sym);
     if (r === undefined || !isVar(r.writer)) {
       return new TranspileError(
-        `The argument to \`${formId}\` must be a name of a variable declared by \`let\`!`,
+        `\`${sym.v}\` is not a name of a variable declared by \`let\` or a mutable property!`,
       );
     }
 
@@ -398,7 +399,7 @@ export async function buildFn(
   }
 
   if (isStatement(env, lastStatement)) {
-    return functionPostlude(env, `${result}  ${lastSrc};\n  return;\n`);
+    return functionPostlude(env, `${result}  ${lastSrc};\n`);
   }
   return functionPostlude(env, `${result}  return ${lastSrc};\n`);
 }
@@ -461,47 +462,44 @@ export function buildScope(
 
 export function buildForEach(
   build: (assignee: JsSrc, iterableSrc: JsSrc, statementsSrc: JsSrc) => JsSrc,
-): MarkedDirectWriter {
-  return markAsDirectWriter(
-    async (
-      env: Env,
-      id: Form,
-      iterable: Form,
-      ...statements: Block
-    ): Promise<JsSrc | TranspileError> => {
-      EnvF.pushInherited(env);
+): DirectWriter {
+  return async (
+    env: Env,
+    id: Form,
+    iterable: Form,
+    ...statements: Block
+  ): Promise<JsSrc | TranspileError> => {
+    EnvF.pushInherited(env);
 
-      if (id === undefined) {
-        return new TranspileError(
-          "No variable name given to a `forEach` statement!",
-        );
-      }
+    if (id === undefined) {
+      return new TranspileError(
+        "No variable name given to a `forEach` statement!",
+      );
+    }
 
-      const assignee = transpileAssignee("forEach", env, id, aConst);
-      if (TranspileError.is(assignee)) {
-        return assignee;
-      }
+    const assignee = transpileAssignee("forEach", env, id, aConst);
+    if (TranspileError.is(assignee)) {
+      return assignee;
+    }
 
-      if (iterable === undefined) {
-        return new TranspileError(
-          "No iterable expression given to a `forEach` statement!",
-        );
-      }
+    if (iterable === undefined) {
+      return new TranspileError(
+        "No iterable expression given to a `forEach` statement!",
+      );
+    }
 
-      const iterableSrc = await transpileExpression(iterable, env);
-      if (TranspileError.is(iterableSrc)) {
-        return iterableSrc;
-      }
+    const iterableSrc = await transpileExpression(iterable, env);
+    if (TranspileError.is(iterableSrc)) {
+      return iterableSrc;
+    }
 
-      const statementsSrc = await transpileBlock(statements, env);
-      if (TranspileError.is(statementsSrc)) {
-        return statementsSrc;
-      }
+    const statementsSrc = await transpileBlock(statements, env);
+    if (TranspileError.is(statementsSrc)) {
+      return statementsSrc;
+    }
 
-      EnvF.pop(env);
+    EnvF.pop(env);
 
-      return build(assignee, iterableSrc, statementsSrc);
-    },
-    ordinaryStatement,
-  );
+    return build(assignee, iterableSrc, statementsSrc);
+  };
 }

@@ -1,12 +1,12 @@
-import { assertNonNull, expectNever } from "../util/error.js";
+import { expectNever } from "../util/error.js";
 
 import {
   Block,
+  Call,
   canBePseudoTopLevelReferenced,
   CuSymbol,
   DynamicVar,
   Form,
-  Id,
   isContextualKeyword,
   isCuSymbol,
   isDynamicVar,
@@ -294,17 +294,13 @@ export async function transpileString(
   return transpileBlock(forms, env);
 }
 
-export function asCall(form: Form): [Id, ...Form[]] | undefined {
+export function asCall(form: Form): Call | undefined {
   if (!(form instanceof Array)) {
     return;
   }
   const id = form[0];
-  if (isCuSymbol(id)) {
-    return [id.v, ...form.slice(1)];
-  }
-  if (isPropertyAccess(id)) {
-    const msg = "Assertion failure: an empty PropertyAccess";
-    return [assertNonNull(id.v[0], msg), ...form.slice(1)];
+  if (isCuSymbol(id) || isPropertyAccess(id)) {
+    return [id, ...form.slice(1)];
   }
 }
 

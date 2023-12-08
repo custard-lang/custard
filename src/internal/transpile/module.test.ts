@@ -9,6 +9,7 @@ import { transpileBlock } from "../transpile";
 import { transpileModule } from "../transpile-state";
 import {
   Block,
+  cuSymbol,
   Env,
   isNamespace,
   JsSrc,
@@ -57,7 +58,7 @@ describe("transpileBlock", () => {
         expect(src.trim()).toEqual(
           'import * as a from "../../../test-assets/a.mjs";',
         );
-        expect(EnvF.find(env, "a")).toSatisfy(isNamespace);
+        expect(EnvF.find(env, cuSymbol("a"))).toSatisfy(isNamespace);
       });
 
       test("adds identifiers in the module, and returns an import for a node library in JavaScript", async () => {
@@ -66,14 +67,14 @@ describe("transpileBlock", () => {
         expect(src.trim()).toEqual(
           'import * as typescript from "../../../node_modules/typescript/lib/typescript.js";',
         );
-        expect(EnvF.find(env, "typescript")).toSatisfy(isNamespace);
+        expect(EnvF.find(env, cuSymbol("typescript"))).toSatisfy(isNamespace);
       });
 
       test("adds identifiers in the module, and returns an import for a node library in Node.js", async () => {
         const [jsMod, env] = await subject("(import fs)");
         const src = assertNonError(jsMod) as JsSrc;
         expect(src.trim()).toEqual('import * as fs from "node:fs/promises";');
-        expect(EnvF.find(env, "fs")).toSatisfy(isNamespace);
+        expect(EnvF.find(env, cuSymbol("fs"))).toSatisfy(isNamespace);
       });
     });
 
@@ -85,7 +86,7 @@ describe("transpileBlock", () => {
             "No module `nonExistent` registered in the Module Paths",
           ),
         );
-        expect(EnvF.find(env, "a")).toBeUndefined();
+        expect(EnvF.find(env, cuSymbol("a"))).toBeUndefined();
       });
     });
   });
@@ -106,6 +107,17 @@ describe("transpileBlock", () => {
     test("returns an error if an export is not a const/let declaration", async () => {
       const [r, _env] = await subject(
         "(importAnyOf base)(export (fn () none))",
+      );
+      expect(r).toEqual(
+        new TranspileError(
+          "The arguments of `export` must be a const/let declaration.",
+        ),
+      );
+    });
+
+    test("returns an error if an export is not an exportable statement", async () => {
+      const [r, _env] = await subject(
+        "(importAnyOf base)(export (when true none))",
       );
       expect(r).toEqual(
         new TranspileError(

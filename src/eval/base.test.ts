@@ -617,7 +617,9 @@ describe("evalBlock", () => {
 
     testEvalBlockOf({
       src: "(const y 5)(assign y 3)",
-      expected: new TranspileError('Variable "y" is NOT declared by `let`!'),
+      expected: new TranspileError(
+        "`y` is not a name of a variable declared by `let` or a mutable property!",
+      ),
       setUpConfig,
     });
 
@@ -906,7 +908,7 @@ describe("evalBlock", () => {
     testEvalBlockOf({
       src: "(const x 0)(incrementF x) x",
       expected: new TranspileError(
-        "The argument to `incrementF` must be a name of a variable declared by `let`!",
+        "`x` is not a name of a variable declared by `let` or a mutable property!",
       ),
       setUpConfig,
     });
@@ -920,14 +922,14 @@ describe("evalBlock", () => {
     testEvalBlockOf({
       src: "(incrementF decrementF) 1",
       expected: new TranspileError(
-        "The argument to `incrementF` must be a name of a variable declared by `let`!",
+        "`decrementF` is not a name of a variable declared by `let` or a mutable property!",
       ),
       setUpConfig,
     });
     testEvalBlockOf({
       src: "(incrementF unknown) 1",
       expected: new TranspileError(
-        "The argument to `incrementF` must be a name of a variable declared by `let`!",
+        "`unknown` is not a name of a variable declared by `let` or a mutable property!",
       ),
       setUpConfig,
     });
@@ -949,7 +951,7 @@ describe("evalBlock", () => {
     testEvalBlockOf({
       src: "(const x 0)(decrementF x) x",
       expected: new TranspileError(
-        "The argument to `decrementF` must be a name of a variable declared by `let`!",
+        "`x` is not a name of a variable declared by `let` or a mutable property!",
       ),
       setUpConfig,
     });
@@ -963,14 +965,14 @@ describe("evalBlock", () => {
     testEvalBlockOf({
       src: "(decrementF incrementF) 1",
       expected: new TranspileError(
-        "The argument to `decrementF` must be a name of a variable declared by `let`!",
+        "`incrementF` is not a name of a variable declared by `let` or a mutable property!",
       ),
       setUpConfig,
     });
     testEvalBlockOf({
       src: "(decrementF unknown) 1",
       expected: new TranspileError(
-        "The argument to `decrementF` must be a name of a variable declared by `let`!",
+        "`unknown` is not a name of a variable declared by `let` or a mutable property!",
       ),
       setUpConfig,
     });

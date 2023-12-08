@@ -4,6 +4,7 @@ import {
   Env,
   Form,
   markAsDirectWriter,
+  ordinaryStatement,
   TranspileError,
 } from "../internal/types.js";
 import { JsSrc } from "../types.js";
@@ -19,7 +20,7 @@ export const _cu$await = markAsDirectWriter(
   (env: Env, a: Form, ...unused: Form[]) => {
     if (!EnvF.isInAsyncContext(env)) {
       return new TranspileError(
-        "`await` in a non-async function or scope is not allowed.",
+        "`async.await` in a non-async function or scope is not allowed.",
       );
     }
     return transpiling1Unmarked("await", (s: JsSrc) => `await ${s}`)(
@@ -104,7 +105,17 @@ export const generatorProcedure = markAsDirectWriter(
 
 export const scope = buildScope("scope", "async ", defaultAsyncScopeOptions);
 
-export const forEach = buildForEach(
-  (assignee: JsSrc, iterableSrc: JsSrc, statementsSrc: JsSrc): JsSrc =>
-    `for await (const ${assignee} of ${iterableSrc}){${statementsSrc}}`,
+export const forEach = markAsDirectWriter(
+  async (env: Env, ...forms: Form[]): Promise<JsSrc | TranspileError> => {
+    if (!EnvF.isInAsyncContext(env)) {
+      return new TranspileError(
+        "`async.forEach` in a non-async function or scope is not allowed.",
+      );
+    }
+    return buildForEach(
+      (assignee: JsSrc, iterableSrc: JsSrc, statementsSrc: JsSrc): JsSrc =>
+        `for await (const ${assignee} of ${iterableSrc}){${statementsSrc}}`,
+    )(env, ...forms);
+  },
+  ordinaryStatement,
 );

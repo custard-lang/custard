@@ -10,6 +10,7 @@ import {
 import { pseudoTopLevelAssignment } from "../../internal/cu-env.js";
 import {
   defaultScopeOptions,
+  isVar,
   ordinaryExpression,
   ordinaryStatement,
 } from "../../internal/types.js";
@@ -23,7 +24,6 @@ import {
   Env,
   Form,
   Id,
-  isConst,
   isCuSymbol,
   JsSrc,
   LiteralObject,
@@ -176,10 +176,10 @@ export const assign = transpilingForAssignment(
     exp: JsSrc,
   ): Promise<JsSrc | TranspileError> => {
     function assignStatement(sym: CuSymbol, e: JsSrc): JsSrc | TranspileError {
-      const r = EnvF.findWithIsAtTopLevel(env, sym.v);
-      if (r === undefined || isConst(r.writer)) {
+      const r = EnvF.findWithIsAtTopLevel(env, sym);
+      if (r === undefined || !isVar(r.writer)) {
         return new TranspileError(
-          `Variable "${sym.v}" is NOT declared by \`let\`!`,
+          `\`${sym.v}\` is not a name of a variable declared by \`let\` or a mutable property!`,
         );
       }
       if (EnvF.writerIsAtReplTopLevel(env, r)) {
@@ -246,7 +246,7 @@ export const _cu$if = markAsDirectWriter(
     const falseForms: Form[] = [];
     let elseIsFound = false;
     for (const form of rest) {
-      if (isCuSymbol(form) && EnvF.find(env, form.v) === _cu$else) {
+      if (isCuSymbol(form) && EnvF.find(env, form) === _cu$else) {
         if (elseIsFound) {
           return new TranspileError(
             "`else` is specified more than once in an `if` expression!",
@@ -310,8 +310,8 @@ export const _cu$try = markAsDirectWriter(
       let isFinally = false;
       let transpiled: JsSrc | TranspileError;
       if (isCuSymbol(form)) {
-        isCatch = EnvF.find(env, form.v) === _cu$catch;
-        isFinally = EnvF.find(env, form.v) === _cu$finally;
+        isCatch = EnvF.find(env, form) === _cu$catch;
+        isFinally = EnvF.find(env, form) === _cu$finally;
       }
       switch (state) {
         case initial:
