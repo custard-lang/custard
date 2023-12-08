@@ -131,3 +131,5 @@ Elmを少し参考に
 - [ ] rest構文: 関数の引数、配列リテラル、オブジェクトリテラル
 - [ ] 入れ子のdestructuring
 - [ ] exportのvalidation: 複数同じ名前をexportしないように。普通の`export`は`default`を受け付けない（代わりに`exportDefault`を使えという
+- [ ] ESLintの設定を改善: <https://zenn.dev/teppeis/articles/2023-04-typescript-5_0-verbatim-module-syntax>
+- [ ] `undefined`の代わりに`null`を使う
