@@ -234,13 +234,15 @@ export async function findModule(
     path.resolve(currentFileDir),
     modFullPath,
   );
+  const relPath =
+    /^\.\.?[\/\\]/.test(uncanonicalPath) ? uncanonicalPath : `./${uncanonicalPath}`;
 
   return {
     url: `file://${modFullPath}`,
     relativePath:
       path.sep === "/"
-        ? uncanonicalPath
-        : uncanonicalPath.replace(new RegExp(escapeRegExp(path.sep), "g"), "/"),
+        ? relPath
+        : relPath.replace(new RegExp(escapeRegExp(path.sep), "g"), "/"),
   };
 }
 

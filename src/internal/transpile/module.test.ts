@@ -26,6 +26,7 @@ describe("transpileBlock", () => {
     const modulePaths: ModulePaths = new Map();
     modulePaths.set("base", `${standardModuleRoot}/base.js`);
     modulePaths.set("a", "../../../test-assets/a.mjs");
+    modulePaths.set("sameDir", "./same-dir.js");
     modulePaths.set(
       "typescript",
       "../../../node_modules/typescript/lib/typescript.js",
@@ -52,7 +53,7 @@ describe("transpileBlock", () => {
 
   describe("(import id)", () => {
     describe("given an id registered in the ModulePaths", () => {
-      test("adds identifiers in the module, and returns an import for a relative path in JavaScript", async () => {
+      test("adds identifiers in the module, and returns an import for a relative path to the module", async () => {
         const [jsMod, env] = await subject("(import a)");
         const src = assertNonError(jsMod) as JsSrc;
         expect(src.trim()).toEqual(
@@ -61,7 +62,16 @@ describe("transpileBlock", () => {
         expect(EnvF.find(env, cuSymbol("a"))).toSatisfy(isNamespace);
       });
 
-      test("adds identifiers in the module, and returns an import for a node library in JavaScript", async () => {
+      test("adds identifiers in the module, and returns an import for a relative path to the module at the same directory", async () => {
+        const [jsMod, env] = await subject("(import sameDir)");
+        const src = assertNonError(jsMod) as JsSrc;
+        expect(src.trim()).toEqual(
+          'import * as sameDir from "./same-dir.js";',
+        );
+        expect(EnvF.find(env, cuSymbol("sameDir"))).toSatisfy(isNamespace);
+      });
+
+      test("adds identifiers in the module, and returns an import for a node library in node_modules", async () => {
         const [jsMod, env] = await subject("(import typescript)");
         const src = assertNonError(jsMod) as JsSrc;
         expect(src.trim()).toEqual(
@@ -70,7 +80,7 @@ describe("transpileBlock", () => {
         expect(EnvF.find(env, cuSymbol("typescript"))).toSatisfy(isNamespace);
       });
 
-      test("adds identifiers in the module, and returns an import for a node library in Node.js", async () => {
+      test("adds identifiers in the module, and returns an import for a node built-in library", async () => {
         const [jsMod, env] = await subject("(import fs)");
         const src = assertNonError(jsMod) as JsSrc;
         expect(src.trim()).toEqual('import * as fs from "node:fs/promises";');
