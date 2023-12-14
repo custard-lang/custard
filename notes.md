@@ -127,7 +127,6 @@ Elmを少し参考に
         - nodeのライブラリ作ったり読んだりしてて思うのは、複雑なライブラリの内部は徹底的に非同期を排した作りにして外からステップ実行できるようにしないと、内部キャッシュのライフサイクル管理できなくなる
 - [ ] providedSymbolsConfig.modulePaths における `npm:`の解釈
 - [ ] public APIの整理: 特に src/types.ts
-- [ ] 配列のdestructuring: `let/const/assign`, `fn`, `forEach`
 - [ ] rest構文: 関数の引数、配列リテラル、オブジェクトリテラル
 - [ ] 入れ子のdestructuring
 - [ ] exportのvalidation: 複数同じ名前をexportしないように。普通の`export`は`default`を受け付けない（代わりに`exportDefault`を使えという
