@@ -28,7 +28,6 @@ import {
   Id,
   isCuSymbol,
   JsSrc,
-  LiteralObject,
   markAsDirectWriter,
   markAsDynamicVar,
   TranspileError,
@@ -172,12 +171,7 @@ export const not = transpiling1("not", (a: JsSrc) => `!(${a})`);
 
 export const assign = transpilingForAssignment(
   "assign",
-  async (
-    env: Env,
-    id: Form,
-    exp: JsSrc,
-  ): Promise<JsSrc | TranspileError> => {
-
+  async (env: Env, id: Form, exp: JsSrc): Promise<JsSrc | TranspileError> => {
     function assignStatement(sym: CuSymbol, e: JsSrc): JsSrc | TranspileError {
       const r = EnvF.findWithIsAtTopLevel(env, sym);
       if (r === undefined || !isVar(r.writer)) {

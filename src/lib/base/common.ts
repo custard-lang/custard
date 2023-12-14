@@ -20,7 +20,6 @@ import {
   isMarkedDirectStatementWriter,
   isVar,
   JsSrc,
-  LiteralObject,
   markAsDirectWriter,
   MarkedDirectWriter,
   ordinaryStatement,
@@ -127,11 +126,7 @@ export function transpiling2(
 // TODO: Handle assignment to reserved words etc.
 export function transpilingForAssignment(
   formId: Id,
-  f: (
-    env: Env,
-    id: Form,
-    exp: JsSrc,
-  ) => Promise<JsSrc | TranspileError>,
+  f: (env: Env, id: Form, exp: JsSrc) => Promise<JsSrc | TranspileError>,
   kind: DirectWriterKindFlags = exportableStatement,
 ): MarkedDirectWriter {
   return markAsDirectWriter(
