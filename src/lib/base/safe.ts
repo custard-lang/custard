@@ -10,6 +10,8 @@ import {
 import { pseudoTopLevelAssignment } from "../../internal/cu-env.js";
 import {
   defaultScopeOptions,
+  isLiteralArray,
+  isLiteralObject,
   isVar,
   ordinaryExpression,
   ordinaryStatement,
@@ -172,9 +174,10 @@ export const assign = transpilingForAssignment(
   "assign",
   async (
     env: Env,
-    id: CuSymbol | LiteralObject,
+    id: Form,
     exp: JsSrc,
   ): Promise<JsSrc | TranspileError> => {
+
     function assignStatement(sym: CuSymbol, e: JsSrc): JsSrc | TranspileError {
       const r = EnvF.findWithIsAtTopLevel(env, sym);
       if (r === undefined || !isVar(r.writer)) {
@@ -187,43 +190,71 @@ export const assign = transpilingForAssignment(
       }
       return `${sym.v}=${e}`;
     }
+
     if (isCuSymbol(id)) {
       return assignStatement(id, exp);
     }
-    const { id: tmpVar, statement } = EnvF.tmpVarOf(env, exp);
-    let src = statement;
-    for (const kvOrSym of id.v) {
-      if (isCuSymbol(kvOrSym)) {
-        const assignment = assignStatement(kvOrSym, `${tmpVar}.${kvOrSym.v}`);
+
+    if (isLiteralObject(id)) {
+      const { id: tmpVar, statement } = EnvF.tmpVarOf(env, exp);
+      let src = statement;
+      for (const kvOrSym of id.v) {
+        if (isCuSymbol(kvOrSym)) {
+          const assignment = assignStatement(kvOrSym, `${tmpVar}.${kvOrSym.v}`);
+          if (TranspileError.is(assignment)) {
+            return assignment;
+          }
+          src = `${src}${assignment}\n`;
+          continue;
+        }
+        const [k, v] = kvOrSym;
+        if (!isCuSymbol(v)) {
+          return new TranspileError(
+            `Assignee must be a symbol, but ${JSON.stringify(v)} is not!`,
+          );
+        }
+
+        let assignment: JsSrc | TranspileError;
+        if (isCuSymbol(k)) {
+          assignment = assignStatement(v, `${tmpVar}.${k.v}`);
+        } else {
+          const kSrc = await transpileExpression(k, env);
+          if (TranspileError.is(kSrc)) {
+            return kSrc;
+          }
+          assignment = assignStatement(v, `${tmpVar}${kSrc}`);
+        }
         if (TranspileError.is(assignment)) {
           return assignment;
         }
         src = `${src}${assignment}\n`;
-        continue;
       }
-      const [k, v] = kvOrSym;
-      if (!isCuSymbol(v)) {
+      return src;
+    }
+
+    if (isLiteralArray(id)) {
+      const { id: tmpVar, statement } = EnvF.tmpVarOf(env, exp);
+      let src = statement;
+      for (const [k, v] of id.v.entries()) {
+        if (isCuSymbol(v)) {
+          const assignment = assignStatement(v, `${tmpVar}[${k}]`);
+          if (TranspileError.is(assignment)) {
+            return assignment;
+          }
+          src = `${src}${assignment}\n`;
+          continue;
+        }
+        const vJson = JSON.stringify(v);
         return new TranspileError(
-          `Assignee must be a symbol, but ${JSON.stringify(v)} is not!`,
+          `assign's assignee must be a symbol, but ${vJson} is not!`,
         );
       }
-
-      let assignment: JsSrc | TranspileError;
-      if (isCuSymbol(k)) {
-        assignment = assignStatement(v, `${tmpVar}.${k.v}`);
-      } else {
-        const kSrc = await transpileExpression(k, env);
-        if (TranspileError.is(kSrc)) {
-          return kSrc;
-        }
-        assignment = assignStatement(v, `${tmpVar}${kSrc}`);
-      }
-      if (TranspileError.is(assignment)) {
-        return assignment;
-      }
-      src = `${src}${assignment}\n`;
+      return src;
     }
-    return src;
+    const vJson = JSON.stringify(id);
+    return new TranspileError(
+      `assign's assignee must be a symbol, but ${vJson} is not!`,
+    );
   },
   ordinaryExpression,
 );

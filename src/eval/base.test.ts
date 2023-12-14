@@ -706,6 +706,24 @@ describe("evalBlock", () => {
       expected: [0, 1],
       setUpConfig,
     });
+
+    testEvalBlockOf({
+      src: "(const [y x] [3 2]) [x, y]",
+      expected: [2, 3],
+      setUpConfig,
+    });
+
+    testEvalBlockOf({
+      src: "(let [y x] [3 5]) [x, y]",
+      expected: [5, 3],
+      setUpConfig,
+    });
+
+    testEvalBlockOf({
+      src: "(let [ x y ] [ 3 1 ]) (assign [x y] [7 8]) [y x]",
+      expected: [8, 7],
+      setUpConfig,
+    });
   });
 
   describe('{object: "literal"}', () => {
@@ -768,6 +786,24 @@ describe("evalBlock", () => {
     testEvalBlockOf({
       src: "(const f (fn (x) (decrementF x))) (f 9)",
       expected: undefined,
+      setUpConfig,
+    });
+
+    testEvalBlockOf({
+      src: "(const f (fn ({ x, y }) (plusF x y))) (f { x: 1, y: 9 })",
+      expected: 10,
+      setUpConfig,
+    });
+
+    testEvalBlockOf({
+      src: "(const f (fn ({ x: v1, y: v2 }) (minusF v1 v2))) (f { x: 1, y: 9 })",
+      expected: -8,
+      setUpConfig,
+    });
+
+    testEvalBlockOf({
+      src: "(const f (fn ([v1, v2]) (timesF v1 v2))) (f [2 9])",
+      expected: 18,
       setUpConfig,
     });
   });
@@ -992,6 +1028,11 @@ describe("evalBlock", () => {
     testEvalBlockOf({
       src: "(let x 0)(forEach { v1, v2 } [{ v1: 1, v2: 1 } { v1: 2, v2: 2 } { v1: 3, v2: 3 }] (assign x (plusF (plusF x v1) v2))) x",
       expected: 12,
+      setUpConfig,
+    });
+    testEvalBlockOf({
+      src: "(let x 0)(forEach [v1 v2] [[2 1] [3 2] [4 3]] (assign x (plusF (plusF x v1) v2))) x",
+      expected: 15,
       setUpConfig,
     });
     testEvalBlockOf({

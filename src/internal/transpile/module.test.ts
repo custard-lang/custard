@@ -65,9 +65,7 @@ describe("transpileBlock", () => {
       test("adds identifiers in the module, and returns an import for a relative path to the module at the same directory", async () => {
         const [jsMod, env] = await subject("(import sameDir)");
         const src = assertNonError(jsMod) as JsSrc;
-        expect(src.trim()).toEqual(
-          'import * as sameDir from "./same-dir.js";',
-        );
+        expect(src.trim()).toEqual('import * as sameDir from "./same-dir.js";');
         expect(EnvF.find(env, cuSymbol("sameDir"))).toSatisfy(isNamespace);
       });
 

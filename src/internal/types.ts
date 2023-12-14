@@ -11,6 +11,10 @@ export type Form = CuArray | LiteralArray | LiteralObject | Atom;
 
 export type LiteralArray = { t: "LiteralArray"; v: CuArray };
 
+export function isLiteralArray(v: Form): v is LiteralArray {
+  return v !== undefined && (v as Record<string, unknown>).t === "LiteralArray";
+}
+
 export type CuArray = Form[];
 
 export type LiteralObject = {

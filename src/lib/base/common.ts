@@ -30,6 +30,7 @@ import {
   aConst,
   isMarkedDirectExportableStatementWriter,
   DirectWriter,
+  isLiteralArray,
 } from "../../internal/types.js";
 
 import {
@@ -128,7 +129,7 @@ export function transpilingForAssignment(
   formId: Id,
   f: (
     env: Env,
-    id: CuSymbol | LiteralObject,
+    id: Form,
     exp: JsSrc,
   ) => Promise<JsSrc | TranspileError>,
   kind: DirectWriterKindFlags = exportableStatement,
@@ -138,11 +139,6 @@ export function transpilingForAssignment(
       if (another != null) {
         return new TranspileError(
           `The number of arguments to \`${formId}\` must be 2!`,
-        );
-      }
-      if (!isCuSymbol(id) && !isLiteralObject(id)) {
-        return new TranspileError(
-          `${JSON.stringify(id)} is must be a symbol or key values of symbols!`,
         );
       }
 
@@ -163,7 +159,7 @@ export function transpilingForVariableDeclaration(
 ): MarkedDirectWriter {
   return transpilingForAssignment(
     formId,
-    async (env: Env, sym: CuSymbol | LiteralObject, exp: JsSrc) => {
+    async (env: Env, sym: Form, exp: JsSrc) => {
       let r: undefined | TranspileError;
 
       if (EnvF.isAtReplTopLevel(env)) {
@@ -174,46 +170,77 @@ export function transpilingForVariableDeclaration(
           }
           return pseudoTopLevelAssignment(sym.v, exp);
         }
-        const { id: tmpVar, statement } = EnvF.tmpVarOf(env, exp);
-        let src = statement;
-        for (const kvOrSym of sym.v) {
-          if (isCuSymbol(kvOrSym)) {
-            r = tryToSet(kvOrSym, env, newWriter);
+
+        if (isLiteralObject(sym)) {
+          const { id: tmpVar, statement } = EnvF.tmpVarOf(env, exp);
+          let src = statement;
+          for (const kvOrSym of sym.v) {
+            if (isCuSymbol(kvOrSym)) {
+              r = tryToSet(kvOrSym, env, newWriter);
+              if (TranspileError.is(r)) {
+                return r;
+              }
+              const expDotId = `${tmpVar}.${kvOrSym.v}`;
+              src = `${src}\n${pseudoTopLevelAssignment(kvOrSym.v, expDotId)};`;
+              continue;
+            }
+            const [k, v] = kvOrSym;
+
+            let expDotId: JsSrc | TranspileError;
+            if (isCuSymbol(k)) {
+              expDotId = `${tmpVar}.${k.v}`;
+            } else {
+              // TODO: expect k is an LiteralArray
+              const kSrc = await transpileExpression(k, env);
+              if (TranspileError.is(kSrc)) {
+                return kSrc;
+              }
+              expDotId = `${tmpVar}${kSrc}`;
+            }
+
+            if (!isCuSymbol(v)) {
+              const vJson = JSON.stringify(v);
+              return new TranspileError(
+                `${formId}'s assignee must be a symbol, but ${vJson} is not!`,
+              );
+            }
+            r = tryToSet(v, env, newWriter);
             if (TranspileError.is(r)) {
               return r;
             }
-            const expDotId = `${tmpVar}.${kvOrSym.v}`;
-            src = `${src}\n${pseudoTopLevelAssignment(kvOrSym.v, expDotId)};`;
-            continue;
+            src = `${src}\n${pseudoTopLevelAssignment(v.v, expDotId)};`;
           }
-          const [k, v] = kvOrSym;
+          return src;
+        }
 
-          let expDotId: JsSrc | TranspileError;
-          if (isCuSymbol(k)) {
-            expDotId = `${tmpVar}.${k.v}`;
-          } else {
-            // TODO: expect k is an LiteralArray
-            const kSrc = await transpileExpression(k, env);
-            if (TranspileError.is(kSrc)) {
-              return kSrc;
+        if (isLiteralArray(sym)) {
+          const { id: tmpVar, statement } = EnvF.tmpVarOf(env, exp);
+          let src = statement;
+          for (const [k, v] of sym.v.entries()) {
+            if (isCuSymbol(v)) {
+              r = tryToSet(v, env, newWriter);
+              if (TranspileError.is(r)) {
+                return r;
+              }
+              const expDotId = `${tmpVar}[${k}]`;
+              src = `${src}\n${pseudoTopLevelAssignment(v.v, expDotId)};`;
+              continue;
             }
-            expDotId = `${tmpVar}${kSrc}`;
-          }
-
-          if (!isCuSymbol(v)) {
             const vJson = JSON.stringify(v);
             return new TranspileError(
               `${formId}'s assignee must be a symbol, but ${vJson} is not!`,
             );
           }
-          r = tryToSet(v, env, newWriter);
-          if (TranspileError.is(r)) {
-            return r;
-          }
-          src = `${src}\n${pseudoTopLevelAssignment(v.v, expDotId)};`;
+
+          return src;
         }
-        return src;
+
+        const symJson = JSON.stringify(sym);
+        return new TranspileError(
+          `${formId}'s assignee must be a symbol, but ${symJson} is not!`,
+        );
       }
+
       const assignee = transpileAssignee(formId, env, sym, newWriter);
       if (TranspileError.is(assignee)) {
         return assignee;
@@ -271,6 +298,25 @@ export function transpileAssignee(
       assignee = `${assignee}${k.v}:${v.v},`;
     }
     return `${assignee}}`;
+  }
+  if (isLiteralArray(sym)) {
+    let assignee = "[";
+    for (const form of sym.v) {
+      if (isCuSymbol(form)) {
+        const r0 = tryToSet(form, env, newWriter);
+        if (TranspileError.is(r0)) {
+          return r0;
+        }
+        assignee = `${assignee}${`${form.v},`}`;
+        continue;
+      }
+
+      const formJson = JSON.stringify(form);
+      return new TranspileError(
+        `${formId}'s assignee must be a symbol, but ${formJson} is not!`,
+      );
+    }
+    return `${assignee}]`;
   }
   const symJson = JSON.stringify(sym);
   return new TranspileError(

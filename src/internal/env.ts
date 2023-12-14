@@ -234,8 +234,9 @@ export async function findModule(
     path.resolve(currentFileDir),
     modFullPath,
   );
-  const relPath =
-    /^\.\.?[\/\\]/.test(uncanonicalPath) ? uncanonicalPath : `./${uncanonicalPath}`;
+  const relPath = /^\.\.?[\/\\]/.test(uncanonicalPath)
+    ? uncanonicalPath
+    : `./${uncanonicalPath}`;
 
   return {
     url: `file://${modFullPath}`,
