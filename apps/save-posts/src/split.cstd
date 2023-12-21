@@ -1,0 +1,53 @@
+(import iso8601ForFs)
+
+(const
+  loadJsonArrayElementsFromFiles
+  (async.generatorFn (paths)
+    (forEach p paths
+      (forEach e (JSON.parse (async.await (fs.readFile p "utf-8")))
+        [ (yield [p e])]))))
+
+(annotate
+  "Utility function that should be in the standard library of Custard."
+  (const
+    slicesOf
+    (async.generatorFn (iterator n)
+      (let current [])
+      (async.forEach e iterator
+        (array.push current e)
+        (when (equals current.length n)
+          (yield current)
+          (assign current [])))
+      (when (isGreaterThan current.length 0)
+        (yield current)))))
+
+(const targetPaths (array.slice process.argv 2))
+(targetPaths.sort)
+
+(async.forEach slice
+  (slicesOf (loadJsonArrayElementsFromFiles targetPaths) 20)
+  (const [p latestPost] (array.first slice))
+
+  (const
+    outName
+    (path.join
+      (path.dirname p)
+      (iso8601ForFs.toFileName latestPost.indexedAt ".json")))
+
+  (console.log "Writing" outName)
+  (annotate
+    "Rename the destination file. If it doesn't exist, that's fine."
+    (async.await
+      (async.scope
+        (try
+          (async.await
+            (fs.rename outName (text outName ".bk")))
+          catch e
+          (when (notEquals e.code "ENOENT")
+            (throw e))))))
+
+  (const
+    postsInSlice
+    (array.map slice (fn ([_ post]) post)))
+  (async.await
+    (fs.writeFile outName (JSON.stringify postsInSlice none 2))))

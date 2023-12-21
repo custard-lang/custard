@@ -1,0 +1,5 @@
+(export
+  (const
+    toFileName
+    (fn (iso8601String suffix)
+      (text (iso8601String.replaceAll ":" "_") suffix))))

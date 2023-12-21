@@ -1,3 +1,5 @@
+(import iso8601ForFs)
+
 (const agent (new atproto.default.BskyAgent { service: "https://bsky.social/"}))
 
 (const myDid "did:plc:ccikl4jnjjzzap7ifyvce7d7")
@@ -77,7 +79,7 @@
 (when (isGreaterThanOrEquals posts.length 1)
   (const
     outName
-    (text (latestPost.indexedAt.replaceAll ":" "_") ".json"))
+    (iso8601ForFs.toFileName latestPost.indexedAt ".json"))
   (const
     outJson (JSON.stringify posts none 2))
   (console.log "Saving" posts.length "posts on" outName)
