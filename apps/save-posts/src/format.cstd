@@ -28,7 +28,7 @@
     (string.replace
       t
       (annotate
-        "Ref." "https://pandoc-doc-ja.readthedocs.io/ja/latest/users-guide.html#backslash-escapes"
+        "Ref. https://pandoc-doc-ja.readthedocs.io/ja/latest/users-guide.html#backslash-escapes"
         (new RegExp "[\\\\`*_{}\\[\\]()>#+-\\.!\n]|(?:  +)" "g"))
       (fn (m)
         (when (string.includes "\\`*_{}[]()>#+-.!" m)
@@ -109,10 +109,24 @@
     (const
       imageParagraph
       (fn ({ thumb, fullsize, alt, aspectRatio })
+        (const
+          style
+          (fn ()
+            (if (isNone aspectRatio)
+              (text
+                "max-width: 100%;"
+                "height: auto;"
+                )
+              else
+              (text
+                "aspect-ratio:"
+                aspectRatio.width
+                " / "
+                aspectRatio.height))))
         (text
           "\n\n"
           "<a href=\"" fullsize "\">"
-          "<img src=\"" thumb "\" style=\"aspect-ratio: " aspectRatio.width " / " aspectRatio.height "\"/>"
+          "<img src=\"" thumb "\" style=\"" (style) "\"/>"
           "</a>")))
 
     (when (equals p.embed.$type "app.bsky.embed.images#view")
