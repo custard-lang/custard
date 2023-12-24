@@ -33,25 +33,17 @@
 
 (const
   lastState
-  (async.await
-    (async.scope
-      (try
-        (return
-          (JSON.parse
-            (async.await
-              (fs.readFile statePath))))
-        catch e
-        (when (notEquals e.code "ENOENT") (throw e)))
-      (return { indexedAt: 0 }))))
-(const savedIndexedAt (new Date lastState.indexedAt))
+  (JSON.parse
+    (async.await
+      (fs.readFile statePath))))
+(const savedUri lastState.uri)
 
-(console.log { savedIndexedAt })
+(console.log { savedUri })
 
 (const
-  isNotYetSaved
+  isAlreadySaved
   (fn (p)
-    (const indexedAt (new Date p.indexedAt))
-    (isGreaterThan indexedAt savedIndexedAt)))
+    (equals p.uri savedUri)))
 
 (let cursor none)
 (const
@@ -68,26 +60,35 @@
         (assign cursor res.data.cursor)
         (console.log { cursor })
         (forEach p res.data.feed
-          (when (not (isNotYetSaved p.post))
-            (return result))
+          (annotate
+            "This algorithm can't save the first post of the feed, so I manually append it to the saved JSON"
+            (when (isAlreadySaved p.post)
+            (return result)))
           (array.push result p.post))
         (when (isNone cursor)
           (return result))))))
 
-(const latestPost (array.first posts))
-
 (when (isGreaterThanOrEquals posts.length 1)
   (const
+    latestIndexedAt
+    (array.reduce
+      (array.map posts (fn (p) p.indexedAt))
+      (fn (a b)
+        (if (isGreaterThan (new Date a) (new Date b))
+          a else b))))
+  (const
     outName
-    (iso8601ForFs.toFileName latestPost.indexedAt ".json"))
+    (iso8601ForFs.toFileName latestIndexedAt ".json"))
+
   (const
     outJson (JSON.stringify posts none 2))
   (console.log "Saving" posts.length "posts on" outName)
   (async.await
     (fs.writeFile (path.join config.outDirectory outName) outJson))
 
-  (const lastIndexedAt latestPost.indexedAt)
+  (const latestPost (array.first posts))
+  (const latestUri latestPost.uri)
   (async.await
     (fs.writeFile
       statePath
-      (JSON.stringify { indexedAt: lastIndexedAt } none 2))))
+      (JSON.stringify { uri: latestUri } none 2))))

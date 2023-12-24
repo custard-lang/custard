@@ -5,7 +5,7 @@
   (async.generatorFn (paths)
     (forEach p paths
       (forEach e (JSON.parse (async.await (fs.readFile p "utf-8")))
-        [ (yield [p e])]))))
+        [ (yield [e p])]))))
 
 (annotate
   "Utility function that should be in the standard library of Custard."
@@ -26,13 +26,23 @@
 
 (async.forEach slice
   (slicesOf (loadJsonArrayElementsFromFiles targetPaths) 20)
-  (const [p latestPost] (array.first slice))
+
+  (const
+    [latestIndexedAt p]
+    (array.reduce
+      (array.map slice (fn ([po pa]) [po.indexedAt pa]))
+      (fn (a b)
+        (if
+          (isGreaterThan
+            (new Date (array.first a))
+            (new Date (array.first b)))
+          a else b))))
 
   (const
     outName
     (path.join
       (path.dirname p)
-      (iso8601ForFs.toFileName latestPost.indexedAt ".json")))
+      (iso8601ForFs.toFileName latestIndexedAt ".json")))
 
   (console.log "Writing" outName)
   (annotate
@@ -48,6 +58,6 @@
 
   (const
     postsInSlice
-    (array.map slice (fn ([_ post]) post)))
+    (array.map slice (fn ([post _]) post)))
   (async.await
     (fs.writeFile outName (JSON.stringify postsInSlice none 2))))
