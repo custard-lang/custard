@@ -16,5 +16,5 @@
 {
   modulePaths,
   implicitStatements: "(importAnyOf base)(importAnyOf js)(import async)(import atproto)(import read)(import fs)(import path)(import date)(import dateLocale)",
-  jsTopLevels: ["console" "JSON" "Date" "process" "RegExp"],
+  jsTopLevels: ["console" "JSON" "Number" "Date" "process" "RegExp" "isNaN" "Error"],
 }

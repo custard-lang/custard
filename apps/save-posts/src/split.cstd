@@ -23,6 +23,7 @@
 
 (const targetPaths (array.slice process.argv 2))
 (targetPaths.sort)
+(targetPaths.reverse)
 
 (async.forEach slice
   (slicesOf (loadJsonArrayElementsFromFiles targetPaths) 20)

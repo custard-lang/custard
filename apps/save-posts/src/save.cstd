@@ -17,19 +17,8 @@
   (agent.login
     { identifier: myDid, password }))
 
-(const
-  config
-  (async.await
-    (async.scope
-      (JSON.parse
-        (async.await
-          (fs.readFile
-            (path.join
-              cu$directoryOfThisFile
-              ".."
-              "save-posts-config.json")))))))
-
-(const statePath (path.join config.outDirectory "state.json"))
+(const outDirectory (array.at process.argv 2))
+(const statePath (path.join outDirectory "state.json"))
 
 (const
   lastState
@@ -59,11 +48,11 @@
             (agent.getAuthorFeed { actor: myDid, limit: 100, cursor })))
         (assign cursor res.data.cursor)
         (console.log { cursor })
+        (when (isLessThan res.data.feed.length 1)
+          (return result))
         (forEach p res.data.feed
-          (annotate
-            "This algorithm can't save the first post of the feed, so I manually append it to the saved JSON"
-            (when (isAlreadySaved p.post)
-            (return result)))
+          (when (isAlreadySaved p.post)
+            (return result))
           (array.push result p.post))
         (when (isNone cursor)
           (return result))))))
@@ -84,7 +73,7 @@
     outJson (JSON.stringify posts none 2))
   (console.log "Saving" posts.length "posts on" outName)
   (async.await
-    (fs.writeFile (path.join config.outDirectory outName) outJson))
+    (fs.writeFile (path.join outDirectory outName) outJson))
 
   (const latestPost (array.first posts))
   (const latestUri latestPost.uri)
