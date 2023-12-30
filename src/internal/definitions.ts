@@ -14,6 +14,7 @@ export const standardModuleRoot = [
   "dist",
   "src",
   "lib",
+  "",
 ].join("/");
 
 export async function loadModule(
