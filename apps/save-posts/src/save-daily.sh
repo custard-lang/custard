@@ -6,7 +6,7 @@ outDir="$1"
 
 cd "$(dirname "$0")"
 
-hours=20
+hours=92
 set +e
 node ./throttle.mjs "$outDir" "$hours";
 if [ "$?" -ne 0 ]; then
@@ -16,6 +16,10 @@ fi
 set -e
 
 node ./save.mjs "$outDir"
+
+# Stop running from here because BlueSky now supports non-logged-in users' view.
+# I don't have to generate markdown files anymore.
+exit 0
 
 toSplit=($(bash ./list-not-formatted.sh "$outDir"))
 node ./split.mjs "${toSplit[@]}"
