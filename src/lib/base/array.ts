@@ -14,6 +14,7 @@ export const first = transpiling1("array.first", (a: JsSrc) => `${a}[0]`);
 //       implementing more flexible tmpVar generator.
 export const last = transpiling1("array.last", (a: JsSrc) => `${a}.at(-1)`);
 
+export const entries = Function.call.bind(Array.prototype.entries);
 export const map = Function.call.bind(Array.prototype.map);
 export const push = Function.call.bind(Array.prototype.push);
 export const reduce = Function.call.bind(Array.prototype.reduce);

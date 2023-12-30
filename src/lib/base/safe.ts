@@ -36,6 +36,7 @@ import {
   buildFn,
   buildProcedure,
   buildScope,
+  constructorFor,
   transpiling1,
   transpiling1Unmarked,
   transpiling2,
@@ -559,24 +560,9 @@ export const text = markAsDirectWriter(
   },
 );
 
-export const Map = markAsDirectWriter(
-  async (env: Env, ...args: Form[]): Promise<JsSrc | TranspileError> => {
-    if (args.length > 1) {
-      return new TranspileError(
-        `Too many arguments to \`Map\` (${JSON.stringify(args)})`,
-      );
-    }
-    if (args.length === 1) {
-      const [arg] = args;
-      const argSrc = await transpileExpression(arg, env);
-      if (TranspileError.is(argSrc)) {
-        return argSrc;
-      }
-      return `new Map(${argSrc})`;
-    }
-    return "new Map()";
-  },
-);
+export const Map = constructorFor("Map", 1);
+
+export const RegExp = constructorFor("RegExp", 2);
 
 export const cu$thisFile = markAsDynamicVar(
   async ({

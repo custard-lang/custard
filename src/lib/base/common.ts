@@ -3,6 +3,7 @@ import {
   asCall,
   transpileBlock,
   transpileExpression,
+  transpileJoinWithComma,
 } from "../../internal/transpile.js";
 import {
   aVar,
@@ -543,4 +544,21 @@ export function buildForEach(
 
     return build(assignee, iterableSrc, statementsSrc);
   };
+}
+
+export function constructorFor(id: Id, arity: number): MarkedDirectWriter {
+  return markAsDirectWriter(
+    async (env: Env, ...args: Form[]): Promise<JsSrc | TranspileError> => {
+      if (args.length > arity) {
+        return new TranspileError(
+          `Too many arguments to \`${id}\` (${JSON.stringify(args)})`,
+        );
+      }
+      const argsSrc = await transpileJoinWithComma(args, env);
+      if (TranspileError.is(argsSrc)) {
+        return argsSrc;
+      }
+      return `new ${id}(${argsSrc})`;
+    },
+  );
 }
