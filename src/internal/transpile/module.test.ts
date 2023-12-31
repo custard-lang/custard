@@ -106,7 +106,7 @@ describe("transpileBlock", () => {
       );
       const src = assertNonError(jsMod) as JsSrc;
       const imports =
-        'import{array, regExp, standardModuleRoot, string}from"../../../dist/src/lib/base.js";\n;\n';
+        'import{Array, Map, RegExp, String, standardModuleRoot}from"../../../dist/src/lib/base.js";\n;\n';
       expect(src.trim()).toEqual(
         `${imports}export const a=1;\nexport const b=2;\nexport let c=3;\n;`,
       );

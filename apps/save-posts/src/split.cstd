@@ -14,14 +14,14 @@
     (async.generatorFn (iterator n)
       (let current [])
       (async.forEach e iterator
-        (array.push current e)
+        (Array.push current e)
         (when (equals current.length n)
           (yield current)
           (assign current [])))
       (when (isGreaterThan current.length 0)
         (yield current)))))
 
-(const targetPaths (array.slice process.argv 2))
+(const targetPaths (Array.slice process.argv 2))
 (targetPaths.sort)
 (targetPaths.reverse)
 
@@ -30,13 +30,13 @@
 
   (const
     [latestIndexedAt p]
-    (array.reduce
-      (array.map slice (fn ([po pa]) [po.indexedAt pa]))
+    (Array.reduce
+      (Array.map slice (fn ([po pa]) [po.indexedAt pa]))
       (fn (a b)
         (if
           (isGreaterThan
-            (new Date (array.first a))
-            (new Date (array.first b)))
+            (new Date (Array.first a))
+            (new Date (Array.first b)))
           a else b))))
 
   (const
@@ -59,6 +59,6 @@
 
   (const
     postsInSlice
-    (array.map slice (fn ([post _]) post)))
+    (Array.map slice (fn ([post _]) post)))
   (async.await
     (fs.writeFile outName (JSON.stringify postsInSlice none 2))))

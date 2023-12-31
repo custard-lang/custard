@@ -5,14 +5,13 @@
   (fn (uri)
     (const
       re
-      (new
-        RegExp "at://(did:plc:[^/]*)/app\\.bsky\\.feed\\.post/([^/]*)"))
+      (RegExp.new "at://(did:plc:[^/]*)/app\\.bsky\\.feed\\.post/([^/]*)"))
     (const md (re.exec uri))
     (text
       "https:///bsky.app/profile/"
-      (array.at md 1)
+      (Array.at md 1)
       "/post/"
-      (array.at md 2))))
+      (Array.at md 2))))
 
 (const endOfPost "\n\n----\n\n")
 
@@ -25,19 +24,19 @@
 (const
   escapeMarkdown
   (fn (t)
-    (string.replace
+    (String.replace
       t
       (annotate
         "Ref. https://pandoc-doc-ja.readthedocs.io/ja/latest/users-guide.html#backslash-escapes"
-        (new RegExp "[\\\\`*_{}\\[\\]()>#+-\\.!\n]|(?:  +)" "g"))
+        (RegExp.new "[\\\\`*_{}\\[\\]()>#+-\\.!\n]|(?:  +)" "g"))
       (fn (m)
-        (when (string.includes "\\`*_{}[]()>#+-.!" m)
+        (when (String.includes "\\`*_{}[]()>#+-.!" m)
           (return (text "\\" m)))
         (when (equals "\n" m)
           (return "<br/>"))
 
-        (when (string.startsWith "  " m)
-          (return (string.repeat "&nbsp;" m.length)))
+        (when (String.startsWith "  " m)
+          (return (String.repeat "&nbsp;" m.length)))
         (return m)))))
 
 

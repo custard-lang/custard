@@ -36,7 +36,6 @@ import {
   buildFn,
   buildProcedure,
   buildScope,
-  constructorFor,
   transpiling1,
   transpiling1Unmarked,
   transpiling2,
@@ -46,6 +45,18 @@ import {
 } from "./common.js";
 
 export { standardModuleRoot } from "../../definitions.js";
+
+import * as ArrayModule from "./safe/Array.js";
+import * as MapModule from "./safe/Map.js";
+import * as StringModule from "./safe/String.js";
+import * as RegExpModule from "./safe/RegExp.js";
+
+import { asNamespace } from "../../definitions.js";
+
+export const Array = asNamespace(ArrayModule, "./safe/Array.js");
+export const Map = asNamespace(MapModule, "./safe/Map.js");
+export const String = asNamespace(StringModule, "./safe/String.js");
+export const RegExp = asNamespace(RegExpModule, "./safe/RegExp.js");
 
 export const note = markAsDirectWriter(
   (_env: Env, ..._args: Form[]): Promise<JsSrc> => Promise.resolve("void 0"),
@@ -559,10 +570,6 @@ export const text = markAsDirectWriter(
     return `${result}\``;
   },
 );
-
-export const Map = constructorFor("Map", 1);
-
-export const RegExp = constructorFor("RegExp", 2);
 
 export const cu$thisFile = markAsDynamicVar(
   async ({

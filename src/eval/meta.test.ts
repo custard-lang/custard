@@ -56,7 +56,7 @@ describe("evalForm", () => {
     const basePathJson = JSON.stringify(`${standardModuleRoot}/base.js`);
     const proviedSymbolsSrcFrom = (src: FilePath): JsSrc => {
       const fromSrc = JSON.stringify(src);
-      return `{ modulePaths: (Map [["base" ${basePathJson}]]), implicitStatements: "(importAnyOf base)", jsTopLevels: [], from: ${fromSrc} }`;
+      return `{ modulePaths: (Map.new [["base" ${basePathJson}]]), implicitStatements: "(importAnyOf base)", jsTopLevels: [], from: ${fromSrc} }`;
     };
     const extraOptionsSrc = `{ mayHaveResult: true }`;
 

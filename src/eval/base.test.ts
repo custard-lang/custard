@@ -522,60 +522,60 @@ describe("evalForm", () => {
     });
   });
 
-  describe("array", () => {
+  describe("Array", () => {
     testEvalFormOf({
-      src: "(array.at [0, 1, 2] 0)",
+      src: "(Array.at [0, 1, 2] 0)",
       expected: 0,
       setUpConfig,
     });
     testEvalFormOf({
-      src: "(array.at [] 0)",
+      src: "(Array.at [] 0)",
       expected: undefined,
       setUpConfig,
     });
     testEvalFormOf({
-      src: "(array.at [0, 1, 2] 1)",
+      src: "(Array.at [0, 1, 2] 1)",
       expected: 1,
       setUpConfig,
     });
     testEvalFormOf({
-      src: "(array.at [0] 1)",
+      src: "(Array.at [0] 1)",
       expected: undefined,
       setUpConfig,
     });
 
     testEvalFormOf({
-      src: "(array.at [0] 1 2)",
+      src: "(Array.at [0] 1 2)",
       expected: new TranspileError(
-        "`array.at` must receive exactly one expression!",
+        "`Array.at` must receive exactly one expression!",
       ),
       setUpConfig,
     });
 
     testEvalFormOf({
-      src: "(array.first [0, 1, 2])",
+      src: "(Array.first [0, 1, 2])",
       expected: 0,
       setUpConfig,
     });
     testEvalFormOf({
-      src: "(array.first [])",
+      src: "(Array.first [])",
       expected: undefined,
       setUpConfig,
     });
 
     testEvalFormOf({
-      src: "(array.last [0, 1, 2])",
+      src: "(Array.last [0, 1, 2])",
       expected: 2,
       setUpConfig,
     });
     testEvalFormOf({
-      src: "(array.last [])",
+      src: "(Array.last [])",
       expected: undefined,
       setUpConfig,
     });
 
     testEvalFormOf({
-      src: "(array.map [2, 3, 5] (fn (x) (timesF x 2)))",
+      src: "(Array.map [2, 3, 5] (fn (x) (timesF x 2)))",
       expected: [4, 6, 10],
       setUpConfig,
     });
@@ -1229,9 +1229,9 @@ describe("evalBlock", () => {
     });
   });
 
-  describe("array", () => {
+  describe("Array", () => {
     testEvalBlockOf({
-      src: "(const a [])(array.push a 2)(array.push a 3)(array.push a 5) a",
+      src: "(const a [])(Array.push a 2)(Array.push a 3)(Array.push a 5) a",
       expected: [2, 3, 5],
       setUpConfig,
     });
