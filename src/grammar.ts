@@ -153,6 +153,7 @@ function atom(s: Scanner): Atom | ParseError {
     case "false":
       return false;
     case "none":
+      // TODO: Use null
       return undefined;
     default:
       // TODO: Tokenize the period character.

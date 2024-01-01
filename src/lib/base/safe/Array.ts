@@ -19,3 +19,5 @@ export const map = Function.call.bind(Array.prototype.map);
 export const push = Function.call.bind(Array.prototype.push);
 export const reduce = Function.call.bind(Array.prototype.reduce);
 export const slice = Function.call.bind(Array.prototype.slice);
+
+export const from = Array.from.bind(Array);

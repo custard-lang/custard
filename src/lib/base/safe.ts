@@ -176,10 +176,16 @@ export const isGreaterThanOrEquals = transpiling2(
 );
 
 export const isNone = transpiling1("isNone", (a: JsSrc) => `${a}==null`);
+export const isString = transpiling1(
+  "isString",
+  (a: JsSrc) => `typeof ${a}=="string"`,
+);
 
 export const and = transpiling2("and", (a: JsSrc, b: JsSrc) => `${a}&&${b}`);
 export const or = transpiling2("or", (a: JsSrc, b: JsSrc) => `${a}||${b}`);
 export const not = transpiling1("not", (a: JsSrc) => `!(${a})`);
+
+export const any = transpiling2("any", (a: JsSrc, b: JsSrc) => `${a}??${b}`);
 
 export const assign = transpilingForAssignment(
   "assign",

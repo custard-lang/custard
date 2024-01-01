@@ -382,6 +382,19 @@ describe("evalForm", () => {
     });
   });
 
+  describe("isString", () => {
+    testEvalFormOf({
+      src: '(isString "123")',
+      expected: true,
+      setUpConfig,
+    });
+    testEvalFormOf({
+      src: "(isString 123)",
+      expected: false,
+      setUpConfig,
+    });
+  });
+
   describe("(and x y)", () => {
     testEvalFormOf({
       src: "(and true true)",
@@ -432,6 +445,60 @@ describe("evalForm", () => {
       expected: new TranspileError(
         "`not` must receive exactly one expression!",
       ),
+      setUpConfig,
+    });
+  });
+
+  describe("(any f o r m s)", () => {
+    testEvalFormOf({ src: "(any true true)", expected: true, setUpConfig });
+    testEvalFormOf({
+      src: "(any false true)",
+      expected: false,
+      setUpConfig,
+    });
+    testEvalFormOf({
+      src: "(any true false)",
+      expected: true,
+      setUpConfig,
+    });
+    testEvalFormOf({
+      src: "(any false false)",
+      expected: false,
+      setUpConfig,
+    });
+    testEvalFormOf({
+      src: "(any none false)",
+      expected: false,
+      setUpConfig,
+    });
+    testEvalFormOf({
+      src: "(any none 0)",
+      expected: 0,
+      setUpConfig,
+    });
+    testEvalFormOf({
+      src: '(any none "")',
+      expected: "",
+      setUpConfig,
+    });
+    testEvalFormOf({
+      src: "(any none none)",
+      expected: undefined,
+      setUpConfig,
+    });
+    testEvalFormOf({
+      src: "(any false none)",
+      expected: false,
+      setUpConfig,
+    });
+    testEvalFormOf({
+      src: "(any 0 none)",
+      expected: 0,
+      setUpConfig,
+    });
+    testEvalFormOf({
+      src: '(any "" none)',
+      expected: "",
       setUpConfig,
     });
   });
