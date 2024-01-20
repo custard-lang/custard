@@ -1,6 +1,7 @@
 {
   "name": "save-posts",
   "type": "module",
+  "private": true,
   "version": "0.1.0",
   "description": "Save my posts on a SNS",
   "scripts": {
@@ -17,11 +18,12 @@
   },
   "homepage": "https://github.com/igrep/custard#readme",
   "dependencies": {
-    "@atproto/api": "^0.6.3",
-    "date-fns": "^2.30.0",
-    "read": "^2.1.0"
+    "@atproto/api": "^0.7.4",
+    "@custard-lang/command": "file:../../packages/command",
+    "date-fns": "^3.0.6",
+    "read": "^3.0.1"
   },
   "devDependencies": {
-    "vitest": "^1.0.4"
+    "vitest": "^1.1.1"
   }
 }

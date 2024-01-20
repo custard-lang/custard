@@ -2,15 +2,13 @@
   "type": "module",
   "name": "@custard-lang/processor",
   "version": "0.0.1",
-  "description": "My programming language",
-  "main": "dist/src/cli.js",
+  "description": "My programming language Custard (core processor modules and library)",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
-    "custard": "node dist/src/cli.js",
-    "test": "vitest",
-    "test:detailed": "vitest --reporter verbose",
+    "build": "tsc",
     "lint": "eslint --ext ts src",
-    "fix:lint": "eslint --ext ts --fix src",
-    "test:coverage": "vitest run --coverage"
+    "fix:lint": "eslint --ext ts --fix src"
   },
   "repository": {
     "type": "git",
@@ -26,21 +24,9 @@
   },
   "homepage": "https://github.com/igrep/custard#readme",
   "devDependencies": {
-    "@types/node": "^18.11.18",
-    "@typescript-eslint/eslint-plugin": "^5.50.0",
-    "@vitest/coverage-c8": "^0.28.3",
-    "eslint": "^8.33.0",
-    "eslint-config-standard-with-typescript": "^34.0.0",
-    "eslint-plugin-import": "^2.27.5",
-    "eslint-plugin-n": "^15.6.1",
-    "eslint-plugin-no-ignore-returned-union": "^0.2.0",
-    "eslint-plugin-promise": "^6.1.1",
-    "fast-check": "^3.6.2",
-    "prettier": "^2.8.3",
-    "typescript": "^4.9.5",
-    "vitest": "^0.28.3"
+    "@types/node": "^20.10.6",
+    "typescript": "^5.3.3"
   },
   "dependencies": {
-    "@commander-js/extra-typings": "^10.0.3"
   }
 }

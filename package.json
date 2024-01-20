@@ -1,7 +1,34 @@
 {
   "name": "custard",
+  "type": "module",
   "license": "UNLICENSED",
   "private": true,
+  "scripts": {
+    "custard": "node packages/command/dist/cli.js",
+    "build": "tsc -b tsconfig.build.json",
+    "clean": "rimraf -g \"packages/**/dist\" \"packages/**/*.tsbuildinfo\"",
+    "test": "npm run --ws test --if-present",
+    "test:detailed": "npm run test -- --reporter verbose",
+    "test:coverage": "npm run test -- run --coverage",
+    "lint": "eslint --ext ts */*/src/**/*",
+    "fix:lint": "eslint --ext ts --fix */*/src/**/*",
+    "format": "prettier --write */*/src/**/*.ts",
+    "prepare": "npm run build"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^5.62.0",
+    "@vitest/coverage-v8": "^1.1.3",
+    "eslint": "^8.56.0",
+    "eslint-config-standard-with-typescript": "^37.0.0",
+    "eslint-plugin-import": "^2.29.1",
+    "eslint-plugin-n": "^16.6.1",
+    "eslint-plugin-no-ignore-returned-union": "^0.2.0",
+    "eslint-plugin-promise": "^6.1.1",
+    "prettier": "^3.1.1",
+    "rimraf": "^5.0.5",
+    "typescript": "^5.3.3",
+    "vitest": "^1.1.1"
+  },
   "workspaces": [
     "packages/*",
     "apps/*"
