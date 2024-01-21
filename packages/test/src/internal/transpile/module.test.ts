@@ -1,12 +1,12 @@
 import { describe, expect, test } from "vitest";
 
-import { assertNonError } from "../../util/error";
+import { assertNonError } from "@custard-lang/processor/dist/util/error.js";
 
-import * as EnvF from "../env";
-import * as ProvidedSymbolsConfigF from "../../provided-symbols-config.js";
-import { readBlock } from "../../reader";
-import { transpileBlock } from "../transpile";
-import { transpileModule } from "../transpile-state";
+import * as EnvF from "@custard-lang/processor/dist/internal/env.js";
+import * as ProvidedSymbolsConfigF from "@custard-lang/processor/dist/provided-symbols-config.js";
+import { readBlock } from "@custard-lang/processor/dist/reader.js";
+import { transpileBlock } from "@custard-lang/processor/dist/internal/transpile.js";
+import { transpileModule } from "@custard-lang/processor/dist/internal/transpile-state.js";
 import {
   Block,
   cuSymbol,
@@ -15,9 +15,9 @@ import {
   JsSrc,
   ModulePaths,
   TranspileError,
-} from "../types";
-import { fileOfImportMetaUrl } from "../../util/path";
-import { standardModuleRoot } from "../definitions";
+} from "@custard-lang/processor/dist/internal/types.js";
+import { fileOfImportMetaUrl } from "@custard-lang/processor/dist/util/path.js";
+import { standardModuleRoot } from "@custard-lang/processor/dist/internal/definitions.js";
 
 describe("transpileBlock", () => {
   const subject = async (
@@ -25,12 +25,9 @@ describe("transpileBlock", () => {
   ): Promise<[JsSrc | TranspileError, Env]> => {
     const modulePaths: ModulePaths = new Map();
     modulePaths.set("base", `${standardModuleRoot}/base.js`);
-    modulePaths.set("a", "../../../test-assets/a.mjs");
+    modulePaths.set("a", "../../../assets/a.mjs");
     modulePaths.set("sameDir", "./same-dir.js");
-    modulePaths.set(
-      "typescript",
-      "../../../node_modules/typescript/lib/typescript.js",
-    );
+    modulePaths.set("typescript", "npm:typescript");
     modulePaths.set("fs", "node:fs/promises");
     const providedSymbolsConfig = ProvidedSymbolsConfigF.build({
       builtinModulePaths: [],
@@ -57,7 +54,7 @@ describe("transpileBlock", () => {
         const [jsMod, env] = await subject("(import a)");
         const src = assertNonError(jsMod) as JsSrc;
         expect(src.trim()).toEqual(
-          'import * as a from "../../../test-assets/a.mjs";',
+          'import * as a from "../../../assets/a.mjs";',
         );
         expect(EnvF.find(env, cuSymbol("a"))).toSatisfy(isNamespace);
       });
@@ -72,9 +69,7 @@ describe("transpileBlock", () => {
       test("adds identifiers in the module, and returns an import for a node library in node_modules", async () => {
         const [jsMod, env] = await subject("(import typescript)");
         const src = assertNonError(jsMod) as JsSrc;
-        expect(src.trim()).toEqual(
-          'import * as typescript from "../../../node_modules/typescript/lib/typescript.js";',
-        );
+        expect(src.trim()).toEqual('import * as typescript from "typescript";');
         expect(EnvF.find(env, cuSymbol("typescript"))).toSatisfy(isNamespace);
       });
 
@@ -106,7 +101,7 @@ describe("transpileBlock", () => {
       );
       const src = assertNonError(jsMod) as JsSrc;
       const imports =
-        'import{Array, Map, RegExp, String, standardModuleRoot}from"../../../dist/src/lib/base.js";\n;\n';
+        'import{Array, Map, RegExp, String, standardModuleRoot}from"@custard-lang/processor/dist/lib/base.js";\n;\n';
       expect(src.trim()).toEqual(
         `${imports}export const a=1;\nexport const b=2;\nexport let c=3;\n;`,
       );

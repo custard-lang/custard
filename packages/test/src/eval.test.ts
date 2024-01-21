@@ -1,9 +1,10 @@
 import { describe } from "vitest";
-import { Config, testEvalBlockOf } from "./test";
 
-import { standardModuleRoot } from "./definitions";
-import { ModulePaths } from "./types";
-import { fileOfImportMetaUrl } from "./util/path";
+import { Config, testEvalBlockOf } from "./test.js";
+
+import { standardModuleRoot } from "@custard-lang/processor/dist/definitions.js";
+import { ModulePaths } from "@custard-lang/processor/dist/types.js";
+import { fileOfImportMetaUrl } from "@custard-lang/processor/dist/util/path.js";
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/restrict-template-expressions */
 

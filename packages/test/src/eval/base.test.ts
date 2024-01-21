@@ -1,11 +1,16 @@
 import { describe } from "vitest";
-import { Config, testEvalBlockOf, testEvalFormOf } from "../test";
 import * as path from "node:path";
 
-import { defaultTranspileOptions, FilePath, TranspileError } from "../types";
-import { standardModuleRoot } from "../definitions";
-import { implicitlyImporting } from "../provided-symbols-config";
-import { fileOfImportMetaUrl } from "../util/path";
+import { Config, testEvalBlockOf, testEvalFormOf } from "../test.js";
+
+import {
+  defaultTranspileOptions,
+  FilePath,
+  TranspileError,
+} from "@custard-lang/processor/dist/types.js";
+import { standardModuleRoot } from "@custard-lang/processor/dist/definitions.js";
+import { implicitlyImporting } from "@custard-lang/processor/dist/provided-symbols-config.js";
+import { fileOfImportMetaUrl } from "@custard-lang/processor/dist/util/path.js";
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/restrict-template-expressions, @typescript-eslint/no-unsafe-assignment */
 

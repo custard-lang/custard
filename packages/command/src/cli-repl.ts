@@ -3,16 +3,19 @@
 import * as readline from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
 
-import { readStr } from "./reader.js";
-import { Env, Form } from "./types.js";
-import { ParseError } from "./grammar.js";
-import { prStr } from "./printer.js";
-import { evalForm } from "./eval.js";
-import { standardModuleRoot } from "./definitions.js";
-import { defaultTranspileOptions, TranspileRepl } from "./internal/types.js";
-import { initializeForRepl } from "./env.js";
-import { implicitlyImporting } from "./provided-symbols-config.js";
-import { assertNonError } from "./util/error.js";
+import {
+  readStr,
+  Env,
+  Form,
+  ParseError,
+  prStr,
+  evalForm,
+  standardModuleRoot,
+  defaultTranspileOptions,
+  TranspileRepl,
+  initializeForRepl,
+  implicitlyImporting,
+} from "@custard-lang/processor";
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-return */
 
@@ -68,6 +71,13 @@ async function loop(env: Env<TranspileRepl>): Promise<void> {
     finalize();
     throw err;
   }
+}
+
+export function assertNonError<T>(v: T | Error): T {
+  if (v instanceof Error) {
+    throw v;
+  }
+  return v;
 }
 
 (async () => {

@@ -45,7 +45,7 @@ export function resolveModulePaths({
     const moduleFullPath = isAbsoluteUrl(modulePath)
       ? modulePath
       : path.resolve(fromDir, modulePath);
-    result.set(moduleName, moduleFullPath);
+    result.set(moduleName, moduleFullPath.replace(/\/\/+/g, "/"));
   }
   return result;
 }

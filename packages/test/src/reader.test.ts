@@ -1,7 +1,8 @@
-import { readStr } from "./reader";
 import { describe, expect, test } from "vitest";
-import { ParseError } from "./grammar";
-import { cuSymbol } from "./internal/types";
+
+import { readStr } from "@custard-lang/processor/dist/reader.js";
+import { ParseError } from "@custard-lang/processor/dist/grammar.js";
+import { cuSymbol } from "@custard-lang/processor/dist/internal/types.js";
 
 describe("readStr", () => {
   describe("Integer32", () => {

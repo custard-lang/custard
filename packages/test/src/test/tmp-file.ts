@@ -6,8 +6,8 @@ import * as path from "node:path";
 import { pid } from "node:process";
 import { threadId } from "node:worker_threads";
 
-import { FilePath } from "../types";
-import { projectRootFromImportMetaUrl } from "../util/path";
+import { FilePath } from "@custard-lang/processor/dist/types.js";
+import { projectRootFromImportMetaUrl } from "@custard-lang/processor/dist/util/path.js";
 
 let count = 0;
 

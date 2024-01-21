@@ -4,6 +4,8 @@ import { execFileSync } from "node:child_process";
 import { writeFile, opendir, rm, readFile } from "fs/promises";
 import { describe, it, expect, beforeEach, beforeAll } from "vitest";
 
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
 import * as iso8601ForFs from "../src/iso8601ForFs.mjs";
 
 describe("split.cstd", () => {
@@ -28,8 +30,13 @@ describe("split.cstd", () => {
     return { indexedAt: `2023-10-23T09:00:${s}.000Z` };
   });
   const outDir = "tmp";
-  const pathOfPostAt = (i: number) =>
-    `${outDir}/${iso8601ForFs.toFileName(input[i].indexedAt, ".json")}`;
+  const pathOfPostAt = (i: number) => {
+    const fileName = iso8601ForFs.toFileName(
+      assertNonNull(input[i], `Not found at ${i}`).indexedAt,
+      ".json",
+    );
+    return `${outDir}/${fileName}`;
+  };
   const inputPath = pathOfPostAt(0);
 
   beforeEach(async () => {
@@ -66,3 +73,10 @@ describe("split.cstd", () => {
     );
   });
 });
+
+function assertNonNull<T>(v: T | undefined, msg: string): T {
+  if (v === undefined) {
+    throw new Error(msg);
+  }
+  return v;
+}

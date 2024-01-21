@@ -3,16 +3,19 @@ import { program } from "@commander-js/extra-typings";
 import * as path from "node:path";
 import * as fs from "node:fs/promises";
 
-import { defaultProvidedSymbolsConfig } from "../default-provided-symbols.js";
-import { ParseError } from "../grammar.js";
-import { implicitlyImporting } from "../provided-symbols-config.js";
-import { readBlock } from "../reader.js";
-import { transpileModule } from "../transpile.js";
-import { Block, ProvidedSymbolsConfig } from "../types.js";
-import { evalBlock } from "../eval.js";
-import { standardModuleRoot } from "../definitions.js";
-import { ValidationError } from "../lib/spec.js";
-import { initializeForRepl } from "../env.js";
+import {
+  defaultProvidedSymbolsConfig,
+  ParseError,
+  implicitlyImporting,
+  readBlock,
+  transpileModule,
+  Block,
+  ProvidedSymbolsConfig,
+  evalBlock,
+  standardModuleRoot,
+  ValidationError,
+  initializeForRepl,
+} from "@custard-lang/processor";
 
 export const transpileProgram = program
   .option(

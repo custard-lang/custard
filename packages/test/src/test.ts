@@ -1,17 +1,17 @@
 import { test, expect } from "vitest";
 
-import { assertNonError } from "./util/error";
-import type { Awaitable } from "./util/types";
+import { assertNonError } from "@custard-lang/processor/dist/util/error.js";
+import type { Awaitable } from "@custard-lang/processor/dist/util/types.js";
 
-import { readBlock, readStr } from "./reader";
-import { evalBlock, evalForm } from "./eval";
-import { initializeForRepl } from "./env";
+import { readBlock, readStr } from "@custard-lang/processor/dist/reader.js";
+import { evalBlock, evalForm } from "@custard-lang/processor/dist/eval.js";
+import { initializeForRepl } from "@custard-lang/processor/dist/env.js";
 import {
   Block,
   Form,
   CompleteProvidedSymbolsConfig,
   TranspileOptions,
-} from "./types";
+} from "@custard-lang/processor/dist/types.js";
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/restrict-template-expressions, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-assignment */
 

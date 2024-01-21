@@ -1,10 +1,10 @@
 import { describe } from "vitest";
-import { Config, testEvalBlockOf, testEvalFormOf } from "../test";
+import { Config, testEvalBlockOf, testEvalFormOf } from "../test.js";
 
-import { defaultTranspileOptions } from "../types";
-import { standardModuleRoot } from "../definitions";
-import * as ProvidedSymbolsConfig from "../provided-symbols-config";
-import { fileOfImportMetaUrl } from "../util/path";
+import { defaultTranspileOptions } from "@custard-lang/processor/dist/types.js";
+import { standardModuleRoot } from "@custard-lang/processor/dist/definitions.js";
+import * as ProvidedSymbolsConfig from "@custard-lang/processor/dist/provided-symbols-config.js";
+import { fileOfImportMetaUrl } from "@custard-lang/processor/dist/util/path.js";
 
 function setUpConfig(): Config {
   const providedSymbols = ProvidedSymbolsConfig.build({

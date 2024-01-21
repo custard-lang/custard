@@ -1,17 +1,22 @@
 import { describe, expect, test } from "vitest";
 
-import { Config, testEvalFormOf } from "../test";
+import { Config, testEvalFormOf } from "../test.js";
+import { withNewPath } from "../test/tmp-file.js";
+import { writeAndEval } from "../test/eval.js";
 
-import { assertNonError } from "../util/error";
+import { assertNonError } from "@custard-lang/processor/dist/util/error.js";
 
-import { FilePath, Form, JsSrc, ModulePaths } from "../types";
-import { standardModuleRoot } from "../definitions";
-import { evalForm } from "../eval";
-import { readStr } from "../reader";
-import { withNewPath } from "../test/tmp-file";
-import { writeAndEval } from "../test/eval";
-import { initializeForRepl } from "../env";
-import { fileOfImportMetaUrl } from "../util/path";
+import {
+  FilePath,
+  Form,
+  JsSrc,
+  ModulePaths,
+} from "@custard-lang/processor/dist/types.js";
+import { standardModuleRoot } from "@custard-lang/processor/dist/definitions.js";
+import { evalForm } from "@custard-lang/processor/dist/eval.js";
+import { readStr } from "@custard-lang/processor/dist/reader.js";
+import { initializeForRepl } from "@custard-lang/processor/dist/env.js";
+import { fileOfImportMetaUrl } from "@custard-lang/processor/dist/util/path.js";
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/restrict-template-expressions */
 
@@ -19,8 +24,8 @@ describe("evalForm", () => {
   function setUpConfig(): Config {
     const modulePaths: ModulePaths = new Map();
     modulePaths.set("base", `${standardModuleRoot}/base.js`);
-    modulePaths.set("meta", "../../dist/src/lib/meta.js");
-    modulePaths.set("async", "../../dist/src/lib/async.js");
+    modulePaths.set("meta", "npm:@custard-lang/processor/dist/lib/meta.js");
+    modulePaths.set("async", "npm:@custard-lang/processor/dist/lib/async.js");
 
     const srcPath = fileOfImportMetaUrl(import.meta.url);
     return {

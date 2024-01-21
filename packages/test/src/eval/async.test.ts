@@ -1,10 +1,14 @@
 import { describe } from "vitest";
-import { testEvalBlockOf, testEvalFormOf } from "../test";
 
-import { ModulePaths, TranspileError } from "../types";
-import { standardModuleRoot } from "../definitions";
-import type { Config } from "../test";
-import { fileOfImportMetaUrl } from "../util/path";
+import { testEvalBlockOf, testEvalFormOf } from "../test.js";
+import type { Config } from "../test.js";
+
+import {
+  ModulePaths,
+  TranspileError,
+} from "@custard-lang/processor/dist/types.js";
+import { standardModuleRoot } from "@custard-lang/processor/dist/definitions.js";
+import { fileOfImportMetaUrl } from "@custard-lang/processor/dist/util/path.js";
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/restrict-template-expressions */
 
@@ -12,7 +16,7 @@ describe("evalForm", () => {
   function setUpConfig(): Config {
     const modulePaths: ModulePaths = new Map();
     modulePaths.set("base", `${standardModuleRoot}/base.js`);
-    modulePaths.set("async", "../../dist/src/lib/async.js");
+    modulePaths.set("async", "npm:@custard-lang/processor/dist/lib/async.js");
 
     const srcPath = fileOfImportMetaUrl(import.meta.url);
 

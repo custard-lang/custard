@@ -144,7 +144,7 @@ export class TranspileError extends Error {
 
 export type Call = [CuSymbol | PropertyAccess, ...Form[]];
 
-export type Env<State = TranspileState> = {
+export type Env<State extends TranspileState = TranspileState> = {
   readonly scopes: [Scope, ...Scope[]];
   readonly references: References; // References in the Progaram
   readonly modules: ModulePaths; // Mapping from module name to its path.

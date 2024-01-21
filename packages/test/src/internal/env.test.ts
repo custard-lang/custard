@@ -1,15 +1,15 @@
 import { describe, expect, test } from "vitest";
 
-import type { Env } from "./types.js";
+import type { Env } from "@custard-lang/processor/dist/internal/types.js";
 import {
   aVar,
   cuSymbol,
   defaultTranspileOptions,
   TranspileError,
-} from "../internal/types.js";
-import * as EnvF from "./env.js";
-import { transpileRepl } from "./transpile-state.js";
-import { fileOfImportMetaUrl } from "../util/path.js";
+} from "@custard-lang/processor/dist/internal/types.js";
+import * as EnvF from "@custard-lang/processor/dist/internal/env.js";
+import { transpileRepl } from "@custard-lang/processor/dist/internal/transpile-state.js";
+import { fileOfImportMetaUrl } from "@custard-lang/processor/dist/util/path.js";
 
 function inScope(env: Env, f: () => void): void {
   EnvF.push(env);

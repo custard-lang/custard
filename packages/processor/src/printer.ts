@@ -1,4 +1,4 @@
-import { Form } from "./types";
+import { Form } from "./types.js";
 
 export function prStr(form: Form): string {
   if (form instanceof Array) {

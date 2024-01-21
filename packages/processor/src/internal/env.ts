@@ -29,7 +29,7 @@ import { isDeeperThanOrEqual, isShallowerThan } from "./scope-path.js";
 import { assertNonNull, expectNever } from "../util/error.js";
 import { escapeRegExp } from "../util/regexp.js";
 import { resolveModulePaths } from "../provided-symbols-config.js";
-import { isAbsoluteUrl } from "../util/path.js";
+import { parseAbsoluteUrl } from "../util/path.js";
 import { stat } from "node:fs/promises";
 
 // To distinguish jsTopLevels and the top level scope of the code,
@@ -221,7 +221,18 @@ export async function findModule(
     return;
   }
 
-  if (isAbsoluteUrl(modFullPath)) {
+  const schemeAndPath = parseAbsoluteUrl(modFullPath);
+  if (schemeAndPath !== null) {
+    if (schemeAndPath[0] === "npm") {
+      const pkgName = schemeAndPath[1];
+      return {
+        url: import.meta.resolve(
+          pkgName,
+          new URL(`file:///${path.resolve(srcPath)}`).href,
+        ),
+        relativePath: pkgName,
+      };
+    }
     return {
       url: modFullPath,
       relativePath: modFullPath,

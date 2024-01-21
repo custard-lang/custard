@@ -1,5 +1,3 @@
-import { projectRootFromImportMetaUrl } from "../util/path.js";
-
 import {
   aNamespace,
   FilePath,
@@ -10,9 +8,9 @@ import {
 
 // Path to the `lib` directory in the dist/ from this module.
 export const standardModuleRoot = [
-  projectRootFromImportMetaUrl(import.meta.url),
+  "npm:@custard-lang",
+  "processor",
   "dist",
-  "src",
   "lib",
   "",
 ].join("/");

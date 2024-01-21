@@ -28,6 +28,8 @@ export {
   type Namespace,
   type ModulePaths,
   type TranspileOptions,
+  type TranspileModule,
+  type TranspileRepl,
   defaultTranspileOptions,
   Id,
   FilePath,
