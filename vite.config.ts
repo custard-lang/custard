@@ -1,14 +1,21 @@
-/// <reference types="vitest" />
-
 // Configure Vitest (https://vitest.dev/config/)
 
-import { defineConfig } from "vite";
+import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
     coverage: {
-      provider: "c8",
+      provider: "v8",
       reporter: ["text", "json", "html"],
+    },
+    server: {
+      deps: {
+        external: [
+          /\/node_modules\//,
+          // To prevent vitest converting `import.meta.resolve` to `__vite_ssr_import_meta_`
+          /\/packages\/processor\//,
+        ],
+      },
     },
     // testTimeout: 100,
   },
