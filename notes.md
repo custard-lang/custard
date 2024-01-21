@@ -132,3 +132,10 @@ Elmを少し参考に
 - [ ] exportのvalidation: 複数同じ名前をexportしないように。普通の`export`は`default`を受け付けない（代わりに`exportDefault`を使えという
 - [ ] ESLintの設定を改善: <https://zenn.dev/teppeis/articles/2023-04-typescript-5_0-verbatim-module-syntax>
 - [ ] `undefined`の代わりに`null`を使う
+- [ ] 各クラスのメソッドを呼ぶか、ライブラリーの関数を呼ぶか
+    - メソッドを禁止するような作りにしたいけど、難しいなぁ。やっぱ止めた方がいい
+        - そうするとJS標準にない追加の関数を同じような地位で使えなくなるけど、そこは仕方ないか
+            - [ ] だから単に対応するメソッドを呼ぶだけの関数は廃止しよう。標準の`Array`とかを上書きしてしまうのは好ましくない
+    - [ ] `((call).method)`のような書き方のサポートは、当面した方がいいかも
+- packageの整理
+    - [ ] utilを別パッケージにする？
