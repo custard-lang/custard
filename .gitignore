@@ -107,3 +107,6 @@ dist
 *.timestamp-*.mjs
 
 /examples/*.js
+
+vite.config.d.ts
+vite.config.js*
