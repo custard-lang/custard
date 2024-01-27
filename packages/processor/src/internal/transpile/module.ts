@@ -33,6 +33,7 @@ export const _cu$import = markAsDirectWriter(
       );
     }
 
+    // TODO: Transpile if the module is a .cstd module
     const ns = await loadModule(foundModule.url);
     if (TranspileError.is(ns)) {
       return ns;
@@ -76,6 +77,7 @@ export const importAnyOf = markAsDirectWriter(
         `No module \`${moduleId.v}\` registered in the Module Paths`,
       );
     }
+    // TODO: Transpile if the module is a .cstd module
     const ns = await loadModule(foundModule.url);
     if (TranspileError.is(ns)) {
       return ns;
