@@ -7,7 +7,7 @@
 (const
   password
   (async.await
-    (read.default { prompt: "Pass: ", silent: true })))
+    (read.read { prompt: "Pass: ", silent: true })))
 
 (annotate
   "Break line after the prompt"
