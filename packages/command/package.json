@@ -31,6 +31,7 @@
   },
   "dependencies": {
     "@commander-js/extra-typings": "^11.1.0",
-    "@custard-lang/processor": "file:../processor"
+    "@custard-lang/processor": "file:../processor",
+    "glob": "^10.3.10"
   }
 }

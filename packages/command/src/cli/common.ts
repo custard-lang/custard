@@ -1,3 +1,4 @@
+import { globIterate } from "glob";
 import { program } from "@commander-js/extra-typings";
 
 import * as path from "node:path";
@@ -72,7 +73,7 @@ export async function transpileMain(
   }
 
   const destPaths: string[] = [];
-  for (const srcPath of args) {
+  for await (const srcPath of globIterate(args)) {
     if (opts.verbose) {
       console.info(`Transpiling ${srcPath}...`);
     }
