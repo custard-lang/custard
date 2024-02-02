@@ -1,4 +1,4 @@
-(const modulePaths (Map.new))
+(const modulePaths (createMap))
 (modulePaths.set "meta" "./lib/meta.js")
 (modulePaths.set "async" "./lib/async.js")
 {

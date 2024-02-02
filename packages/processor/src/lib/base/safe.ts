@@ -42,21 +42,10 @@ import {
   transpilingForAssignment,
   transpilingForVariableDeclaration,
   transpilingForVariableMutation,
+  transpilingFunctionArguments,
 } from "./common.js";
 
 export { standardModuleRoot } from "../../definitions.js";
-
-import * as ArrayModule from "./safe/Array.js";
-import * as MapModule from "./safe/Map.js";
-import * as StringModule from "./safe/String.js";
-import * as RegExpModule from "./safe/RegExp.js";
-
-import { asNamespace } from "../../definitions.js";
-
-export const Array = asNamespace(ArrayModule, "./safe/Array.js");
-export const Map = asNamespace(MapModule, "./safe/Map.js");
-export const String = asNamespace(StringModule, "./safe/String.js");
-export const RegExp = asNamespace(RegExpModule, "./safe/RegExp.js");
 
 export const note = markAsDirectWriter(
   (_env: Env, ..._args: Form[]): Promise<JsSrc> => Promise.resolve("void 0"),
@@ -601,4 +590,20 @@ export const cu$directoryOfThisFile = markAsDynamicVar(
     }
     return JSON.stringify(path.dirname(srcFullPath));
   },
+);
+
+export const get = transpiling2("get", (a: JsSrc, b: JsSrc) => `${a}[${b}]`);
+
+export const first = transpiling1("first", (a: JsSrc) => `${a}[0]`);
+
+// TODO: If a.at(-1) is not faster, implement a[a.length] as macro after
+//       implementing more flexible tmpVar generator.
+export const last = transpiling1("last", (a: JsSrc) => `${a}.at(-1)`);
+
+export const createMap = transpilingFunctionArguments(
+  (argSrcs: JsSrc): JsSrc => `new Map(${argSrcs})`,
+);
+
+export const createRegExp = transpilingFunctionArguments(
+  (argSrcs: JsSrc): JsSrc => `new RegExp(${argSrcs})`,
 );

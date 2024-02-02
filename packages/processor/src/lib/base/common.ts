@@ -124,6 +124,20 @@ export function transpiling2(
   );
 }
 
+export function transpilingFunctionArguments(
+  f: (a: JsSrc) => JsSrc,
+): MarkedDirectWriter {
+  return markAsDirectWriter(
+    async (env: Env, ...args: Form[]): Promise<JsSrc | TranspileError> => {
+      const argSrcs = await transpileJoinWithComma(args, env);
+      if (TranspileError.is(argSrcs)) {
+        return argSrcs;
+      }
+      return f(argSrcs);
+    },
+  );
+}
+
 // TODO: Handle assignment to reserved words etc.
 export function transpilingForAssignment(
   formId: Id,

@@ -1,7 +1,7 @@
 (const
   statePath
-  (path.join (Array.at process.argv 2) "state.json"))
-(const waitForHours (Number (Array.at process.argv 3)))
+  (path.join (get process.argv 2) "state.json"))
+(const waitForHours (Number (get process.argv 3)))
 
 (when (isNaN waitForHours)
   (throw (new Error "Invalid number of hours")))

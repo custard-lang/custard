@@ -1,4 +1,4 @@
-(const modulePaths (Map.new))
+(const modulePaths (createMap))
 (modulePaths.set "base" (text standardModuleRoot "base.js"))
 (modulePaths.set "async" (text standardModuleRoot "async.js"))
 (modulePaths.set "js" (text standardModuleRoot "js.js"))

@@ -594,63 +594,53 @@ describe("evalForm", () => {
     });
   });
 
-  describe("Array", () => {
-    testEvalFormOf({
-      src: "(Array.at [0, 1, 2] 0)",
-      expected: 0,
-      setUpConfig,
-    });
-    testEvalFormOf({
-      src: "(Array.at [] 0)",
-      expected: undefined,
-      setUpConfig,
-    });
-    testEvalFormOf({
-      src: "(Array.at [0, 1, 2] 1)",
-      expected: 1,
-      setUpConfig,
-    });
-    testEvalFormOf({
-      src: "(Array.at [0] 1)",
-      expected: undefined,
-      setUpConfig,
-    });
+  testEvalFormOf({
+    src: "(get [0, 1, 2] 0)",
+    expected: 0,
+    setUpConfig,
+  });
+  testEvalFormOf({
+    src: "(get [] 0)",
+    expected: undefined,
+    setUpConfig,
+  });
+  testEvalFormOf({
+    src: "(get [0, 1, 2] 1)",
+    expected: 1,
+    setUpConfig,
+  });
+  testEvalFormOf({
+    src: "(get [0] 1)",
+    expected: undefined,
+    setUpConfig,
+  });
 
-    testEvalFormOf({
-      src: "(Array.at [0] 1 2)",
-      expected: new TranspileError(
-        "`Array.at` must receive exactly one expression!",
-      ),
-      setUpConfig,
-    });
+  testEvalFormOf({
+    src: "(get [0] 1 2)",
+    expected: new TranspileError("`get` must receive exactly one expression!"),
+    setUpConfig,
+  });
 
-    testEvalFormOf({
-      src: "(Array.first [0, 1, 2])",
-      expected: 0,
-      setUpConfig,
-    });
-    testEvalFormOf({
-      src: "(Array.first [])",
-      expected: undefined,
-      setUpConfig,
-    });
+  testEvalFormOf({
+    src: "(first [0, 1, 2])",
+    expected: 0,
+    setUpConfig,
+  });
+  testEvalFormOf({
+    src: "(first [])",
+    expected: undefined,
+    setUpConfig,
+  });
 
-    testEvalFormOf({
-      src: "(Array.last [0, 1, 2])",
-      expected: 2,
-      setUpConfig,
-    });
-    testEvalFormOf({
-      src: "(Array.last [])",
-      expected: undefined,
-      setUpConfig,
-    });
-
-    testEvalFormOf({
-      src: "(Array.map [2, 3, 5] (fn (x) (timesF x 2)))",
-      expected: [4, 6, 10],
-      setUpConfig,
-    });
+  testEvalFormOf({
+    src: "(last [0, 1, 2])",
+    expected: 2,
+    setUpConfig,
+  });
+  testEvalFormOf({
+    src: "(last [])",
+    expected: undefined,
+    setUpConfig,
   });
 });
 
@@ -1297,14 +1287,6 @@ describe("evalBlock", () => {
     testEvalBlockOf({
       src: '(let x 1) (let y 10) (try (try (throw "thrown") finally (assign x 2)) catch _ (assign y 20)) [x, y]',
       expected: [2, 20],
-      setUpConfig,
-    });
-  });
-
-  describe("Array", () => {
-    testEvalBlockOf({
-      src: "(const a [])(Array.push a 2)(Array.push a 3)(Array.push a 5) a",
-      expected: [2, 3, 5],
       setUpConfig,
     });
   });

@@ -24,8 +24,9 @@ describe("evalForm", () => {
   function setUpConfig(): Config {
     const modulePaths: ModulePaths = new Map();
     modulePaths.set("base", `${standardModuleRoot}/base.js`);
-    modulePaths.set("meta", "npm:@custard-lang/processor/dist/lib/meta.js");
-    modulePaths.set("async", "npm:@custard-lang/processor/dist/lib/async.js");
+    modulePaths.set("meta", `${standardModuleRoot}/meta.js`);
+    modulePaths.set("async", `${standardModuleRoot}/async.js`);
+    modulePaths.set("js", `${standardModuleRoot}/js.js`);
 
     const srcPath = fileOfImportMetaUrl(import.meta.url);
     return {
@@ -33,8 +34,9 @@ describe("evalForm", () => {
       providedSymbols: {
         from: srcPath,
         modulePaths,
-        implicitStatements: "(importAnyOf base)(import meta)(import async)",
-        jsTopLevels: [],
+        implicitStatements:
+          "(importAnyOf base)(import meta)(import async)(import js)",
+        jsTopLevels: ["Map"],
       },
     };
   }
@@ -61,7 +63,7 @@ describe("evalForm", () => {
     const basePathJson = JSON.stringify(`${standardModuleRoot}/base.js`);
     const proviedSymbolsSrcFrom = (src: FilePath): JsSrc => {
       const fromSrc = JSON.stringify(src);
-      return `{ modulePaths: (Map.new [["base" ${basePathJson}]]), implicitStatements: "(importAnyOf base)", jsTopLevels: [], from: ${fromSrc} }`;
+      return `{ modulePaths: (js.new Map [["base" ${basePathJson}]]), implicitStatements: "(importAnyOf base)", jsTopLevels: [], from: ${fromSrc} }`;
     };
     const extraOptionsSrc = `{ mayHaveResult: true }`;
 

@@ -17,7 +17,7 @@
   (agent.login
     { identifier: myDid, password }))
 
-(const outDirectory (Array.at process.argv 2))
+(const outDirectory (get process.argv 2))
 (const statePath (path.join outDirectory "state.json"))
 
 (const
@@ -53,18 +53,18 @@
         (forEach p res.data.feed
           (when (isAlreadySaved p.post)
             (return result))
-          (Array.push result p.post))
+          (result.push p.post))
         (when (isNone cursor)
           (return result))))))
 
 (when (isGreaterThanOrEquals posts.length 1)
   (const
+    indexedAts (posts.map (fn (p) p.indexedAt)))
+  (const
     latestIndexedAt
-    (Array.reduce
-      (Array.map posts (fn (p) p.indexedAt))
+    (indexedAts.reduce
       (fn (a b)
-        (if (isGreaterThan (new Date a) (new Date b))
-          a else b))))
+        (if (isGreaterThan (new Date a) (new Date b)) a else b))))
   (const
     outName
     (iso8601ForFs.toFileName latestIndexedAt ".json"))
@@ -75,7 +75,7 @@
   (async.await
     (fs.writeFile (path.join outDirectory outName) outJson))
 
-  (const latestPost (Array.first posts))
+  (const latestPost (first posts))
   (const latestUri latestPost.uri)
   (async.await
     (fs.writeFile
