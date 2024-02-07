@@ -19,7 +19,7 @@ const specialSingle = "[\\[\\]{}()'`~^@:]";
 const doubleQuoted = '"(?:\\\\.|[^\\\\"])*"?';
 const doubleQuotedRe = new RegExp(doubleQuoted);
 
-// TODO: symbolに変えて、JSのidentifierと同等に
+// TODO: symbolにrenameして、JSのidentifierと同等に
 const nonSpecial = "[^\\s\\[\\]{}('\"`,;:)]*";
 
 export function buildTokenRegex(): RegExp {
