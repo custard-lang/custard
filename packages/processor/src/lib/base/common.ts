@@ -119,7 +119,7 @@ export function transpiling2(
         );
       }
 
-      return f(ra, rb);
+      return `(${f(ra, rb)})`;
     },
   );
 }

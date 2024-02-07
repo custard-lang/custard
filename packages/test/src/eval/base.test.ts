@@ -51,6 +51,11 @@ describe("evalForm", () => {
     setUpConfig,
   });
   testEvalFormOf({
+    src: "( timesF 2.0 (plusF 3.0 4.0) )",
+    expected: 14,
+    setUpConfig,
+  });
+  testEvalFormOf({
     src: '(eval "1")',
     expected: new TranspileError(
       "No variable `eval` is defined! NOTE: If you want to define `eval` recursively, wrap the declaration(s) with `recursive`.",
@@ -504,6 +509,16 @@ describe("evalForm", () => {
     testEvalFormOf({
       src: '(any "" none)',
       expected: "",
+      setUpConfig,
+    });
+    testEvalFormOf({
+      src: "(plusF (any 2 0) 3)",
+      expected: 5,
+      setUpConfig,
+    });
+    testEvalFormOf({
+      src: "(plusF 3 (any 2 0))",
+      expected: 5,
       setUpConfig,
     });
   });

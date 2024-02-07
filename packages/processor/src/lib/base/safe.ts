@@ -126,7 +126,7 @@ export const decrementF = transpilingForVariableMutation(
 export const plusF = transpiling2("plusF", (a: JsSrc, b: JsSrc) => `${a}+${b}`);
 export const minusF = transpiling2(
   "minusF",
-  (a: JsSrc, b: JsSrc) => `(${a}-${b})`,
+  (a: JsSrc, b: JsSrc) => `${a}-${b}`,
 );
 export const timesF = transpiling2(
   "timesF",
