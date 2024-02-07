@@ -133,9 +133,7 @@ function atom(s: Scanner): Atom | ParseError {
     return new ParseError("Unexpected end of input!");
   }
   if (doubleQuotedRe.test(token)) {
-    return token
-      .slice(1, token.length - 1)
-      .replace(/\\(.)/g, (_, c: string) => (c == "n" ? "\n" : c));
+    return JSON.parse(token) as string;
   }
   const md = /^-?[0-9]+(\.[0-9]+)?$/.exec(token);
   if (md) {
