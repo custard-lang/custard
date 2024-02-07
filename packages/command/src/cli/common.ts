@@ -17,6 +17,7 @@ import {
   ValidationError,
   initializeForRepl,
 } from "@custard-lang/processor";
+import { assertNonError } from "@custard-lang/processor/dist/util/error.js";
 
 export const transpileProgram = program
   .option(
@@ -65,7 +66,7 @@ export async function transpileMain(
     throw env;
   }
   const providedSymbolsConfig = ProvidedSymbolsConfig.validate(
-    await evalBlock(providedSymbolsBlock, env),
+    assertNonError(await evalBlock(providedSymbolsBlock, env)),
   );
   if (ValidationError.is(providedSymbolsConfig)) {
     console.error("Error when validating the provided symbols config.");
