@@ -1,7 +1,7 @@
 {
   "type": "module",
   "name": "@custard-lang/command",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "The command line interface for my programming language Custard",
   "main": "dist/index.js",
   "bin": {
