@@ -1,0 +1,119 @@
+(const expenditureByCategory (createMap))
+(let expenditure 0)
+(const incomeByCategory (createMap))
+(let income 0)
+
+(annotate
+  "Parse each line into fields. The format parsed here is rather relaxed than the exact syntax of igrep-cashbook."
+  (const
+    parseLine
+    (fn (n l)
+      (const trimmed (l.trim))
+      (const
+        isDateLine
+        (fn ()
+          (const dateRegExp (createRegExp "^\\d\\d/\\d\\d/\\d\\d$"))
+          (dateRegExp.test trimmed)))
+
+      (when
+        (or
+          (l.startsWith "#")
+          (or
+            (isLessThan l.length 1)
+            (isDateLine)))
+        (return none))
+
+      (when (not (l.startsWith " "))
+        (return (text "At line " n ": Invalid line. Missing a leading space.")))
+
+      (const sep (createRegExp " {2,}"))
+      (const fields (trimmed.split sep 3))
+      (const [name amountS category] fields)
+
+      (when (isNone name)
+        (return (text "At line " n ": Missing name field.")))
+      (when (isNone category)
+        (return (text "At line " n ": Missing category field.")))
+      (when (isNone amountS)
+        (return (text "At line " n ": Missing amount field.")))
+
+      (const reAmount (createRegExp "^(?<isIncome>\\+?)[\\d,_]+$"))
+      (const amountMd (amountS.match reAmount))
+      (when (isNone amountMd)
+        (return (text "At line " n ": Invalid amount field: " amountS)))
+
+      (const reAmountSeparator (createRegExp "[,_]+" "g"))
+      (const amount (Number (amountS.replace reAmountSeparator "")))
+
+      (when (isLessThan amount 1)
+        (return (text "At line " n ": Invalid amount field: " amount)))
+
+      (const isIncome (equals amountMd.groups.isIncome "+"))
+      (return {category isIncome amount}))))
+
+(const args (process.argv.slice 2))
+(forEach f (if (isGreaterThan args.length 0) args else ["-"])
+  (const
+    reader
+    (if (equals f "-")
+      process.stdin
+      else
+      (fsC.createReadStream f)))
+
+  (reader.setEncoding "utf8")
+  (let data "")
+  (async.forEach chunk reader
+    (assign data (text data chunk)))
+  (let lines (data.split "\n"))
+
+  (forEach [i l] (lines.entries)
+    (const n (plusF i 1))
+    (const result (parseLine n l))
+    (when (isNone result)
+      (continue))
+    (when (isString result)
+      (console.warn result)
+      (continue))
+
+    (const {category isIncome amount} result)
+
+    (if isIncome
+      (incomeByCategory.set
+        category
+        (plusF
+          (any (incomeByCategory.get category) 0)
+          amount))
+      (assign income (plusF income amount))
+      else
+      (expenditureByCategory.set
+        category
+        (plusF
+          (any (expenditureByCategory.get category) 0)
+          amount))
+      (assign expenditure (plusF expenditure amount)))))
+
+(const sum (minusF income expenditure))
+(const expenditureS (expenditure.toString))
+(const incomeS (income.toString))
+(const sumS (sum.toString))
+
+(const digits (Math.max expenditureS.length incomeS.length sumS.length))
+
+(const
+  printSummary
+  (fn (byCategory)
+    (const categories (Array.from (byCategory.keys)))
+    (categories.sort
+      (fn (a b) (minusF (byCategory.get b) (byCategory.get a))))
+    (forEach c categories
+      (const amount (byCategory.get c))
+      (const amountS (amount.toString))
+      (console.log (text c "\t" (amountS.padStart digits " "))))))
+
+(console.log "## EXPENDITURES ##\n")
+(printSummary expenditureByCategory)
+(console.log (text "合計\t" (expenditureS.padStart digits " ")))
+(console.log "\n#### INCOMES ####\n")
+(printSummary incomeByCategory)
+(console.log (text "収入\t" (incomeS.padStart digits " ")))
+(console.log (text "\n合計\t" (sumS.padStart digits " ")))

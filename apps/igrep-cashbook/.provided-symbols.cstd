@@ -1,0 +1,10 @@
+(const modulePaths (createMap))
+(modulePaths.set "base" (text standardModuleRoot "base.js"))
+(modulePaths.set "async" (text standardModuleRoot "async.js"))
+(modulePaths.set "fsC" "node:fs")
+
+{
+  modulePaths,
+  implicitStatements: "(importAnyOf base)(import async)(import fsC)",
+  jsTopLevels: ["console" "Number" "process" "Array" "Math"],
+}
