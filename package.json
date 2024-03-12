@@ -30,7 +30,6 @@
     "vitest": "^1.1.1"
   },
   "workspaces": [
-    "packages/*",
-    "apps/save-posts"
+    "packages/*"
   ]
 }
