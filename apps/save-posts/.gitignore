@@ -1,3 +1,7 @@
 src/*.mjs
 save-daily.bat
 save-daily.command
+
+*.d.ts
+*.js
+*.js.map
