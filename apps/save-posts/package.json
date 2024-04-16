@@ -9,7 +9,7 @@
     "custard-run": "node ../../packages/command/dist/cli.js run -p .provided-symbols.cstd",
     "custard-transpile:not-working-on-windows": "custard tranpile -vp .provided-symbols-config.cstd src/*.cstd",
     "custard-run:not-working-on-windows": "custard run -p .provided-symbols-config.cstd",
-    "test": "vitest run"
+    "test": "vitest"
   },
   "repository": {
     "type": "git",
