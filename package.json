@@ -6,7 +6,7 @@
   "scripts": {
     "custard": "node packages/command/dist/cli.js",
     "build": "tsc -b tsconfig.build.json",
-    "clean": "rimraf -g \"packages/**/dist\" \"packages/**/*.tsbuildinfo\"",
+    "clean": "rimraf -g \"packages/**/dist\" \"packages/**/*.tsbuildinfo\" \"*.tsbuildinfo\"",
     "test": "npm run --ws test --if-present",
     "test:detailed": "npm run test -- --reporter verbose",
     "test:coverage": "npm run test -- run --coverage",
