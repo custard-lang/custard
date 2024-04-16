@@ -70,9 +70,9 @@
       rt
       (new
         atproto.default.RichText
-        { text: record.text, facets: record.facets }))
+        { text: record.text facets: record.facets }))
     (let result "")
-    (forEach { text: t, facet } (rt.segments)
+    (forEach { text: t facet } (rt.segments)
       (assign
         result
         (text result (applyFacet facet (escapeMarkdown t)))))
@@ -108,7 +108,7 @@
 
     (const
       imageParagraph
-      (fn ({ thumb, fullsize, alt, aspectRatio })
+      (fn ({ thumb fullsize alt aspectRatio })
         (const
           style
           (fn ()

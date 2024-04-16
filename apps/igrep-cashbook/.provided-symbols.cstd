@@ -4,7 +4,7 @@
 (modulePaths.set "fsC" "node:fs")
 
 {
-  modulePaths,
-  implicitStatements: "(importAnyOf base)(import async)(import fsC)",
-  jsTopLevels: ["console" "Number" "process" "Array" "Math"],
+  modulePaths
+  implicitStatements: "(importAnyOf base)(import async)(import fsC)"
+  jsTopLevels: ["console" "Number" "process" "Array" "Math"]
 }
