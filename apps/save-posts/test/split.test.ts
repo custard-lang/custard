@@ -42,7 +42,7 @@ describe("split.cstd", () => {
   beforeEach(async () => {
     for await (const { name } of await opendir("tmp")) {
       if (name.endsWith(".json")) {
-        await rm(`tmp/${name}`, { maxRetries: 3 });
+        await rm(`tmp/${name}`, { maxRetries: 3, force: true });
       }
     }
 
