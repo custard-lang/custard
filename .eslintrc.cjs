@@ -48,6 +48,7 @@ module.exports = {
         ignoreIIFE: true,
       },
     ],
+    "@typescript-eslint/no-redundant-type-constituents": "off",
     "@typescript-eslint/no-unused-vars": [
       "warn",
       {
