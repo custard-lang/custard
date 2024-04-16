@@ -5,7 +5,7 @@
   (async.generatorFn (paths)
     (forEach p paths
       (forEach e (JSON.parse (async.await (fs.readFile p "utf-8")))
-        [ (yield [e p])]))))
+        (yield [e p])))))
 
 (annotate
   "Utility function that should be in the standard library of Custard."
