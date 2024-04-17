@@ -31,6 +31,10 @@ import {
   isMarkedDirectExportableStatementWriter,
   DirectWriter,
   isLiteralArray,
+  isKeyValue,
+  unknownLocation,
+  emptyList,
+  formatForError,
 } from "../../internal/types.js";
 
 import {
@@ -55,7 +59,7 @@ function isCallOf(
   if (call === undefined) {
     return false;
   }
-  const w = EnvF.find(env, call[0]);
+  const w = EnvF.find(env, call.v[0]);
   // TODO: More helpful error if the writer is not found
   return w !== undefined && p(w);
 }
@@ -141,15 +145,19 @@ export function transpilingFunctionArguments(
 // TODO: Handle assignment to reserved words etc.
 export function transpilingForAssignment(
   formId: Id,
-  f: (env: Env, id: Form, exp: JsSrc) => Promise<JsSrc | TranspileError>,
+  f: (env: Env, id: Form, exp?: JsSrc) => Promise<JsSrc | TranspileError>,
   kind: DirectWriterKindFlags = exportableStatement,
 ): MarkedDirectWriter {
   return markAsDirectWriter(
-    async (env: Env, id: Form, v: Form, another?: Form) => {
+    async (env: Env, id: Form, v?: Form, another?: Form) => {
       if (another != null) {
         return new TranspileError(
           `The number of arguments to \`${formId}\` must be 2!`,
         );
+      }
+
+      if (v === undefined) {
+        return await f(env, id);
       }
 
       const exp = await transpileExpression(v, env);
@@ -164,15 +172,16 @@ export function transpilingForAssignment(
 
 export function transpilingForVariableDeclaration(
   formId: Id,
-  buildStatement: (assignee: JsSrc, exp: JsSrc) => JsSrc,
+  buildStatement: (assignee: JsSrc, exp?: JsSrc) => JsSrc | TranspileError,
   newWriter: () => Writer,
 ): MarkedDirectWriter {
   return transpilingForAssignment(
     formId,
-    async (env: Env, sym: Form, exp: JsSrc) => {
+    async (env: Env, sym: Form, exp?: JsSrc) => {
       let r: undefined | TranspileError;
 
       if (EnvF.isAtReplTopLevel(env)) {
+        exp ??= "void 0";
         if (isCuSymbol(sym)) {
           r = tryToSet(sym, env, newWriter);
           if (TranspileError.is(r)) {
@@ -185,40 +194,40 @@ export function transpilingForVariableDeclaration(
           const { id: tmpVar, statement } = EnvF.tmpVarOf(env, exp);
           let src = statement;
           for (const kvOrSym of sym.v) {
-            if (isCuSymbol(kvOrSym)) {
-              r = tryToSet(kvOrSym, env, newWriter);
+            if (isKeyValue(kvOrSym)) {
+              const [k, v] = kvOrSym;
+
+              let expDotId: JsSrc | TranspileError;
+              if (isCuSymbol(k)) {
+                expDotId = `${tmpVar}.${k.v}`;
+              } else {
+                // TODO: expect k is an LiteralArray
+                const kSrc = await transpileExpression(k, env);
+                if (TranspileError.is(kSrc)) {
+                  return kSrc;
+                }
+                expDotId = `${tmpVar}${kSrc}`;
+              }
+
+              if (!isCuSymbol(v)) {
+                const vFormatted = formatForError(v);
+                return new TranspileError(
+                  `${formId}'s assignee must be a symbol, but ${vFormatted} is not!`,
+                );
+              }
+              r = tryToSet(v, env, newWriter);
               if (TranspileError.is(r)) {
                 return r;
               }
-              const expDotId = `${tmpVar}.${kvOrSym.v}`;
-              src = `${src}\n${pseudoTopLevelAssignment(kvOrSym.v, expDotId)};`;
+              src = `${src}\n${pseudoTopLevelAssignment(v.v, expDotId)};`;
               continue;
             }
-            const [k, v] = kvOrSym;
-
-            let expDotId: JsSrc | TranspileError;
-            if (isCuSymbol(k)) {
-              expDotId = `${tmpVar}.${k.v}`;
-            } else {
-              // TODO: expect k is an LiteralArray
-              const kSrc = await transpileExpression(k, env);
-              if (TranspileError.is(kSrc)) {
-                return kSrc;
-              }
-              expDotId = `${tmpVar}${kSrc}`;
-            }
-
-            if (!isCuSymbol(v)) {
-              const vJson = JSON.stringify(v);
-              return new TranspileError(
-                `${formId}'s assignee must be a symbol, but ${vJson} is not!`,
-              );
-            }
-            r = tryToSet(v, env, newWriter);
+            r = tryToSet(kvOrSym, env, newWriter);
             if (TranspileError.is(r)) {
               return r;
             }
-            src = `${src}\n${pseudoTopLevelAssignment(v.v, expDotId)};`;
+            const expDotId = `${tmpVar}.${kvOrSym.v}`;
+            src = `${src}\n${pseudoTopLevelAssignment(kvOrSym.v, expDotId)};`;
           }
           return src;
         }
@@ -236,18 +245,18 @@ export function transpilingForVariableDeclaration(
               src = `${src}\n${pseudoTopLevelAssignment(v.v, expDotId)};`;
               continue;
             }
-            const vJson = JSON.stringify(v);
+            const vFormatted = formatForError(v);
             return new TranspileError(
-              `${formId}'s assignee must be a symbol, but ${vJson} is not!`,
+              `${formId}'s assignee must be a symbol, but ${vFormatted} is not!`,
             );
           }
 
           return src;
         }
 
-        const symJson = JSON.stringify(sym);
+        const symFormatted = formatForError(sym);
         return new TranspileError(
-          `${formId}'s assignee must be a symbol, but ${symJson} is not!`,
+          `${formId}'s assignee must be a symbol, but ${symFormatted} is not!`,
         );
       }
 
@@ -276,36 +285,35 @@ export function transpileAssignee(
   if (isLiteralObject(sym)) {
     let assignee = "{";
     for (const kvOrSym of sym.v) {
-      if (isCuSymbol(kvOrSym)) {
-        const r0 = tryToSet(kvOrSym, env, newWriter);
-        if (TranspileError.is(r0)) {
-          return r0;
+      if (isKeyValue(kvOrSym)) {
+        const [k, v] = kvOrSym;
+        if (!isCuSymbol(k)) {
+          const kFormatted = formatForError(k);
+          return new TranspileError(
+            `${formId}'s assignee must be a symbol, but ${kFormatted} is not!`,
+          );
         }
-        assignee = `${assignee}${`${kvOrSym.v},`}`;
+
+        if (!isCuSymbol(v)) {
+          const vFormatted = formatForError(v);
+          return new TranspileError(
+            `${formId}'s assignee must be a symbol, but ${vFormatted} is not!`,
+          );
+        }
+
+        const r1 = tryToSet(v, env, newWriter);
+        if (TranspileError.is(r1)) {
+          return r1;
+        }
+
+        assignee = `${assignee}${k.v}:${v.v},`;
         continue;
       }
-
-      const [k, v] = kvOrSym;
-      if (!isCuSymbol(k)) {
-        const vJson = JSON.stringify(v);
-        return new TranspileError(
-          `${formId}'s assignee must be a symbol, but ${vJson} is not!`,
-        );
+      const r0 = tryToSet(kvOrSym, env, newWriter);
+      if (TranspileError.is(r0)) {
+        return r0;
       }
-
-      if (!isCuSymbol(v)) {
-        const vJson = JSON.stringify(v);
-        return new TranspileError(
-          `${formId}'s assignee must be a symbol, but ${vJson} is not!`,
-        );
-      }
-
-      const r1 = tryToSet(v, env, newWriter);
-      if (TranspileError.is(r1)) {
-        return r1;
-      }
-
-      assignee = `${assignee}${k.v}:${v.v},`;
+      assignee = `${assignee}${`${kvOrSym.v},`}`;
     }
     return `${assignee}}`;
   }
@@ -321,16 +329,16 @@ export function transpileAssignee(
         continue;
       }
 
-      const formJson = JSON.stringify(form);
+      const formFormatted = formatForError(form);
       return new TranspileError(
-        `${formId}'s assignee must be a symbol, but ${formJson} is not!`,
+        `${formId}'s assignee must be a symbol, but ${formFormatted} is not!`,
       );
     }
     return `${assignee}]`;
   }
-  const symJson = JSON.stringify(sym);
+  const symFormatted = formatForError(sym);
   return new TranspileError(
-    `${formId}'s assignee must be a symbol or an object literal, but ${symJson} is not!`,
+    `${formId}'s assignee must be a symbol or an object literal, but ${symFormatted} is not!`,
   );
 }
 
@@ -391,18 +399,17 @@ function functionPrelude(
   beforeArguments: JsSrc,
   afterArguments: JsSrc,
 ): JsSrc | TranspileError {
-  if (!(args instanceof Array)) {
+  if (args.t !== "List") {
+    const argsFormatted = formatForError(args);
     return new TranspileError(
-      `Arguments for a function must be a list of symbols! But actually ${JSON.stringify(
-        args,
-      )}`,
+      `Arguments for a function must be a list of symbols! But ${argsFormatted} is not!`,
     );
   }
 
   EnvF.push(env, scopeOptions);
 
   const argPatterns: JsSrc[] = [];
-  for (const arg of args) {
+  for (const arg of args.v) {
     const argSrc = transpileAssignee(formId, env, arg, aVar);
     if (TranspileError.is(argSrc)) {
       return argSrc;
@@ -441,7 +448,9 @@ export async function buildFn(
 
   const lastI = block.length - 1;
   for (let i = 0; i < lastI; ++i) {
-    const src = await transpileExpression(block[i], env);
+    // `i` is always less than `block.length` so it's safe to use `block[i]!`
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const src = await transpileExpression(block[i]!, env);
     if (TranspileError.is(src)) {
       return src;
     }
@@ -449,15 +458,18 @@ export async function buildFn(
   }
 
   const lastStatement = block[lastI];
-  const lastSrc = await transpileExpression(lastStatement, env);
-  if (TranspileError.is(lastSrc)) {
-    return lastSrc;
-  }
+  if (lastStatement !== undefined) {
+    const lastSrc = await transpileExpression(lastStatement, env);
+    if (TranspileError.is(lastSrc)) {
+      return lastSrc;
+    }
 
-  if (isStatement(env, lastStatement)) {
-    return functionPostlude(env, `${result}  ${lastSrc};\n`);
+    if (isStatement(env, lastStatement)) {
+      return functionPostlude(env, `${result}  ${lastSrc};\n`);
+    }
+    return functionPostlude(env, `${result}  return ${lastSrc};\n`);
   }
-  return functionPostlude(env, `${result}  return ${lastSrc};\n`);
+  return functionPostlude(env, result);
 }
 
 export async function buildProcedure(
@@ -482,7 +494,9 @@ export async function buildProcedure(
   }
 
   for (let i = 0; i < block.length; ++i) {
-    const src = await transpileExpression(block[i], env);
+    // `i` is always less than `block.length` so it's safe to use `block[i]!`
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const src = await transpileExpression(block[i]!, env);
     if (TranspileError.is(src)) {
       return src;
     }
@@ -502,7 +516,7 @@ export function buildScope(
       const funcSrc = await buildFn(
         formId,
         env,
-        [],
+        emptyList(unknownLocation),
         block,
         scopeOptions,
         "",
@@ -564,8 +578,9 @@ export function constructorFor(id: Id, arity: number): MarkedDirectWriter {
   return markAsDirectWriter(
     async (env: Env, ...args: Form[]): Promise<JsSrc | TranspileError> => {
       if (args.length > arity) {
+        const argsFormatted = args.map((arg) => formatForError(arg)).join(", ");
         return new TranspileError(
-          `Too many arguments to \`${id}\` (${JSON.stringify(args)})`,
+          `Too many arguments to \`${id}\` (${argsFormatted})`,
         );
       }
       const argsSrc = await transpileJoinWithComma(args, env);

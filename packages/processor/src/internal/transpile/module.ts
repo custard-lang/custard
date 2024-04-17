@@ -2,10 +2,10 @@ import * as EnvF from "../env.js";
 import { loadModule } from "../definitions.js";
 import {
   canBePseudoTopLevelReferenced,
-  CuArray,
   CuSymbol,
   Env,
   exportableStatement,
+  Form,
   Id,
   isCuSymbol,
   isWriter,
@@ -20,7 +20,7 @@ import { transpileExpression } from "../transpile.js";
 import { isExportableStatement } from "../../lib/base/common.js";
 
 export const _cu$import = markAsDirectWriter(
-  async (env: Env, ...forms: CuArray): Promise<JsSrc | TranspileError> => {
+  async (env: Env, ...forms: Form[]): Promise<JsSrc | TranspileError> => {
     const moduleId = validateArgsOfImport(forms, "import");
     if (TranspileError.is(moduleId)) {
       return moduleId;
@@ -65,7 +65,7 @@ export const _cu$import = markAsDirectWriter(
 );
 
 export const importAnyOf = markAsDirectWriter(
-  async (env: Env, ...forms: CuArray): Promise<JsSrc | TranspileError> => {
+  async (env: Env, ...forms: Form[]): Promise<JsSrc | TranspileError> => {
     const moduleId = validateArgsOfImport(forms, "importAnyOf");
     if (TranspileError.is(moduleId)) {
       return moduleId;
@@ -122,7 +122,7 @@ export const importAnyOf = markAsDirectWriter(
 );
 
 function validateArgsOfImport(
-  forms: CuArray,
+  forms: Form[],
   formId: Id,
 ): TranspileError | CuSymbol {
   if (forms.length !== 1) {
@@ -131,14 +131,14 @@ function validateArgsOfImport(
     );
   }
   const [id] = forms;
-  if (!isCuSymbol(id)) {
+  if (id === undefined || !isCuSymbol(id)) {
     return new TranspileError("The argument of `import` must be a Symbol.");
   }
   return id;
 }
 
 export const _cu$export = markAsDirectWriter(
-  async (env: Env, ...forms: CuArray): Promise<JsSrc | TranspileError> => {
+  async (env: Env, ...forms: Form[]): Promise<JsSrc | TranspileError> => {
     if (forms.length === 0) {
       return new TranspileError(
         "The number of arguments of `export` must be at least 1.",

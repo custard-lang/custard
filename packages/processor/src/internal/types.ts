@@ -1,81 +1,119 @@
-import { expectNever } from "../util/error.js";
-import { Awaitable } from "../util/types.js";
+import { ExpectNever, expectNever } from "../util/error.js";
+import { Awaitable, Empty } from "../util/types.js";
 
 import * as s from "../lib/spec.js";
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
+export type Block<X extends Empty = Empty> = Form<X>[];
 
-export type Block = Form[];
+export type Form<X extends Empty = Empty> = List<X> | LiteralArray<X> | LiteralObject<X> | Atom<X>;
 
-export type Form = CuArray | LiteralArray | LiteralObject | Atom;
-
-export type LiteralArray = { t: "LiteralArray"; v: CuArray };
-
-export function isLiteralArray(v: Form): v is LiteralArray {
-  return v !== undefined && (v as Record<string, unknown>).t === "LiteralArray";
+// The ***Base interfaces are necessary to avoid circular references. But I'm not sure why this works!
+interface ListBase<X extends Empty = Empty> {
+  t: "List";
+  v: Form<X>[];
 }
 
-export type CuArray = Form[];
+export type List<X extends Empty = Empty> = ListBase<X> & X;
 
-export type LiteralObject = {
-  t: "LiteralObject";
-  v: (KeyValue | CuSymbol)[];
-};
-
-export function isLiteralObject(v: Form): v is LiteralObject {
-  return (
-    v !== undefined && (v as Record<string, unknown>).t === "LiteralObject"
-  );
+export function emptyList(l: Location): List<Location> {
+  return { ...l, t: "List", v: [] };
 }
 
-// TODO: Perhaps key should be either an Atom or Call;
-export type KeyValue = [Form, Form];
+export function isList<X extends Empty>(v: Form<X>): v is List<X> {
+  return v.t === "List";
+}
+
+interface CallBase<X extends Empty = Empty> {
+  t: "List";
+  v: [CuSymbol<X> | PropertyAccess<X>, ...Form<X>[]];
+}
+
+export type Call<X extends Empty = Empty> = CallBase<X> & X;
+
+export interface LiteralArrayBase<X extends Empty = Empty> {
+  t: "Array";
+  v: Form<X>[];
+}
+
+export type LiteralArray<X extends Empty = Empty> = LiteralArrayBase<X> & X;
+
+export function isLiteralArray<X extends Empty = Empty>(v: Form<X>): v is LiteralArray<X> {
+  return v.t === "Array";
+}
+
+export interface LiteralObjectBase<X extends Empty = Empty> {
+  t: "Object";
+  v: (KeyValue<X> | CuSymbol<X>)[];
+}
+
+export type LiteralObject<X extends Empty = Empty> = LiteralObjectBase<X> & X;
+
+export function isLiteralObject<X extends Empty = Empty>(v: Form<X>): v is LiteralObject<X> {
+  return v.t === "Object";
+}
+
+// TODO: Perhaps key should be either an Atom or LiteralArray;
+export type KeyValue<X extends Empty = Empty> = [Form<X>, Form<X>];
+
+// This is used to see the element of the LiteralObject, that's why its
+// argument is `Form | KeyValue`, unlike the other is* functions.
+export function isKeyValue<X extends Empty = Empty>(v: Form<X> | KeyValue<X>): v is KeyValue<X> {
+  return Array.isArray(v);
+}
 
 // The `Cu` prefix is only to avoid conflicts with TypeScript's builtin types.
-export type Atom =
-  | Integer32
-  | Float64
-  | CuString
-  | Bool
-  | None
-  | CuSymbol
-  | PropertyAccess;
+export type Atom<X extends Empty = Empty> =
+  | LiteralInteger32<X>
+  | LiteralFloat64<X>
+  | LiteralString<X>
+  | ReservedSymbol<X>
+  | CuSymbol<X>
+  | PropertyAccess<X>;
 
-export type Integer32 = {
+export type LiteralInteger32<X extends Empty = Empty> = {
   t: "Integer32";
   v: number;
-};
+} & X;
 
-export type Float64 = number;
+export type LiteralFloat64<X extends Empty = Empty> = {
+  t: "Float64";
+  v: number;
+} & X;
 
-export type CuString = string;
+export type LiteralString<X extends Empty = Empty> = {
+  t: "String";
+  v: string;
+} & X;
 
-export type Bool = boolean;
+export type ReservedSymbol<X extends Empty = Empty> = {
+  t: "ReservedSymbol";
+  v: boolean | null;
+} & X;
 
-export type None = undefined;
-
-export type CuSymbol = {
+export type CuSymbol<X extends Empty = Empty> = {
   t: "Symbol";
   v: string;
-};
+} & X;
+
+export function locatedCuSymbol(v: string, l: Location): CuSymbol<Location> {
+  return { ...l, t: "Symbol", v };
+}
 
 export function cuSymbol(v: string): CuSymbol {
   return { t: "Symbol", v };
 }
 
-export type PropertyAccess = {
-  t: "PropertyAccess";
-  v: string[];
-};
-
-export function isCuSymbol(v: Form): v is CuSymbol {
-  return v !== undefined && (v as Record<string, unknown>).t === "Symbol";
+export function isCuSymbol<X extends Empty = Empty>(v: Form<X>): v is CuSymbol<X> {
+  return v.t === "Symbol";
 }
 
-export function isPropertyAccess(v: Form): v is PropertyAccess {
-  return (
-    v !== undefined && (v as Record<string, unknown>).t === "PropertyAccess"
-  );
+export type PropertyAccess<X extends Empty = Empty> = X & {
+  t: "PropertyAccess";
+  v: string[];
+}
+
+export function isPropertyAccess<X extends Empty = Empty>(v: Form<X>): v is PropertyAccess<X> {
+  return v.t === "PropertyAccess";
 }
 
 export function showSymbolAccess(sym: CuSymbol | PropertyAccess): string {
@@ -86,6 +124,86 @@ export function showSymbolAccess(sym: CuSymbol | PropertyAccess): string {
       return sym.v.join(".");
     default:
       return expectNever(sym) as string;
+  }
+}
+
+export interface ReaderInput {
+  readonly path: FilePath;
+  readonly contents: string;
+}
+
+export interface Location {
+  l: number;
+  c: number;
+  f: FilePath;
+  // Add lexical binding information like Racket's syntax object?
+}
+
+export const unknownLocation: Location = Object.freeze({
+  l: -1,
+  c: -1,
+  f: "THIS_SHOULD_NOT_BE_SHOWN",
+});
+
+export function formatForError(f: Form): string {
+  switch (f.t) {
+    case "List":
+      return `\`(List${formatForErrorElement(f.v, formatForErrorShallow)})\``;
+    case "Array":
+      return `\`(Array${formatForErrorElement(f.v, formatForErrorShallow)})\``;
+    case "Object":
+      return `\`(Object${formatForErrorElement(f.v, formatForErrorKV)})\``;
+    default:
+      return formatForErrorAtom(f);
+  }
+}
+
+function formatForErrorElement<T>(forms: T[], fx: (f: T) => string): string {
+  const [first, ...rest] = forms;
+  if (first === undefined) {
+    return "";
+  }
+  if (rest.length === 0) {
+    return ` ${fx(first)}`;
+  }
+  return ` ${fx(first)} ...`;
+}
+
+function formatForErrorKV(kv: KeyValue | CuSymbol): string {
+  if (isKeyValue(kv)) {
+    return `${formatForErrorShallow(kv[0])}: ${formatForErrorShallow(kv[1])}`;
+  }
+  return formatForErrorShallow(kv);
+}
+
+function formatForErrorShallow(f: Form): string {
+  switch (f.t) {
+    case "List":
+      return `\`(List ..)\``;
+    case "Array":
+      return `\`(Array ..)\``;
+    case "Object":
+      return `\`(Object ..)\``;
+    default:
+      return formatForErrorAtom(f);
+  }
+}
+
+function formatForErrorAtom(f: Atom): string {
+  switch (f.t) {
+    case "Integer32":
+    case "Float64":
+      return `\`(${f.t} ${f.v})\``;
+    case "String":
+      return `\`(String ${JSON.stringify(f.v)})\``;
+    case "ReservedSymbol":
+      return `\`(ReservedSymbol ${f.v === null ? "none" : f.v})\``;
+    case "Symbol":
+      return `\`(Symbol ${f.v})\``;
+    case "PropertyAccess":
+      return `\`(PropertyAccess ${f.v.join(".")})\``;
+    default:
+      throw ExpectNever(f);
   }
 }
 
@@ -141,8 +259,6 @@ export class TranspileError extends Error {
     return !!(e as Record<string, unknown>)?._cu$isTranspileError;
   }
 }
-
-export type Call = [CuSymbol | PropertyAccess, ...Form[]];
 
 export type Env<State extends TranspileState = TranspileState> = {
   readonly scopes: [Scope, ...Scope[]];
@@ -233,7 +349,7 @@ export function isNamespace(x: Writer): x is Namespace {
 
 export type DirectWriter = (
   env: Env,
-  ...forms: CuArray
+  ...forms: Form[]
 ) => Awaitable<JsSrc | TranspileError>;
 export interface MarkedDirectWriter extends AnyWriter<5> {
   readonly call: DirectWriter;
@@ -285,6 +401,8 @@ export function isMarkedDirectExportableStatementWriter(
   return isMarkedDirectWriter(x) && x.kind.exportable;
 }
 
+  // `FunctionWithEnv` must receive literally any values.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type FunctionWithEnv = (env: Env, ...rest: any[]) => any | Error;
 export interface MarkedFunctionWithEnv extends AnyWriter<6> {
   readonly call: FunctionWithEnv;

@@ -16,6 +16,7 @@ import {
   standardModuleRoot,
   ValidationError,
   initializeForRepl,
+  readerInputOf,
 } from "@custard-lang/processor";
 import { assertNonError } from "@custard-lang/processor/dist/util/error.js";
 
@@ -31,11 +32,23 @@ export async function transpileMain(
   opts: { providedSymbols: string; verbose?: true | undefined },
   args: string[],
 ): Promise<string[]> {
-  let providedSymbolsBlock: Block | ParseError;
   const providedSymbolsPath = opts.providedSymbols;
+
+  const env = await initializeForRepl(
+    { srcPath: providedSymbolsPath },
+    {
+      from: providedSymbolsPath,
+      ...implicitlyImporting(`${standardModuleRoot}/base/safe.js`),
+    },
+  );
+
+  if (env instanceof Error) {
+    throw env;
+  }
+  let providedSymbolsBlock: Block | ParseError;
   try {
     providedSymbolsBlock = readBlock(
-      await fs.readFile(providedSymbolsPath, "utf-8"),
+      readerInputOf(env, await fs.readFile(providedSymbolsPath, "utf-8")),
     );
   } catch (e) {
     // There's no way to distinguish the "Not Found" error from the other errors except for using `any`!
@@ -46,24 +59,16 @@ export async function transpileMain(
           `Provided symbols config file not found at ${providedSymbolsPath}. Using the default`,
         );
       }
-      providedSymbolsBlock = readBlock(defaultProvidedSymbolsConfig);
+      providedSymbolsBlock = readBlock({
+        contents: defaultProvidedSymbolsConfig,
+        path: "@custard-lang/processor/src/default-provided-symbols.ts",
+      });
     } else {
       throw e;
     }
   }
   if (ParseError.is(providedSymbolsBlock)) {
     throw providedSymbolsBlock;
-  }
-
-  const env = await initializeForRepl(
-    { srcPath: providedSymbolsPath },
-    {
-      from: providedSymbolsPath,
-      ...implicitlyImporting(`${standardModuleRoot}/base/safe.js`),
-    },
-  );
-  if (env instanceof Error) {
-    throw env;
   }
   const providedSymbolsConfig = ProvidedSymbolsConfig.validate(
     assertNonError(await evalBlock(providedSymbolsBlock, env)),
@@ -81,7 +86,10 @@ export async function transpileMain(
     if (opts.verbose) {
       console.info(`Transpiling ${srcPath}...`);
     }
-    const block = readBlock(await fs.readFile(srcPath, "utf-8"));
+    const block = readBlock({
+      path: srcPath,
+      contents: await fs.readFile(srcPath, "utf-8"),
+    });
     if (block instanceof Error) {
       console.error("Error when parsing the source file.");
       throw block;

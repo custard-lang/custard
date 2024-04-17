@@ -8,13 +8,13 @@ import {
   Env,
   Form,
   ParseError,
-  prStr,
   evalForm,
   standardModuleRoot,
   defaultTranspileOptions,
   TranspileRepl,
   initializeForRepl,
   implicitlyImporting,
+  readerInputOf,
 } from "@custard-lang/processor";
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-return */
@@ -22,8 +22,8 @@ import {
 const rl = readline.createInterface({ input, output });
 
 // READ
-function read(str: string): Form | ParseError {
-  return readStr(str);
+function read(str: string, env: Env): Form | ParseError {
+  return readStr(readerInputOf(env, str));
 }
 
 // EVAL
@@ -31,25 +31,20 @@ async function evalCustard(ast: Form, env: Env<TranspileRepl>): Promise<any> {
   return await evalForm(ast, env);
 }
 
-// PRINT
-function print(exp: any): string {
-  if (exp instanceof Error) {
-    console.error(exp);
-    return "";
-  }
-  return prStr(exp);
-}
+// PRINT: TODO
+//function print(exp: any): string {
+//}
 
 async function readEvaluatePrint(
   str: string,
   env: Env<TranspileRepl>,
 ): Promise<void> {
-  const r0 = read(str);
+  const r0 = read(str, env);
   if (ParseError.is(r0)) {
     console.error(r0);
     return;
   }
-  console.log(print(await evalCustard(r0, env)));
+  console.log(await evalCustard(r0, env));
 }
 
 function finalize() {

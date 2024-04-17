@@ -3,16 +3,20 @@ import {
   TranspileRepl,
   Block,
   markAsFunctionWithEnv,
+  FilePath,
 } from "../internal/types.js";
 import { evalBlock } from "../internal/eval.js";
+import { srcPathForErrorMessage } from "../internal/env.js";
 
 import { ParseError } from "../grammar.js";
 import { readBlock } from "../reader.js";
 export { transpileModule } from "../transpile.js";
 
-export function readString(input: string): Block | ParseError {
-  return readBlock(input);
-}
+export const readString = markAsFunctionWithEnv(
+  (env: Env, contents: string, path: FilePath = srcPathForErrorMessage(env)): Block | ParseError => {
+    return readBlock({ contents, path });
+  }
+);
 
 export const evaluate = markAsFunctionWithEnv(
   /* eslint-disable-next-line @typescript-eslint/no-explicit-any */

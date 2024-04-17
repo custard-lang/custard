@@ -22,7 +22,7 @@ import {
   defaultScopeOptions,
   defaultAsyncScopeOptions,
 } from "./types.js";
-import type { Env, TranspileState } from "./types.js";
+import type { Env, ReaderInput, TranspileState } from "./types.js";
 import * as References from "./references.js";
 import * as ScopeF from "./scope.js";
 import { isDeeperThanOrEqual, isShallowerThan } from "./scope-path.js";
@@ -292,4 +292,13 @@ export function tmpVarOf(
   exp: JsSrc,
 ): { statement: JsSrc; id: Id } {
   return ScopeF.tmpVarOf(scopes[0], exp);
+}
+
+export function srcPathForErrorMessage({ transpileState }: Env): FilePath {
+  const prefix = transpileState.mode === "repl" ? "//(REPL)" : "";
+  return `${path.normalize(transpileState.srcPath)}${prefix}`;
+}
+
+export function readerInputOf(env: Env, contents: string): ReaderInput {
+  return { path: srcPathForErrorMessage(env), contents };
 }

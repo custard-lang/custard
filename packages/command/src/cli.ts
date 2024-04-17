@@ -1,3 +1,5 @@
+#!/bin/env node
+
 import { program } from "@commander-js/extra-typings";
 
 program

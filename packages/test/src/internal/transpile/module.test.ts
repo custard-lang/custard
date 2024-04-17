@@ -21,7 +21,7 @@ import { standardModuleRoot } from "@custard-lang/processor/dist/internal/defini
 
 describe("transpileBlock", () => {
   const subject = async (
-    src: string,
+    contents: string,
   ): Promise<[JsSrc | TranspileError, Env]> => {
     const modulePaths: ModulePaths = new Map();
     modulePaths.set("base", `${standardModuleRoot}/base.js`);
@@ -42,7 +42,7 @@ describe("transpileBlock", () => {
       ...providedSymbolsConfig,
     });
     const jsSrc = await transpileBlock(
-      assertNonError(readBlock(src)) as Block,
+      assertNonError(readBlock({ contents, path: srcPath })) as Block,
       env,
     );
     return [jsSrc, env];

@@ -27,13 +27,13 @@ export function testEvalFormOf({
   setUpConfig: () => Awaitable<Config>;
 }): void {
   const t = only ? test.only : test;
-  t(`\`${src}\` => ${expected}`, async () => {
+  t(`\`${src}\` => ${JSON.stringify(expected)}`, async () => {
     const c = setUpConfig();
     const { options, providedSymbols } = c instanceof Promise ? await c : c;
     const env = assertNonError(
       await initializeForRepl(options, providedSymbols),
     );
-    const result = await evalForm(assertNonError(readStr(src) as Form), env);
+    const result = await evalForm(assertNonError(readStr({ contents: src, path: "test" }) as Form), env);
     if (!(expected instanceof Error) && result instanceof Error) {
       throw result;
     }
@@ -53,14 +53,14 @@ export function testEvalBlockOf({
   setUpConfig: () => Awaitable<Config>;
 }): void {
   const t = only ? test.only : test;
-  t(`\`${src}\` => ${expected}`, async () => {
+  t(`\`${src}\` => ${JSON.stringify(expected)}`, async () => {
     const c = setUpConfig();
     const { options, providedSymbols } = c instanceof Promise ? await c : c;
     const env = assertNonError(
       await initializeForRepl(options, providedSymbols),
     );
     const result = await evalBlock(
-      assertNonError(readBlock(src) as Block),
+      assertNonError(readBlock({ contents: src, path: "test" }) as Block),
       env,
     );
     if (!(expected instanceof Error) && result instanceof Error) {

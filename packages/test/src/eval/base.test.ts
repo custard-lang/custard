@@ -150,12 +150,12 @@ describe("evalForm", () => {
       setUpConfig,
     });
     testEvalFormOf({
-      src: "( (fn ({ x, y }) (plusF x y)) { x: 1, y: 9 } )",
+      src: "( (fn ({ x y }) (plusF x y)) { x: 1 y: 9 } )",
       expected: 10,
       setUpConfig,
     });
     testEvalFormOf({
-      src: "( (fn ({ x: v1, y: v2 }) (minusF v1 v2)) { x: 1, y: 9 } )",
+      src: "( (fn ({ x: v1 y: v2 }) (minusF v1 v2)) { x: 1 y: 9 } )",
       expected: -8,
       setUpConfig,
     });
@@ -173,14 +173,14 @@ describe("evalForm", () => {
     testEvalFormOf({
       src: "( (fn x x) 1 )",
       expected: new TranspileError(
-        'Arguments for a function must be a list of symbols! But actually {"t":"Symbol","v":"x"}',
+        'Arguments for a function must be a list of symbols! But `(Symbol x)` is not!',
       ),
       setUpConfig,
     });
     testEvalFormOf({
       src: "( (fn (x 1) x) 1 )",
       expected: new TranspileError(
-        `fn's assignee must be a symbol or an object literal, but {"t":"Integer32","v":1} is not!`,
+        "fn's assignee must be a symbol or an object literal, but `(Integer32 1)` is not!",
       ),
       setUpConfig,
     });
@@ -229,12 +229,12 @@ describe("evalForm", () => {
     });
     testEvalFormOf({
       src: "(scope (return) 1)",
-      expected: undefined,
+      expected: undefined, // TODO: null might be better?
       setUpConfig,
     });
     testEvalFormOf({
       src: "(scope (return none) 1)",
-      expected: undefined,
+      expected: null,
       setUpConfig,
     });
     testEvalFormOf({
@@ -493,7 +493,7 @@ describe("evalForm", () => {
     });
     testEvalFormOf({
       src: "(any none none)",
-      expected: undefined,
+      expected: null,
       setUpConfig,
     });
     testEvalFormOf({
@@ -610,7 +610,7 @@ describe("evalForm", () => {
   });
 
   testEvalFormOf({
-    src: "(get [0, 1, 2] 0)",
+    src: "(get [0 1 2] 0)",
     expected: 0,
     setUpConfig,
   });
@@ -620,7 +620,7 @@ describe("evalForm", () => {
     setUpConfig,
   });
   testEvalFormOf({
-    src: "(get [0, 1, 2] 1)",
+    src: "(get [0 1 2] 1)",
     expected: 1,
     setUpConfig,
   });
@@ -637,7 +637,7 @@ describe("evalForm", () => {
   });
 
   testEvalFormOf({
-    src: "(first [0, 1, 2])",
+    src: "(first [0 1 2])",
     expected: 0,
     setUpConfig,
   });
@@ -648,7 +648,7 @@ describe("evalForm", () => {
   });
 
   testEvalFormOf({
-    src: "(last [0, 1, 2])",
+    src: "(last [0 1 2])",
     expected: 2,
     setUpConfig,
   });
@@ -667,7 +667,7 @@ describe("evalBlock", () => {
       setUpConfig,
     });
     testEvalBlockOf({
-      src: '(annotate "comment" { this: "is also", a: "comment" } (const f (fn () 9))) (f)',
+      src: '(annotate "comment" { this: "is also" a: "comment" } (const f (fn () 9))) (f)',
       expected: 9,
       setUpConfig,
     });
@@ -747,7 +747,7 @@ describe("evalBlock", () => {
     });
 
     testEvalBlockOf({
-      src: "(let y 8)(assign y 9 10))",
+      src: "(let y 8)(assign y 9 10)",
       expected: new TranspileError(
         "The number of arguments to `assign` must be 2!",
       ),
@@ -755,43 +755,43 @@ describe("evalBlock", () => {
     });
 
     testEvalBlockOf({
-      src: "(const { x, y } { y: 3 x: 2 }) [x, y]",
+      src: "(const { x y } { y: 3 x: 2 }) [x y]",
       expected: [2, 3],
       setUpConfig,
     });
 
     testEvalBlockOf({
-      src: "(let { x, y } { y: 3 x: 2 }) (assign x 4) [x, y]",
+      src: "(let { x y } { y: 3 x: 2 }) (assign x 4) [x y]",
       expected: [4, 3],
       setUpConfig,
     });
 
     testEvalBlockOf({
-      src: "(let { x, y } { y: 3 x: 2 }) (assign { x, y } { y: 4 x: 9 }) [x, y]",
+      src: "(let { x y } { y: 3 x: 2 }) (assign { x y } { y: 4 x: 9 }) [x y]",
       expected: [9, 4],
       setUpConfig,
     });
 
     testEvalBlockOf({
-      src: "(let x 0) (let y 0) (const f (fn () (incrementF y) {x, y}))(const { x: x1 y: y1 } (f)) [x1, y1]",
+      src: "(let x 0) (let y 0) (const f (fn () (incrementF y) {x y}))(const { x: x1 y: y1 } (f)) [x1 y1]",
       expected: [0, 1],
       setUpConfig,
     });
 
     testEvalBlockOf({
-      src: "(let x 0) (let y 0) (const f (fn () (incrementF y) {x, y})) (let x1) (let y1) (assign { x: x1 y: y1 } (f)) [x1, y1]",
+      src: "(let x 0) (let y 0) (const f (fn () (incrementF y) {x y})) (let x1) (let y1) (assign { x: x1 y: y1 } (f)) [x1 y1]",
       expected: [0, 1],
       setUpConfig,
     });
 
     testEvalBlockOf({
-      src: "(const [y x] [3 2]) [x, y]",
+      src: "(const [y x] [3 2]) [x y]",
       expected: [2, 3],
       setUpConfig,
     });
 
     testEvalBlockOf({
-      src: "(let [y x] [3 5]) [x, y]",
+      src: "(let [y x] [3 5]) [x y]",
       expected: [5, 3],
       setUpConfig,
     });
@@ -867,19 +867,19 @@ describe("evalBlock", () => {
     });
 
     testEvalBlockOf({
-      src: "(const f (fn ({ x, y }) (plusF x y))) (f { x: 1, y: 9 })",
+      src: "(const f (fn ({ x y }) (plusF x y))) (f { x: 1 y: 9 })",
       expected: 10,
       setUpConfig,
     });
 
     testEvalBlockOf({
-      src: "(const f (fn ({ x: v1, y: v2 }) (minusF v1 v2))) (f { x: 1, y: 9 })",
+      src: "(const f (fn ({ x: v1 y: v2 }) (minusF v1 v2))) (f { x: 1 y: 9 })",
       expected: -8,
       setUpConfig,
     });
 
     testEvalBlockOf({
-      src: "(const f (fn ([v1, v2]) (timesF v1 v2))) (f [2 9])",
+      src: "(const f (fn ([v1 v2]) (timesF v1 v2))) (f [2 9])",
       expected: 18,
       setUpConfig,
     });
@@ -1098,12 +1098,12 @@ describe("evalBlock", () => {
       setUpConfig,
     });
     testEvalBlockOf({
-      src: "(let x 0)(forEach { x: v1, y: v2 } [{ x: 1, y: 1 } { x: 2, y: 2 } { x: 3, y: 3 }] (assign x (plusF (plusF x v1) v2))) x",
+      src: "(let x 0)(forEach { x: v1 y: v2 } [{ x: 1 y: 1 } { x: 2 y: 2 } { x: 3 y: 3 }] (assign x (plusF (plusF x v1) v2))) x",
       expected: 12,
       setUpConfig,
     });
     testEvalBlockOf({
-      src: "(let x 0)(forEach { v1, v2 } [{ v1: 1, v2: 1 } { v1: 2, v2: 2 } { v1: 3, v2: 3 }] (assign x (plusF (plusF x v1) v2))) x",
+      src: "(let x 0)(forEach { v1 v2 } [{ v1: 1 v2: 1 } { v1: 2 v2: 2 } { v1: 3 v2: 3 }] (assign x (plusF (plusF x v1) v2))) x",
       expected: 12,
       setUpConfig,
     });
@@ -1149,12 +1149,12 @@ describe("evalBlock", () => {
         setUpConfig,
       });
       testEvalBlockOf({
-        src: "(let x 0)(scope (forEach { x: v1, y: v2 } [{ x: 1, y: 1 } { x: 2, y: 2 } { x: 3, y: 3 }] (assign x (plusF (plusF x v1) v2)))) x",
+        src: "(let x 0)(scope (forEach { x: v1 y: v2 } [{ x: 1 y: 1 } { x: 2 y: 2 } { x: 3 y: 3 }] (assign x (plusF (plusF x v1) v2)))) x",
         expected: 12,
         setUpConfig,
       });
       testEvalBlockOf({
-        src: "(let x 0)(scope (forEach { v1, v2 } [{ v1: 1, v2: 1 } { v1: 2, v2: 2 } { v1: 3, v2: 3 }] (assign x (plusF (plusF x v1) v2)))) x",
+        src: "(let x 0)(scope (forEach { v1 v2 } [{ v1: 1 v2: 1 } { v1: 2 v2: 2 } { v1: 3 v2: 3 }] (assign x (plusF (plusF x v1) v2)))) x",
         expected: 12,
         setUpConfig,
       });
@@ -1215,7 +1215,7 @@ describe("evalBlock", () => {
     });
     testEvalBlockOf({
       src: "(recursive (const))",
-      expected: new TranspileError("undefined is not a symbol!"),
+      expected: new TranspileError("No variable name given to a `const`!"),
       setUpConfig,
     });
     testEvalBlockOf({
@@ -1300,7 +1300,7 @@ describe("evalBlock", () => {
     });
 
     testEvalBlockOf({
-      src: '(let x 1) (let y 10) (try (try (throw "thrown") finally (assign x 2)) catch _ (assign y 20)) [x, y]',
+      src: '(let x 1) (let y 10) (try (try (throw "thrown") finally (assign x 2)) catch _ (assign y 20)) [x y]',
       expected: [2, 20],
       setUpConfig,
     });

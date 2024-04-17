@@ -4,7 +4,9 @@ import type {
   TranspileOptions,
 } from "./types.js";
 
-import { init } from "./internal/env.js";
+import { init, readerInputOf } from "./internal/env.js";
+export { readerInputOf } from "./internal/env.js";
+
 import { transpileString } from "./internal/transpile.js";
 import { transpileModule, transpileRepl } from "./internal/transpile-state.js";
 import type { TranspileModule, TranspileRepl } from "./internal/types.js";
@@ -17,7 +19,7 @@ export async function initializeForModule(
   const state = transpileModule(options);
   const env = init(state, providedSymbols);
   const imports = await transpileString(
-    providedSymbols.implicitStatements,
+    readerInputOf(env, providedSymbols.implicitStatements),
     env,
   );
   if (imports instanceof Error) {
@@ -34,7 +36,7 @@ export async function initializeForRepl(
   const state = transpileRepl(options);
   const env = init(state, providedSymbols);
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-  const r = await evalString(providedSymbols.implicitStatements, env);
+  const r = await evalString(readerInputOf(env, providedSymbols.implicitStatements), env);
   if (r instanceof Error) {
     return r;
   }

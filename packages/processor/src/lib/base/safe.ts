@@ -10,6 +10,8 @@ import {
 import { pseudoTopLevelAssignment } from "../../internal/cu-env.js";
 import {
   defaultScopeOptions,
+  formatForError,
+  isKeyValue,
   isLiteralArray,
   isLiteralObject,
   isVar,
@@ -53,38 +55,46 @@ export const note = markAsDirectWriter(
 
 export const annotate = markAsDirectWriter(
   async (env: Env, ...args: Form[]): Promise<JsSrc | TranspileError> => {
-    return await transpileExpression(args[args.length - 1], env);
+    const lastArg = args[args.length - 1];
+    if (lastArg === undefined) {
+      return "";
+    }
+    return await transpileExpression(lastArg, env);
   },
 );
 
 export const _cu$const = transpilingForVariableDeclaration(
   "const",
-  (assignee: JsSrc, exp: JsSrc) => `const ${assignee}=${exp}`,
+  (assignee: JsSrc, exp?: JsSrc): JsSrc | TranspileError =>
+    exp === undefined
+      ? new TranspileError("No variable name given to a `const`!")
+      : `const ${assignee}=${exp}`,
   aConst,
 );
 
 export const _cu$let = transpilingForVariableDeclaration(
   "let",
-  (assignee: JsSrc, exp: JsSrc) => `let ${assignee}=${exp}`,
+  (assignee: JsSrc, exp?: JsSrc): JsSrc =>
+    exp === undefined ? `let ${assignee}` : `let ${assignee}=${exp}`,
   aVar,
 );
 
 export const _cu$return = markAsDirectWriter(
   async (env: Env, ...args: Form[]): Promise<JsSrc | TranspileError> => {
-    switch (args.length) {
-      case 0:
-        return "return";
-      case 1:
-        const argSrc = await transpileExpression(args[0], env);
-        if (TranspileError.is(argSrc)) {
-          return argSrc;
-        }
-        return `return ${argSrc}`;
-      default:
-        return new TranspileError(
-          "`return` must receive at most one expression!",
-        );
+    if (args.length > 1) {
+      return new TranspileError(
+        "`return` must receive at most one expression!",
+      );
     }
+    const arg = args[0];
+    if (arg === undefined) {
+      return "return";
+    }
+    const argSrc = await transpileExpression(arg, env);
+    if (TranspileError.is(argSrc)) {
+      return argSrc;
+    }
+    return `return ${argSrc}`;
   },
   ordinaryStatement,
 );
@@ -178,7 +188,11 @@ export const any = transpiling2("any", (a: JsSrc, b: JsSrc) => `${a}??${b}`);
 
 export const assign = transpilingForAssignment(
   "assign",
-  async (env: Env, id: Form, exp: JsSrc): Promise<JsSrc | TranspileError> => {
+  async (env: Env, id: Form, exp?: JsSrc): Promise<JsSrc | TranspileError> => {
+    if (exp === undefined) {
+      return new TranspileError("No expression given to an `assign` statement!");
+    }
+
     function assignStatement(sym: CuSymbol, e: JsSrc): JsSrc | TranspileError {
       const r = EnvF.findWithIsAtTopLevel(env, sym);
       if (r === undefined || !isVar(r.writer)) {
@@ -200,31 +214,32 @@ export const assign = transpilingForAssignment(
       const { id: tmpVar, statement } = EnvF.tmpVarOf(env, exp);
       let src = statement;
       for (const kvOrSym of id.v) {
-        if (isCuSymbol(kvOrSym)) {
-          const assignment = assignStatement(kvOrSym, `${tmpVar}.${kvOrSym.v}`);
+        if (isKeyValue(kvOrSym)) {
+          const [k, v] = kvOrSym;
+          if (!isCuSymbol(v)) {
+            return new TranspileError(
+              `Assignee must be a symbol, but ${formatForError(v)} is not!`,
+            );
+          }
+
+          let assignment: JsSrc | TranspileError;
+          if (isCuSymbol(k)) {
+            assignment = assignStatement(v, `${tmpVar}.${k.v}`);
+          } else {
+            const kSrc = await transpileExpression(k, env);
+            if (TranspileError.is(kSrc)) {
+              return kSrc;
+            }
+            assignment = assignStatement(v, `${tmpVar}${kSrc}`);
+          }
           if (TranspileError.is(assignment)) {
             return assignment;
           }
           src = `${src}${assignment}\n`;
+
           continue;
         }
-        const [k, v] = kvOrSym;
-        if (!isCuSymbol(v)) {
-          return new TranspileError(
-            `Assignee must be a symbol, but ${JSON.stringify(v)} is not!`,
-          );
-        }
-
-        let assignment: JsSrc | TranspileError;
-        if (isCuSymbol(k)) {
-          assignment = assignStatement(v, `${tmpVar}.${k.v}`);
-        } else {
-          const kSrc = await transpileExpression(k, env);
-          if (TranspileError.is(kSrc)) {
-            return kSrc;
-          }
-          assignment = assignStatement(v, `${tmpVar}${kSrc}`);
-        }
+        const assignment = assignStatement(kvOrSym, `${tmpVar}.${kvOrSym.v}`);
         if (TranspileError.is(assignment)) {
           return assignment;
         }
@@ -245,16 +260,16 @@ export const assign = transpilingForAssignment(
           src = `${src}${assignment}\n`;
           continue;
         }
-        const vJson = JSON.stringify(v);
+        const vFormatted = formatForError(v);
         return new TranspileError(
-          `assign's assignee must be a symbol, but ${vJson} is not!`,
+          `assign's assignee must be a symbol, but ${vFormatted} is not!`,
         );
       }
       return src;
     }
-    const vJson = JSON.stringify(id);
+    const vFormatted = formatForError(id);
     return new TranspileError(
-      `assign's assignee must be a symbol, but ${vJson} is not!`,
+      `assign's assignee must be a symbol, but ${vFormatted} is not!`,
     );
   },
   ordinaryExpression,
@@ -265,9 +280,13 @@ export const scope = buildScope("scope", "", defaultScopeOptions);
 export const _cu$if = markAsDirectWriter(
   async (
     env: Env,
-    bool: Form,
+    bool?: Form,
     ...rest: Form[]
   ): Promise<JsSrc | TranspileError> => {
+    if (bool === undefined) {
+      return new TranspileError("No expressions given to an `if` expression!");
+    }
+
     const boolSrc = await transpileExpression(bool, env);
     if (TranspileError.is(boolSrc)) {
       return boolSrc;

@@ -1,4 +1,4 @@
-import { Env, TranspileRepl } from "./types.js";
+import { Env, ReaderInput, TranspileRepl } from "./types.js";
 import { Block, Form } from "../types.js";
 import { transpileBlockCore, transpileExpression } from "./transpile.js";
 import { _cu$eval } from "./isolated-eval.js";
@@ -41,10 +41,10 @@ export async function evalBlock(
 }
 
 export async function evalString(
-  formsString: string,
+  input: ReaderInput,
   env: Env<TranspileRepl>,
 ): Promise<any | Error> {
-  const forms = readBlock(formsString);
+  const forms = readBlock(input);
   if (ParseError.is(forms)) {
     return forms;
   }

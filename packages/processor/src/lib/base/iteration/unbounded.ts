@@ -35,7 +35,7 @@ export const _cu$while = markAsDirectWriter(
     }
 
     if (isStatement(env, bool)) {
-      const id = showSymbolAccess(bool[0]);
+      const id = showSymbolAccess(bool.v[0]);
       return new TranspileError(
         `The conditional expression in a \`for\` must be an expression! But \`${id}\` is a statement!`,
       );
@@ -88,7 +88,7 @@ export const _cu$for = markAsDirectWriter(
     }
 
     if (isStatement(env, bool)) {
-      const id = showSymbolAccess(bool[0]);
+      const id = showSymbolAccess(bool.v[0]);
       return new TranspileError(
         `The conditional expression in a \`for\` must be an expression! But \`${id}\` is a statement!`,
       );
@@ -141,14 +141,17 @@ export const recursive = markAsDirectWriter(
           "All arguments in `recursive` must be `const` declarations!",
         );
       }
-      const declName = EnvF.find(env, call[0]);
+      const declName = EnvF.find(env, call.v[0]);
       if (declName !== _cu$const) {
         return new TranspileError(
           "All declarations in `recursive` must be `const`!",
         );
       }
 
-      const id = call[1];
+      const id = call.v[1];
+      if (id === undefined) {
+        return new TranspileError(`No variable name given to a \`const\`!`);
+      }
       if (!isCuSymbol(id)) {
         return new TranspileError(`${JSON.stringify(id)} is not a symbol!`);
       }
