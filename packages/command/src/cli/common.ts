@@ -74,7 +74,10 @@ export async function transpileMain(
   }
 
   const destPaths: string[] = [];
-  for await (const srcPath of globIterate(args)) {
+  const srcs = globIterate(args, {
+    windowsPathsNoEscape: process.platform === "win32",
+  });
+  for await (const srcPath of srcs) {
     if (opts.verbose) {
       console.info(`Transpiling ${srcPath}...`);
     }
