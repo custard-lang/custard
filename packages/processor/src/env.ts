@@ -36,7 +36,10 @@ export async function initializeForRepl(
   const state = transpileRepl(options);
   const env = init(state, providedSymbols);
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-  const r = await evalString(readerInputOf(env, providedSymbols.implicitStatements), env);
+  const r = await evalString(
+    readerInputOf(env, providedSymbols.implicitStatements),
+    env,
+  );
   if (r instanceof Error) {
     return r;
   }

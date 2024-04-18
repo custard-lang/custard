@@ -13,9 +13,13 @@ import { readBlock } from "../reader.js";
 export { transpileModule } from "../transpile.js";
 
 export const readString = markAsFunctionWithEnv(
-  (env: Env, contents: string, path: FilePath = srcPathForErrorMessage(env)): Block | ParseError => {
+  (
+    env: Env,
+    contents: string,
+    path: FilePath = srcPathForErrorMessage(env),
+  ): Block | ParseError => {
     return readBlock({ contents, path });
-  }
+  },
 );
 
 export const evaluate = markAsFunctionWithEnv(

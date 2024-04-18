@@ -11,40 +11,76 @@ describe("readStr", () => {
 
   describe("Integer32", () => {
     test("`123` -> `123`", () => {
-      expect(readStr(inputOf("123"))).toEqual({ t: "Integer32", v: 123, ...location(1, 1) });
+      expect(readStr(inputOf("123"))).toEqual({
+        t: "Integer32",
+        v: 123,
+        ...location(1, 1),
+      });
     });
     test("`45 ` -> `45`", () => {
-      expect(readStr(inputOf("45 "))).toEqual({ t: "Integer32", v: 45, ...location(1, 1) });
+      expect(readStr(inputOf("45 "))).toEqual({
+        t: "Integer32",
+        v: 45,
+        ...location(1, 1),
+      });
     });
     test("` \n 6 \n` -> `6`", () => {
-      expect(readStr(inputOf(" \n 6 \n"))).toEqual({ t: "Integer32", v: 6, ...location(2, 2) });
+      expect(readStr(inputOf(" \n 6 \n"))).toEqual({
+        t: "Integer32",
+        v: 6,
+        ...location(2, 2),
+      });
     });
   });
 
   describe("Float64", () => {
     test("` 789.1  ` -> `789.1`", () => {
-      expect(readStr(inputOf(" 789.1  "))).toEqual({ t: "Float64", v: 789.1, ...location(1, 2) });
+      expect(readStr(inputOf(" 789.1  "))).toEqual({
+        t: "Float64",
+        v: 789.1,
+        ...location(1, 2),
+      });
     });
     test("`-800.19` -> `-800.19`", () => {
-      expect(readStr(inputOf("-800.19"))).toEqual({ t: "Float64", v: -800.19, ...location(1, 1) });
+      expect(readStr(inputOf("-800.19"))).toEqual({
+        t: "Float64",
+        v: -800.19,
+        ...location(1, 1),
+      });
     });
   });
 
   describe("String", () => {
     test('`   "aaa"` -> `"aaa"`', () => {
-      expect(readStr(inputOf('   "aaa"'))).toEqual({ t: "String", v: "aaa", ...location(1, 4) });
+      expect(readStr(inputOf('   "aaa"'))).toEqual({
+        t: "String",
+        v: "aaa",
+        ...location(1, 4),
+      });
     });
     test('`   \n"\\\\aaa"` -> `"\\\\aaa"`', () => {
-      expect(readStr(inputOf('   \n"\\\\aaa"'))).toEqual({ t: "String", v: "\\aaa", ...location(2, 1) });
+      expect(readStr(inputOf('   \n"\\\\aaa"'))).toEqual({
+        t: "String",
+        v: "\\aaa",
+        ...location(2, 1),
+      });
     });
   });
 
   describe("Symbol", () => {
     test("`abc` -> `abc`", () => {
-      expect(readStr(inputOf("abc"))).toEqual({ t: "Symbol", v: "abc", ...location(1, 1) });
+      expect(readStr(inputOf("abc"))).toEqual({
+        t: "Symbol",
+        v: "abc",
+        ...location(1, 1),
+      });
     });
     test("` \n  \n  abc ` -> `abc`", () => {
-      expect(readStr(inputOf(" \n  \n  abc "))).toEqual({ t: "Symbol", v: "abc", ...location(3, 3) });
+      expect(readStr(inputOf(" \n  \n  abc "))).toEqual({
+        t: "Symbol",
+        v: "abc",
+        ...location(3, 3),
+      });
     });
   });
 
@@ -67,13 +103,25 @@ describe("readStr", () => {
 
   describe("reserved symbols", () => {
     test("`true` -> `true`", () => {
-      expect(readStr(inputOf("true"))).toEqual({ t: "ReservedSymbol", v: true, ...location(1, 1) });
+      expect(readStr(inputOf("true"))).toEqual({
+        t: "ReservedSymbol",
+        v: true,
+        ...location(1, 1),
+      });
     });
     test("`   false ` -> `false`", () => {
-      expect(readStr(inputOf("   false "))).toEqual({ t: "ReservedSymbol", v: false, ...location(1, 4) });
+      expect(readStr(inputOf("   false "))).toEqual({
+        t: "ReservedSymbol",
+        v: false,
+        ...location(1, 4),
+      });
     });
     test("`\n\nnone ` -> `none`", () => {
-      expect(readStr(inputOf("\n\nnone "))).toEqual({ t: "ReservedSymbol", v: null, ...location(3, 1) });
+      expect(readStr(inputOf("\n\nnone "))).toEqual({
+        t: "ReservedSymbol",
+        v: null,
+        ...location(3, 1),
+      });
     });
   });
 
@@ -107,8 +155,7 @@ describe("readStr", () => {
           { t: "Integer32", v: 2, ...location(1, 9) },
           {
             t: "List",
-            v: 
-            [
+            v: [
               { t: "Symbol", v: "m", ...location(1, 12) },
               { t: "Integer32", v: 3, ...location(1, 14) },
               { t: "Integer32", v: 4, ...location(1, 16) },
@@ -240,10 +287,14 @@ describe("readStr", () => {
     });
     test("when the input string contains unmatched double quotes", () => {
       expect(readStr(inputOf('(p "hello)'))).toEqual(
-        new ParseError('Unterminated string literal: "hello) at line 1, column 4'),
+        new ParseError(
+          'Unterminated string literal: "hello) at line 1, column 4',
+        ),
       );
       expect(readStr(inputOf('(p  "hola\\")'))).toEqual(
-        new ParseError('Unterminated string literal: "hola\\") at line 1, column 5'),
+        new ParseError(
+          'Unterminated string literal: "hola\\") at line 1, column 5',
+        ),
       );
       expect(readStr(inputOf('(p\n "'))).toEqual(
         new ParseError('Unterminated string literal: " at line 2, column 2'),
@@ -253,13 +304,19 @@ describe("readStr", () => {
     test("when the input string contains an unexpected token", () => {
       // FIXME: This error message is not exact: Should be "Expected form or close ...".
       expect(readStr(inputOf("{ a: b, c: d }"))).toEqual(
-        new ParseError('Expected form, but got unknown: ",", at line 1, column 7'),
+        new ParseError(
+          'Expected form, but got unknown: ",", at line 1, column 7',
+        ),
       );
       expect(readStr(inputOf("[a, b]"))).toEqual(
-        new ParseError('Expected form, but got unknown: ",", at line 1, column 3'),
+        new ParseError(
+          'Expected form, but got unknown: ",", at line 1, column 3',
+        ),
       );
       expect(readStr(inputOf("[a: b]"))).toEqual(
-        new ParseError('Expected form, but got colon: ":", at line 1, column 3'),
+        new ParseError(
+          'Expected form, but got colon: ":", at line 1, column 3',
+        ),
       );
     });
   });

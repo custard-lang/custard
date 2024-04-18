@@ -173,7 +173,7 @@ describe("evalForm", () => {
     testEvalFormOf({
       src: "( (fn x x) 1 )",
       expected: new TranspileError(
-        'Arguments for a function must be a list of symbols! But `(Symbol x)` is not!',
+        "Arguments for a function must be a list of symbols! But `(Symbol x)` is not!",
       ),
       setUpConfig,
     });

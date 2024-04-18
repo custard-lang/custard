@@ -33,7 +33,10 @@ export function testEvalFormOf({
     const env = assertNonError(
       await initializeForRepl(options, providedSymbols),
     );
-    const result = await evalForm(assertNonError(readStr({ contents: src, path: "test" }) as Form), env);
+    const result = await evalForm(
+      assertNonError(readStr({ contents: src, path: "test" }) as Form),
+      env,
+    );
     if (!(expected instanceof Error) && result instanceof Error) {
       throw result;
     }

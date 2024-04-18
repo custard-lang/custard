@@ -58,7 +58,6 @@ async function transpileExpressionWithNextCall(
   ast: Form,
   env: Env,
 ): Promise<JsSrcAndNextCall | TranspileError> {
-
   async function expandDynamicVar(
     dynVar: DynamicVar,
   ): Promise<TranspileError | JsSrcAndNextCall> {
@@ -95,10 +94,7 @@ async function transpileExpressionWithNextCall(
         return await expandDynamicVar(r.writer);
       }
       if (EnvF.writerIsAtReplTopLevel(env, r)) {
-        return [
-          pseudoTopLevelReference(ast.v),
-          { writer: r.writer, sym: ast },
-        ];
+        return [pseudoTopLevelReference(ast.v), { writer: r.writer, sym: ast }];
       }
       return [ast.v, { writer: r.writer, sym: ast }];
     case "PropertyAccess":
@@ -301,7 +297,7 @@ export async function transpileString(
 }
 
 export function asCall(form: Form): Call | undefined {
-  if (!(isList(form))) {
+  if (!isList(form)) {
     return;
   }
   const id = form.v[0];

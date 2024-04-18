@@ -1,4 +1,9 @@
-import type { MatchedToken, SpaceSkippingScanner, TokenAndRE, TokenKind } from "./scanner.js";
+import type {
+  MatchedToken,
+  SpaceSkippingScanner,
+  TokenAndRE,
+  TokenKind,
+} from "./scanner.js";
 import { EOF } from "./scanner.js";
 import {
   Form,
@@ -85,7 +90,10 @@ export function form(s: SpaceSkippingScanner): Form<Location> | ParseError {
   }
 }
 
-function list(s: SpaceSkippingScanner, l: Location): List<Location> | ParseError {
+function list(
+  s: SpaceSkippingScanner,
+  l: Location,
+): List<Location> | ParseError {
   const v = untilClose(s, "close paren", form);
   if (ParseError.is(v)) {
     return v;
@@ -97,7 +105,10 @@ function list(s: SpaceSkippingScanner, l: Location): List<Location> | ParseError
   };
 }
 
-function literalArray(s: SpaceSkippingScanner, l: Location): LiteralArray<Location> | ParseError {
+function literalArray(
+  s: SpaceSkippingScanner,
+  l: Location,
+): LiteralArray<Location> | ParseError {
   const v = untilClose(s, "close bracket", form);
   if (ParseError.is(v)) {
     return v;
@@ -109,7 +120,10 @@ function literalArray(s: SpaceSkippingScanner, l: Location): LiteralArray<Locati
   };
 }
 
-function literalObject(s: SpaceSkippingScanner, l: Location): LiteralObject<Location> | ParseError {
+function literalObject(
+  s: SpaceSkippingScanner,
+  l: Location,
+): LiteralObject<Location> | ParseError {
   const v = untilClose(s, "close brace", keyValueOrSymbol);
   if (ParseError.is(v)) {
     return v;
@@ -149,14 +163,16 @@ function untilClose<Result>(
   return result;
 }
 
-function keyValueOrSymbol(s: SpaceSkippingScanner): KeyValue<Location> | CuSymbol<Location> | ParseError {
+function keyValueOrSymbol(
+  s: SpaceSkippingScanner,
+): KeyValue<Location> | CuSymbol<Location> | ParseError {
   const key = form(s);
   if (ParseError.is(key)) {
     return key;
   }
   const colonOrOther = s.peek();
   if (colonOrOther === EOF) {
-    return new ParseError('colon, close brace, or form', EOF);
+    return new ParseError("colon, close brace, or form", EOF);
   }
   if (colonOrOther.t === "colon") {
     // eslint-disable-next-line no-ignore-returned-union/no-ignore-returned-union
@@ -177,9 +193,16 @@ function keyValueOrSymbol(s: SpaceSkippingScanner): KeyValue<Location> | CuSymbo
 }
 
 function string(token: MatchedToken): LiteralString<Location> | ParseError {
-  const { l, c, f, v: [stringLiteral] } = token;
+  const {
+    l,
+    c,
+    f,
+    v: [stringLiteral],
+  } = token;
   if (stringLiteral === '"' || !/[^\\]?"$/.test(stringLiteral)) {
-    return new ParseError(`Unterminated string literal: ${stringLiteral} at line ${l}, column ${c}`);
+    return new ParseError(
+      `Unterminated string literal: ${stringLiteral} at line ${l}, column ${c}`,
+    );
   }
   return {
     t: "String",
@@ -190,7 +213,9 @@ function string(token: MatchedToken): LiteralString<Location> | ParseError {
   };
 }
 
-function number(token: MatchedToken): LiteralInteger32<Location> | LiteralFloat64<Location> {
+function number(
+  token: MatchedToken,
+): LiteralInteger32<Location> | LiteralFloat64<Location> {
   const { l, c, f } = token;
   const m = token.v;
 
@@ -215,7 +240,13 @@ function number(token: MatchedToken): LiteralInteger32<Location> | LiteralFloat6
   };
 }
 
-function symbolOrPropertyAccess(token: MatchedToken): CuSymbol<Location> | ReservedSymbol<Location> | PropertyAccess<Location> | ParseError {
+function symbolOrPropertyAccess(
+  token: MatchedToken,
+):
+  | CuSymbol<Location>
+  | ReservedSymbol<Location>
+  | PropertyAccess<Location>
+  | ParseError {
   const { l, c, f } = token;
   const v = token.v[0];
   switch (v) {
@@ -247,7 +278,9 @@ function symbolOrPropertyAccess(token: MatchedToken): CuSymbol<Location> | Reser
       // TODO: Insufficient validation
       const parts = v.split(".");
       if (parts.length === 0) {
-        return new ParseError(`Invalid symbol or property access: ${v} at line ${l}, column ${c}`);
+        return new ParseError(
+          `Invalid symbol or property access: ${v} at line ${l}, column ${c}`,
+        );
       }
       if (parts.length > 1) {
         return {

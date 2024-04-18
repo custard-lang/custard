@@ -17,4 +17,8 @@ export {
 export { evalBlock, evalForm } from "./eval.js";
 export { standardModuleRoot } from "./definitions.js";
 export { ValidationError } from "./lib/spec.js";
-export { initializeForRepl, initializeForModule, readerInputOf } from "./env.js";
+export {
+  initializeForRepl,
+  initializeForModule,
+  readerInputOf,
+} from "./env.js";

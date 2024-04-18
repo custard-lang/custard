@@ -45,17 +45,23 @@ describe("evalForm", () => {
   describe("meta.readString", () => {
     const srcPathForErrorMessage = `${path.normalize(srcPath)}//(REPL)`;
 
-    const contents1 = '(plusF 4.1 5.2)';
+    const contents1 = "(plusF 4.1 5.2)";
     testEvalFormOf({
-      src: `(meta.readString "${(contents1)}")`,
-      expected: readBlock({ contents: contents1, path: srcPathForErrorMessage }),
+      src: `(meta.readString "${contents1}")`,
+      expected: readBlock({
+        contents: contents1,
+        path: srcPathForErrorMessage,
+      }),
       setUpConfig,
     });
 
-    const contents2 = '(const x 9.2) (plusF 4.1 5.2) (let y 0.1)';
+    const contents2 = "(const x 9.2) (plusF 4.1 5.2) (let y 0.1)";
     testEvalFormOf({
-      src: `(meta.readString "${(contents2)}")`,
-      expected: readBlock({ contents: contents2, path: srcPathForErrorMessage }),
+      src: `(meta.readString "${contents2}")`,
+      expected: readBlock({
+        contents: contents2,
+        path: srcPathForErrorMessage,
+      }),
       setUpConfig,
     });
   });
@@ -98,8 +104,7 @@ describe("evalForm", () => {
         const transpileOptionsSrc = `{ srcPath: ${JSON.stringify(src)} }`;
         const proviedSymbolsSrc = proviedSymbolsSrcFrom(src);
         const input = {
-          contents:
-          `(async.await (meta.transpileModule (meta.readString "(const x 9.2) (let y 0.1) (plusF x y)") ${transpileOptionsSrc} ${proviedSymbolsSrc} ${extraOptionsSrc}))`,
+          contents: `(async.await (meta.transpileModule (meta.readString "(const x 9.2) (let y 0.1) (plusF x y)") ${transpileOptionsSrc} ${proviedSymbolsSrc} ${extraOptionsSrc}))`,
           path: "test",
         };
         const result = assertNonError(

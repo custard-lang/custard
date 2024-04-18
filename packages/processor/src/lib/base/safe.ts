@@ -190,7 +190,9 @@ export const assign = transpilingForAssignment(
   "assign",
   async (env: Env, id: Form, exp?: JsSrc): Promise<JsSrc | TranspileError> => {
     if (exp === undefined) {
-      return new TranspileError("No expression given to an `assign` statement!");
+      return new TranspileError(
+        "No expression given to an `assign` statement!",
+      );
     }
 
     function assignStatement(sym: CuSymbol, e: JsSrc): JsSrc | TranspileError {

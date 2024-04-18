@@ -35,7 +35,9 @@ export class SpaceSkippingScanner {
   constructor(res: TokenAndRE[], input: ReaderInput) {
     for (const { t, r } of res) {
       if (!r.sticky) {
-        throw new Error(`Assertion failed: RegExp for token ${t} must enable the sticky flag`);
+        throw new Error(
+          `Assertion failed: RegExp for token ${t} must enable the sticky flag`,
+        );
       }
     }
 

@@ -5,7 +5,11 @@ import * as s from "../lib/spec.js";
 
 export type Block<X extends Empty = Empty> = Form<X>[];
 
-export type Form<X extends Empty = Empty> = List<X> | LiteralArray<X> | LiteralObject<X> | Atom<X>;
+export type Form<X extends Empty = Empty> =
+  | List<X>
+  | LiteralArray<X>
+  | LiteralObject<X>
+  | Atom<X>;
 
 // The ***Base interfaces are necessary to avoid circular references. But I'm not sure why this works!
 interface ListBase<X extends Empty = Empty> {
@@ -37,7 +41,9 @@ export interface LiteralArrayBase<X extends Empty = Empty> {
 
 export type LiteralArray<X extends Empty = Empty> = LiteralArrayBase<X> & X;
 
-export function isLiteralArray<X extends Empty = Empty>(v: Form<X>): v is LiteralArray<X> {
+export function isLiteralArray<X extends Empty = Empty>(
+  v: Form<X>,
+): v is LiteralArray<X> {
   return v.t === "Array";
 }
 
@@ -48,7 +54,9 @@ export interface LiteralObjectBase<X extends Empty = Empty> {
 
 export type LiteralObject<X extends Empty = Empty> = LiteralObjectBase<X> & X;
 
-export function isLiteralObject<X extends Empty = Empty>(v: Form<X>): v is LiteralObject<X> {
+export function isLiteralObject<X extends Empty = Empty>(
+  v: Form<X>,
+): v is LiteralObject<X> {
   return v.t === "Object";
 }
 
@@ -57,7 +65,9 @@ export type KeyValue<X extends Empty = Empty> = [Form<X>, Form<X>];
 
 // This is used to see the element of the LiteralObject, that's why its
 // argument is `Form | KeyValue`, unlike the other is* functions.
-export function isKeyValue<X extends Empty = Empty>(v: Form<X> | KeyValue<X>): v is KeyValue<X> {
+export function isKeyValue<X extends Empty = Empty>(
+  v: Form<X> | KeyValue<X>,
+): v is KeyValue<X> {
   return Array.isArray(v);
 }
 
@@ -103,16 +113,20 @@ export function cuSymbol(v: string): CuSymbol {
   return { t: "Symbol", v };
 }
 
-export function isCuSymbol<X extends Empty = Empty>(v: Form<X>): v is CuSymbol<X> {
+export function isCuSymbol<X extends Empty = Empty>(
+  v: Form<X>,
+): v is CuSymbol<X> {
   return v.t === "Symbol";
 }
 
 export type PropertyAccess<X extends Empty = Empty> = X & {
   t: "PropertyAccess";
   v: string[];
-}
+};
 
-export function isPropertyAccess<X extends Empty = Empty>(v: Form<X>): v is PropertyAccess<X> {
+export function isPropertyAccess<X extends Empty = Empty>(
+  v: Form<X>,
+): v is PropertyAccess<X> {
   return v.t === "PropertyAccess";
 }
 
@@ -401,8 +415,8 @@ export function isMarkedDirectExportableStatementWriter(
   return isMarkedDirectWriter(x) && x.kind.exportable;
 }
 
-  // `FunctionWithEnv` must receive literally any values.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+// `FunctionWithEnv` must receive literally any values.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type FunctionWithEnv = (env: Env, ...rest: any[]) => any | Error;
 export interface MarkedFunctionWithEnv extends AnyWriter<6> {
   readonly call: FunctionWithEnv;
