@@ -9,7 +9,9 @@ export type Form<X extends Empty = Empty> =
   | List<X>
   | LiteralArray<X>
   | LiteralObject<X>
-  | Atom<X>;
+  | Atom<X>
+  | Unquote<X>
+  | Splice<X>;
 
 // The ***Base interfaces are necessary to avoid circular references. But I'm not sure why this works!
 interface ListBase<X extends Empty = Empty> {
@@ -25,6 +27,10 @@ export function emptyList(l: Location): List<Location> {
 
 export function isList<X extends Empty>(v: Form<X>): v is List<X> {
   return v.t === "List";
+}
+
+export function list(...v: Form[]): List {
+  return { t: "List", v };
 }
 
 interface CallBase<X extends Empty = Empty> {
@@ -141,6 +147,28 @@ export function showSymbolAccess(sym: CuSymbol | PropertyAccess): string {
   }
 }
 
+export type Unquote<X extends Empty = Empty> = X & {
+  t: "Unquote";
+  v: Form<X>;
+};
+
+export function isUnquote<X extends Empty = Empty>(
+  v: Form<X>,
+): v is Unquote<X> {
+  return v.t === "Unquote";
+}
+
+export type Splice<X extends Empty = Empty> = X & {
+  t: "Splice";
+  v: Form<X>;
+};
+
+export function isSplice<X extends Empty = Empty>(
+  v: Form<X>,
+): v is Splice<X> {
+  return v.t === "Splice";
+}
+
 export interface ReaderInput {
   readonly path: FilePath;
   readonly contents: string;
@@ -160,15 +188,19 @@ export const unknownLocation: Location = Object.freeze({
 });
 
 export function formatForError(f: Form): string {
+  return `\`${formatForErrorUnticked(f)}\``;
+}
+
+export function formatForErrorUnticked(f: Form): string {
   switch (f.t) {
     case "List":
-      return `\`(List${formatForErrorElement(f.v, formatForErrorShallow)})\``;
+      return `(List${formatForErrorElement(f.v, formatForErrorShallow)})`;
     case "Array":
-      return `\`(Array${formatForErrorElement(f.v, formatForErrorShallow)})\``;
+      return `(Array${formatForErrorElement(f.v, formatForErrorShallow)})`;
     case "Object":
-      return `\`(Object${formatForErrorElement(f.v, formatForErrorKV)})\``;
+      return `(Object${formatForErrorElement(f.v, formatForErrorKV)})`;
     default:
-      return formatForErrorAtom(f);
+      return formatForErrorEtc(f);
   }
 }
 
@@ -193,29 +225,33 @@ function formatForErrorKV(kv: KeyValue | CuSymbol): string {
 function formatForErrorShallow(f: Form): string {
   switch (f.t) {
     case "List":
-      return `\`(List ..)\``;
+      return `(List ..)`;
     case "Array":
-      return `\`(Array ..)\``;
+      return `(Array ..)`;
     case "Object":
-      return `\`(Object ..)\``;
+      return `(Object ..)`;
     default:
-      return formatForErrorAtom(f);
+      return formatForErrorEtc(f);
   }
 }
 
-function formatForErrorAtom(f: Atom): string {
+function formatForErrorEtc(f: Atom | Unquote | Splice): string {
   switch (f.t) {
     case "Integer32":
     case "Float64":
-      return `\`(${f.t} ${f.v})\``;
+      return `(${f.t} ${f.v})`;
     case "String":
-      return `\`(String ${JSON.stringify(f.v)})\``;
+      return `(String ${JSON.stringify(f.v)})`;
     case "ReservedSymbol":
-      return `\`(ReservedSymbol ${f.v === null ? "none" : f.v})\``;
+      return `(ReservedSymbol ${f.v === null ? "none" : f.v})`;
     case "Symbol":
-      return `\`(Symbol ${f.v})\``;
+      return `(Symbol ${f.v})`;
     case "PropertyAccess":
-      return `\`(PropertyAccess ${f.v.join(".")})\``;
+      return `(PropertyAccess ${f.v.join(".")})`;
+    case "Unquote":
+      return `$${formatForErrorUnticked(f.v)}`;
+    case "Splice":
+      return `..${formatForErrorUnticked(f.v)}`;
     default:
       throw ExpectNever(f);
   }
@@ -363,7 +399,7 @@ export function isNamespace(x: Writer): x is Namespace {
 
 export type DirectWriter = (
   env: Env,
-  ...forms: Form[]
+  ...forms: Form<Location>[]
 ) => Awaitable<JsSrc | TranspileError>;
 export interface MarkedDirectWriter extends AnyWriter<5> {
   readonly call: DirectWriter;

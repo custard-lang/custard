@@ -274,6 +274,69 @@ describe("readStr", () => {
     });
   });
 
+  describe("Unquote", () => {
+    test("`$a` -> `$a`", () => {
+      expect(readStr(inputOf("$a"))).toEqual({
+        t: "Unquote",
+        v: { t: "Symbol", v: "a", ...location(1, 2) },
+        ...location(1, 1),
+      });
+    });
+    test("`$(1 2 3)` -> `$(1 2 3)`", () => {
+      expect(readStr(inputOf("$(1 2 3)"))).toEqual({
+        t: "Unquote",
+        v: {
+          t: "List",
+          v: [
+            { t: "Integer32", v: 1, ...location(1, 3) },
+            { t: "Integer32", v: 2, ...location(1, 5) },
+            { t: "Integer32", v: 3, ...location(1, 7) },
+          ],
+          ...location(1, 2),
+        },
+        ...location(1, 1),
+      });
+    });
+  });
+
+  describe("Splice (and Unquote)", () => {
+    test("`...$a` -> `...$a`", () => {
+      expect(readStr(inputOf("...$a"))).toEqual({
+        t: "Splice",
+        v: {
+          t: "Unquote",
+          v: {
+            t: "Symbol",
+            v: "a",
+            ...location(1, 5),
+          },
+          ...location(1, 4),
+        },
+        ...location(1, 1),
+      });
+    });
+
+    test("`...$(1 2 3)` -> `...$(1 2 3)`", () => {
+      expect(readStr(inputOf("...$(1 2 3)"))).toEqual({
+        t: "Splice",
+        v: {
+          t: "Unquote",
+          v: {
+            t: "List",
+            v: [
+              { t: "Integer32", v: 1, ...location(1, 6) },
+              { t: "Integer32", v: 2, ...location(1, 8) },
+              { t: "Integer32", v: 3, ...location(1, 10) },
+            ],
+            ...location(1, 5),
+          },
+          ...location(1, 4),
+        },
+        ...location(1, 1),
+      });
+    });
+  });
+
   describe("ParseError", () => {
     test("when the input string contains unmatched parentheses", () => {
       expect(readStr(inputOf("(p 45"))).toEqual(

@@ -35,6 +35,9 @@ export const tokens: TokenAndRE[] = [
   { t: "string", r: /"(?:\\.|[^\\"])*"?/y },
   { t: "number", r: /-?\d+(?<fractional>\.\d+)?/y },
   { t: "symbol or property access", r: /[a-z_][\w$.]*/iy },
+
+  { t: "unquote sign", r: /\$/y },
+  { t: "splice sign", r: /\.\.\./y },
 ];
 
 export class ParseError extends Error {
@@ -85,6 +88,10 @@ export function form(s: SpaceSkippingScanner): Form<Location> | ParseError {
     case "symbol or property access":
       s.next();
       return symbolOrPropertyAccess(token);
+    case "unquote sign":
+      return unquote(s, { l, c, f });
+    case "splice sign":
+      return splice(s, { l, c, f });
     default:
       return new ParseError("form", token);
   }
@@ -300,3 +307,32 @@ function symbolOrPropertyAccess(
       };
   }
 }
+
+function unquote(s: SpaceSkippingScanner, l: Location): Form<Location> | ParseError {
+  // eslint-disable-next-line no-ignore-returned-union/no-ignore-returned-union
+  s.next(); // drop "$"
+  const v = form(s);
+  if (ParseError.is(v)) {
+    return v;
+  }
+  return {
+    t: "Unquote",
+    v,
+    ...l,
+  };
+}
+
+function splice(s: SpaceSkippingScanner, l: Location): Form<Location> | ParseError {
+  // eslint-disable-next-line no-ignore-returned-union/no-ignore-returned-union
+  s.next(); // drop "..."
+  const v = form(s);
+  if (ParseError.is(v)) {
+    return v;
+  }
+  return {
+    t: "Splice",
+    v,
+    ...l,
+  };
+}
+

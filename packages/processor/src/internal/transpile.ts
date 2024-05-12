@@ -69,7 +69,6 @@ async function transpileExpressionWithNextCall(
     return [rw, undefined];
   }
 
-  let r: EnvF.WriterWithIsAtTopLevel | TranspileError;
   switch (ast.t) {
     case "String":
       return [JSON.stringify(ast.v), undefined];
@@ -85,8 +84,8 @@ async function transpileExpressionWithNextCall(
     case "Integer32":
     case "Float64":
       return [`${ast.v}`, undefined];
-    case "Symbol":
-      r = EnvF.referTo(env, ast);
+    case "Symbol": {
+      const r = EnvF.referTo(env, ast);
       if (TranspileError.is(r)) {
         return r;
       }
@@ -97,9 +96,10 @@ async function transpileExpressionWithNextCall(
         return [pseudoTopLevelReference(ast.v), { writer: r.writer, sym: ast }];
       }
       return [ast.v, { writer: r.writer, sym: ast }];
-    case "PropertyAccess":
+    }
+    case "PropertyAccess": {
       // TODO: Properly Access inside Namespace
-      r = EnvF.referTo(env, ast);
+      const r = EnvF.referTo(env, ast);
       if (TranspileError.is(r)) {
         return r;
       }
@@ -113,19 +113,22 @@ async function transpileExpressionWithNextCall(
         ];
       }
       return [ast.v.join("."), { writer: r.writer, sym: ast }];
-    case "Array":
+    }
+    case "Array": {
       const elementsSrc = await transpileJoinWithComma(ast.v, env);
       if (TranspileError.is(elementsSrc)) {
         return elementsSrc;
       }
       return [`[${elementsSrc}]`, undefined];
-    case "Object":
+    }
+    case "Object": {
       const kvSrc = await transpileLiteralObject(ast, env);
       if (TranspileError.is(kvSrc)) {
         return kvSrc;
       }
       return [kvSrc, undefined];
-    case "List":
+    }
+    case "List": {
       const [funcForm, ...args] = ast.v;
       if (funcForm === undefined) {
         return new TranspileError("Invalid function call: empty");
@@ -191,6 +194,11 @@ async function transpileExpressionWithNextCall(
       }
 
       throw ExpectNever(writer);
+    }
+    case "Unquote":
+      return new TranspileError("Unquote should be used inside quasiQuote");
+    case "Splice":
+      return new TranspileError("Splice should be used inside quasiQuote");
     default:
       throw ExpectNever(ast);
   }

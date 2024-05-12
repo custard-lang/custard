@@ -1,7 +1,7 @@
 import * as path from "node:path";
 import { describe, expect, test } from "vitest";
 
-import { Config, testEvalFormOf } from "../test.js";
+import { Config, testEvalBlockOf, testEvalFormOf } from "../test.js";
 import { withNewPath } from "../test/tmp-file.js";
 import { writeAndEval } from "../test/eval.js";
 
@@ -127,5 +127,174 @@ describe("evalForm", () => {
       expected: 9.2 + 0.1,
       setUpConfig,
     });
+  });
+
+  describe("meta.quasiQuote", () => {
+    const path = "testQuasiQuote";
+    const location = (l: number, c: number) => ({ f: path, l, c });
+
+    testEvalFormOf({
+      src: '(meta.quasiQuote (const x 9.2)\n(let y (minusF 10 (timesF "3"))) [x\n(dividedByF) [] { x: y y }] )',
+      expected: {
+        t: "List",
+        v: [
+          {
+            t: "List",
+            v: [
+              { t: "Symbol", v: "const", ...location(1, 18), },
+              { t: "Symbol", v: "x", ...location(1, 24), },
+              { t: "Number", v: 9.2, ...location(1, 26), },
+            ],
+            ...location(1, 18),
+          },
+          {
+            t: "List",
+            v: [
+              { t: "Symbol", v: "let", ...location(2, 2), },
+              { t: "Symbol", v: "y", ...location(2, 5), },
+              {
+                t: "List",
+                v: [
+                  { t: "Symbol", v: "minusF", ...location(2, 9), },
+                  { t: "Number", v: 10, ...location(2, 16), },
+                  {
+                    t: "List",
+                    v: [
+                      { t: "Symbol", v: "timesF", ...location(2, 20), },
+                      { t: "String", v: "3", ...location(2, 27), },
+                    ],
+                    ...location(2, 19),
+                  },
+                ],
+                ...location(2, 7),
+              },
+            ],
+            ...location(2, 1),
+          },
+          {
+            t: "Array",
+            v: [
+              { t: "Symbol", v: "x", ...location(2, 36), },
+              {
+                t: "List",
+                v: [
+                  { t: "Symbol", v: "dividedByF", ...location(3, 2), },
+                ],
+                ...location(3, 1),
+              },
+              { t: "Array", v: [], ...location(3, 14), },
+              {
+                t: "Object",
+                v: [
+                  [
+                    { t: "Symbol", v: "x", ...location(3, 19), },
+                    { t: "Symbol", v: "y", ...location(3, 22), },
+                  ],
+                  { t: "Symbol", v: "y", ...location(3, 24), },
+                ],
+                ...location(3, 17),
+              },
+            ],
+            ...location(2, 34),
+          },
+        ]
+      },
+      setUpConfig,
+    });
+
+    const declareVarName = '(let v1 (meta.symbol "varName")) ';
+    const declareVarNameLength = declareVarName.length;
+    testEvalBlockOf({
+      src: `${declareVarName}(meta.quasiQuote ((const x $v1)\n(let y (minusF 10 (timesF $v1))) [x\n(dividedByF) [] { x: y $v1 }] ))`,
+      expected: {
+        t: "List",
+        v: [
+          {
+            t: "List",
+            v: [
+              { t: "Symbol", v: "const", ...location(1, 18 + declareVarNameLength), },
+              { t: "Symbol", v: "x", ...location(1, 24 + declareVarNameLength), },
+              { t: "Symbol", v: "varName", ...location(1, 26 + declareVarNameLength), },
+            ],
+            ...location(1, 18 + declareVarNameLength),
+          },
+          {
+            t: "List",
+            v: [
+              { t: "Symbol", v: "let", ...location(2, 2), },
+              { t: "Symbol", v: "y", ...location(2, 5), },
+              {
+                t: "List",
+                v: [
+                  { t: "Symbol", v: "minusF", ...location(2, 9), },
+                  { t: "Number", v: 10, ...location(2, 16), },
+                  {
+                    t: "List",
+                    v: [
+                      { t: "Symbol", v: "timesF", ...location(2, 20), },
+                      { t: "Symbol", v: "varName", ...location(2, 27), },
+                    ],
+                    ...location(2, 19),
+                  },
+                ],
+                ...location(2, 7),
+              },
+            ],
+            ...location(2, 1),
+          },
+          {
+            t: "Array",
+            v: [
+              { t: "Symbol", v: "x", ...location(2, 36), },
+              {
+                t: "List",
+                v: [
+                  { t: "Symbol", v: "dividedByF", ...location(3, 2), },
+                ],
+                ...location(3, 1),
+              },
+              { t: "Array", v: [], ...location(3, 14), },
+              {
+                t: "Object",
+                v: [
+                  [
+                    { t: "Symbol", v: "x", ...location(3, 19), },
+                    { t: "Symbol", v: "y", ...location(3, 22), },
+                  ],
+                  { t: "Symbol", v: "varName", ...location(3, 24), },
+                ],
+                ...location(3, 17),
+              },
+            ],
+            ...location(2, 34),
+          },
+        ]
+      },
+      setUpConfig,
+    });
+
+    testEvalBlockOf({
+      src: '(const vars [(meta.symbol "varName") "varName2" 9 {}]) (meta.quasiQuote (const xs [12 ...$vars]))',
+      expected: {
+        t: "List",
+        v: [
+          { t: "Symbol", v: "const", ...location(1, 74), },
+          { t: "Symbol", v: "xs", ...location(1, 80), },
+          {
+            t: "Array",
+            v: [
+              { t: "Symbol", v: "varName", ...location(1, 87), },
+              { t: "String", v: "varName2", ...location(1, 87), },
+              { t: "Number", v: 9, ...location(1, 87), },
+              { t: "Object", v: [], ...location(1, 87), },
+            ],
+            ...location(1, 83),
+          },
+        ],
+        ...location(1, 73),
+      },
+      setUpConfig,
+    });
+
   });
 });
