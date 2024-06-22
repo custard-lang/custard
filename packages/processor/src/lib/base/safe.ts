@@ -14,6 +14,7 @@ import {
   isKeyValue,
   isLiteralArray,
   isLiteralObject,
+  isUnquote,
   isVar,
   ordinaryExpression,
   ordinaryStatement,
@@ -24,7 +25,7 @@ import {
   aContextualKeyword,
   aVar,
   Block,
-  CuSymbol,
+  LiteralCuSymbol,
   Env,
   Form,
   Id,
@@ -195,7 +196,7 @@ export const assign = transpilingForAssignment(
       );
     }
 
-    function assignStatement(sym: CuSymbol, e: JsSrc): JsSrc | TranspileError {
+    function assignStatement(sym: LiteralCuSymbol, e: JsSrc): JsSrc | TranspileError {
       const r = EnvF.findWithIsAtTopLevel(env, sym);
       if (r === undefined || !isVar(r.writer)) {
         return new TranspileError(
@@ -241,6 +242,11 @@ export const assign = transpilingForAssignment(
 
           continue;
         }
+
+        if (isUnquote(kvOrSym)) {
+          return new TranspileError("Unquote must be used inside quasiQuote");
+        }
+
         const assignment = assignStatement(kvOrSym, `${tmpVar}.${kvOrSym.v}`);
         if (TranspileError.is(assignment)) {
           return assignment;

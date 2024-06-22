@@ -7,8 +7,8 @@ import {
   FilePath,
   Id,
   isNamespace,
-  PropertyAccess,
-  CuSymbol,
+  LiteralPropertyAccess,
+  LiteralCuSymbol,
   isCuSymbol,
   isPropertyAccess,
   JsSrc,
@@ -22,7 +22,7 @@ import {
   defaultScopeOptions,
   defaultAsyncScopeOptions,
 } from "./types.js";
-import type { Env, ReaderInput, TranspileState } from "./types.js";
+import type { Env, HowToRefer, ReaderInput, TranspileState } from "./types.js";
 import * as References from "./references.js";
 import * as ScopeF from "./scope.js";
 import { isDeeperThanOrEqual, isShallowerThan } from "./scope-path.js";
@@ -31,6 +31,7 @@ import { escapeRegExp } from "../util/regexp.js";
 import { resolveModulePaths } from "../provided-symbols-config.js";
 import { parseAbsoluteUrl } from "../util/path.js";
 import { stat } from "node:fs/promises";
+import { pseudoTopLevelReference } from "./cu-env.js";
 
 // To distinguish jsTopLevels and the top level scope of the code,
 // assign the second scope as the top level.
@@ -48,12 +49,13 @@ export function init<State extends TranspileState>(
     references: References.init(),
     modules: resolveModulePaths(providedSymbolsConfig),
     transpileState: state,
+    importedModuleJsIds: new Map(),
   };
 }
 
 export function find(
   env: Env,
-  symLike: CuSymbol | PropertyAccess,
+  symLike: LiteralCuSymbol | LiteralPropertyAccess,
 ): Writer | undefined {
   const r = findWithIsAtTopLevel(env, symLike);
   if (r === undefined) {
@@ -69,7 +71,7 @@ export type WriterWithIsAtTopLevel = {
 
 export function findWithIsAtTopLevel(
   env: Env,
-  symLike: CuSymbol | PropertyAccess,
+  symLike: LiteralCuSymbol | LiteralPropertyAccess,
 ): WriterWithIsAtTopLevel | undefined {
   const r = findCore(env, symLike, false);
   if (TranspileError.is(r)) {
@@ -80,14 +82,14 @@ export function findWithIsAtTopLevel(
 
 export function referTo(
   env: Env,
-  symLike: CuSymbol | PropertyAccess,
+  symLike: LiteralCuSymbol | LiteralPropertyAccess,
 ): WriterWithIsAtTopLevel | TranspileError {
   return findCore(env, symLike, true);
 }
 
 function findCore(
   { scopes, references }: Env,
-  symLike: CuSymbol | PropertyAccess,
+  symLike: LiteralCuSymbol | LiteralPropertyAccess,
   doRefer: boolean,
 ): WriterWithIsAtTopLevel | TranspileError {
   const topLevelI = scopes.length - TOP_LEVEL_OFFSET;
@@ -203,59 +205,25 @@ export function pop({ scopes, references }: Env): void {
   scopes.shift();
 }
 
-export type FindModuleResult = {
-  url: FilePath;
-  relativePath: FilePath;
+export type ModulePathAndUrl = {
+  u: string; // Absolute URL
+  r: FilePath; // Relative path
+  k: string; // Used for key in Env.importedModuleJsIds
 };
 
 export async function findModule(
   env: Env,
   id: Id,
-): Promise<FindModuleResult | undefined> {
+): Promise<ModulePathAndUrl | undefined> {
   const {
     modules,
-    transpileState: { srcPath },
   } = env;
   const modFullPath = modules.get(id);
   if (modFullPath === undefined) {
     return;
   }
 
-  const schemeAndPath = parseAbsoluteUrl(modFullPath);
-  if (schemeAndPath !== null) {
-    if (schemeAndPath[0] === "npm") {
-      const pkgName = schemeAndPath[1];
-      return {
-        url: import.meta.resolve(
-          pkgName,
-          new URL(`file:///${path.resolve(srcPath)}`).href,
-        ),
-        relativePath: pkgName,
-      };
-    }
-    return {
-      url: modFullPath,
-      relativePath: modFullPath,
-    };
-  }
-
-  const src = await stat(srcPath);
-  const currentFileDir = src.isDirectory() ? srcPath : path.dirname(srcPath);
-  const uncanonicalPath = path.relative(
-    path.resolve(currentFileDir),
-    modFullPath,
-  );
-  const relPath = /^\.\.?[\/\\]/.test(uncanonicalPath)
-    ? uncanonicalPath
-    : `./${uncanonicalPath}`;
-
-  return {
-    url: `file://${modFullPath}`,
-    relativePath:
-      path.sep === "/"
-        ? relPath
-        : relPath.replace(new RegExp(escapeRegExp(path.sep), "g"), "/"),
-  };
+  return modulePathAndUrl(env, modFullPath);
 }
 
 export function getCurrentScope({ scopes: [current] }: Env): Scope {
@@ -301,4 +269,81 @@ export function srcPathForErrorMessage({ transpileState }: Env): FilePath {
 
 export function readerInputOf(env: Env, contents: string): ReaderInput {
   return { path: srcPathForErrorMessage(env), contents };
+}
+
+export function setImportedModulesJsId(
+  env: Env,
+  { k }: ModulePathAndUrl,
+  howToRefer: HowToRefer,
+): void {
+  env.importedModuleJsIds.set(k, howToRefer);
+}
+
+export async function findIdAsJsSrc(env: Env, moduleName: string, id: Id): Promise<JsSrc | undefined> {
+  const { k } = await modulePathAndUrl(env, moduleName);
+
+  const howToReferOrMap = env.importedModuleJsIds.get(k);
+  if (howToReferOrMap == null) {
+    return;
+  }
+
+  if (howToReferOrMap instanceof Map) {
+    const howToRefer = howToReferOrMap.get(id);
+    if (howToRefer == null) {
+      return;
+    }
+    if (howToRefer.isPseudoTopLevel) {
+      return pseudoTopLevelReference(howToRefer.id);
+    }
+    return howToRefer.id;
+  }
+    if (howToReferOrMap.isPseudoTopLevel) {
+      return `${pseudoTopLevelReference(howToReferOrMap.id)}.${id}`;
+    }
+    return `${howToReferOrMap.id}.${id}`;
+}
+
+async function modulePathAndUrl(env: Env, moduleName: string): Promise<ModulePathAndUrl> {
+  const {
+    transpileState: { srcPath },
+  } = env;
+  const schemeAndPath = parseAbsoluteUrl(moduleName);
+  if (schemeAndPath !== null) {
+    if (schemeAndPath[0] === "npm") {
+      const packageName = schemeAndPath[1];
+      return {
+        u: import.meta.resolve(
+          packageName,
+          new URL(`file:///${path.resolve(srcPath)}`).href,
+        ),
+        r: packageName,
+        k: moduleName,
+      };
+    }
+    return {
+      u: moduleName,
+      r: moduleName,
+      k: moduleName,
+    };
+  }
+
+  const src = await stat(srcPath);
+  const currentFileDir = src.isDirectory() ? srcPath : path.dirname(srcPath);
+  const uncanonicalPath = path.relative(
+    path.resolve(currentFileDir),
+    moduleName,
+  );
+  const relPath = /^\.\.?[\/\\]/.test(uncanonicalPath)
+    ? uncanonicalPath
+    : `./${uncanonicalPath}`;
+
+  const u = `file://${moduleName}`;
+  return {
+    u,
+    r:
+      path.sep === "/"
+        ? relPath
+        : relPath.replace(new RegExp(escapeRegExp(path.sep), "g"), "/"),
+    k: u,
+  };
 }

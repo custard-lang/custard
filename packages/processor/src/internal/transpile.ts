@@ -4,7 +4,7 @@ import {
   Block,
   Call,
   canBePseudoTopLevelReferenced,
-  CuSymbol,
+  LiteralCuSymbol,
   DynamicVar,
   Form,
   isContextualKeyword,
@@ -19,11 +19,12 @@ import {
   isProvidedConst,
   JsSrc,
   LiteralObject,
-  PropertyAccess,
+  LiteralPropertyAccess,
   ReaderInput,
   showSymbolAccess,
   TranspileError,
   Writer,
+  isUnquote,
 } from "../internal/types.js";
 import {
   CU_ENV,
@@ -49,7 +50,7 @@ export async function transpileExpression(
 
 type NextCall = {
   writer: Writer;
-  sym: CuSymbol | PropertyAccess;
+  sym: LiteralCuSymbol | LiteralPropertyAccess;
 };
 
 type JsSrcAndNextCall = [JsSrc, NextCall | undefined];
@@ -225,7 +226,7 @@ async function transpileLiteralObject(
       }
 
       kvSrc = `${kSrc}:${vSrc}`;
-    } else {
+    } else if (isCuSymbol(kv)) {
       const f = EnvF.referTo(env, kv);
       if (TranspileError.is(f)) {
         return f;
@@ -235,6 +236,10 @@ async function transpileLiteralObject(
       } else {
         kvSrc = kv.v;
       }
+    } else if (isUnquote(kv)) {
+      return new TranspileError("Unquote must be used inside quasiQuote");
+    } else {
+      throw ExpectNever(kv);
     }
     objectContents = `${objectContents}${kvSrc},`;
   }

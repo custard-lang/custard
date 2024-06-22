@@ -9,7 +9,7 @@ import {
   aVar,
   Block,
   Call,
-  CuSymbol,
+  LiteralCuSymbol,
   ordinaryExpression,
   DirectWriterKindFlags,
   Env,
@@ -35,6 +35,7 @@ import {
   unknownLocation,
   emptyList,
   formatForError,
+  isUnquote,
 } from "../../internal/types.js";
 
 import {
@@ -222,6 +223,11 @@ export function transpilingForVariableDeclaration(
               src = `${src}\n${pseudoTopLevelAssignment(v.v, expDotId)};`;
               continue;
             }
+
+            if (isUnquote(kvOrSym)) {
+              return new TranspileError("Unquote must be used inside quasiQuote");
+            }
+
             r = tryToSet(kvOrSym, env, newWriter);
             if (TranspileError.is(r)) {
               return r;
@@ -309,6 +315,11 @@ export function transpileAssignee(
         assignee = `${assignee}${k.v}:${v.v},`;
         continue;
       }
+
+      if (isUnquote(kvOrSym)) {
+        return new TranspileError("Unquote must be used inside quasiQuote");
+      }
+
       const r0 = tryToSet(kvOrSym, env, newWriter);
       if (TranspileError.is(r0)) {
         return r0;
@@ -343,7 +354,7 @@ export function transpileAssignee(
 }
 
 function tryToSet(
-  sym: CuSymbol,
+  sym: LiteralCuSymbol,
   env: Env,
   newWriter: () => Writer,
 ): undefined | TranspileError {

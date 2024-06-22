@@ -7,18 +7,20 @@ import type {
 import { EOF } from "./scanner.js";
 import {
   Form,
-  List,
+  LiteralList,
   LiteralObject,
   LiteralString,
   LiteralInteger32,
   LiteralFloat64,
   Location,
   KeyValue,
-  CuSymbol,
+  LiteralCuSymbol,
   isCuSymbol,
   LiteralArray,
   ReservedSymbol,
-  PropertyAccess,
+  LiteralPropertyAccess,
+  isUnquote,
+  LiteralUnquote,
 } from "./types.js";
 
 export const tokens: TokenAndRE[] = [
@@ -100,7 +102,7 @@ export function form(s: SpaceSkippingScanner): Form<Location> | ParseError {
 function list(
   s: SpaceSkippingScanner,
   l: Location,
-): List<Location> | ParseError {
+): LiteralList<Location> | ParseError {
   const v = untilClose(s, "close paren", form);
   if (ParseError.is(v)) {
     return v;
@@ -131,7 +133,7 @@ function literalObject(
   s: SpaceSkippingScanner,
   l: Location,
 ): LiteralObject<Location> | ParseError {
-  const v = untilClose(s, "close brace", keyValueOrSymbol);
+  const v = untilClose(s, "close brace", keyValueOrSymbolOrUnquote);
   if (ParseError.is(v)) {
     return v;
   }
@@ -170,9 +172,9 @@ function untilClose<Result>(
   return result;
 }
 
-function keyValueOrSymbol(
+function keyValueOrSymbolOrUnquote(
   s: SpaceSkippingScanner,
-): KeyValue<Location> | CuSymbol<Location> | ParseError {
+): KeyValue<Location> | LiteralCuSymbol<Location> | LiteralUnquote<Location> | ParseError {
   const key = form(s);
   if (ParseError.is(key)) {
     return key;
@@ -190,12 +192,11 @@ function keyValueOrSymbol(
     }
     return [key, value];
   }
-  if (isCuSymbol(key)) {
+  if (isCuSymbol(key) || isUnquote(key)) {
     return key;
   }
-  const keyJson = JSON.stringify(key.v);
   return new ParseError(
-    `key of an object without a value must be a symbol, but ${keyJson} at line ${key.l}, column ${key.c}`,
+    `key of an object without a value must be a Symbol, but ${key.t} at line ${key.l}, column ${key.c}`,
   );
 }
 
@@ -250,9 +251,9 @@ function number(
 function symbolOrPropertyAccess(
   token: MatchedToken,
 ):
-  | CuSymbol<Location>
+  | LiteralCuSymbol<Location>
   | ReservedSymbol<Location>
-  | PropertyAccess<Location>
+  | LiteralPropertyAccess<Location>
   | ParseError {
   const { l, c, f } = token;
   const v = token.v[0];
@@ -308,7 +309,10 @@ function symbolOrPropertyAccess(
   }
 }
 
-function unquote(s: SpaceSkippingScanner, l: Location): Form<Location> | ParseError {
+function unquote(
+  s: SpaceSkippingScanner,
+  l: Location,
+): Form<Location> | ParseError {
   // eslint-disable-next-line no-ignore-returned-union/no-ignore-returned-union
   s.next(); // drop "$"
   const v = form(s);
@@ -322,7 +326,10 @@ function unquote(s: SpaceSkippingScanner, l: Location): Form<Location> | ParseEr
   };
 }
 
-function splice(s: SpaceSkippingScanner, l: Location): Form<Location> | ParseError {
+function splice(
+  s: SpaceSkippingScanner,
+  l: Location,
+): Form<Location> | ParseError {
   // eslint-disable-next-line no-ignore-returned-union/no-ignore-returned-union
   s.next(); // drop "..."
   const v = form(s);
@@ -335,4 +342,3 @@ function splice(s: SpaceSkippingScanner, l: Location): Form<Location> | ParseErr
     ...l,
   };
 }
-

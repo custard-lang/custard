@@ -2,7 +2,7 @@ import * as EnvF from "../env.js";
 import { loadModule } from "../definitions.js";
 import {
   canBePseudoTopLevelReferenced,
-  CuSymbol,
+  LiteralCuSymbol,
   Env,
   exportableStatement,
   Form,
@@ -34,7 +34,7 @@ export const _cu$import = markAsDirectWriter(
     }
 
     // TODO: Transpile if the module is a .cstd module
-    const ns = await loadModule(foundModule.url);
+    const ns = await loadModule(foundModule.u);
     if (TranspileError.is(ns)) {
       return ns;
     }
@@ -47,18 +47,33 @@ export const _cu$import = markAsDirectWriter(
     switch (env.transpileState.mode) {
       case "repl":
         const awaitImportUrl = `await import(${JSON.stringify(
-          foundModule.url,
+          foundModule.u,
         )})`;
-        return EnvF.isAtTopLevel(env)
-          ? pseudoTopLevelAssignment(moduleId.v, awaitImportUrl)
-          : `const ${moduleId.v}=${awaitImportUrl}`;
+        if (EnvF.isAtTopLevel(env)) {
+          EnvF.setImportedModulesJsId(env, foundModule, {
+            id: moduleId.v,
+            isPseudoTopLevel: true,
+          });
+
+          return pseudoTopLevelAssignment(moduleId.v, awaitImportUrl)
+        }
+
+        EnvF.setImportedModulesJsId(env, foundModule, {
+          id: moduleId.v,
+          isPseudoTopLevel: false,
+        });
+        return `const ${moduleId.v}=${awaitImportUrl}`;
       case "module":
-        const modulePathJson = JSON.stringify(foundModule.relativePath);
+        EnvF.setImportedModulesJsId(env, foundModule, {
+          id: moduleId.v,
+          isPseudoTopLevel: false,
+        });
+
+        const modulePathJson = JSON.stringify(foundModule.r);
         if (EnvF.isAtTopLevel(env)) {
           return `import * as ${moduleId.v} from ${modulePathJson}`;
         }
-        const awaitImportRelativePath = `await import(${modulePathJson})`;
-        return `const ${moduleId.v}=${awaitImportRelativePath}`;
+        return `const ${moduleId.v}=await import(${modulePathJson})`;
     }
   },
   ordinaryStatement,
@@ -78,7 +93,7 @@ export const importAnyOf = markAsDirectWriter(
       );
     }
     // TODO: Transpile if the module is a .cstd module
-    const ns = await loadModule(foundModule.url);
+    const ns = await loadModule(foundModule.u);
     if (TranspileError.is(ns)) {
       return ns;
     }
@@ -94,7 +109,7 @@ export const importAnyOf = markAsDirectWriter(
     switch (env.transpileState.mode) {
       case "repl":
         const awaitImportUrl = `await import(${JSON.stringify(
-          foundModule.url,
+          foundModule.u,
         )})`;
         if (EnvF.isAtTopLevel(env)) {
           let jsModule = "";
@@ -106,14 +121,27 @@ export const importAnyOf = markAsDirectWriter(
               awaitImportDotId,
             )};\n`;
           }
+
+          for (const id of ids) {
+            EnvF.setImportedModulesJsId(env, foundModule, { id, isPseudoTopLevel: true });
+          }
           return jsModule;
+        }
+
+        for (const id of ids) {
+          EnvF.setImportedModulesJsId(env, foundModule, { id, isPseudoTopLevel: false });
         }
         return `const{${ids.join(", ")}}=${awaitImportUrl};\n`;
       case "module":
-        const modulePathJson = JSON.stringify(foundModule.relativePath);
+        for (const id of ids) {
+          EnvF.setImportedModulesJsId(env, foundModule, { id, isPseudoTopLevel: false });
+        }
+
+        const modulePathJson = JSON.stringify(foundModule.r);
         if (EnvF.isAtTopLevel(env)) {
           return `import{${ids.join(", ")}}from${modulePathJson};\n`;
         }
+
         const awaitImportRelativePath = `await import(${modulePathJson})`;
         return `const{${ids.join(", ")}}=${awaitImportRelativePath};\n`;
     }
@@ -124,7 +152,7 @@ export const importAnyOf = markAsDirectWriter(
 function validateArgsOfImport(
   forms: Form[],
   formId: Id,
-): TranspileError | CuSymbol {
+): TranspileError | LiteralCuSymbol {
   if (forms.length !== 1) {
     return new TranspileError(
       `The number of arguments of \`${formId}\` must be 1.`,

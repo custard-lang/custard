@@ -3,7 +3,7 @@ export {
   Env,
   Form,
   Block,
-  List,
+  LiteralList,
   Call,
   LiteralObject,
   KeyValue,
@@ -15,10 +15,10 @@ export {
   ReservedSymbol,
   Location,
   ReaderInput,
-  CuSymbol,
-  PropertyAccess,
-  Unquote,
-  Splice,
+  LiteralCuSymbol,
+  LiteralPropertyAccess,
+  LiteralUnquote,
+  LiteralSplice,
   isList,
   isLiteralArray,
   isLiteralObject,
@@ -53,3 +53,9 @@ export {
   JsModuleWithResult,
   TranspileError,
 } from "./internal/types.js";
+export { List } from "./internal/types/list.js";
+export { CuSymbol } from "./internal/types/cu-symbol.js";
+export { KeyValues } from "./internal/types/key-values.js";
+export { PropertyAccess } from "./internal/types/property-access.js";
+export { Unquote } from "./internal/types/unquote.js";
+export { Splice } from "./internal/types/splice.js";

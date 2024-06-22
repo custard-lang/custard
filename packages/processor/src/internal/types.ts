@@ -6,12 +6,12 @@ import * as s from "../lib/spec.js";
 export type Block<X extends Empty = Empty> = Form<X>[];
 
 export type Form<X extends Empty = Empty> =
-  | List<X>
+  | LiteralList<X>
   | LiteralArray<X>
   | LiteralObject<X>
   | Atom<X>
-  | Unquote<X>
-  | Splice<X>;
+  | LiteralUnquote<X>
+  | LiteralSplice<X>;
 
 // The ***Base interfaces are necessary to avoid circular references. But I'm not sure why this works!
 interface ListBase<X extends Empty = Empty> {
@@ -19,23 +19,23 @@ interface ListBase<X extends Empty = Empty> {
   v: Form<X>[];
 }
 
-export type List<X extends Empty = Empty> = ListBase<X> & X;
+export type LiteralList<X extends Empty = Empty> = ListBase<X> & X;
 
-export function emptyList(l: Location): List<Location> {
+export function emptyList(l: Location): LiteralList<Location> {
   return { ...l, t: "List", v: [] };
 }
 
-export function isList<X extends Empty>(v: Form<X>): v is List<X> {
+export function isList<X extends Empty>(v: Form<X>): v is LiteralList<X> {
   return v.t === "List";
 }
 
-export function list(...v: Form[]): List {
+export function list(...v: Form[]): LiteralList {
   return { t: "List", v };
 }
 
 interface CallBase<X extends Empty = Empty> {
   t: "List";
-  v: [CuSymbol<X> | PropertyAccess<X>, ...Form<X>[]];
+  v: [LiteralCuSymbol<X> | LiteralPropertyAccess<X>, ...Form<X>[]];
 }
 
 export type Call<X extends Empty = Empty> = CallBase<X> & X;
@@ -55,7 +55,7 @@ export function isLiteralArray<X extends Empty = Empty>(
 
 export interface LiteralObjectBase<X extends Empty = Empty> {
   t: "Object";
-  v: (KeyValue<X> | CuSymbol<X>)[];
+  v: (KeyValue<X> | LiteralCuSymbol<X> | LiteralUnquote<X>)[];
 }
 
 export type LiteralObject<X extends Empty = Empty> = LiteralObjectBase<X> & X;
@@ -83,8 +83,8 @@ export type Atom<X extends Empty = Empty> =
   | LiteralFloat64<X>
   | LiteralString<X>
   | ReservedSymbol<X>
-  | CuSymbol<X>
-  | PropertyAccess<X>;
+  | LiteralCuSymbol<X>
+  | LiteralPropertyAccess<X>;
 
 export type LiteralInteger32<X extends Empty = Empty> = {
   t: "Integer32";
@@ -106,37 +106,37 @@ export type ReservedSymbol<X extends Empty = Empty> = {
   v: boolean | null;
 } & X;
 
-export type CuSymbol<X extends Empty = Empty> = {
+export type LiteralCuSymbol<X extends Empty = Empty> = {
   t: "Symbol";
   v: string;
 } & X;
 
-export function locatedCuSymbol(v: string, l: Location): CuSymbol<Location> {
+export function locatedCuSymbol(v: string, l: Location): LiteralCuSymbol<Location> {
   return { ...l, t: "Symbol", v };
 }
 
-export function cuSymbol(v: string): CuSymbol {
+export function cuSymbol(v: string): LiteralCuSymbol {
   return { t: "Symbol", v };
 }
 
 export function isCuSymbol<X extends Empty = Empty>(
   v: Form<X>,
-): v is CuSymbol<X> {
+): v is LiteralCuSymbol<X> {
   return v.t === "Symbol";
 }
 
-export type PropertyAccess<X extends Empty = Empty> = X & {
+export type LiteralPropertyAccess<X extends Empty = Empty> = X & {
   t: "PropertyAccess";
   v: string[];
 };
 
 export function isPropertyAccess<X extends Empty = Empty>(
   v: Form<X>,
-): v is PropertyAccess<X> {
+): v is LiteralPropertyAccess<X> {
   return v.t === "PropertyAccess";
 }
 
-export function showSymbolAccess(sym: CuSymbol | PropertyAccess): string {
+export function showSymbolAccess(sym: LiteralCuSymbol | LiteralPropertyAccess): string {
   switch (sym.t) {
     case "Symbol":
       return sym.v;
@@ -147,25 +147,23 @@ export function showSymbolAccess(sym: CuSymbol | PropertyAccess): string {
   }
 }
 
-export type Unquote<X extends Empty = Empty> = X & {
+export type LiteralUnquote<X extends Empty = Empty> = X & {
   t: "Unquote";
   v: Form<X>;
 };
 
 export function isUnquote<X extends Empty = Empty>(
   v: Form<X>,
-): v is Unquote<X> {
+): v is LiteralUnquote<X> {
   return v.t === "Unquote";
 }
 
-export type Splice<X extends Empty = Empty> = X & {
+export type LiteralSplice<X extends Empty = Empty> = X & {
   t: "Splice";
   v: Form<X>;
 };
 
-export function isSplice<X extends Empty = Empty>(
-  v: Form<X>,
-): v is Splice<X> {
+export function isSplice<X extends Empty = Empty>(v: Form<X>): v is LiteralSplice<X> {
   return v.t === "Splice";
 }
 
@@ -215,7 +213,7 @@ function formatForErrorElement<T>(forms: T[], fx: (f: T) => string): string {
   return ` ${fx(first)} ...`;
 }
 
-function formatForErrorKV(kv: KeyValue | CuSymbol): string {
+function formatForErrorKV(kv: KeyValue | LiteralCuSymbol | LiteralUnquote): string {
   if (isKeyValue(kv)) {
     return `${formatForErrorShallow(kv[0])}: ${formatForErrorShallow(kv[1])}`;
   }
@@ -235,7 +233,7 @@ function formatForErrorShallow(f: Form): string {
   }
 }
 
-function formatForErrorEtc(f: Atom | Unquote | Splice): string {
+function formatForErrorEtc(f: Atom | LiteralUnquote | LiteralSplice): string {
   switch (f.t) {
     case "Integer32":
     case "Float64":
@@ -315,7 +313,15 @@ export type Env<State extends TranspileState = TranspileState> = {
   readonly references: References; // References in the Progaram
   readonly modules: ModulePaths; // Mapping from module name to its path.
   readonly transpileState: State;
+  readonly importedModuleJsIds: Map<FilePath, HowToRefer | Map<Id, HowToRefer>>;
 };
+
+export interface HowToRefer {
+  id: Id;
+  isPseudoTopLevel: IsPseudoTopLevel;
+}
+
+export type IsPseudoTopLevel = boolean;
 
 export type Scope = {
   isAsync: boolean;
@@ -399,7 +405,7 @@ export function isNamespace(x: Writer): x is Namespace {
 
 export type DirectWriter = (
   env: Env,
-  ...forms: Form<Location>[]
+  ...forms: Form[]
 ) => Awaitable<JsSrc | TranspileError>;
 export interface MarkedDirectWriter extends AnyWriter<5> {
   readonly call: DirectWriter;
