@@ -24,9 +24,6 @@ export default [
     ],
   },
   ...compat.extends(
-    "plugin:import/errors",
-    "plugin:import/warnings",
-    "plugin:import/typescript",
     "plugin:promise/recommended",
     "love",
   ),
