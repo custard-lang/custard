@@ -6,17 +6,17 @@ import * as path from "node:path";
 import { pid } from "node:process";
 import { threadId } from "node:worker_threads";
 
-import { FilePath } from "@custard-lang/processor/dist/types.js";
+import { type FilePath } from "@custard-lang/processor/dist/types.js";
 import { projectRootFromImportMetaUrl } from "@custard-lang/processor/dist/util/path.js";
 
 let count = 0;
 
 const tmpDir = [projectRootFromImportMetaUrl(import.meta.url), "tmp"].join("/");
 
-export type SrcAndDestPaths = {
+export interface SrcAndDestPaths {
   src: FilePath;
   dest: FilePath;
-};
+}
 
 export async function withNewPath<T>(
   body: (paths: SrcAndDestPaths) => Promise<T>,

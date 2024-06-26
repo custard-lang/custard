@@ -1,5 +1,5 @@
-import { Env, ReaderInput, TranspileRepl } from "./types.js";
-import { Block, Form } from "../types.js";
+import { type Env, type ReaderInput, type TranspileRepl } from "./types.js";
+import { type Block, type Form } from "../types.js";
 import { transpileBlockCore, transpileExpression } from "./transpile.js";
 import { _cu$eval } from "./isolated-eval.js";
 
@@ -48,5 +48,5 @@ export async function evalString(
   if (ParseError.is(forms)) {
     return forms;
   }
-  return evalBlock(forms, env);
+  return await evalBlock(forms, env);
 }

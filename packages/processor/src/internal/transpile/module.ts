@@ -2,14 +2,14 @@ import * as EnvF from "../env.js";
 import { loadModule } from "../definitions.js";
 import {
   canBePseudoTopLevelReferenced,
-  LiteralCuSymbol,
-  Env,
+  type LiteralCuSymbol,
+  type Env,
   exportableStatement,
-  Form,
-  Id,
+  type Form,
+  type Id,
   isCuSymbol,
   isWriter,
-  JsSrc,
+  type JsSrc,
   markAsDirectWriter,
   ordinaryStatement,
   TranspileError,
@@ -45,17 +45,15 @@ export const _cu$import = markAsDirectWriter(
     }
 
     switch (env.transpileState.mode) {
-      case "repl":
-        const awaitImportUrl = `await import(${JSON.stringify(
-          foundModule.u,
-        )})`;
+      case "repl": {
+        const awaitImportUrl = `await import(${JSON.stringify(foundModule.u)})`;
         if (EnvF.isAtTopLevel(env)) {
           EnvF.setImportedModulesJsId(env, foundModule, {
             id: moduleId.v,
             isPseudoTopLevel: true,
           });
 
-          return pseudoTopLevelAssignment(moduleId.v, awaitImportUrl)
+          return pseudoTopLevelAssignment(moduleId.v, awaitImportUrl);
         }
 
         EnvF.setImportedModulesJsId(env, foundModule, {
@@ -63,7 +61,8 @@ export const _cu$import = markAsDirectWriter(
           isPseudoTopLevel: false,
         });
         return `const ${moduleId.v}=${awaitImportUrl}`;
-      case "module":
+      }
+      case "module": {
         EnvF.setImportedModulesJsId(env, foundModule, {
           id: moduleId.v,
           isPseudoTopLevel: false,
@@ -74,6 +73,7 @@ export const _cu$import = markAsDirectWriter(
           return `import * as ${moduleId.v} from ${modulePathJson}`;
         }
         return `const ${moduleId.v}=await import(${modulePathJson})`;
+      }
     }
   },
   ordinaryStatement,
@@ -107,10 +107,8 @@ export const importAnyOf = markAsDirectWriter(
     }
 
     switch (env.transpileState.mode) {
-      case "repl":
-        const awaitImportUrl = `await import(${JSON.stringify(
-          foundModule.u,
-        )})`;
+      case "repl": {
+        const awaitImportUrl = `await import(${JSON.stringify(foundModule.u)})`;
         if (EnvF.isAtTopLevel(env)) {
           let jsModule = "";
           for (const id of ids) {
@@ -123,18 +121,28 @@ export const importAnyOf = markAsDirectWriter(
           }
 
           for (const id of ids) {
-            EnvF.setImportedModulesJsId(env, foundModule, { id, isPseudoTopLevel: true });
+            EnvF.setImportedModulesJsId(env, foundModule, {
+              id,
+              isPseudoTopLevel: true,
+            });
           }
           return jsModule;
         }
 
         for (const id of ids) {
-          EnvF.setImportedModulesJsId(env, foundModule, { id, isPseudoTopLevel: false });
+          EnvF.setImportedModulesJsId(env, foundModule, {
+            id,
+            isPseudoTopLevel: false,
+          });
         }
         return `const{${ids.join(", ")}}=${awaitImportUrl};\n`;
-      case "module":
+      }
+      case "module": {
         for (const id of ids) {
-          EnvF.setImportedModulesJsId(env, foundModule, { id, isPseudoTopLevel: false });
+          EnvF.setImportedModulesJsId(env, foundModule, {
+            id,
+            isPseudoTopLevel: false,
+          });
         }
 
         const modulePathJson = JSON.stringify(foundModule.r);
@@ -144,6 +152,7 @@ export const importAnyOf = markAsDirectWriter(
 
         const awaitImportRelativePath = `await import(${modulePathJson})`;
         return `const{${ids.join(", ")}}=${awaitImportRelativePath};\n`;
+      }
     }
   },
   ordinaryStatement,

@@ -6,21 +6,21 @@ import type {
 } from "./scanner.js";
 import { EOF } from "./scanner.js";
 import {
-  Form,
-  LiteralList,
-  LiteralObject,
-  LiteralString,
-  LiteralInteger32,
-  LiteralFloat64,
-  Location,
-  KeyValue,
-  LiteralCuSymbol,
+  type Form,
+  type LiteralList,
+  type LiteralObject,
+  type LiteralString,
+  type LiteralInteger32,
+  type LiteralFloat64,
+  type Location,
+  type KeyValue,
+  type LiteralCuSymbol,
   isCuSymbol,
-  LiteralArray,
-  ReservedSymbol,
-  LiteralPropertyAccess,
+  type LiteralArray,
+  type ReservedSymbol,
+  type LiteralPropertyAccess,
   isUnquote,
-  LiteralUnquote,
+  type LiteralUnquote,
 } from "./types.js";
 
 export const tokens: TokenAndRE[] = [
@@ -63,7 +63,7 @@ export class ParseError extends Error {
   // NOTE: Use this instead of instanceof to avoid https://github.com/vitejs/vite/issues/9528
   _cu$isParseError = true;
   static is(e: unknown): e is ParseError {
-    return (e as Record<string, unknown>)?._cu$isParseError === true;
+    return (e as { [key: string]: unknown })?._cu$isParseError === true;
   }
 }
 
@@ -82,13 +82,16 @@ export function form(s: SpaceSkippingScanner): Form<Location> | ParseError {
     case "open brace":
       return literalObject(s, { l, c, f });
     case "string":
-      s.next();
+      // eslint-disable-next-line eslint-plugin-no-ignore-returned-union/no-ignore-returned-union
+      s.next(); // Drop the peeked token
       return string(token);
     case "number":
-      s.next();
+      // eslint-disable-next-line eslint-plugin-no-ignore-returned-union/no-ignore-returned-union
+      s.next(); // Drop the peeked token
       return number(token);
     case "symbol or property access":
-      s.next();
+      // eslint-disable-next-line eslint-plugin-no-ignore-returned-union/no-ignore-returned-union
+      s.next(); // Drop the peeked token
       return symbolOrPropertyAccess(token);
     case "unquote sign":
       return unquote(s, { l, c, f });
@@ -149,7 +152,7 @@ function untilClose<Result>(
   close: TokenKind,
   fn: (s: SpaceSkippingScanner) => Result | ParseError,
 ): Result[] | ParseError {
-  // eslint-disable-next-line no-ignore-returned-union/no-ignore-returned-union
+  // eslint-disable-next-line eslint-plugin-no-ignore-returned-union/no-ignore-returned-union
   s.next(); // drop open paren
 
   const result: Result[] = [];
@@ -167,14 +170,18 @@ function untilClose<Result>(
     }
     result.push(f);
   }
-  // eslint-disable-next-line no-ignore-returned-union/no-ignore-returned-union
+  // eslint-disable-next-line eslint-plugin-no-ignore-returned-union/no-ignore-returned-union
   s.next(); // drop close paren
   return result;
 }
 
 function keyValueOrSymbolOrUnquote(
   s: SpaceSkippingScanner,
-): KeyValue<Location> | LiteralCuSymbol<Location> | LiteralUnquote<Location> | ParseError {
+):
+  | KeyValue<Location>
+  | LiteralCuSymbol<Location>
+  | LiteralUnquote<Location>
+  | ParseError {
   const key = form(s);
   if (ParseError.is(key)) {
     return key;
@@ -184,7 +191,7 @@ function keyValueOrSymbolOrUnquote(
     return new ParseError("colon, close brace, or form", EOF);
   }
   if (colonOrOther.t === "colon") {
-    // eslint-disable-next-line no-ignore-returned-union/no-ignore-returned-union
+    // eslint-disable-next-line eslint-plugin-no-ignore-returned-union/no-ignore-returned-union
     s.next(); // drop colon
     const value = form(s);
     if (ParseError.is(value)) {
@@ -282,7 +289,7 @@ function symbolOrPropertyAccess(
         c,
         f,
       };
-    default:
+    default: {
       // TODO: Insufficient validation
       const parts = v.split(".");
       if (parts.length === 0) {
@@ -306,6 +313,7 @@ function symbolOrPropertyAccess(
         c,
         f,
       };
+    }
   }
 }
 
@@ -313,7 +321,7 @@ function unquote(
   s: SpaceSkippingScanner,
   l: Location,
 ): Form<Location> | ParseError {
-  // eslint-disable-next-line no-ignore-returned-union/no-ignore-returned-union
+  // eslint-disable-next-line eslint-plugin-no-ignore-returned-union/no-ignore-returned-union
   s.next(); // drop "$"
   const v = form(s);
   if (ParseError.is(v)) {
@@ -330,7 +338,7 @@ function splice(
   s: SpaceSkippingScanner,
   l: Location,
 ): Form<Location> | ParseError {
-  // eslint-disable-next-line no-ignore-returned-union/no-ignore-returned-union
+  // eslint-disable-next-line eslint-plugin-no-ignore-returned-union/no-ignore-returned-union
   s.next(); // drop "..."
   const v = form(s);
   if (ParseError.is(v)) {

@@ -24,13 +24,13 @@ import {
   aConst,
   aContextualKeyword,
   aVar,
-  Block,
-  LiteralCuSymbol,
-  Env,
-  Form,
-  Id,
+  type Block,
+  type LiteralCuSymbol,
+  type Env,
+  type Form,
+  type Id,
   isCuSymbol,
-  JsSrc,
+  type JsSrc,
   markAsDirectWriter,
   markAsDynamicVar,
   TranspileError,
@@ -51,7 +51,8 @@ import {
 export { standardModuleRoot } from "../../definitions.js";
 
 export const note = markAsDirectWriter(
-  (_env: Env, ..._args: Form[]): Promise<JsSrc> => Promise.resolve("void 0"),
+  async (_env: Env, ..._args: Form[]): Promise<JsSrc> =>
+    await Promise.resolve("void 0"),
 );
 
 export const annotate = markAsDirectWriter(
@@ -196,7 +197,10 @@ export const assign = transpilingForAssignment(
       );
     }
 
-    function assignStatement(sym: LiteralCuSymbol, e: JsSrc): JsSrc | TranspileError {
+    function assignStatement(
+      sym: LiteralCuSymbol,
+      e: JsSrc,
+    ): JsSrc | TranspileError {
       const r = EnvF.findWithIsAtTopLevel(env, sym);
       if (r === undefined || !isVar(r.writer)) {
         return new TranspileError(
@@ -361,7 +365,7 @@ export const _cu$try = markAsDirectWriter(
     const finallyFound = 2;
     type State = typeof initial | typeof catchFound | typeof finallyFound;
     let state: State = initial;
-    let catchVarName: Id | undefined = undefined;
+    let catchVarName: Id | undefined;
 
     EnvF.pushInherited(env);
     for (const form of statements) {
@@ -564,7 +568,7 @@ export const _cu$yield = markAsDirectWriter(
         "`yield` must be used in a generator function!",
       );
     }
-    return transpiling1Unmarked("yield", (s: JsSrc) => `yield ${s}`)(
+    return await transpiling1Unmarked("yield", (s: JsSrc) => `yield ${s}`)(
       env,
       a,
       ...unused,

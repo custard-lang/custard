@@ -1,11 +1,11 @@
 import { describe } from "vitest";
 import * as path from "node:path";
 
-import { Config, testEvalBlockOf, testEvalFormOf } from "../test.js";
+import { type Config, testEvalBlockOf, testEvalFormOf } from "../test.js";
 
 import {
   defaultTranspileOptions,
-  FilePath,
+  type FilePath,
   TranspileError,
 } from "@custard-lang/processor/dist/types.js";
 import { standardModuleRoot } from "@custard-lang/processor/dist/definitions.js";
@@ -563,7 +563,7 @@ describe("evalForm", () => {
   describe('{object: "literal"}', () => {
     testEvalFormOf({
       src: '{ a: 1 [(scope "b")]: 3 [(plusF 1 1)]: 2 }',
-      expected: { a: 1, b: 3, "2": 2 },
+      expected: { a: 1, b: 3, 2: 2 },
       setUpConfig,
     });
   });

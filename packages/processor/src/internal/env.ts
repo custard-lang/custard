@@ -3,26 +3,29 @@ import * as path from "node:path";
 import {
   isRecursiveConst,
   TranspileError,
-  Writer,
-  FilePath,
-  Id,
+  type Writer,
+  type FilePath,
+  type Id,
   isNamespace,
-  LiteralPropertyAccess,
-  LiteralCuSymbol,
+  type LiteralPropertyAccess,
+  type LiteralCuSymbol,
   isCuSymbol,
   isPropertyAccess,
-  JsSrc,
-  Scope,
+  type JsSrc,
+  type Scope,
   canBePseudoTopLevelReferenced,
-  CompleteProvidedSymbolsConfig,
-  Namespace,
+  type CompleteProvidedSymbolsConfig,
+  type Namespace,
   aConst,
   isWriter,
-  ScopeOptions,
+  type ScopeOptions,
   defaultScopeOptions,
   defaultAsyncScopeOptions,
+  type Env,
+  type HowToRefer,
+  type ReaderInput,
+  type TranspileState,
 } from "./types.js";
-import type { Env, HowToRefer, ReaderInput, TranspileState } from "./types.js";
 import * as References from "./references.js";
 import * as ScopeF from "./scope.js";
 import { isDeeperThanOrEqual, isShallowerThan } from "./scope-path.js";
@@ -64,10 +67,10 @@ export function find(
   return r.writer;
 }
 
-export type WriterWithIsAtTopLevel = {
+export interface WriterWithIsAtTopLevel {
   readonly writer: Writer;
   readonly canBeAtPseudoTopLevel: boolean;
-};
+}
 
 export function findWithIsAtTopLevel(
   env: Env,
@@ -171,7 +174,7 @@ export function set(
   id: Id,
   writer: Writer,
 ): undefined | TranspileError {
-  const rs = referenceById.get(id) || [];
+  const rs = referenceById.get(id) ?? [];
   if (
     rs.some(
       (references) =>
@@ -201,29 +204,27 @@ export function pushInherited(env: Env): void {
 
 export function pop({ scopes, references }: Env): void {
   References.returnToPreviousScope(references);
-  // eslint-disable-next-line no-ignore-returned-union/no-ignore-returned-union
+  // eslint-disable-next-line eslint-plugin-no-ignore-returned-union/no-ignore-returned-union
   scopes.shift();
 }
 
-export type ModulePathAndUrl = {
+export interface ModulePathAndUrl {
   u: string; // Absolute URL
   r: FilePath; // Relative path
   k: string; // Used for key in Env.importedModuleJsIds
-};
+}
 
 export async function findModule(
   env: Env,
   id: Id,
 ): Promise<ModulePathAndUrl | undefined> {
-  const {
-    modules,
-  } = env;
+  const { modules } = env;
   const modFullPath = modules.get(id);
   if (modFullPath === undefined) {
     return;
   }
 
-  return modulePathAndUrl(env, modFullPath);
+  return await modulePathAndUrl(env, modFullPath);
 }
 
 export function getCurrentScope({ scopes: [current] }: Env): Scope {
@@ -279,7 +280,11 @@ export function setImportedModulesJsId(
   env.importedModuleJsIds.set(k, howToRefer);
 }
 
-export async function findIdAsJsSrc(env: Env, moduleName: string, id: Id): Promise<JsSrc | undefined> {
+export async function findIdAsJsSrc(
+  env: Env,
+  moduleName: string,
+  id: Id,
+): Promise<JsSrc | undefined> {
   const { k } = await modulePathAndUrl(env, moduleName);
 
   const howToReferOrMap = env.importedModuleJsIds.get(k);
@@ -297,13 +302,16 @@ export async function findIdAsJsSrc(env: Env, moduleName: string, id: Id): Promi
     }
     return howToRefer.id;
   }
-    if (howToReferOrMap.isPseudoTopLevel) {
-      return `${pseudoTopLevelReference(howToReferOrMap.id)}.${id}`;
-    }
-    return `${howToReferOrMap.id}.${id}`;
+  if (howToReferOrMap.isPseudoTopLevel) {
+    return `${pseudoTopLevelReference(howToReferOrMap.id)}.${id}`;
+  }
+  return `${howToReferOrMap.id}.${id}`;
 }
 
-async function modulePathAndUrl(env: Env, moduleName: string): Promise<ModulePathAndUrl> {
+async function modulePathAndUrl(
+  env: Env,
+  moduleName: string,
+): Promise<ModulePathAndUrl> {
   const {
     transpileState: { srcPath },
   } = env;
@@ -333,7 +341,7 @@ async function modulePathAndUrl(env: Env, moduleName: string): Promise<ModulePat
     path.resolve(currentFileDir),
     moduleName,
   );
-  const relPath = /^\.\.?[\/\\]/.test(uncanonicalPath)
+  const relPath = /^\.\.?[/\\]/.test(uncanonicalPath)
     ? uncanonicalPath
     : `./${uncanonicalPath}`;
 

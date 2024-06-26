@@ -1,11 +1,11 @@
 import { _cu$export, _cu$import, importAnyOf } from "./transpile/module.js";
 import {
   aProvidedConst,
-  Id,
-  JsSrc,
-  Scope,
-  ScopeOptions,
-  Writer,
+  type Id,
+  type JsSrc,
+  type Scope,
+  type ScopeOptions,
+  type Writer,
 } from "./types.js";
 
 export function init(options: ScopeOptions): Scope {
@@ -27,7 +27,7 @@ export function get({ definitions }: Scope, id: Id): Writer | undefined {
 
 export function destroy({ definitions }: Scope, id: Id): void {
   // I just want to delete, so I don't have to use the result.
-  // eslint-disable-next-line no-ignore-returned-union/no-ignore-returned-union
+  // eslint-disable-next-line eslint-plugin-no-ignore-returned-union/no-ignore-returned-union
   definitions.delete(id);
 }
 

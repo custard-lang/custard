@@ -1,9 +1,9 @@
 import { ExpectNever, expectNever } from "../util/error.js";
-import { Awaitable, Empty } from "../util/types.js";
+import { type Awaitable, type Empty } from "../util/types.js";
 
 import * as s from "../lib/spec.js";
 
-export type Block<X extends Empty = Empty> = Form<X>[];
+export type Block<X extends Empty = Empty> = Array<Form<X>>;
 
 export type Form<X extends Empty = Empty> =
   | LiteralList<X>
@@ -16,7 +16,7 @@ export type Form<X extends Empty = Empty> =
 // The ***Base interfaces are necessary to avoid circular references. But I'm not sure why this works!
 interface ListBase<X extends Empty = Empty> {
   t: "List";
-  v: Form<X>[];
+  v: Array<Form<X>>;
 }
 
 export type LiteralList<X extends Empty = Empty> = ListBase<X> & X;
@@ -35,14 +35,14 @@ export function list(...v: Form[]): LiteralList {
 
 interface CallBase<X extends Empty = Empty> {
   t: "List";
-  v: [LiteralCuSymbol<X> | LiteralPropertyAccess<X>, ...Form<X>[]];
+  v: [LiteralCuSymbol<X> | LiteralPropertyAccess<X>, ...Array<Form<X>>];
 }
 
 export type Call<X extends Empty = Empty> = CallBase<X> & X;
 
 export interface LiteralArrayBase<X extends Empty = Empty> {
   t: "Array";
-  v: Form<X>[];
+  v: Array<Form<X>>;
 }
 
 export type LiteralArray<X extends Empty = Empty> = LiteralArrayBase<X> & X;
@@ -55,7 +55,7 @@ export function isLiteralArray<X extends Empty = Empty>(
 
 export interface LiteralObjectBase<X extends Empty = Empty> {
   t: "Object";
-  v: (KeyValue<X> | LiteralCuSymbol<X> | LiteralUnquote<X>)[];
+  v: Array<KeyValue<X> | LiteralCuSymbol<X> | LiteralUnquote<X>>;
 }
 
 export type LiteralObject<X extends Empty = Empty> = LiteralObjectBase<X> & X;
@@ -111,7 +111,10 @@ export type LiteralCuSymbol<X extends Empty = Empty> = {
   v: string;
 } & X;
 
-export function locatedCuSymbol(v: string, l: Location): LiteralCuSymbol<Location> {
+export function locatedCuSymbol(
+  v: string,
+  l: Location,
+): LiteralCuSymbol<Location> {
   return { ...l, t: "Symbol", v };
 }
 
@@ -136,7 +139,9 @@ export function isPropertyAccess<X extends Empty = Empty>(
   return v.t === "PropertyAccess";
 }
 
-export function showSymbolAccess(sym: LiteralCuSymbol | LiteralPropertyAccess): string {
+export function showSymbolAccess(
+  sym: LiteralCuSymbol | LiteralPropertyAccess,
+): string {
   switch (sym.t) {
     case "Symbol":
       return sym.v;
@@ -163,7 +168,9 @@ export type LiteralSplice<X extends Empty = Empty> = X & {
   v: Form<X>;
 };
 
-export function isSplice<X extends Empty = Empty>(v: Form<X>): v is LiteralSplice<X> {
+export function isSplice<X extends Empty = Empty>(
+  v: Form<X>,
+): v is LiteralSplice<X> {
   return v.t === "Splice";
 }
 
@@ -213,7 +220,9 @@ function formatForErrorElement<T>(forms: T[], fx: (f: T) => string): string {
   return ` ${fx(first)} ...`;
 }
 
-function formatForErrorKV(kv: KeyValue | LiteralCuSymbol | LiteralUnquote): string {
+function formatForErrorKV(
+  kv: KeyValue | LiteralCuSymbol | LiteralUnquote,
+): string {
   if (isKeyValue(kv)) {
     return `${formatForErrorShallow(kv[0])}: ${formatForErrorShallow(kv[1])}`;
   }
@@ -241,7 +250,7 @@ function formatForErrorEtc(f: Atom | LiteralUnquote | LiteralSplice): string {
     case "String":
       return `(String ${JSON.stringify(f.v)})`;
     case "ReservedSymbol":
-      return `(ReservedSymbol ${f.v === null ? "none" : f.v})`;
+      return `(ReservedSymbol ${f.v ?? "none"})`;
     case "Symbol":
       return `(Symbol ${f.v})`;
     case "PropertyAccess":
@@ -255,17 +264,19 @@ function formatForErrorEtc(f: Atom | LiteralUnquote | LiteralSplice): string {
   }
 }
 
-export type ProvidedSymbolsConfig = {
+export interface ProvidedSymbolsConfig {
   // TODO: quoteされたFormにする。最終的にはProvidedSymbolsConfig全体を専用のマクロで設定する仕様に
   implicitStatements: string;
   modulePaths: ModulePaths;
   jsTopLevels: Id[];
-};
+}
 
 export type CompleteProvidedSymbolsConfig = ProvidedSymbolsConfig & {
   from: FilePath;
 };
 
+// Intentionally naming the variable the same as the type
+// eslint-disable-next-line @typescript-eslint/no-redeclare
 export const ProvidedSymbolsConfig: s.Spec<ProvidedSymbolsConfig> = s.withId(
   "ProvidedSymbolsConfig",
   s.record({
@@ -277,9 +288,9 @@ export const ProvidedSymbolsConfig: s.Spec<ProvidedSymbolsConfig> = s.withId(
 
 export type ModulePaths = Map<Id, FilePath>;
 
-export type TranspileOptions = {
+export interface TranspileOptions {
   srcPath: FilePath;
-};
+}
 
 export function defaultTranspileOptions(): TranspileOptions {
   return { srcPath: process.cwd() };
@@ -289,10 +300,10 @@ export type Id = string;
 
 export type FilePath = string;
 
-export type JsModule = {
+export interface JsModule {
   readonly imports: JsSrc;
   readonly body: JsSrc;
-};
+}
 
 export type JsModuleWithResult = JsModule & { lastExpression: JsSrc };
 
@@ -304,17 +315,18 @@ export class TranspileError extends Error {
   // NOTE: Use this instead of instanceof to avoid https://github.com/vitejs/vite/issues/9528
   _cu$isTranspileError = true;
   static is(e: unknown): e is TranspileError {
-    return !!(e as Record<string, unknown>)?._cu$isTranspileError;
+    return !!((e as { [key: string]: unknown })
+      ?._cu$isTranspileError as boolean);
   }
 }
 
-export type Env<State extends TranspileState = TranspileState> = {
+export interface Env<State extends TranspileState = TranspileState> {
   readonly scopes: [Scope, ...Scope[]];
   readonly references: References; // References in the Progaram
   readonly modules: ModulePaths; // Mapping from module name to its path.
   readonly transpileState: State;
   readonly importedModuleJsIds: Map<FilePath, HowToRefer | Map<Id, HowToRefer>>;
-};
+}
 
 export interface HowToRefer {
   id: Id;
@@ -323,12 +335,12 @@ export interface HowToRefer {
 
 export type IsPseudoTopLevel = boolean;
 
-export type Scope = {
+export interface Scope {
   isAsync: boolean;
   isGenerator: boolean;
   definitions: ModuleMap;
   temporaryVariablesCount: number;
-};
+}
 
 export type ScopeOptions = Pick<Scope, "isAsync" | "isGenerator">;
 
@@ -347,7 +359,7 @@ export function isWriter(x: unknown): x is Writer {
   return (
     x != null &&
     typeof x === "object" &&
-    WriterKindKey in (x as Record<string, unknown>)
+    WriterKindKey in (x as { [key: string]: unknown })
   );
 }
 
@@ -385,7 +397,9 @@ export function isRecursiveConst(x: Writer): x is RecursiveConst {
   return x[WriterKindKey] === 3;
 }
 
-export type Module = { [id: Id]: Writer | unknown };
+export interface Module {
+  [id: Id]: Writer | unknown;
+}
 
 export type ModuleMap = Map<Id, Writer>;
 
@@ -417,10 +431,10 @@ export interface MarkedDirectWriter extends AnyWriter<5> {
 // Another plan:
 //   DirectWriterKind = EXPRESSION | STATEMENT | EXPORTABLE.
 // where EXPRESSION < STATEMENT < EXPORTABLE.
-export type DirectWriterKindFlags = {
+export interface DirectWriterKindFlags {
   statement: boolean;
   exportable: boolean;
-};
+}
 
 export const ordinaryExpression = {
   statement: false,
@@ -520,11 +534,11 @@ export function canBePseudoTopLevelReferenced(
   return isVar(x) || isConst(x) || isRecursiveConst(x) || isNamespace(x);
 }
 
-export type References = {
+export interface References {
   readonly referenceById: Map<Id, Ref[]>;
   readonly currentScope: ScopePath;
   nextScope: ScopeIndex;
-};
+}
 
 export type TranspileState = TranspileRepl | TranspileModule;
 
@@ -540,15 +554,15 @@ export type TranspileModule = TranspileOptions & {
   importsSrc: JsSrc;
 };
 
-export type Ref = {
+export interface Ref {
   readonly referer: ScopePath;
   readonly referee: ReferencePath;
-};
+}
 
-export type ReferencePath = {
+export interface ReferencePath {
   scopePath: ScopePath; // Index of the every scope
   id: Id; // The variable name
-};
+}
 
 export type ScopeIndex = number;
 

@@ -1,21 +1,21 @@
 import {
-  Env,
-  TranspileRepl,
-  Block,
+  type Env,
+  type TranspileRepl,
+  type Block,
   markAsFunctionWithEnv,
-  FilePath,
+  type FilePath,
   markAsDirectWriter,
   TranspileError,
-  JsSrc,
-  Form,
+  type JsSrc,
+  type Form,
   isUnquote,
   isSplice,
   isLiteralArray,
   isList,
   isLiteralObject,
-  LiteralList,
-  LiteralObject,
-  LiteralArray,
+  type LiteralList,
+  type LiteralObject,
+  type LiteralArray,
   List,
   CuSymbol,
   Unquote,
@@ -23,12 +23,12 @@ import {
   PropertyAccess,
   isPropertyAccess,
   isCuSymbol,
-  LiteralUnquote,
-  LiteralSplice,
-  LiteralPropertyAccess,
-  LiteralCuSymbol,
+  type LiteralUnquote,
+  type LiteralSplice,
+  type LiteralPropertyAccess,
+  type LiteralCuSymbol,
   KeyValues,
-  Id,
+  type Id,
 } from "../types.js";
 import { evalBlock, evalForm } from "../internal/eval.js";
 import { findIdAsJsSrc, srcPathForErrorMessage } from "../internal/env.js";
@@ -81,10 +81,7 @@ export const quote = markAsDirectWriter(
 );
 
 export const quasiQuote = markAsDirectWriter(
-  async (
-    env: Env,
-    ...forms: Block
-  ): Promise<JsSrc | TranspileError> => {
+  async (env: Env, ...forms: Block): Promise<JsSrc | TranspileError> => {
     const [form] = forms;
     if (forms.length !== 1 || form === undefined) {
       return new TranspileError("quasiQuote expects exactly one form");
@@ -129,8 +126,15 @@ async function traverse(
   return JSON.stringify(form.v);
 }
 
-async function traverseList(form: LiteralList, env: Env, unquote: boolean): Promise<JsSrc | TranspileError> {
-  const elementsSrc = await mapJoinE(form.v, async (f) => await traverse(f, env, unquote));
+async function traverseList(
+  form: LiteralList,
+  env: Env,
+  unquote: boolean,
+): Promise<JsSrc | TranspileError> {
+  const elementsSrc = await mapJoinE(
+    form.v,
+    async (f) => await traverse(f, env, unquote),
+  );
   if (TranspileError.is(elementsSrc)) {
     return elementsSrc;
   }
@@ -146,8 +150,15 @@ async function traverseLiteralArray(
   return await doTraverseLiteralArray(form.v, env, unquote);
 }
 
-async function doTraverseLiteralArray(forms: Array<Form>, env: Env, unquote: boolean): Promise<JsSrc | TranspileError> {
-  const elementsSrc = await mapJoinE(forms, async (f) => await traverse(f, env, unquote));
+async function doTraverseLiteralArray(
+  forms: Form[],
+  env: Env,
+  unquote: boolean,
+): Promise<JsSrc | TranspileError> {
+  const elementsSrc = await mapJoinE(
+    forms,
+    async (f) => await traverse(f, env, unquote),
+  );
   if (TranspileError.is(elementsSrc)) {
     return elementsSrc;
   }
@@ -159,12 +170,15 @@ async function traverseLiteralObject(
   env: Env,
   unquote: boolean,
 ): Promise<JsSrc | TranspileError> {
-  const elementsSrc = await mapJoinE(form.v, async (f): Promise<JsSrc | TranspileError> => {
-    if (Array.isArray(f)) {
-      return await doTraverseLiteralArray(f, env, unquote);
-    }
-    return await traverse(f, env, unquote);
-  });
+  const elementsSrc = await mapJoinE(
+    form.v,
+    async (f): Promise<JsSrc | TranspileError> => {
+      if (Array.isArray(f)) {
+        return await doTraverseLiteralArray(f, env, unquote);
+      }
+      return await traverse(f, env, unquote);
+    },
+  );
   if (TranspileError.is(elementsSrc)) {
     return elementsSrc;
   }
@@ -197,7 +211,10 @@ async function traverseSplice(
   return `...${s}`;
 }
 
-async function quotePropertyAccess(form: LiteralPropertyAccess, env: Env): Promise<JsSrc> {
+async function quotePropertyAccess(
+  form: LiteralPropertyAccess,
+  env: Env,
+): Promise<JsSrc> {
   const elementsSrc = form.v.map((id) => JSON.stringify(id)).join(",");
   const funcSrc = await findThisModulesJsId(env, "propertyAccess");
   return `${funcSrc}(${elementsSrc})`;
@@ -245,7 +262,10 @@ export function splice<T>(value: T): Splice<T> {
   return new Splice(value);
 }
 
-async function mapJoinE<T>(xs: T[], f: (x: T) => Promise<JsSrc | TranspileError>): Promise<JsSrc | TranspileError> {
+async function mapJoinE<T>(
+  xs: T[],
+  f: (x: T) => Promise<JsSrc | TranspileError>,
+): Promise<JsSrc | TranspileError> {
   let result = "";
   for (const x of xs) {
     const r = await f(x);
@@ -260,7 +280,9 @@ async function mapJoinE<T>(xs: T[], f: (x: T) => Promise<JsSrc | TranspileError>
 async function findThisModulesJsId(env: Env, id: Id): Promise<JsSrc> {
   const r = await findIdAsJsSrc(env, metaModulePath, id);
   if (r == null) {
-    throw new TranspileError("Assertion failed: Cannot find the standard `meta` module!");
+    throw new TranspileError(
+      "Assertion failed: Cannot find the standard `meta` module!",
+    );
   }
 
   return r;

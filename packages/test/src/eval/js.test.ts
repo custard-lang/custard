@@ -1,5 +1,5 @@
 import { describe } from "vitest";
-import { Config, testEvalBlockOf, testEvalFormOf } from "../test.js";
+import { type Config, testEvalBlockOf, testEvalFormOf } from "../test.js";
 
 import { defaultTranspileOptions } from "@custard-lang/processor/dist/types.js";
 import { standardModuleRoot } from "@custard-lang/processor/dist/definitions.js";

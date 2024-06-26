@@ -5,7 +5,7 @@ import { writeFile, opendir, rm, readFile } from "fs/promises";
 import { describe, it, expect, beforeEach, beforeAll } from "vitest";
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
+// @ts-expect-error
 import * as iso8601ForFs from "../src/iso8601ForFs.mjs";
 
 describe("split.cstd", () => {
@@ -30,7 +30,7 @@ describe("split.cstd", () => {
     return { indexedAt: `2023-10-23T09:00:${s}.000Z` };
   });
   const outDir = "tmp";
-  const pathOfPostAt = (i: number) => {
+  const pathOfPostAt = (i: number): string => {
     const fileName = iso8601ForFs.toFileName(
       assertNonNull(input[i], `Not found at ${i}`).indexedAt,
       ".json",

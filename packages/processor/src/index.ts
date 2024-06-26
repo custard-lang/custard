@@ -5,13 +5,13 @@ export { implicitlyImporting } from "./provided-symbols-config.js";
 export { readBlock } from "./reader.js";
 export { transpileModule } from "./transpile.js";
 export {
-  Env,
-  Form,
-  Block,
+  type Env,
+  type Form,
+  type Block,
   ProvidedSymbolsConfig,
-  TranspileRepl,
-  TranspileModule,
-  TranspileOptions,
+  type TranspileRepl,
+  type TranspileModule,
+  type TranspileOptions,
   defaultTranspileOptions,
 } from "./types.js";
 export { evalBlock, evalForm } from "./eval.js";

@@ -1,8 +1,8 @@
 import {
   aNamespace,
-  FilePath,
+  type FilePath,
   isWriter,
-  Namespace,
+  type Namespace,
   TranspileError,
 } from "./types.js";
 
@@ -19,12 +19,12 @@ export async function loadModule(
   path: FilePath,
 ): Promise<Namespace | TranspileError> {
   // TODO: Parse JavaScript source to avoid unsafe execution.
-  const mod = (await import(path)) as Record<string, unknown>;
+  const mod = (await import(path)) as { [key: string]: unknown };
   return asNamespace(mod, path);
 }
 
 export function asNamespace(
-  mod: Record<string, unknown>,
+  mod: { [key: string]: unknown },
   p: FilePath,
 ): Namespace | TranspileError {
   const ns = aNamespace();

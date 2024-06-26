@@ -5,12 +5,12 @@ import type {
 } from "./types.js";
 
 import { init, readerInputOf } from "./internal/env.js";
-export { readerInputOf } from "./internal/env.js";
 
 import { transpileString } from "./internal/transpile.js";
 import { transpileModule, transpileRepl } from "./internal/transpile-state.js";
 import type { TranspileModule, TranspileRepl } from "./internal/types.js";
 import { evalString } from "./internal/eval.js";
+export { readerInputOf } from "./internal/env.js";
 
 export async function initializeForModule(
   options: TranspileOptions,

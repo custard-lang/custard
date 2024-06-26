@@ -1,13 +1,13 @@
 import * as EnvF from "../internal/env.js";
 import {
   defaultAsyncScopeOptions,
-  Env,
-  Form,
+  type Env,
+  type Form,
   markAsDirectWriter,
   ordinaryStatement,
   TranspileError,
 } from "../internal/types.js";
-import { JsSrc } from "../types.js";
+import { type JsSrc } from "../types.js";
 import {
   buildFn,
   buildForEach,
@@ -17,13 +17,13 @@ import {
 } from "./base/common.js";
 
 export const _cu$await = markAsDirectWriter(
-  (env: Env, a: Form, ...unused: Form[]) => {
+  async (env: Env, a: Form, ...unused: Form[]) => {
     if (!EnvF.isInAsyncContext(env)) {
       return new TranspileError(
         "`async.await` in a non-async function or scope is not allowed.",
       );
     }
-    return transpiling1Unmarked("await", (s: JsSrc) => `await ${s}`)(
+    return await transpiling1Unmarked("await", (s: JsSrc) => `await ${s}`)(
       env,
       a,
       ...unused,
@@ -112,7 +112,7 @@ export const forEach = markAsDirectWriter(
         "`async.forEach` in a non-async function or scope is not allowed.",
       );
     }
-    return buildForEach(
+    return await buildForEach(
       (assignee: JsSrc, iterableSrc: JsSrc, statementsSrc: JsSrc): JsSrc =>
         `for await (const ${assignee} of ${iterableSrc}){${statementsSrc}}`,
     )(env, ...forms);

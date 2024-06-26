@@ -11,6 +11,12 @@ import * as EnvF from "@custard-lang/processor/dist/internal/env.js";
 import { transpileRepl } from "@custard-lang/processor/dist/internal/transpile-state.js";
 import { fileOfImportMetaUrl } from "@custard-lang/processor/dist/util/path.js";
 
+// I want to use underscore in the variable name for the delimiters of numbers.
+/* eslint @typescript-eslint/naming-convention: 0 */
+
+// The result of EnvF.set is unnecessary in this test.
+/* eslint eslint-plugin-no-ignore-returned-union/no-ignore-returned-union: 0 */
+
 function inScope(env: Env, f: () => void): void {
   EnvF.push(env);
   f();

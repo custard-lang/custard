@@ -5,13 +5,13 @@ import { stdin as input, stdout as output } from "node:process";
 
 import {
   readStr,
-  Env,
-  Form,
+  type Env,
+  type Form,
   ParseError,
   evalForm,
   standardModuleRoot,
   defaultTranspileOptions,
-  TranspileRepl,
+  type TranspileRepl,
   initializeForRepl,
   implicitlyImporting,
   readerInputOf,
@@ -32,8 +32,8 @@ async function evalCustard(ast: Form, env: Env<TranspileRepl>): Promise<any> {
 }
 
 // PRINT: TODO
-//function print(exp: any): string {
-//}
+// function print(exp: any): string {
+// }
 
 async function readEvaluatePrint(
   str: string,
@@ -47,7 +47,7 @@ async function readEvaluatePrint(
   console.log(await evalCustard(r0, env));
 }
 
-function finalize() {
+function finalize(): void {
   rl.close();
   input.destroy();
 }
@@ -56,7 +56,7 @@ async function loop(env: Env<TranspileRepl>): Promise<void> {
   try {
     while (true) {
       const answer = await rl.question("custard> ");
-      if (!answer) {
+      if (answer === "") {
         finalize();
         break;
       }

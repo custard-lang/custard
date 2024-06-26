@@ -1,5 +1,5 @@
 import { append, clone, goUp } from "./scope-path.js";
-import { ReferencePath, References } from "./types.js";
+import { type ReferencePath, type References } from "./types.js";
 
 export function init(): References {
   return {

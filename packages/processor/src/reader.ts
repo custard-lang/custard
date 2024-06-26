@@ -1,6 +1,11 @@
 import { form, ParseError, tokens } from "./grammar.js";
 import { SpaceSkippingScanner, EOF } from "./scanner.js";
-import { Block, Form, ReaderInput, Location } from "./types.js";
+import {
+  type Block,
+  type Form,
+  type ReaderInput,
+  type Location,
+} from "./types.js";
 
 export function readStr(input: ReaderInput): Form<Location> | ParseError {
   const s = new SpaceSkippingScanner(tokens, input);

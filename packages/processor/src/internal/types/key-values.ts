@@ -1,7 +1,7 @@
 export class KeyValues<K, V> {
-  #keyValues: ([K, V] | K)[];
+  readonly #keyValues: Array<[K, V] | K>;
 
-  constructor(keyValues: ([K, V] | K)[]) {
+  constructor(keyValues: Array<[K, V] | K>) {
     this.#keyValues = keyValues;
   }
 

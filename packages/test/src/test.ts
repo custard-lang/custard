@@ -7,10 +7,10 @@ import { readBlock, readStr } from "@custard-lang/processor/dist/reader.js";
 import { evalBlock, evalForm } from "@custard-lang/processor/dist/eval.js";
 import { initializeForRepl } from "@custard-lang/processor/dist/env.js";
 import {
-  Block,
-  Form,
-  CompleteProvidedSymbolsConfig,
-  TranspileOptions,
+  type Block,
+  type Form,
+  type CompleteProvidedSymbolsConfig,
+  type TranspileOptions,
 } from "@custard-lang/processor/dist/types.js";
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/restrict-template-expressions, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-assignment */
@@ -73,7 +73,7 @@ export function testEvalBlockOf({
   });
 }
 
-export type Config = {
+export interface Config {
   options: TranspileOptions;
   providedSymbols: CompleteProvidedSymbolsConfig;
-};
+}

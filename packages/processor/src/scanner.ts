@@ -1,9 +1,11 @@
-import { Location, ReaderInput } from "./internal/types.js";
+import { type Location, type ReaderInput } from "./internal/types.js";
 
 export type TokenKind = string;
 
 export type EOF = null;
 
+// Intentionally naming the variable the same as the type
+// eslint-disable-next-line @typescript-eslint/no-redeclare
 export const EOF: EOF = null;
 
 export interface TokenAndRE {
@@ -22,8 +24,8 @@ export const UNKNOWN_TOKEN: TokenAndRE = {
 };
 
 export class SpaceSkippingScanner {
-  #res: TokenAndRE[];
-  #input: ReaderInput;
+  readonly #res: TokenAndRE[];
+  readonly #input: ReaderInput;
   #position = 0;
 
   #line = 1;

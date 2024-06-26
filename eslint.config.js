@@ -28,7 +28,7 @@ export default [
     "love",
   ),
   {
-    files: ["*.ts"],
+    files: ["**/*.ts"],
     languageOptions: {
       globals: {
         ...globals.builtin,
@@ -82,6 +82,12 @@ export default [
       "@typescript-eslint/space-before-function-paren": "off",
       "@typescript-eslint/space-infix-ops": "off",
       "@typescript-eslint/member-delimiter-style": "off",
+      "@typescript-eslint/consistent-indexed-object-style": ["error", "index-signature"],
+      "@typescript-eslint/strict-boolean-expressions": ["error", {
+        allowNullableBoolean: true,
+        allowNullableString: true,
+        allowNullableObject: true,
+      }],
     },
   },
   {

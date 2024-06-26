@@ -3,12 +3,12 @@ export type SpecId = string | symbol;
 // TODO: more informative: { t: "String" } | { t: "Array", e: BaseStructure[] } | { t: "Map", k: BaseStructure, v: BaseStructure } | ...
 export type BaseStructure = "String" | "Array" | "Map" | "Record";
 
-export type Breadcrumbs = (string | number | symbol)[];
+export type Breadcrumbs = Array<string | number | symbol>;
 
 export interface Spec<T> {
   readonly id: SpecId;
   readonly base: BaseStructure;
-  validate(x: unknown, path?: Breadcrumbs): T | ValidationError;
+  validate: (x: unknown, path?: Breadcrumbs) => T | ValidationError;
   // TODO: generate any value of T, JSON.stringify(T), JSON.parse(T), and more!
 }
 
@@ -26,7 +26,7 @@ export class ValidationError extends Error {
   // NOTE: Use this instead of instanceof to avoid https://github.com/vitejs/vite/issues/9528
   _cu$isValidationError = true;
   static is(e: unknown): e is ValidationError {
-    return (e as Record<string, unknown>)?._cu$isValidationError === true;
+    return (e as { [key: string]: unknown })?._cu$isValidationError === true;
   }
 }
 
@@ -64,8 +64,8 @@ export const record = <T>(keyAndSpecs: {
       const result: any = {};
       for (const [k, v] of Object.entries(x)) {
         /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-        const s = (keyAndSpecs as Record<string, Spec<any>>)[k];
-        if (!s) {
+        const s = (keyAndSpecs as { [key: string]: Spec<any> })[k];
+        if (s == null) {
           return new ValidationError(
             "Record",
             `Record with an extra key ${JSON.stringify(k)}`,

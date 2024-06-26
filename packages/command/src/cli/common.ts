@@ -10,7 +10,7 @@ import {
   implicitlyImporting,
   readBlock,
   transpileModule,
-  Block,
+  type Block,
   ProvidedSymbolsConfig,
   evalBlock,
   standardModuleRoot,
@@ -53,7 +53,7 @@ export async function transpileMain(
   } catch (e) {
     // There's no way to distinguish the "Not Found" error from the other errors except for using `any`!
     /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-    if (e instanceof Error && (e as Record<string, any>).code === "ENOENT") {
+    if (e instanceof Error && (e as { [key: string]: any }).code === "ENOENT") {
       if (opts.verbose) {
         console.info(
           `Provided symbols config file not found at ${providedSymbolsPath}. Using the default`,

@@ -1,12 +1,12 @@
 import { ExpectNever } from "../util/error.js";
 
 import {
-  Block,
-  Call,
+  type Block,
+  type Call,
   canBePseudoTopLevelReferenced,
-  LiteralCuSymbol,
-  DynamicVar,
-  Form,
+  type LiteralCuSymbol,
+  type DynamicVar,
+  type Form,
   isContextualKeyword,
   isCuSymbol,
   isDynamicVar,
@@ -17,13 +17,13 @@ import {
   isNamespace,
   isPropertyAccess,
   isProvidedConst,
-  JsSrc,
-  LiteralObject,
-  LiteralPropertyAccess,
-  ReaderInput,
+  type JsSrc,
+  type LiteralObject,
+  type LiteralPropertyAccess,
+  type ReaderInput,
   showSymbolAccess,
   TranspileError,
-  Writer,
+  type Writer,
   isUnquote,
 } from "../internal/types.js";
 import {
@@ -31,7 +31,7 @@ import {
   pseudoTopLevelReference,
   pseudoTopLevelReferenceToPropertyAccess,
 } from "./cu-env.js";
-import { Env } from "./types.js";
+import { type Env } from "./types.js";
 import * as EnvF from "./env.js";
 import { readBlock } from "../reader.js";
 import { ParseError } from "../grammar.js";
@@ -48,10 +48,10 @@ export async function transpileExpression(
   return r[0];
 }
 
-type NextCall = {
+interface NextCall {
   writer: Writer;
   sym: LiteralCuSymbol | LiteralPropertyAccess;
-};
+}
 
 type JsSrcAndNextCall = [JsSrc, NextCall | undefined];
 
@@ -82,7 +82,9 @@ async function transpileExpressionWithNextCall(
         case null:
           return ["null", undefined];
       }
-    case "Integer32":
+
+    // Intentional fall-through
+    case "Integer32": // eslint-disable-line no-fallthrough
     case "Float64":
       return [`${ast.v}`, undefined];
     case "Symbol": {
@@ -306,7 +308,7 @@ export async function transpileString(
   if (ParseError.is(forms)) {
     return forms;
   }
-  return transpileBlock(forms, env);
+  return await transpileBlock(forms, env);
 }
 
 export function asCall(form: Form): Call | undefined {

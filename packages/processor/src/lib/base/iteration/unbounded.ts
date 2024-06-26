@@ -6,11 +6,11 @@ import {
 } from "../../../internal/transpile.js";
 import {
   aRecursiveConst,
-  Block,
-  Env,
-  Form,
+  type Block,
+  type Env,
+  type Form,
   isCuSymbol,
-  JsSrc,
+  type JsSrc,
   markAsDirectWriter,
   ordinaryStatement,
   showSymbolAccess,

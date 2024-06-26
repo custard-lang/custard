@@ -8,12 +8,12 @@ import { readBlock } from "@custard-lang/processor/dist/reader.js";
 import { transpileBlock } from "@custard-lang/processor/dist/internal/transpile.js";
 import { transpileModule } from "@custard-lang/processor/dist/internal/transpile-state.js";
 import {
-  Block,
+  type Block,
   cuSymbol,
-  Env,
+  type Env,
   isNamespace,
-  JsSrc,
-  ModulePaths,
+  type JsSrc,
+  type ModulePaths,
   TranspileError,
 } from "@custard-lang/processor/dist/internal/types.js";
 import { fileOfImportMetaUrl } from "@custard-lang/processor/dist/util/path.js";

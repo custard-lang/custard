@@ -1,17 +1,17 @@
 import * as path from "node:path";
 import { describe, expect, test } from "vitest";
 
-import { Config, testEvalBlockOf, testEvalFormOf } from "../test.js";
+import { type Config, testEvalBlockOf, testEvalFormOf } from "../test.js";
 import { withNewPath } from "../test/tmp-file.js";
 import { writeAndEval } from "../test/eval.js";
 
 import { assertNonError } from "@custard-lang/processor/dist/util/error.js";
 
 import {
-  FilePath,
-  Form,
-  JsSrc,
-  ModulePaths,
+  type FilePath,
+  type Form,
+  type JsSrc,
+  type ModulePaths,
 } from "@custard-lang/processor/dist/types.js";
 import { standardModuleRoot } from "@custard-lang/processor/dist/definitions.js";
 import { evalForm } from "@custard-lang/processor/dist/eval.js";
@@ -134,7 +134,7 @@ describe("evalForm", () => {
 
   describe("meta.quote", () => {
     testEvalBlockOf({
-      src: '(const xs []) (const y 10) (meta.quote (plusF 4.1 $y ...$xs a.b.c))',
+      src: "(const xs []) (const y 10) (meta.quote (plusF 4.1 $y ...$xs a.b.c))",
       expected: meta_.list<any>(
         meta_.symbol("plusF"),
         4.1,
@@ -150,21 +150,14 @@ describe("evalForm", () => {
     testEvalFormOf({
       src: '(meta.quasiQuote ((const x 9.2)\n(let y (minusF 10 (timesF "3"))) [x\n(dividedByF) () [] { x: y y }] ))',
       expected: meta_.list<any>(
-        meta_.list<any>(
-          meta_.symbol("const"),
-          meta_.symbol("x"),
-          9.2,
-        ),
+        meta_.list<any>(meta_.symbol("const"), meta_.symbol("x"), 9.2),
         meta_.list<any>(
           meta_.symbol("let"),
           meta_.symbol("y"),
           meta_.list<any>(
             meta_.symbol("minusF"),
             10,
-            meta_.list<any>(
-              meta_.symbol("timesF"),
-              "3",
-            ),
+            meta_.list<any>(meta_.symbol("timesF"), "3"),
           ),
         ),
         [
@@ -176,7 +169,7 @@ describe("evalForm", () => {
             [meta_.symbol("x"), meta_.symbol("y")],
             meta_.symbol("y"),
           ),
-        ]
+        ],
       ),
       setUpConfig,
     });
@@ -195,10 +188,7 @@ describe("evalForm", () => {
           meta_.list<any>(
             meta_.symbol("minusF"),
             10,
-            meta_.list<any>(
-              meta_.symbol("timesF"),
-              meta_.symbol("varName"),
-            ),
+            meta_.list<any>(meta_.symbol("timesF"), meta_.symbol("varName")),
           ),
         ),
         [
@@ -216,17 +206,13 @@ describe("evalForm", () => {
 
     testEvalBlockOf({
       src: '(const vars [(meta.symbol "varName") "varName2" 9 {}]) (meta.quasiQuote (const xs [12 ...$vars]))',
-      expected: meta_.list<any>(
-        meta_.symbol("const"),
-        meta_.symbol("xs"),
-        [
-          12,
-          meta_.symbol("varName"),
-          "varName2",
-          9,
-          meta_.keyValues<any, any>(),
-        ],
-      ),
+      expected: meta_.list<any>(meta_.symbol("const"), meta_.symbol("xs"), [
+        12,
+        meta_.symbol("varName"),
+        "varName2",
+        9,
+        meta_.keyValues<any, any>(),
+      ]),
       setUpConfig,
     });
 

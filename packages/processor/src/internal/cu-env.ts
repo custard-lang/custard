@@ -1,4 +1,4 @@
-import { Id, JsSrc, LiteralPropertyAccess } from "./types.js";
+import { type Id, type JsSrc, type LiteralPropertyAccess } from "./types.js";
 
 // _cu$ is the reserved prefix of Custard
 export const CU_ENV = "_cu$env";

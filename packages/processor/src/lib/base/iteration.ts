@@ -1,10 +1,10 @@
 import {
-  Env,
-  Form,
-  Id,
-  JsSrc,
+  type Env,
+  type Form,
+  type Id,
+  type JsSrc,
   markAsDirectWriter,
-  MarkedDirectWriter,
+  type MarkedDirectWriter,
   ordinaryStatement,
   TranspileError,
 } from "../../internal/types.js";

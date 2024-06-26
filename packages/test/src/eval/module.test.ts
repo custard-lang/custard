@@ -3,7 +3,7 @@ import { describe } from "vitest";
 import { testEvalBlockOf } from "../test.js";
 import type { Config } from "../test.js";
 
-import { ModulePaths } from "@custard-lang/processor/dist/types.js";
+import { type ModulePaths } from "@custard-lang/processor/dist/types.js";
 import { standardModuleRoot } from "@custard-lang/processor/dist/definitions.js";
 import { fileOfImportMetaUrl } from "@custard-lang/processor/dist/util/path.js";
 

@@ -4,7 +4,7 @@
 import { evalModule } from "../util/eval.js";
 
 import { CU_ENV } from "./cu-env.js";
-import { Env, JsSrc } from "./types.js";
+import { type Env, type JsSrc } from "./types.js";
 
 // See cu-env.ts for details of the `_CU$` prefix.
 export const _cu$eval = async (
@@ -20,6 +20,6 @@ export const _cu$eval = async (
   f = `${f}}`;
   // console.log(f);
   const mod = await evalModule(f);
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-call,  @typescript-eslint/no-unsafe-member-access
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call,  @typescript-eslint/no-unsafe-member-access, @typescript-eslint/return-await
   return await mod.default(env);
 };

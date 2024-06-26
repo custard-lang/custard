@@ -3,10 +3,10 @@ import * as fs from "node:fs";
 
 import { isAbsoluteUrl } from "./util/path.js";
 
-import { FilePath, Id, ProvidedSymbolsConfig } from "./types.js";
+import { type FilePath, type Id, type ProvidedSymbolsConfig } from "./types.js";
 import {
-  CompleteProvidedSymbolsConfig,
-  ModulePaths,
+  type CompleteProvidedSymbolsConfig,
+  type ModulePaths,
 } from "./internal/types.js";
 
 export function build({
@@ -21,7 +21,7 @@ export function build({
   jsTopLevels: Id[];
 }): ProvidedSymbolsConfig {
   let importAnys = "";
-  const modulePaths: Map<string, string> = new Map(otherModulePaths);
+  const modulePaths = new Map<string, string>(otherModulePaths);
   for (const modulePath of builtinModulePaths) {
     const moduleName = path.basename(modulePath, path.extname(modulePath));
     importAnys = `${importAnys}(importAnyOf ${moduleName})`;

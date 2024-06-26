@@ -7,29 +7,29 @@ import {
 } from "../../internal/transpile.js";
 import {
   aVar,
-  Block,
-  Call,
-  LiteralCuSymbol,
+  type Block,
+  type Call,
+  type LiteralCuSymbol,
   ordinaryExpression,
-  DirectWriterKindFlags,
-  Env,
+  type DirectWriterKindFlags,
+  type Env,
   exportableStatement,
-  Form,
-  Id,
+  type Form,
+  type Id,
   isCuSymbol,
   isLiteralObject,
   isMarkedDirectStatementWriter,
   isVar,
-  JsSrc,
+  type JsSrc,
   markAsDirectWriter,
-  MarkedDirectWriter,
+  type MarkedDirectWriter,
   ordinaryStatement,
   TranspileError,
-  Writer,
-  ScopeOptions,
+  type Writer,
+  type ScopeOptions,
   aConst,
   isMarkedDirectExportableStatementWriter,
-  DirectWriter,
+  type DirectWriter,
   isLiteralArray,
   isKeyValue,
   unknownLocation,
@@ -225,7 +225,9 @@ export function transpilingForVariableDeclaration(
             }
 
             if (isUnquote(kvOrSym)) {
-              return new TranspileError("Unquote must be used inside quasiQuote");
+              return new TranspileError(
+                "Unquote must be used inside quasiQuote",
+              );
             }
 
             r = tryToSet(kvOrSym, env, newWriter);
