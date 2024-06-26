@@ -78,9 +78,9 @@ Elmを少し参考に
 
 - `(import base)`: `base`だけをqualified import
 - `(import { base })`: `base`だけをqualified import （1つ目と同じ）
-- `(import { base, anotherBase })`: `base`と`anotherBase`をqualified import
+- `(import { base, anotherModule })`: `base`と`anotherModule`をqualified import
 - `(import { base: alias })`: `base`を`alias`としてqualified import
-- `(import { base: alias, anotherBase: anotherAlias })`: `base`と`alias`として、`anotherBase`を`anotherAlias`としてqualified import
+- `(import { base: alias, anotherModule: anotherAlias })`: `base`と`alias`として、`anotherModule`を`anotherAlias`としてqualified import
 - `(import base {f1 f2})`: `base`にある`f1`と`f2`だけをimport
 - `(import base {f1: a1 f2: a2})`: `base`にある`f1`・`f2`だけをそれぞれ`a1`・`a2`としてimport
 
@@ -143,3 +143,5 @@ Elmを少し参考に
 - [ ] APIの整理: 何が`internal`で何が`public`なのか
 - [ ] vitestで発生する、`instanceof`が意図せず`false`を返す問題や、`Symbol`の同一性が保たれない問題は、恐らくパッケージを分けて`external`扱いにしたことで解決したはずなので、不要なプロパティーを消す
 - [ ] `scope`を裸のブロックを出すよう書き換える
+    - でも、値を返す機能は残しておきたいし、やっぱそのままでいいかな
+- [ ] moduleにまつわる概念の整理: Node.jsのものに更に追加した形で？
