@@ -36,6 +36,7 @@ import {
   emptyList,
   formatForError,
   isUnquote,
+  isList,
 } from "../../internal/types.js";
 
 import {
@@ -404,16 +405,50 @@ export function transpilingForVariableMutation(
   }, ordinaryStatement);
 }
 
+interface PreludeResult {
+  src: JsSrc;
+  readonly funName: LiteralCuSymbol | null;
+  readonly firstBlock: Block;
+}
+
 function functionPrelude(
   formId: Id,
   env: Env,
-  args: Form,
+  nameOrArgs: Form | undefined,
+  argsOrFirstForm: Form | undefined,
   scopeOptions: ScopeOptions,
   beforeArguments: JsSrc,
-  afterArguments: JsSrc,
-): JsSrc | TranspileError {
-  if (args.t !== "List") {
-    const argsFormatted = formatForError(args);
+): PreludeResult | TranspileError {
+  if (nameOrArgs === undefined) {
+    return new TranspileError(
+      `No name or argument list is given to a \`${formId}\`!`,
+    );
+  }
+
+  if (argsOrFirstForm === undefined) {
+    return new TranspileError(`No argument list is given to a \`${formId}\`!`);
+  }
+
+  let funName: LiteralCuSymbol | null;
+  let funNameInSrc: JsSrc;
+  let firstBlock: Block;
+  if (isCuSymbol(nameOrArgs)) {
+    funName = nameOrArgs;
+    funNameInSrc = ` ${funName.v}`;
+    firstBlock = [];
+  } else if (isList(nameOrArgs)) {
+    funName = null;
+    funNameInSrc = "";
+    firstBlock = [argsOrFirstForm];
+    argsOrFirstForm = nameOrArgs;
+  } else {
+    return new TranspileError(
+      `The first argument to a function must be a symbol or a list of symbols!`,
+    );
+  }
+
+  if (argsOrFirstForm.t !== "List") {
+    const argsFormatted = formatForError(argsOrFirstForm);
     return new TranspileError(
       `Arguments for a function must be a list of symbols! But ${argsFormatted} is not!`,
     );
@@ -422,7 +457,7 @@ function functionPrelude(
   EnvF.push(env, scopeOptions);
 
   const argPatterns: JsSrc[] = [];
-  for (const arg of args.v) {
+  for (const arg of argsOrFirstForm.v) {
     const argSrc = transpileAssignee(formId, env, arg, aVar);
     if (TranspileError.is(argSrc)) {
       return argSrc;
@@ -430,35 +465,55 @@ function functionPrelude(
     argPatterns.push(argSrc);
   }
 
-  return `${beforeArguments}(${argPatterns.join(", ")})${afterArguments}{\n`;
+  return {
+    src: `${beforeArguments}${funNameInSrc}(${argPatterns.join(", ")}){\n`,
+    funName,
+    firstBlock,
+  };
 }
 
-function functionPostlude(env: Env, src: JsSrc): JsSrc {
+function functionPostlude(
+  env: Env,
+  { src, funName }: PreludeResult,
+): JsSrc | TranspileError {
   EnvF.pop(env);
+  if (funName !== null) {
+    const r = tryToSet(funName, env, aConst);
+    if (TranspileError.is(r)) {
+      return r;
+    }
+
+    if (EnvF.isAtReplTopLevel(env)) {
+      const functionSrc = `${src}}`;
+      // TODO: 即時関数で包む
+      return `${pseudoTopLevelAssignment(funName.v, functionSrc)}`;
+    }
+  }
   return `${src}}`;
 }
 
 export async function buildFn(
   formId: Id,
   env: Env,
-  args: Form,
+  nameOrArgs: Form | undefined,
+  argsOrFirstForm: Form | undefined,
   block: Block,
   scopeOptions: ScopeOptions,
   beforeArguments: JsSrc,
-  afterArguments: JsSrc,
 ): Promise<JsSrc | TranspileError> {
-  let result = functionPrelude(
+  const preludeResult = functionPrelude(
     formId,
     env,
-    args,
+    nameOrArgs,
+    argsOrFirstForm,
     scopeOptions,
     beforeArguments,
-    afterArguments,
   );
-  if (TranspileError.is(result)) {
-    return result;
+  if (TranspileError.is(preludeResult)) {
+    return preludeResult;
   }
 
+  block = [...preludeResult.firstBlock, ...block];
   const lastI = block.length - 1;
   for (let i = 0; i < lastI; ++i) {
     // `i` is always less than `block.length` so it's safe to use `block[i]!`
@@ -467,7 +522,7 @@ export async function buildFn(
     if (TranspileError.is(src)) {
       return src;
     }
-    result = `${result}  ${src};\n`;
+    preludeResult.src = `${preludeResult.src}  ${src};\n`;
   }
 
   const lastStatement = block[lastI];
@@ -478,45 +533,44 @@ export async function buildFn(
     }
 
     if (isStatement(env, lastStatement)) {
-      return functionPostlude(env, `${result}  ${lastSrc};\n`);
+      preludeResult.src = `${preludeResult.src}  ${lastSrc};\n`;
+    } else {
+      preludeResult.src = `${preludeResult.src}  return ${lastSrc};\n`;
     }
-    return functionPostlude(env, `${result}  return ${lastSrc};\n`);
   }
-  return functionPostlude(env, result);
+  return functionPostlude(env, preludeResult);
 }
 
 export async function buildProcedure(
   formId: Id,
   env: Env,
-  args: Form,
+  nameOrArgs: Form | undefined,
+  argsOrFirstForm: Form | undefined,
   block: Block,
   scopeOptions: ScopeOptions,
   beforeArguments: JsSrc,
-  afterArguments: JsSrc,
 ): Promise<JsSrc | TranspileError> {
-  let result = functionPrelude(
+  const prelude = functionPrelude(
     formId,
     env,
-    args,
+    nameOrArgs,
+    argsOrFirstForm,
     scopeOptions,
     beforeArguments,
-    afterArguments,
   );
-  if (TranspileError.is(result)) {
-    return result;
+  if (TranspileError.is(prelude)) {
+    return prelude;
   }
 
-  for (let i = 0; i < block.length; ++i) {
-    // `i` is always less than `block.length` so it's safe to use `block[i]!`
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const src = await transpileExpression(block[i]!, env);
+  for (const form of block) {
+    const src = await transpileExpression(form, env);
     if (TranspileError.is(src)) {
       return src;
     }
-    result = `${result}  ${src};\n`;
+    prelude.src = `${prelude.src}  ${src};\n`;
   }
 
-  return functionPostlude(env, result);
+  return functionPostlude(env, prelude);
 }
 
 export function buildScope(
@@ -529,11 +583,11 @@ export function buildScope(
       const funcSrc = await buildFn(
         formId,
         env,
+        undefined,
         emptyList(unknownLocation),
         block,
         scopeOptions,
         "",
-        "=>",
       );
       if (TranspileError.is(funcSrc)) {
         return funcSrc;

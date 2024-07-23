@@ -56,8 +56,11 @@ export const note = markAsDirectWriter(
 );
 
 export const annotate = markAsDirectWriter(
-  async (env: Env, ...args: Form[]): Promise<JsSrc | TranspileError> => {
-    const lastArg = args[args.length - 1];
+  async (
+    env: Env,
+    ...argsOrFirstForm: Form[]
+  ): Promise<JsSrc | TranspileError> => {
+    const lastArg = argsOrFirstForm[argsOrFirstForm.length - 1];
     if (lastArg === undefined) {
       return "";
     }
@@ -82,13 +85,16 @@ export const _cu$let = transpilingForVariableDeclaration(
 );
 
 export const _cu$return = markAsDirectWriter(
-  async (env: Env, ...args: Form[]): Promise<JsSrc | TranspileError> => {
-    if (args.length > 1) {
+  async (
+    env: Env,
+    ...argsOrFirstForm: Form[]
+  ): Promise<JsSrc | TranspileError> => {
+    if (argsOrFirstForm.length > 1) {
       return new TranspileError(
         "`return` must receive at most one expression!",
       );
     }
-    const arg = args[0];
+    const arg = argsOrFirstForm[0];
     if (arg === undefined) {
       return "return";
     }
@@ -104,7 +110,7 @@ export const _cu$return = markAsDirectWriter(
 export const when = markAsDirectWriter(
   async (
     env: Env,
-    bool: Form,
+    bool?: Form,
     ...rest: Block
   ): Promise<JsSrc | TranspileError> => {
     if (bool === undefined) {
@@ -496,27 +502,37 @@ export const _cu$throw = transpiling1(
 export const fn = markAsDirectWriter(
   async (
     env: Env,
-    args: Form,
+    nameOrArgs?: Form,
+    argsOrFirstForm?: Form,
     ...block: Form[]
   ): Promise<JsSrc | TranspileError> => {
-    return await buildFn("fn", env, args, block, defaultScopeOptions, "", "=>");
+    return await buildFn(
+      "fn",
+      env,
+      nameOrArgs,
+      argsOrFirstForm,
+      block,
+      defaultScopeOptions,
+      "function",
+    );
   },
 );
 
 export const procedure = markAsDirectWriter(
   async (
     env: Env,
-    args: Form,
+    nameOrArgs?: Form,
+    argsOrFirstForm?: Form,
     ...block: Form[]
   ): Promise<JsSrc | TranspileError> => {
     return await buildProcedure(
       "procedure",
       env,
-      args,
+      nameOrArgs,
+      argsOrFirstForm,
       block,
       defaultScopeOptions,
-      "",
-      "=>",
+      "function",
     );
   },
 );
@@ -524,17 +540,18 @@ export const procedure = markAsDirectWriter(
 export const generatorFn = markAsDirectWriter(
   async (
     env: Env,
-    args: Form,
+    nameOrArgs?: Form,
+    argsOrFirstForm?: Form,
     ...block: Form[]
   ): Promise<JsSrc | TranspileError> => {
     return await buildFn(
       "generatorFn",
       env,
-      args,
+      nameOrArgs,
+      argsOrFirstForm,
       block,
       { isAsync: false, isGenerator: true },
       "function*",
-      "",
     );
   },
 );
@@ -542,17 +559,18 @@ export const generatorFn = markAsDirectWriter(
 export const generatorProcedure = markAsDirectWriter(
   async (
     env: Env,
-    args: Form,
+    name?: Form,
+    argsOrFirstForm?: Form,
     ...block: Form[]
   ): Promise<JsSrc | TranspileError> => {
     return await buildProcedure(
       "generatorProcedure",
       env,
-      args,
+      name,
+      argsOrFirstForm,
       block,
       { isAsync: false, isGenerator: true },
       "function*",
-      "",
     );
   },
 );
@@ -560,9 +578,13 @@ export const generatorProcedure = markAsDirectWriter(
 export const _cu$yield = markAsDirectWriter(
   async (
     env: Env,
-    a: Form,
+    a?: Form,
     ...unused: Form[]
   ): Promise<JsSrc | TranspileError> => {
+    if (a === undefined) {
+      return new TranspileError("`yield` must be followed by an expression!");
+    }
+
     if (!EnvF.isInGeneratorContext(env)) {
       return new TranspileError(
         "`yield` must be used in a generator function!",
@@ -578,11 +600,14 @@ export const _cu$yield = markAsDirectWriter(
 );
 
 export const text = markAsDirectWriter(
-  async (env: Env, ...args: Form[]): Promise<JsSrc | TranspileError> => {
+  async (
+    env: Env,
+    ...argsOrFirstForm: Form[]
+  ): Promise<JsSrc | TranspileError> => {
     const esc = (s: string): string => s.replace(/[$`\\]/g, "\\$&");
 
     let result = "`";
-    for (const arg of args) {
+    for (const arg of argsOrFirstForm) {
       if (typeof arg === "string") {
         result = `${result}${esc(arg)}`;
         continue;

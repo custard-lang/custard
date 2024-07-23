@@ -348,9 +348,7 @@ export const defaultScopeOptions = { isAsync: false, isGenerator: false };
 
 export const defaultAsyncScopeOptions = { isAsync: true, isGenerator: false };
 
-// NOTE: I give up defining this as a unique symbol due to
-// vite's behavior similar to https://github.com/vitejs/vite/issues/9528
-const WriterKindKey = "_cu$WriterKind";
+const WriterKindKey = Symbol("WriterKind");
 export interface AnyWriter<K extends number> {
   readonly [WriterKindKey]: K;
 }
@@ -501,14 +499,26 @@ export type DynamicVarFunction = (
 export interface DynamicVar extends AnyWriter<8> {
   call: DynamicVarFunction;
 }
-export function aDynamicVar(call: DynamicVarFunction): DynamicVar {
-  return { [WriterKindKey]: 8, call };
-}
 export function isDynamicVar(x: Writer): x is DynamicVar {
   return x[WriterKindKey] === 8;
 }
 export function markAsDynamicVar(call: DynamicVarFunction): DynamicVar {
   return { [WriterKindKey]: 8, call };
+}
+
+export type MacroBody = (
+  env: Env,
+  ...forms: Form[]
+) => Awaitable<Form | TranspileError>;
+
+export interface Macro extends AnyWriter<9> {
+  readonly expand: MacroBody;
+}
+export function markAsMacro(expand: MacroBody): Macro {
+  return { [WriterKindKey]: 9, expand };
+}
+export function isMacro(x: Writer): x is Macro {
+  return x[WriterKindKey] === 9;
 }
 
 export type Writer =
@@ -520,7 +530,8 @@ export type Writer =
   | MarkedDirectWriter
   | MarkedFunctionWithEnv
   | ProvidedConst
-  | DynamicVar;
+  | DynamicVar
+  | Macro;
 
 export type CanBePseudoTopLevelReferenced =
   | Var

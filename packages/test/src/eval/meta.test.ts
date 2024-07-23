@@ -8,6 +8,7 @@ import { writeAndEval } from "../test/eval.js";
 import { assertNonError } from "@custard-lang/processor/dist/util/error.js";
 
 import {
+  TranspileError,
   type FilePath,
   type Form,
   type JsSrc,
@@ -128,6 +129,21 @@ describe("evalForm", () => {
     testEvalFormOf({
       src: '(meta.evaluate (meta.readString "(const x 9.2) (let y 0.1) (plusF x y)"))',
       expected: 9.2 + 0.1,
+      setUpConfig,
+    });
+  });
+
+  describe("meta.macro", () => {
+    testEvalFormOf({
+      src: "(meta.macro (b f t) (meta.quote (if (not $b) then $f else $t)))",
+      expected: new TranspileError(
+        "meta.macro needs a name of the macro as a symbol, but got `(List (Symbol b) ...)`",
+      ),
+      setUpConfig,
+    });
+    testEvalBlockOf({
+      src: "(meta.macro unless (b f t) (meta.quote (if (not $b) then $f else $t))) (text (unless false 1 2) (unless true 1 2))",
+      expected: "12",
       setUpConfig,
     });
   });

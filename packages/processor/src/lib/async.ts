@@ -15,6 +15,7 @@ import {
   buildScope,
   transpiling1Unmarked,
 } from "./base/common.js";
+import { buildAsyncFn } from "./common.js";
 
 export const _cu$await = markAsDirectWriter(
   async (env: Env, a: Form, ...unused: Form[]) => {
@@ -34,17 +35,16 @@ export const _cu$await = markAsDirectWriter(
 export const fn = markAsDirectWriter(
   async (
     env: Env,
-    args: Form,
+    nameOrArgs?: Form,
+    argsOrFirstForm?: Form,
     ...block: Form[]
   ): Promise<JsSrc | TranspileError> => {
-    return await buildFn(
+    return await buildAsyncFn(
       "async.fn",
       env,
-      args,
+      nameOrArgs,
+      argsOrFirstForm,
       block,
-      defaultAsyncScopeOptions,
-      "async",
-      "=>",
     );
   },
 );
@@ -52,17 +52,18 @@ export const fn = markAsDirectWriter(
 export const procedure = markAsDirectWriter(
   async (
     env: Env,
-    args: Form,
+    nameOrArgs?: Form,
+    argsOrFirstForm?: Form,
     ...block: Form[]
   ): Promise<JsSrc | TranspileError> => {
     return await buildProcedure(
       "async.procedure",
       env,
-      args,
+      nameOrArgs,
+      argsOrFirstForm,
       block,
       defaultAsyncScopeOptions,
-      "async",
-      "=>",
+      "async function",
     );
   },
 );
@@ -70,17 +71,18 @@ export const procedure = markAsDirectWriter(
 export const generatorFn = markAsDirectWriter(
   async (
     env: Env,
-    args: Form,
+    nameOrArgs?: Form,
+    argsOrFirstForm?: Form,
     ...block: Form[]
   ): Promise<JsSrc | TranspileError> => {
     return await buildFn(
       "async.generatorFn",
       env,
-      args,
+      nameOrArgs,
+      argsOrFirstForm,
       block,
       { isAsync: true, isGenerator: true },
       "async function*",
-      "",
     );
   },
 );
@@ -88,17 +90,18 @@ export const generatorFn = markAsDirectWriter(
 export const generatorProcedure = markAsDirectWriter(
   async (
     env: Env,
-    args: Form,
+    nameOrArgs?: Form,
+    argsOrFirstForm?: Form,
     ...block: Form[]
   ): Promise<JsSrc | TranspileError> => {
     return await buildProcedure(
       "async.generatorProcedure",
       env,
-      args,
+      nameOrArgs,
+      argsOrFirstForm,
       block,
       { isAsync: true, isGenerator: true },
       "async function*",
-      "",
     );
   },
 );

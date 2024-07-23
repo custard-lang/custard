@@ -25,6 +25,7 @@ import {
   TranspileError,
   type Writer,
   isUnquote,
+  isMacro,
 } from "../internal/types.js";
 import {
   CU_ENV,
@@ -73,17 +74,8 @@ async function transpileExpressionWithNextCall(
   switch (ast.t) {
     case "String":
       return [JSON.stringify(ast.v), undefined];
-    case "ReservedSymbol":
-      switch (ast.v) {
-        case true:
-          return ["true", undefined];
-        case false:
-          return ["false", undefined];
-        case null:
-          return ["null", undefined];
-      }
-
     // Intentional fall-through
+    case "ReservedSymbol": // eslint-disable-line no-fallthrough
     case "Integer32": // eslint-disable-line no-fallthrough
     case "Float64":
       return [`${ast.v}`, undefined];
@@ -191,9 +183,16 @@ async function transpileExpressionWithNextCall(
       }
 
       if (isMarkedDirectWriter(writer)) {
-        const srcP = writer.call(env, ...args);
-        const src = srcP instanceof Promise ? await srcP : srcP;
+        const src = await writer.call(env, ...args);
         return TranspileError.is(src) ? src : [src, undefined];
+      }
+
+      if (isMacro(writer)) {
+        const generatedForm = await writer.expand(env, ...args);
+        if (TranspileError.is(generatedForm)) {
+          return generatedForm;
+        }
+        return await transpileExpressionWithNextCall(generatedForm, env);
       }
 
       throw ExpectNever(writer);

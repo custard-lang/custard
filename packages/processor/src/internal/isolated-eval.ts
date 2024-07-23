@@ -6,7 +6,7 @@ import { evalModule } from "../util/eval.js";
 import { CU_ENV } from "./cu-env.js";
 import { type Env, type JsSrc } from "./types.js";
 
-// See cu-env.ts for details of the `_CU$` prefix.
+// See cu-env.ts for details of the `_cu$` prefix.
 export const _cu$eval = async (
   body: JsSrc,
   lastExpression: JsSrc,
@@ -18,7 +18,7 @@ export const _cu$eval = async (
     f = `${f}return ${lastExpression}`;
   }
   f = `${f}}`;
-  // console.log(f);
+  // console.log(f); // TODO: Write to a file executable by the dedicated custard's subcommand.
   const mod = await evalModule(f);
   // eslint-disable-next-line @typescript-eslint/no-unsafe-call,  @typescript-eslint/no-unsafe-member-access, @typescript-eslint/return-await
   return await mod.default(env);

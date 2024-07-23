@@ -25,7 +25,7 @@ export * from "../iteration.js";
 export const _cu$while = markAsDirectWriter(
   async (
     env: Env,
-    bool: Form,
+    bool?: Form,
     ...rest: Block
   ): Promise<JsSrc | TranspileError> => {
     if (bool === undefined) {
@@ -62,9 +62,9 @@ export const _cu$while = markAsDirectWriter(
 export const _cu$for = markAsDirectWriter(
   async (
     env: Env,
-    initialStatement: Form,
-    bool: Form,
-    final: Form,
+    initialStatement?: Form,
+    bool?: Form,
+    final?: Form,
     ...rest: Block
   ): Promise<JsSrc | TranspileError> => {
     EnvF.pushInherited(env);

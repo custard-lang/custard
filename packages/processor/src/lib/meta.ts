@@ -29,6 +29,9 @@ import {
   type LiteralCuSymbol,
   KeyValues,
   type Id,
+  type Macro,
+  markAsMacro,
+  formatForError,
 } from "../types.js";
 import { evalBlock, evalForm } from "../internal/eval.js";
 import { findIdAsJsSrc, srcPathForErrorMessage } from "../internal/env.js";
@@ -38,21 +41,31 @@ import { readBlock } from "../reader.js";
 import { standardModuleRoot } from "../definitions.js";
 import { transpileExpression } from "../internal/transpile.js";
 
+import { buildAsyncFn } from "./common.js";
+import { ordinaryStatement } from "../internal/types.js";
+
 export { transpileModule } from "../transpile.js";
 
 export const readString = markAsFunctionWithEnv(
   (
     env: Env,
-    contents: string,
+    contents?: string,
     path: FilePath = srcPathForErrorMessage(env),
   ): Block | ParseError => {
+    if (contents === undefined) {
+      throw new Error("No string given to `readString`!");
+    }
+
     return readBlock({ contents, path });
   },
 );
 
 export const evaluate = markAsFunctionWithEnv(
   /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-  (env: Env, formOrBlock: Form | Block): any | Error => {
+  (env: Env, formOrBlock?: Form | Block): any | Error => {
+    if (formOrBlock === undefined) {
+      throw new Error("No form or block given to `evaluate`!");
+    }
     if (env.transpileState.mode === "repl") {
       // Dirty workaround for https://github.com/microsoft/TypeScript/issues/42384
       const env_ = env as Env<TranspileRepl>;
@@ -66,6 +79,36 @@ export const evaluate = markAsFunctionWithEnv(
     );
   },
 );
+
+export const macro = markAsDirectWriter(
+  async (
+    env: Env,
+    name?: Form,
+    args?: Form,
+    ...block: Form[]
+  ): Promise<JsSrc | TranspileError> => {
+    if (name === undefined) {
+      return new TranspileError("meta.macro needs a name of the macro");
+    }
+    if (!isCuSymbol(name)) {
+      return new TranspileError(
+        `meta.macro needs a name of the macro as a symbol, but got ${formatForError(name)}`,
+      );
+    }
+
+    const fnSrc = await buildAsyncFn("macro", env, name, args, block);
+    if (TranspileError.is(fnSrc)) {
+      return fnSrc;
+    }
+    const funcSrc = await findThisModulesJsId(env, "asMacro");
+    return `${funcSrc}(${fnSrc})`;
+  },
+  ordinaryStatement,
+);
+
+export function asMacro(expand: (...args: Form[]) => Form): Macro {
+  return markAsMacro((_env: Env, ...args: Form[]): Form => expand(...args));
+}
 
 export const quote = markAsDirectWriter(
   async (env: Env, ...forms: Block): Promise<JsSrc | TranspileError> => {

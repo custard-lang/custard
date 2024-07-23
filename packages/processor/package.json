@@ -6,9 +6,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc",
-    "lint": "eslint --ext ts src",
-    "fix:lint": "eslint --ext ts --fix src"
+    "build": "tsc"
   },
   "repository": {
     "type": "git",
