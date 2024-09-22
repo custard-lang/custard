@@ -1,4 +1,5 @@
 import { test, expect } from "vitest";
+import { equals, type Tester } from "@vitest/expect";
 
 import { assertNonError } from "@custard-lang/processor/dist/util/error.js";
 import type { Awaitable } from "@custard-lang/processor/dist/util/types.js";
@@ -11,9 +12,44 @@ import {
   type Form,
   type CompleteProvidedSymbolsConfig,
   type TranspileOptions,
+  isInteger32,
+  Integer32,
+  Float64,
+  CuString,
+  isFloat64,
+  isCuString,
 } from "@custard-lang/processor/dist/types.js";
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/restrict-template-expressions, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-assignment */
+
+function primitiveFormsAreEqual(
+  a: unknown,
+  b: unknown,
+  customTesters: Tester[],
+): boolean | undefined {
+  if (isInteger32(a)) {
+    return isInteger32(b) && primitiveFormsAreEqualHelper(a, b, customTesters);
+  }
+  if (isFloat64(a)) {
+    return isFloat64(b) && primitiveFormsAreEqualHelper(a, b, customTesters);
+  }
+  if (isCuString(a)) {
+    return isCuString(b) && primitiveFormsAreEqualHelper(a, b, customTesters);
+  }
+  return undefined;
+}
+expect.addEqualityTesters([primitiveFormsAreEqual]);
+
+function primitiveFormsAreEqualHelper(
+  a: Integer32 | Float64 | CuString,
+  b: Integer32 | Float64 | CuString,
+  customTesters: Tester[],
+): boolean {
+  return (
+    a.valueOf() === b.valueOf() &&
+    equals(a.extension, b.extension, customTesters)
+  );
+}
 
 export function testEvalFormOf({
   src,

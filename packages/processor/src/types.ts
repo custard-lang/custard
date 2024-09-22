@@ -3,32 +3,11 @@ export {
   type Env,
   type Form,
   type Block,
-  type LiteralList,
   type Call,
-  type LiteralObject,
-  type KeyValue,
   type Atom,
-  type LiteralArray,
-  type LiteralInteger32,
-  type LiteralFloat64,
-  type LiteralString,
-  type ReservedSymbol,
   type Location,
   type ReaderInput,
-  type LiteralCuSymbol,
-  type LiteralPropertyAccess,
-  type LiteralUnquote,
-  type LiteralSplice,
-  isList,
-  isLiteralArray,
-  isLiteralObject,
-  isKeyValue,
-  isCuSymbol,
-  isUnquote,
-  isSplice,
-  isPropertyAccess,
-  cuSymbol,
-  list,
+  functionIdOfCall,
   formatForError,
   aConst,
   aContextualKeyword,
@@ -56,9 +35,35 @@ export {
   type JsModuleWithResult,
   TranspileError,
 } from "./internal/types.js";
-export { List } from "./internal/types/list.js";
-export { CuSymbol } from "./internal/types/cu-symbol.js";
-export { KeyValues } from "./internal/types/key-values.js";
-export { PropertyAccess } from "./internal/types/property-access.js";
-export { Unquote } from "./internal/types/unquote.js";
-export { Splice } from "./internal/types/splice.js";
+export { isList, list, type List } from "./internal/types/list.js";
+export {
+  isInteger32,
+  integer32,
+  Integer32,
+} from "./internal/types/integer32.js";
+export { isFloat64, float64, Float64 } from "./internal/types/float64.js";
+export {
+  isReservedSymbol,
+  reservedSymbol,
+  ReservedSymbol,
+} from "./internal/types/reserved-symbol.js";
+export { isCuSymbol, cuSymbol, CuSymbol } from "./internal/types/cu-symbol.js";
+export { isCuString, cuString, CuString } from "./internal/types/cu-string.js";
+export { isCuObject, cuObject, CuObject } from "./internal/types/cu-object.js";
+export { isCuArray, cuArray, type CuArray } from "./internal/types/cu-array.js";
+export {
+  isKeyValue,
+  keyValue,
+  KeyValue,
+  isComputedKey,
+  ComputedKey,
+  computedKey,
+  type KeyValueKey,
+} from "./internal/types/key-value.js";
+export {
+  isPropertyAccess,
+  propertyAccess,
+  PropertyAccess,
+} from "./internal/types/property-access.js";
+export { isUnquote, unquote, type Unquote } from "./internal/types/unquote.js";
+export { isSplice, splice, type Splice } from "./internal/types/splice.js";

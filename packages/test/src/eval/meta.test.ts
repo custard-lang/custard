@@ -135,14 +135,14 @@ describe("evalForm", () => {
 
   describe("meta.macro", () => {
     testEvalFormOf({
-      src: "(meta.macro (b f t) (meta.quote (if (not $b) then $f else $t)))",
+      src: "(meta.macro (b f t) (meta.quasiQuote (if (not $b) then $f else $t)))",
       expected: new TranspileError(
         "meta.macro needs a name of the macro as a symbol, but got `(List (Symbol b) ...)`",
       ),
       setUpConfig,
     });
     testEvalBlockOf({
-      src: "(meta.macro unless (b f t) (meta.quote (if (not $b) then $f else $t))) (text (unless false 1 2) (unless true 1 2))",
+      src: "(meta.macro unless (b f t) (meta.quasiQuote (if (not $b) $f else $t))) (text (unless false 1 2) (unless true 1 2))",
       expected: "12",
       setUpConfig,
     });
@@ -151,9 +151,9 @@ describe("evalForm", () => {
   describe("meta.quote", () => {
     testEvalBlockOf({
       src: "(const xs []) (const y 10) (meta.quote (plusF 4.1 $y ...$xs a.b.c))",
-      expected: meta_.list<any>(
+      expected: meta_.list<Form>(
         meta_.symbol("plusF"),
-        4.1,
+        meta_.float64(4.1),
         meta_.unquote(meta_.symbol("y")),
         meta_.splice(meta_.unquote(meta_.symbol("xs"))),
         meta_.propertyAccess("a", "b", "c"),
@@ -165,73 +165,85 @@ describe("evalForm", () => {
   describe("meta.quasiQuote", () => {
     testEvalFormOf({
       src: '(meta.quasiQuote ((const x 9.2)\n(let y (minusF 10 (timesF "3"))) [x\n(dividedByF) () [] { x: y y }] ))',
-      expected: meta_.list<any>(
-        meta_.list<any>(meta_.symbol("const"), meta_.symbol("x"), 9.2),
-        meta_.list<any>(
+      expected: meta_.list<Form>(
+        meta_.list<Form>(
+          meta_.symbol("const"),
+          meta_.symbol("x"),
+          meta_.float64(9.2),
+        ),
+        meta_.list<Form>(
           meta_.symbol("let"),
           meta_.symbol("y"),
-          meta_.list<any>(
+          meta_.list<Form>(
             meta_.symbol("minusF"),
-            10,
-            meta_.list<any>(meta_.symbol("timesF"), "3"),
+            meta_.integer32(10),
+            meta_.list<Form>(meta_.symbol("timesF"), meta_.string("3")),
           ),
         ),
-        [
+        meta_.array<Form>(
           meta_.symbol("x"),
-          meta_.list<any>(meta_.symbol("dividedByF")),
-          meta_.list<any>(),
-          [],
-          meta_.keyValues<any, any>(
-            [meta_.symbol("x"), meta_.symbol("y")],
+          meta_.list(meta_.symbol("dividedByF")),
+          meta_.list(),
+          meta_.array(),
+          meta_.object<Form, Form, Form, Form>(
+            meta_.keyValue<Form, Form, Form>(
+              meta_.symbol("x"),
+              meta_.symbol("y"),
+            ),
             meta_.symbol("y"),
           ),
-        ],
+        ),
       ),
       setUpConfig,
     });
 
     testEvalBlockOf({
       src: `(let v1 (meta.symbol "varName"))(meta.quasiQuote ((const x $v1)\n(let y (minusF 10 (timesF $v1))) [x\n(dividedByF) [] { x: y $v1 }] ))`,
-      expected: meta_.list<any>(
-        meta_.list<any>(
+      expected: meta_.list<Form>(
+        meta_.list(
           meta_.symbol("const"),
           meta_.symbol("x"),
           meta_.symbol("varName"),
         ),
-        meta_.list<any>(
+        meta_.list<Form>(
           meta_.symbol("let"),
           meta_.symbol("y"),
-          meta_.list<any>(
+          meta_.list<Form>(
             meta_.symbol("minusF"),
-            10,
-            meta_.list<any>(meta_.symbol("timesF"), meta_.symbol("varName")),
+            meta_.integer32(10),
+            meta_.list(meta_.symbol("timesF"), meta_.symbol("varName")),
           ),
         ),
-        [
+        meta_.array<Form>(
           meta_.symbol("x"),
-          meta_.list<any>(meta_.symbol("dividedByF")),
-          [],
-          meta_.keyValues<any, any>(
-            [meta_.symbol("x"), meta_.symbol("y")],
+          meta_.list(meta_.symbol("dividedByF")),
+          meta_.array(),
+          meta_.object<Form, Form, Form, Form>(
+            meta_.keyValue<Form, Form, Form>(
+              meta_.symbol("x"),
+              meta_.symbol("y"),
+            ),
             meta_.symbol("varName"),
           ),
-        ],
+        ),
       ),
       setUpConfig,
     });
 
     testEvalBlockOf({
       src: '(const vars [(meta.symbol "varName") "varName2" 9 {}]) (meta.quasiQuote (const xs [12 ...$vars]))',
-      expected: meta_.list<any>(meta_.symbol("const"), meta_.symbol("xs"), [
-        12,
-        meta_.symbol("varName"),
-        "varName2",
-        9,
-        meta_.keyValues<any, any>(),
-      ]),
+      expected: meta_.list<Form>(
+        meta_.symbol("const"),
+        meta_.symbol("xs"),
+        meta_.array<any>(
+          meta_.integer32(12),
+          meta_.symbol("varName"),
+          "varName2",
+          9,
+          {},
+        ),
+      ),
       setUpConfig,
     });
-
-    // TODO: Other error cases: (meta.quasiQuote (const x { $var })) where $var is not a symbol.
   });
 });

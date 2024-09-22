@@ -13,7 +13,7 @@ export const _cu$eval = async (
   env: Env,
 ): Promise<any> => {
   // https://gist.github.com/tomhodgins/0e5a98610a1da2a98049614a4f170734
-  let f = `export default async (${CU_ENV}) => {${body}`;
+  let f = `export default async (${CU_ENV})=>{${body}`;
   if (lastExpression !== "") {
     f = `${f}return ${lastExpression}`;
   }

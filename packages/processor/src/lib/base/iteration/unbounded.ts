@@ -1,23 +1,23 @@
 import * as EnvF from "../../../internal/env.js";
 import {
-  asCall,
   transpileBlock,
   transpileExpression,
 } from "../../../internal/transpile.js";
 import {
-  aRecursiveConst,
   type Block,
   type Env,
   type Form,
   isCuSymbol,
   type JsSrc,
   markAsDirectWriter,
-  ordinaryStatement,
   showSymbolAccess,
+  functionIdOfCall,
   TranspileError,
-} from "../../../internal/types.js";
+} from "../../../types.js";
+import { aRecursiveConst, ordinaryStatement } from "../../../internal/types.js";
+import { asCall, isStatement } from "../../../internal/call.js";
 
-import { buildForEach, isStatement } from "../common.js";
+import { buildForEach } from "../common.js";
 import { _cu$const } from "../safe.js";
 
 export * from "../iteration.js";
@@ -35,7 +35,7 @@ export const _cu$while = markAsDirectWriter(
     }
 
     if (isStatement(env, bool)) {
-      const id = showSymbolAccess(bool.v[0]);
+      const id = showSymbolAccess(functionIdOfCall(bool));
       return new TranspileError(
         `The conditional expression in a \`for\` must be an expression! But \`${id}\` is a statement!`,
       );
@@ -88,7 +88,7 @@ export const _cu$for = markAsDirectWriter(
     }
 
     if (isStatement(env, bool)) {
-      const id = showSymbolAccess(bool.v[0]);
+      const id = showSymbolAccess(functionIdOfCall(bool));
       return new TranspileError(
         `The conditional expression in a \`for\` must be an expression! But \`${id}\` is a statement!`,
       );
@@ -141,21 +141,21 @@ export const recursive = markAsDirectWriter(
           "All arguments in `recursive` must be `const` declarations!",
         );
       }
-      const declName = EnvF.find(env, call.v[0]);
+      const declName = EnvF.find(env, functionIdOfCall(call));
       if (declName !== _cu$const) {
         return new TranspileError(
           "All declarations in `recursive` must be `const`!",
         );
       }
 
-      const id = call.v[1];
+      const id = call.values[1];
       if (id === undefined) {
         return new TranspileError(`No variable name given to a \`const\`!`);
       }
       if (!isCuSymbol(id)) {
         return new TranspileError(`${JSON.stringify(id)} is not a symbol!`);
       }
-      const r = EnvF.set(env, id.v, aRecursiveConst());
+      const r = EnvF.set(env, id.value, aRecursiveConst());
       if (TranspileError.is(r)) {
         return r;
       }

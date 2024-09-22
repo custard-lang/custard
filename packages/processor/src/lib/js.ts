@@ -26,7 +26,7 @@ export const _cu$new = markAsDirectWriter(
     ...args: Form[]
   ): Promise<JsSrc | TranspileError> => {
     if (klass === undefined) {
-      return new TranspileError("`yield` must be followed by an expression!");
+      return new TranspileError("`new` must be followed by an expression!");
     }
 
     const klassSrc = await transpileExpression(klass, env);

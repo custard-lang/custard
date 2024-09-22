@@ -106,7 +106,11 @@ export const generatorProcedure = markAsDirectWriter(
   },
 );
 
-export const scope = buildScope("scope", "async ", defaultAsyncScopeOptions);
+export const scope = buildScope(
+  "scope",
+  "async function",
+  defaultAsyncScopeOptions,
+);
 
 export const forEach = markAsDirectWriter(
   async (env: Env, ...forms: Form[]): Promise<JsSrc | TranspileError> => {

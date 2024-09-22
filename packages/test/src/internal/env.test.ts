@@ -3,10 +3,10 @@ import { describe, expect, test } from "vitest";
 import type { Env } from "@custard-lang/processor/dist/internal/types.js";
 import {
   aVar,
-  cuSymbol,
   defaultTranspileOptions,
   TranspileError,
 } from "@custard-lang/processor/dist/internal/types.js";
+import { cuSymbol } from "@custard-lang/processor/dist/types.js";
 import * as EnvF from "@custard-lang/processor/dist/internal/env.js";
 import { transpileRepl } from "@custard-lang/processor/dist/internal/transpile-state.js";
 import { fileOfImportMetaUrl } from "@custard-lang/processor/dist/util/path.js";

@@ -4,6 +4,7 @@ import * as path from "node:path";
 import * as EnvF from "../../internal/env.js";
 import {
   transpileBlock,
+  transpileComputedKeyOrExpression,
   transpileExpression,
   transpileJoinWithComma,
 } from "../../internal/transpile.js";
@@ -11,21 +12,18 @@ import { pseudoTopLevelAssignment } from "../../internal/cu-env.js";
 import {
   defaultScopeOptions,
   formatForError,
-  isKeyValue,
-  isLiteralArray,
-  isLiteralObject,
-  isUnquote,
   isVar,
   ordinaryExpression,
   ordinaryStatement,
 } from "../../internal/types.js";
+import { isKeyValue, isCuArray, isCuObject, isUnquote } from "../../types.js";
 
 import {
   aConst,
   aContextualKeyword,
   aVar,
   type Block,
-  type LiteralCuSymbol,
+  type CuSymbol,
   type Env,
   type Form,
   type Id,
@@ -203,47 +201,44 @@ export const assign = transpilingForAssignment(
       );
     }
 
-    function assignStatement(
-      sym: LiteralCuSymbol,
-      e: JsSrc,
-    ): JsSrc | TranspileError {
+    function assignStatement(sym: CuSymbol, e: JsSrc): JsSrc | TranspileError {
       const r = EnvF.findWithIsAtTopLevel(env, sym);
       if (r === undefined || !isVar(r.writer)) {
         return new TranspileError(
-          `\`${sym.v}\` is not a name of a variable declared by \`let\` or a mutable property!`,
+          `\`${sym.value}\` is not a name of a variable declared by \`let\` or a mutable property!`,
         );
       }
       if (EnvF.writerIsAtReplTopLevel(env, r)) {
-        return pseudoTopLevelAssignment(sym.v, e);
+        return pseudoTopLevelAssignment(sym.value, e);
       }
-      return `${sym.v}=${e}`;
+      return `${sym.value}=${e}`;
     }
 
     if (isCuSymbol(id)) {
       return assignStatement(id, exp);
     }
 
-    if (isLiteralObject(id)) {
+    if (isCuObject(id)) {
       const { id: tmpVar, statement } = EnvF.tmpVarOf(env, exp);
       let src = statement;
-      for (const kvOrSym of id.v) {
+      for (const kvOrSym of id) {
         if (isKeyValue(kvOrSym)) {
-          const [k, v] = kvOrSym;
-          if (!isCuSymbol(v)) {
+          const { key, value } = kvOrSym;
+          if (!isCuSymbol(value)) {
             return new TranspileError(
-              `Assignee must be a symbol, but ${formatForError(v)} is not!`,
+              `Assignee must be a symbol, but ${formatForError(value)} is not!`,
             );
           }
 
           let assignment: JsSrc | TranspileError;
-          if (isCuSymbol(k)) {
-            assignment = assignStatement(v, `${tmpVar}.${k.v}`);
+          if (isCuSymbol(key)) {
+            assignment = assignStatement(value, `${tmpVar}.${key.value}`);
           } else {
-            const kSrc = await transpileExpression(k, env);
+            const kSrc = await transpileComputedKeyOrExpression(key, env);
             if (TranspileError.is(kSrc)) {
               return kSrc;
             }
-            assignment = assignStatement(v, `${tmpVar}${kSrc}`);
+            assignment = assignStatement(value, `${tmpVar}${kSrc}`);
           }
           if (TranspileError.is(assignment)) {
             return assignment;
@@ -257,7 +252,10 @@ export const assign = transpilingForAssignment(
           return new TranspileError("Unquote must be used inside quasiQuote");
         }
 
-        const assignment = assignStatement(kvOrSym, `${tmpVar}.${kvOrSym.v}`);
+        const assignment = assignStatement(
+          kvOrSym,
+          `${tmpVar}.${kvOrSym.value}`,
+        );
         if (TranspileError.is(assignment)) {
           return assignment;
         }
@@ -266,10 +264,10 @@ export const assign = transpilingForAssignment(
       return src;
     }
 
-    if (isLiteralArray(id)) {
+    if (isCuArray(id)) {
       const { id: tmpVar, statement } = EnvF.tmpVarOf(env, exp);
       let src = statement;
-      for (const [k, v] of id.v.entries()) {
+      for (const [k, v] of id.entries()) {
         if (isCuSymbol(v)) {
           const assignment = assignStatement(v, `${tmpVar}[${k}]`);
           if (TranspileError.is(assignment)) {
@@ -293,7 +291,7 @@ export const assign = transpilingForAssignment(
   ordinaryExpression,
 );
 
-export const scope = buildScope("scope", "", defaultScopeOptions);
+export const scope = buildScope("scope", "function", defaultScopeOptions);
 
 export const _cu$if = markAsDirectWriter(
   async (
@@ -415,11 +413,11 @@ export const _cu$try = markAsDirectWriter(
             }
             if (isCuSymbol(form)) {
               EnvF.pushInherited(env);
-              const r = EnvF.set(env, form.v, aConst());
+              const r = EnvF.set(env, form.value, aConst());
               if (TranspileError.is(r)) {
                 return r;
               }
-              catchVarName = form.v;
+              catchVarName = form.value;
               continue;
             }
             return new TranspileError(

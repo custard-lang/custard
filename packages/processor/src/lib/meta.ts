@@ -10,28 +10,32 @@ import {
   type Form,
   isUnquote,
   isSplice,
-  isLiteralArray,
+  isCuArray,
   isList,
-  isLiteralObject,
-  type LiteralList,
-  type LiteralObject,
-  type LiteralArray,
-  List,
-  CuSymbol,
-  Unquote,
-  Splice,
-  PropertyAccess,
+  isCuObject,
+  type List,
+  type CuObject,
+  type CuSymbol,
+  type Unquote,
+  type Splice,
+  type PropertyAccess,
+  type KeyValue,
   isPropertyAccess,
   isCuSymbol,
-  type LiteralUnquote,
-  type LiteralSplice,
-  type LiteralPropertyAccess,
-  type LiteralCuSymbol,
-  KeyValues,
   type Id,
-  type Macro,
   markAsMacro,
   formatForError,
+  isKeyValue,
+  isComputedKey,
+  type ComputedKey,
+  isInteger32,
+  isFloat64,
+  isCuString,
+  isReservedSymbol,
+  Integer32,
+  Float64,
+  CuString,
+  ReservedSymbol,
 } from "../types.js";
 import { evalBlock, evalForm } from "../internal/eval.js";
 import { findIdAsJsSrc, srcPathForErrorMessage } from "../internal/env.js";
@@ -43,8 +47,26 @@ import { transpileExpression } from "../internal/transpile.js";
 
 import { buildAsyncFn } from "./common.js";
 import { ordinaryStatement } from "../internal/types.js";
+import { tryToSet } from "./base/common.js";
+import { _cu$eval } from "../internal/isolated-eval.js";
+import type { Awaitable } from "../util/types.js";
+import { ExpectNever } from "../util/error.js";
 
 export { transpileModule } from "../transpile.js";
+export {
+  cuArray as array,
+  cuObject as object,
+  list,
+  unquote,
+  splice,
+  propertyAccess,
+  cuSymbol as symbol,
+  integer32,
+  float64,
+  cuString as string,
+  isKeyValue,
+  keyValue,
+} from "../types.js";
 
 export const readString = markAsFunctionWithEnv(
   (
@@ -96,19 +118,29 @@ export const macro = markAsDirectWriter(
       );
     }
 
-    const fnSrc = await buildAsyncFn("macro", env, name, args, block);
+    const fnSrc = await buildAsyncFn("macro", env, null, args, block);
     if (TranspileError.is(fnSrc)) {
       return fnSrc;
     }
-    const funcSrc = await findThisModulesJsId(env, "asMacro");
-    return `${funcSrc}(${fnSrc})`;
+
+    const fn = (await _cu$eval("", fnSrc, env)) as (
+      ...args: Form[]
+    ) => Awaitable<Form | TranspileError>;
+    const r = tryToSet(name, env, () => {
+      return markAsMacro(
+        async (_env: Env, ...args: Form[]): Promise<Form | TranspileError> =>
+          await fn(...args),
+      );
+    });
+    if (r instanceof TranspileError) {
+      return r;
+    }
+
+    // Generated function is just stored in env. No need to return the source code.
+    return "";
   },
   ordinaryStatement,
 );
-
-export function asMacro(expand: (...args: Form[]) => Form): Macro {
-  return markAsMacro((_env: Env, ...args: Form[]): Form => expand(...args));
-}
 
 export const quote = markAsDirectWriter(
   async (env: Env, ...forms: Block): Promise<JsSrc | TranspileError> => {
@@ -141,16 +173,17 @@ async function traverse(
   if (isList(form)) {
     return await traverseList(form, env, unquote);
   }
-  if (isLiteralArray(form)) {
-    return await traverseLiteralArray(form, env, unquote);
+  if (isCuArray(form)) {
+    return await traverseArray(form, env, unquote);
   }
-  if (isLiteralObject(form)) {
-    return await traverseLiteralObject(form, env, unquote);
+  if (isCuObject(form)) {
+    return await traverseCuObject(form, env, unquote);
   }
+
   if (isUnquote(form)) {
     if (unquote) {
       // TODO: Error if not in an unquote
-      return await transpileExpression(form.v, env);
+      return await transpileExpression(form.value, env);
     }
     return await quoteUnquote(form, env);
   }
@@ -166,16 +199,28 @@ async function traverse(
   if (isCuSymbol(form)) {
     return await quoteCuSymbol(form, env);
   }
-  return JSON.stringify(form.v);
+  if (isInteger32(form)) {
+    return await quoteValueOf(form, env, "integer32");
+  }
+  if (isFloat64(form)) {
+    return await quoteValueOf(form, env, "float64");
+  }
+  if (isCuString(form)) {
+    return await quoteValueOf(form, env, "string");
+  }
+  if (isReservedSymbol(form)) {
+    return await quoteValueOf(form, env, "reservedSymbol");
+  }
+  throw ExpectNever(form);
 }
 
 async function traverseList(
-  form: LiteralList,
+  form: List<Form>,
   env: Env,
   unquote: boolean,
 ): Promise<JsSrc | TranspileError> {
   const elementsSrc = await mapJoinE(
-    form.v,
+    form.values,
     async (f) => await traverse(f, env, unquote),
   );
   if (TranspileError.is(elementsSrc)) {
@@ -185,39 +230,32 @@ async function traverseList(
   return `${funcSrc}(${elementsSrc})`;
 }
 
-async function traverseLiteralArray(
-  form: LiteralArray,
-  env: Env,
-  unquote: boolean,
-): Promise<JsSrc | TranspileError> {
-  return await doTraverseLiteralArray(form.v, env, unquote);
-}
-
-async function doTraverseLiteralArray(
-  forms: Form[],
+async function traverseArray(
+  form: Form[],
   env: Env,
   unquote: boolean,
 ): Promise<JsSrc | TranspileError> {
   const elementsSrc = await mapJoinE(
-    forms,
+    form,
     async (f) => await traverse(f, env, unquote),
   );
   if (TranspileError.is(elementsSrc)) {
     return elementsSrc;
   }
-  return `[${elementsSrc}]`;
+  const funcSrc = await findThisModulesJsId(env, "array");
+  return `${funcSrc}(${elementsSrc})`;
 }
 
-async function traverseLiteralObject(
-  form: LiteralObject,
+async function traverseCuObject(
+  form: CuObject<Form, Form, Form, Form>,
   env: Env,
   unquote: boolean,
 ): Promise<JsSrc | TranspileError> {
   const elementsSrc = await mapJoinE(
-    form.v,
+    form.keyValues,
     async (f): Promise<JsSrc | TranspileError> => {
-      if (Array.isArray(f)) {
-        return await doTraverseLiteralArray(f, env, unquote);
+      if (isKeyValue(f)) {
+        return await traverseKeyValue(f, env, unquote);
       }
       return await traverse(f, env, unquote);
     },
@@ -225,15 +263,48 @@ async function traverseLiteralObject(
   if (TranspileError.is(elementsSrc)) {
     return elementsSrc;
   }
-  const funcSrc = await findThisModulesJsId(env, "keyValues");
+  const funcSrc = await findThisModulesJsId(env, "object");
   return `${funcSrc}(${elementsSrc})`;
 }
 
+async function traverseKeyValue(
+  f: KeyValue<Form, Form, Form>,
+  env: Env,
+  unquote: boolean,
+): Promise<JsSrc | TranspileError> {
+  const keySrc = isComputedKey(f.key)
+    ? await traverseComputedKey(f.key, env, unquote)
+    : await traverse(f.key, env, unquote);
+  if (TranspileError.is(keySrc)) {
+    return keySrc;
+  }
+
+  const valueSrc = await traverse(f.value, env, unquote);
+  if (TranspileError.is(valueSrc)) {
+    return valueSrc;
+  }
+
+  const funcSrc = await findThisModulesJsId(env, "keyValue");
+  return `${funcSrc}(${keySrc},${valueSrc})`;
+}
+
+async function traverseComputedKey(
+  form: ComputedKey<Form>,
+  env: Env,
+  unquote: boolean,
+): Promise<JsSrc | TranspileError> {
+  const r = await traverse(form.value, env, unquote);
+  if (TranspileError.is(r)) {
+    return r;
+  }
+  return `[${r}]`;
+}
+
 async function quoteUnquote(
-  form: LiteralUnquote,
+  form: Unquote<Form>,
   env: Env,
 ): Promise<JsSrc | TranspileError> {
-  const elementSrc = await traverse(form.v, env, false);
+  const elementSrc = await traverse(form.value, env, false);
   if (TranspileError.is(elementSrc)) {
     return elementSrc;
   }
@@ -243,11 +314,11 @@ async function quoteUnquote(
 
 // TODO: Error if not in a list, array or object
 async function traverseSplice(
-  form: LiteralSplice,
+  form: Splice<Form>,
   env: Env,
   unquote: boolean,
 ): Promise<JsSrc | TranspileError> {
-  const s = await traverse(form.v, env, unquote);
+  const s = await traverse(form.value, env, unquote);
   if (TranspileError.is(s)) {
     return s;
   }
@@ -255,54 +326,40 @@ async function traverseSplice(
 }
 
 async function quotePropertyAccess(
-  form: LiteralPropertyAccess,
+  form: PropertyAccess,
   env: Env,
 ): Promise<JsSrc> {
-  const elementsSrc = form.v.map((id) => JSON.stringify(id)).join(",");
+  const elementsSrc = form.value.map((id) => JSON.stringify(id)).join(",");
   const funcSrc = await findThisModulesJsId(env, "propertyAccess");
   return `${funcSrc}(${elementsSrc})`;
 }
 
-async function quoteCuSymbol(form: LiteralCuSymbol, env: Env): Promise<JsSrc> {
-  const elementsSrc = JSON.stringify(form.v);
+async function quoteCuSymbol(form: CuSymbol, env: Env): Promise<JsSrc> {
+  const elementsSrc = JSON.stringify(form.value);
   const funcSrc = await findThisModulesJsId(env, "symbol");
   return `${funcSrc}(${elementsSrc})`;
 }
 
+async function quoteValueOf(
+  form: Integer32 | Float64 | CuString | ReservedSymbol,
+  env: Env,
+  constructorId: Id,
+): Promise<JsSrc | TranspileError> {
+  const elementsSrc = JSON.stringify(form.valueOf());
+  const funcSrc = await findThisModulesJsId(env, constructorId);
+  return `${funcSrc}(${elementsSrc})`;
+}
+
 async function quoteSplice(
-  form: LiteralSplice,
+  form: Splice<Form>,
   env: Env,
 ): Promise<JsSrc | TranspileError> {
-  const elementSrc = await traverse(form.v, env, false);
+  const elementSrc = await traverse(form.value, env, false);
   if (TranspileError.is(elementSrc)) {
     return elementSrc;
   }
   const funcSrc = await findThisModulesJsId(env, "splice");
   return `${funcSrc}(${elementSrc})`;
-}
-
-export function list<T>(...items: T[]): List<T> {
-  return List.of(...items);
-}
-
-export function symbol(name: string): CuSymbol {
-  return new CuSymbol(name);
-}
-
-export function keyValues<K, V>(...kvs: Array<[K, V] | K>): KeyValues<K, V> {
-  return new KeyValues(kvs);
-}
-
-export function propertyAccess(...value: string[]): PropertyAccess {
-  return new PropertyAccess(value);
-}
-
-export function unquote<T>(value: T): Unquote<T> {
-  return new Unquote(value);
-}
-
-export function splice<T>(value: T): Splice<T> {
-  return new Splice(value);
 }
 
 async function mapJoinE<T>(

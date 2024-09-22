@@ -9,13 +9,13 @@ import { transpileBlock } from "@custard-lang/processor/dist/internal/transpile.
 import { transpileModule } from "@custard-lang/processor/dist/internal/transpile-state.js";
 import {
   type Block,
-  cuSymbol,
   type Env,
   isNamespace,
   type JsSrc,
   type ModulePaths,
   TranspileError,
 } from "@custard-lang/processor/dist/internal/types.js";
+import { cuSymbol } from "@custard-lang/processor/dist/types.js";
 import { fileOfImportMetaUrl } from "@custard-lang/processor/dist/util/path.js";
 import { standardModuleRoot } from "@custard-lang/processor/dist/internal/definitions.js";
 

@@ -11,7 +11,7 @@ import { buildFn } from "./base/common.js";
 export async function buildAsyncFn(
   formId: Id,
   env: Env,
-  name: Form | undefined,
+  name: Form | undefined | null,
   argsOrFirstForm: Form | undefined,
   block: Form[],
 ): Promise<JsSrc | TranspileError> {

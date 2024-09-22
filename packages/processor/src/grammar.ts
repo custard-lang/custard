@@ -6,21 +6,38 @@ import type {
 } from "./scanner.js";
 import { EOF } from "./scanner.js";
 import {
+  locatedCuArray,
+  locatedCuObject,
+  locatedCuString,
+  locatedCuSymbol,
+  locatedFloat64,
+  locatedInteger32,
+  locatedList,
+  locatedPropertyAccess,
+  locatedReservedSymbol,
+  locatedSplice,
+  locatedUnquote,
+} from "./internal/types.js";
+import {
   type Form,
-  type LiteralList,
-  type LiteralObject,
-  type LiteralString,
-  type LiteralInteger32,
-  type LiteralFloat64,
+  type List,
+  type CuObject,
+  type CuString,
+  type Integer32,
+  type Float64,
   type Location,
   type KeyValue,
-  type LiteralCuSymbol,
+  type CuSymbol,
   isCuSymbol,
-  type LiteralArray,
+  type CuArray,
   type ReservedSymbol,
-  type LiteralPropertyAccess,
+  type PropertyAccess,
   isUnquote,
-  type LiteralUnquote,
+  type Unquote,
+  keyValue,
+  isCuString,
+  isCuArray,
+  computedKey,
 } from "./types.js";
 
 export const tokens: TokenAndRE[] = [
@@ -45,19 +62,19 @@ export const tokens: TokenAndRE[] = [
 export class ParseError extends Error {
   override name = "ParseError";
 
-  constructor(message: string);
-  constructor(expected: string, matchedToken: MatchedToken | EOF);
   constructor(messageOrExpected: string, matchedToken?: MatchedToken | EOF) {
-    let message: string;
     if (matchedToken === undefined) {
-      message = messageOrExpected;
-    } else if (matchedToken === EOF) {
-      message = `Expected ${messageOrExpected}, but got end of input`;
-    } else {
-      const { l, c, t, v } = matchedToken;
-      message = `Expected ${messageOrExpected}, but got ${t}: "${v[0]}", at line ${l}, column ${c}`;
+      super(messageOrExpected);
+      return;
     }
-    super(message);
+    if (matchedToken === EOF) {
+      super(`Expected ${messageOrExpected}, but got end of input`);
+      return;
+    }
+    const { l, c, t, v } = matchedToken;
+    super(
+      `Expected ${messageOrExpected}, but got ${t}: "${v[0]}", at line ${l}, column ${c}`,
+    );
   }
 
   // NOTE: Use this instead of instanceof to avoid https://github.com/vitejs/vite/issues/9528
@@ -76,11 +93,11 @@ export function form(s: SpaceSkippingScanner): Form<Location> | ParseError {
   const { l, c, f } = token;
   switch (token.t) {
     case "open paren":
-      return list(s, { l, c, f });
+      return listP(s, { l, c, f });
     case "open bracket":
-      return literalArray(s, { l, c, f });
+      return cuArrayP(s, { l, c, f });
     case "open brace":
-      return literalObject(s, { l, c, f });
+      return cuObjectP(s, { l, c, f });
     case "string":
       // eslint-disable-next-line eslint-plugin-no-ignore-returned-union/no-ignore-returned-union
       s.next(); // Drop the peeked token
@@ -94,57 +111,53 @@ export function form(s: SpaceSkippingScanner): Form<Location> | ParseError {
       s.next(); // Drop the peeked token
       return symbolOrPropertyAccess(token);
     case "unquote sign":
-      return unquote(s, { l, c, f });
+      return unquoteP(s, { l, c, f });
     case "splice sign":
-      return splice(s, { l, c, f });
+      return spliceP(s, { l, c, f });
     default:
       return new ParseError("form", token);
   }
 }
 
-function list(
+function listP(
   s: SpaceSkippingScanner,
   l: Location,
-): LiteralList<Location> | ParseError {
+): List<Form<Location>, Location> | ParseError {
   const v = untilClose(s, "close paren", form);
   if (ParseError.is(v)) {
     return v;
   }
-  return {
-    t: "List",
-    v,
-    ...l,
-  };
+  return locatedList(v, l);
 }
 
-function literalArray(
+function cuArrayP(
   s: SpaceSkippingScanner,
   l: Location,
-): LiteralArray<Location> | ParseError {
+): CuArray<Form<Location>, Location> | ParseError {
   const v = untilClose(s, "close bracket", form);
   if (ParseError.is(v)) {
     return v;
   }
-  return {
-    t: "Array",
-    v,
-    ...l,
-  };
+  return locatedCuArray(v, l);
 }
 
-function literalObject(
+function cuObjectP(
   s: SpaceSkippingScanner,
   l: Location,
-): LiteralObject<Location> | ParseError {
-  const v = untilClose(s, "close brace", keyValueOrSymbolOrUnquote);
+):
+  | CuObject<
+      Form<Location>,
+      Form<Location>,
+      Form<Location>,
+      Form<Location>,
+      Location
+    >
+  | ParseError {
+  const v = untilClose(s, "close brace", keyValueOrSymbolOrStringOrUnquote);
   if (ParseError.is(v)) {
     return v;
   }
-  return {
-    t: "Object",
-    v,
-    ...l,
-  };
+  return locatedCuObject(v, l);
 }
 
 function untilClose<Result>(
@@ -175,12 +188,12 @@ function untilClose<Result>(
   return result;
 }
 
-function keyValueOrSymbolOrUnquote(
+function keyValueOrSymbolOrStringOrUnquote(
   s: SpaceSkippingScanner,
 ):
-  | KeyValue<Location>
-  | LiteralCuSymbol<Location>
-  | LiteralUnquote<Location>
+  | KeyValue<Form<Location>, Form<Location>, Form<Location>, Location>
+  | CuSymbol<Location>
+  | Unquote<Form<Location>, Location>
   | ParseError {
   const key = form(s);
   if (ParseError.is(key)) {
@@ -197,17 +210,43 @@ function keyValueOrSymbolOrUnquote(
     if (ParseError.is(value)) {
       return value;
     }
-    return [key, value];
+
+    if (isCuArray(key)) {
+      const [computedKeyForm, ...rest] = key;
+      if (computedKeyForm === undefined) {
+        const { l, c } = key.extension;
+        return new ParseError(
+          `No form given to a computed key at line ${l}, column ${c}`,
+        );
+      }
+      if (rest.length > 0) {
+        const { l, c } = key.extension;
+        return new ParseError(
+          `Expected a computed key, but array at line ${l}, column ${c}`,
+        );
+      }
+      return keyValue(computedKey(computedKeyForm), value);
+    }
+    if (isCuSymbol(key) || isCuString(key) || isUnquote(key)) {
+      return keyValue(key, value);
+    }
+
+    const { l, c } = key.extension;
+    return new ParseError(
+      // TODO: Add rule name instead of constructor.name
+      `key of an object must be a symbol, string, or computed key, but ${key.constructor.name} at line ${l}, column ${c}`,
+    );
   }
   if (isCuSymbol(key) || isUnquote(key)) {
     return key;
   }
+  const { l, c } = key.extension;
   return new ParseError(
-    `key of an object without a value must be a Symbol, but ${key.t} at line ${key.l}, column ${key.c}`,
+    `key of an object without a value must be a symbol, but ${key.constructor.name} at line ${l}, column ${c}`,
   );
 }
 
-function string(token: MatchedToken): LiteralString<Location> | ParseError {
+function string(token: MatchedToken): CuString<Location> | ParseError {
   const {
     l,
     c,
@@ -219,76 +258,39 @@ function string(token: MatchedToken): LiteralString<Location> | ParseError {
       `Unterminated string literal: ${stringLiteral} at line ${l}, column ${c}`,
     );
   }
-  return {
-    t: "String",
-    v: JSON.parse(stringLiteral) as string,
-    l,
-    c,
-    f,
-  };
+  return locatedCuString(JSON.parse(stringLiteral) as string, { l, c, f });
 }
 
-function number(
-  token: MatchedToken,
-): LiteralInteger32<Location> | LiteralFloat64<Location> {
+function number(token: MatchedToken): Integer32<Location> | Float64<Location> {
   const { l, c, f } = token;
   const m = token.v;
 
   if (m.groups?.fractional === undefined) {
-    const v = parseInt(m[0]);
-    return {
-      t: "Integer32",
-      v,
-      l,
-      c,
-      f,
-    };
+    return locatedInteger32(parseInt(m[0]), { l, c, f });
   }
 
-  const v = parseFloat(m[0]);
-  return {
-    t: "Float64",
-    v,
-    l,
-    c,
-    f,
-  };
+  return locatedFloat64(parseFloat(m[0]), { l, c, f });
 }
 
 function symbolOrPropertyAccess(
   token: MatchedToken,
 ):
-  | LiteralCuSymbol<Location>
+  | CuSymbol<Location>
   | ReservedSymbol<Location>
-  | LiteralPropertyAccess<Location>
+  | PropertyAccess<Location>
   | ParseError {
   const { l, c, f } = token;
   const v = token.v[0];
   switch (v) {
     case "true":
-      return {
-        t: "ReservedSymbol",
-        v: true,
-        l,
-        c,
-        f,
-      };
+      return locatedReservedSymbol(true, { l, c, f });
+
     case "false":
-      return {
-        t: "ReservedSymbol",
-        v: false,
-        l,
-        c,
-        f,
-      };
+      return locatedReservedSymbol(false, { l, c, f });
+
     case "none":
-      return {
-        t: "ReservedSymbol",
-        v: null,
-        l,
-        c,
-        f,
-      };
+      return locatedReservedSymbol(null, { l, c, f });
+
     default: {
       // TODO: Insufficient validation
       const parts = v.split(".");
@@ -298,26 +300,14 @@ function symbolOrPropertyAccess(
         );
       }
       if (parts.length > 1) {
-        return {
-          t: "PropertyAccess",
-          v: parts,
-          l,
-          c,
-          f,
-        };
+        return locatedPropertyAccess(parts, { l, c, f });
       }
-      return {
-        t: "Symbol",
-        v,
-        l,
-        c,
-        f,
-      };
+      return locatedCuSymbol(v, { l, c, f });
     }
   }
 }
 
-function unquote(
+function unquoteP(
   s: SpaceSkippingScanner,
   l: Location,
 ): Form<Location> | ParseError {
@@ -327,14 +317,10 @@ function unquote(
   if (ParseError.is(v)) {
     return v;
   }
-  return {
-    t: "Unquote",
-    v,
-    ...l,
-  };
+  return locatedUnquote(v, l);
 }
 
-function splice(
+function spliceP(
   s: SpaceSkippingScanner,
   l: Location,
 ): Form<Location> | ParseError {
@@ -344,9 +330,5 @@ function splice(
   if (ParseError.is(v)) {
     return v;
   }
-  return {
-    t: "Splice",
-    v,
-    ...l,
-  };
+  return locatedSplice(v, l);
 }

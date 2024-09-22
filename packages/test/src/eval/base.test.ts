@@ -222,15 +222,13 @@ describe("evalForm", () => {
     });
     testEvalFormOf({
       src: "( (fn name) 1 )",
-      expected: new TranspileError(
-        "No argument list is given to a function definition!",
-      ),
+      expected: new TranspileError("No argument list is given to a `fn`!"),
       setUpConfig,
     });
     testEvalFormOf({
       src: "( (fn) 1 )",
       expected: new TranspileError(
-        "No argument list is given to a function definition!",
+        "No name or argument list is given to a `fn`!",
       ),
       setUpConfig,
     });
@@ -939,6 +937,11 @@ describe("evalBlock", () => {
     testEvalBlockOf({
       src: "(let n 0) (const p (procedure (x) (assign n (plusF 45 x)) (when true (return n)) -1)) (p 3)",
       expected: 48,
+      setUpConfig,
+    });
+    testEvalBlockOf({
+      src: "(let n 0) (procedure p (x) (assign n (plusF 45 x)) (when true (return n)) -1) (p 2)",
+      expected: 47,
       setUpConfig,
     });
   });

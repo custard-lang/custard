@@ -2,7 +2,22 @@ import { describe, expect, test } from "vitest";
 
 import { readStr } from "@custard-lang/processor/dist/reader.js";
 import { ParseError } from "@custard-lang/processor/dist/grammar.js";
-import { locatedCuSymbol } from "@custard-lang/processor/dist/internal/types.js";
+import {
+  locatedFloat64,
+  locatedInteger32,
+  locatedCuString,
+  locatedCuSymbol,
+  locatedPropertyAccess,
+  locatedReservedSymbol,
+  locatedCuArray,
+  locatedCuObject,
+  locatedList,
+  Location,
+  Form,
+  locatedUnquote,
+  locatedSplice,
+} from "@custard-lang/processor/dist/internal/types.js";
+import { keyValue } from "@custard-lang/processor/dist/types.js";
 
 describe("readStr", () => {
   const path = "test";
@@ -17,329 +32,305 @@ describe("readStr", () => {
 
   describe("Integer32", () => {
     test("`123` -> `123`", () => {
-      expect(readStr(inputOf("123"))).toEqual({
-        t: "Integer32",
-        v: 123,
-        ...location(1, 1),
-      });
+      expect(readStr(inputOf("123"))).toEqual(
+        locatedInteger32(123, location(1, 1)),
+      );
     });
     test("`45 ` -> `45`", () => {
-      expect(readStr(inputOf("45 "))).toEqual({
-        t: "Integer32",
-        v: 45,
-        ...location(1, 1),
-      });
+      expect(readStr(inputOf("45 "))).toEqual(
+        locatedInteger32(45, location(1, 1)),
+      );
     });
     test("` \n 6 \n` -> `6`", () => {
-      expect(readStr(inputOf(" \n 6 \n"))).toEqual({
-        t: "Integer32",
-        v: 6,
-        ...location(2, 2),
-      });
+      expect(readStr(inputOf(" \n 6 \n"))).toEqual(
+        locatedInteger32(6, location(2, 2)),
+      );
     });
   });
 
   describe("Float64", () => {
     test("` 789.1  ` -> `789.1`", () => {
-      expect(readStr(inputOf(" 789.1  "))).toEqual({
-        t: "Float64",
-        v: 789.1,
-        ...location(1, 2),
-      });
+      expect(readStr(inputOf(" 789.1  "))).toEqual(
+        locatedFloat64(789.1, location(1, 2)),
+      );
     });
     test("`-800.19` -> `-800.19`", () => {
-      expect(readStr(inputOf("-800.19"))).toEqual({
-        t: "Float64",
-        v: -800.19,
-        ...location(1, 1),
-      });
+      expect(readStr(inputOf("-800.19"))).toEqual(
+        locatedFloat64(-800.19, location(1, 1)),
+      );
     });
   });
 
   describe("String", () => {
     test('`   "aaa"` -> `"aaa"`', () => {
-      expect(readStr(inputOf('   "aaa"'))).toEqual({
-        t: "String",
-        v: "aaa",
-        ...location(1, 4),
-      });
+      expect(readStr(inputOf('   "aaa"'))).toEqual(
+        locatedCuString("aaa", location(1, 4)),
+      );
     });
     test('`   \n"\\\\aaa"` -> `"\\\\aaa"`', () => {
-      expect(readStr(inputOf('   \n"\\\\aaa"'))).toEqual({
-        t: "String",
-        v: "\\aaa",
-        ...location(2, 1),
-      });
+      expect(readStr(inputOf('   \n"\\\\aaa"'))).toEqual(
+        locatedCuString("\\aaa", location(2, 1)),
+      );
     });
   });
 
   describe("Symbol", () => {
     test("`abc` -> `abc`", () => {
-      expect(readStr(inputOf("abc"))).toEqual({
-        t: "Symbol",
-        v: "abc",
-        ...location(1, 1),
-      });
+      expect(readStr(inputOf("abc"))).toEqual(
+        locatedCuSymbol("abc", location(1, 1)),
+      );
     });
     test("` \n  \n  abc ` -> `abc`", () => {
-      expect(readStr(inputOf(" \n  \n  abc "))).toEqual({
-        t: "Symbol",
-        v: "abc",
-        ...location(3, 3),
-      });
+      expect(readStr(inputOf(" \n  \n  abc "))).toEqual(
+        locatedCuSymbol("abc", location(3, 3)),
+      );
     });
   });
 
   describe("PropertyAccess", () => {
     test("`a.b.c` -> `a.b.c`", () => {
-      expect(readStr(inputOf("a.b.c"))).toEqual({
-        t: "PropertyAccess",
-        v: ["a", "b", "c"],
-        ...location(1, 1),
-      });
+      expect(readStr(inputOf("a.b.c"))).toEqual(
+        locatedPropertyAccess(["a", "b", "c"], location(1, 1)),
+      );
     });
     test("` aa.bc ` -> `aa.bc`", () => {
-      expect(readStr(inputOf(" aa.bc "))).toEqual({
-        t: "PropertyAccess",
-        v: ["aa", "bc"],
-        ...location(1, 2),
-      });
+      expect(readStr(inputOf(" aa.bc "))).toEqual(
+        locatedPropertyAccess(["aa", "bc"], location(1, 2)),
+      );
     });
   });
 
   describe("reserved symbols", () => {
     test("`true` -> `true`", () => {
-      expect(readStr(inputOf("true"))).toEqual({
-        t: "ReservedSymbol",
-        v: true,
-        ...location(1, 1),
-      });
+      expect(readStr(inputOf("true"))).toEqual(
+        locatedReservedSymbol(true, location(1, 1)),
+      );
     });
     test("`   false ` -> `false`", () => {
-      expect(readStr(inputOf("   false "))).toEqual({
-        t: "ReservedSymbol",
-        v: false,
-        ...location(1, 4),
-      });
+      expect(readStr(inputOf("   false "))).toEqual(
+        locatedReservedSymbol(false, location(1, 4)),
+      );
     });
     test("`\n\nnone ` -> `none`", () => {
-      expect(readStr(inputOf("\n\nnone "))).toEqual({
-        t: "ReservedSymbol",
-        v: null,
-        ...location(3, 1),
-      });
+      expect(readStr(inputOf("\n\nnone "))).toEqual(
+        locatedReservedSymbol(null, location(3, 1)),
+      );
     });
   });
 
   describe("List", () => {
     test("`(123 456)` -> `(123 456)`", () => {
-      expect(readStr(inputOf("(123 456)"))).toEqual({
-        t: "List",
-        v: [
-          { t: "Integer32", v: 123, ...location(1, 2) },
-          { t: "Integer32", v: 456, ...location(1, 6) },
-        ],
-        ...location(1, 1),
-      });
+      expect(readStr(inputOf("(123 456)"))).toEqual(
+        locatedList(
+          [
+            locatedInteger32(123, location(1, 2)),
+            locatedInteger32(456, location(1, 6)),
+          ],
+          location(1, 1),
+        ),
+      );
     });
     test("`( 123 456\n 789 )` -> `(123 456\n 789)`", () => {
-      expect(readStr(inputOf("( 123 456\n 789 )"))).toEqual({
-        t: "List",
-        v: [
-          { t: "Integer32", v: 123, ...location(1, 3) },
-          { t: "Integer32", v: 456, ...location(1, 7) },
-          { t: "Integer32", v: 789, ...location(2, 2) },
-        ],
-        ...location(1, 1),
-      });
+      expect(readStr(inputOf("( 123 456\n 789 )"))).toEqual(
+        locatedList(
+          [
+            locatedInteger32(123, location(1, 3)),
+            locatedInteger32(456, location(1, 7)),
+            locatedInteger32(789, location(2, 2)),
+          ],
+          location(1, 1),
+        ),
+      );
     });
     test('`( pl.us 2 (m 3 4) none  "foo" )` -> `(pl.us 2 (m 3 4) none "foo")`', () => {
-      expect(readStr(inputOf('( pl.us 2 (m 3 4) none  "foo" )'))).toEqual({
-        t: "List",
-        v: [
-          { t: "PropertyAccess", v: ["pl", "us"], ...location(1, 3) },
-          { t: "Integer32", v: 2, ...location(1, 9) },
-          {
-            t: "List",
-            v: [
-              { t: "Symbol", v: "m", ...location(1, 12) },
-              { t: "Integer32", v: 3, ...location(1, 14) },
-              { t: "Integer32", v: 4, ...location(1, 16) },
-            ],
-            ...location(1, 11),
-          },
-          { t: "ReservedSymbol", v: null, ...location(1, 19) },
-          { t: "String", v: "foo", ...location(1, 25) },
-        ],
-        ...location(1, 1),
-      });
+      expect(readStr(inputOf('( pl.us 2 (m 3 4) none  "foo" )'))).toEqual(
+        locatedList(
+          [
+            locatedPropertyAccess(["pl", "us"], location(1, 3)),
+            locatedInteger32(2, location(1, 9)),
+            locatedList(
+              [
+                locatedCuSymbol("m", location(1, 12)),
+                locatedInteger32(3, location(1, 14)),
+                locatedInteger32(4, location(1, 16)),
+              ],
+              location(1, 11),
+            ),
+            locatedReservedSymbol(null, location(1, 19)),
+            locatedCuString("foo", location(1, 25)),
+          ],
+          location(1, 1),
+        ),
+      );
     });
   });
 
   describe("LiteralArray", () => {
     test("`[123 456]` -> `[123 456]`", () => {
-      expect(readStr(inputOf("[123 456]"))).toEqual({
-        t: "Array",
-        v: [
-          { t: "Integer32", v: 123, ...location(1, 2) },
-          { t: "Integer32", v: 456, ...location(1, 6) },
-        ],
-        ...location(1, 1),
-      });
+      expect(readStr(inputOf("[123 456]"))).toEqual(
+        locatedCuArray(
+          [
+            locatedInteger32(123, location(1, 2)),
+            locatedInteger32(456, location(1, 6)),
+          ],
+          location(1, 1),
+        ),
+      );
     });
     test("`[ 123 456 789 ]` -> `[123 456 789]`", () => {
-      expect(readStr(inputOf("[ 123 456 789 ]"))).toEqual({
-        t: "Array",
-        v: [
-          { t: "Integer32", v: 123, ...location(1, 3) },
-          { t: "Integer32", v: 456, ...location(1, 7) },
-          { t: "Integer32", v: 789, ...location(1, 11) },
-        ],
-        ...location(1, 1),
-      });
+      expect(readStr(inputOf("[ 123 456 789 ]"))).toEqual(
+        locatedCuArray(
+          [
+            locatedInteger32(123, location(1, 3)),
+            locatedInteger32(456, location(1, 7)),
+            locatedInteger32(789, location(1, 11)),
+          ],
+          location(1, 1),
+        ),
+      );
     });
     test('`[ pl.us 2 (m\n 3 4) none  "foo" ]` -> `[pl.us 2 (m 3 4) none "foo"]`', () => {
-      expect(readStr(inputOf('[ pl.us 2 (m\n 3 4) none  "foo" ]'))).toEqual({
-        t: "Array",
-        v: [
-          { t: "PropertyAccess", v: ["pl", "us"], ...location(1, 3) },
-          { t: "Integer32", v: 2, ...location(1, 9) },
-          {
-            t: "List",
-            v: [
-              { t: "Symbol", v: "m", ...location(1, 12) },
-              { t: "Integer32", v: 3, ...location(2, 2) },
-              { t: "Integer32", v: 4, ...location(2, 4) },
-            ],
-            ...location(1, 11),
-          },
-          { t: "ReservedSymbol", v: null, ...location(2, 7) },
-          { t: "String", v: "foo", ...location(2, 13) },
-        ],
-        ...location(1, 1),
-      });
+      expect(readStr(inputOf('[ pl.us 2 (m\n 3 4) none  "foo" ]'))).toEqual(
+        locatedCuArray(
+          [
+            locatedPropertyAccess(["pl", "us"], location(1, 3)),
+            locatedInteger32(2, location(1, 9)),
+            locatedList(
+              [
+                locatedCuSymbol("m", location(1, 12)),
+                locatedInteger32(3, location(2, 2)),
+                locatedInteger32(4, location(2, 4)),
+              ],
+              location(1, 11),
+            ),
+            locatedReservedSymbol(null, location(2, 7)),
+            locatedCuString("foo", location(2, 13)),
+          ],
+          location(1, 1),
+        ),
+      );
     });
   });
 
   describe("LiteralObject", () => {
     test('`{ a: 1.0 bc: "def" }`', () => {
-      expect(readStr(inputOf('{ a:\n1.0\nbc: "def" }'))).toEqual({
-        t: "Object",
-        v: [
+      expect(readStr(inputOf('{ a:\n1.0\nbc: "def" }'))).toEqual(
+        locatedCuObject(
           [
-            locatedCuSymbol("a", location(1, 3)),
-            { t: "Float64", v: 1.0, ...location(2, 1) },
+            keyValue<Form<Location>, Form<Location>, Form<Location>, Location>(
+              locatedCuSymbol("a", location(1, 3)),
+              locatedFloat64(1.0, location(2, 1)),
+            ),
+            keyValue<Form<Location>, Form<Location>, Form<Location>, Location>(
+              locatedCuSymbol("bc", location(3, 1)),
+              locatedCuString("def", location(3, 5)),
+            ),
           ],
-          [
-            locatedCuSymbol("bc", location(3, 1)),
-            { t: "String", v: "def", ...location(3, 5) },
-          ],
-        ],
-        ...location(1, 1),
-      });
+          location(1, 1),
+        ),
+      );
     });
 
     test('`{ a: { aa: ( 1.1 2.1 3.3 ) ab: 3.0 } bc: "def" }`', () => {
       expect(
         readStr(inputOf('{ a: {\naa: ( 1.1 2.1 3.3\n) ab: 3.0 }\nbc: "def" }')),
-      ).toEqual({
-        t: "Object",
-        v: [
+      ).toEqual(
+        locatedCuObject(
           [
-            locatedCuSymbol("a", location(1, 3)),
-            {
-              t: "Object",
-              v: [
+            keyValue<Form<Location>, Form<Location>, Form<Location>, Location>(
+              locatedCuSymbol("a", location(1, 3)),
+              locatedCuObject(
                 [
-                  locatedCuSymbol("aa", location(2, 1)),
-                  {
-                    t: "List",
-                    v: [
-                      { t: "Float64", v: 1.1, ...location(2, 7) },
-                      { t: "Float64", v: 2.1, ...location(2, 11) },
-                      { t: "Float64", v: 3.3, ...location(2, 15) },
-                    ],
-                    ...location(2, 5),
-                  },
+                  keyValue<
+                    Form<Location>,
+                    Form<Location>,
+                    Form<Location>,
+                    Location
+                  >(
+                    locatedCuSymbol("aa", location(2, 1)),
+                    locatedList(
+                      [
+                        locatedFloat64(1.1, location(2, 7)),
+                        locatedFloat64(2.1, location(2, 11)),
+                        locatedFloat64(3.3, location(2, 15)),
+                      ],
+                      location(2, 5),
+                    ),
+                  ),
+                  keyValue<
+                    Form<Location>,
+                    Form<Location>,
+                    Form<Location>,
+                    Location
+                  >(
+                    locatedCuSymbol("ab", location(3, 3)),
+                    locatedFloat64(3.0, location(3, 7)),
+                  ),
                 ],
-                [
-                  locatedCuSymbol("ab", location(3, 3)),
-                  { t: "Float64", v: 3.0, ...location(3, 7) },
-                ],
-              ],
-              ...location(1, 6),
-            },
+                location(1, 6),
+              ),
+            ),
+            keyValue<Form<Location>, Form<Location>, Form<Location>, Location>(
+              locatedCuSymbol("bc", location(4, 1)),
+              locatedCuString("def", location(4, 5)),
+            ),
           ],
-          [
-            locatedCuSymbol("bc", location(4, 1)),
-            { t: "String", v: "def", ...location(4, 5) },
-          ],
-        ],
-        ...location(1, 1),
-      });
+          location(1, 1),
+        ),
+      );
     });
   });
 
   describe("Unquote", () => {
     test("`$a` -> `$a`", () => {
-      expect(readStr(inputOf("$a"))).toEqual({
-        t: "Unquote",
-        v: { t: "Symbol", v: "a", ...location(1, 2) },
-        ...location(1, 1),
-      });
+      expect(readStr(inputOf("$a"))).toEqual(
+        locatedUnquote(locatedCuSymbol("a", location(1, 2)), location(1, 1)),
+      );
     });
     test("`$(1 2 3)` -> `$(1 2 3)`", () => {
-      expect(readStr(inputOf("$(1 2 3)"))).toEqual({
-        t: "Unquote",
-        v: {
-          t: "List",
-          v: [
-            { t: "Integer32", v: 1, ...location(1, 3) },
-            { t: "Integer32", v: 2, ...location(1, 5) },
-            { t: "Integer32", v: 3, ...location(1, 7) },
-          ],
-          ...location(1, 2),
-        },
-        ...location(1, 1),
-      });
+      expect(readStr(inputOf("$(1 2 3)"))).toEqual(
+        locatedUnquote(
+          locatedList(
+            [
+              locatedInteger32(1, location(1, 3)),
+              locatedInteger32(2, location(1, 5)),
+              locatedInteger32(3, location(1, 7)),
+            ],
+            location(1, 2),
+          ),
+          location(1, 1),
+        ),
+      );
     });
   });
 
   describe("Splice (and Unquote)", () => {
     test("`...$a` -> `...$a`", () => {
-      expect(readStr(inputOf("...$a"))).toEqual({
-        t: "Splice",
-        v: {
-          t: "Unquote",
-          v: {
-            t: "Symbol",
-            v: "a",
-            ...location(1, 5),
-          },
-          ...location(1, 4),
-        },
-        ...location(1, 1),
-      });
+      expect(readStr(inputOf("...$a"))).toEqual(
+        locatedSplice(
+          locatedUnquote(locatedCuSymbol("a", location(1, 5)), location(1, 4)),
+          location(1, 1),
+        ),
+      );
     });
 
     test("`...$(1 2 3)` -> `...$(1 2 3)`", () => {
-      expect(readStr(inputOf("...$(1 2 3)"))).toEqual({
-        t: "Splice",
-        v: {
-          t: "Unquote",
-          v: {
-            t: "List",
-            v: [
-              { t: "Integer32", v: 1, ...location(1, 6) },
-              { t: "Integer32", v: 2, ...location(1, 8) },
-              { t: "Integer32", v: 3, ...location(1, 10) },
-            ],
-            ...location(1, 5),
-          },
-          ...location(1, 4),
-        },
-        ...location(1, 1),
-      });
+      expect(readStr(inputOf("...$(1 2 3)"))).toEqual(
+        locatedSplice(
+          locatedUnquote(
+            locatedList(
+              [
+                locatedInteger32(1, location(1, 6)),
+                locatedInteger32(2, location(1, 8)),
+                locatedInteger32(3, location(1, 10)),
+              ],
+              location(1, 5),
+            ),
+            location(1, 4),
+          ),
+          location(1, 1),
+        ),
+      );
     });
   });
 

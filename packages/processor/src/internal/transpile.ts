@@ -2,30 +2,41 @@ import { ExpectNever } from "../util/error.js";
 
 import {
   type Block,
-  type Call,
-  canBePseudoTopLevelReferenced,
-  type LiteralCuSymbol,
-  type DynamicVar,
+  type CuSymbol,
   type Form,
-  isContextualKeyword,
   isCuSymbol,
-  isDynamicVar,
   isKeyValue,
   isList,
-  isMarkedDirectWriter,
-  isMarkedFunctionWithEnv,
-  isNamespace,
   isPropertyAccess,
-  isProvidedConst,
   type JsSrc,
-  type LiteralObject,
-  type LiteralPropertyAccess,
+  type CuObject,
+  type PropertyAccess,
   type ReaderInput,
   showSymbolAccess,
   TranspileError,
-  type Writer,
+  isCuString,
+  isReservedSymbol,
+  isInteger32,
+  isFloat64,
+  isCuArray,
+  isCuObject,
   isUnquote,
+  isSplice,
+  ComputedKey,
+  isComputedKey,
+  List,
+} from "../types.js";
+import {
+  canBePseudoTopLevelReferenced,
+  type DynamicVar,
   isMacro,
+  isContextualKeyword,
+  isMarkedDirectWriter,
+  isMarkedFunctionWithEnv,
+  isNamespace,
+  isProvidedConst,
+  type Writer,
+  isDynamicVar,
 } from "../internal/types.js";
 import {
   CU_ENV,
@@ -36,7 +47,7 @@ import { type Env } from "./types.js";
 import * as EnvF from "./env.js";
 import { readBlock } from "../reader.js";
 import { ParseError } from "../grammar.js";
-import { isStatement } from "../lib/base/common.js";
+import { isStatement } from "./call.js";
 
 export async function transpileExpression(
   ast: Form,
@@ -51,10 +62,10 @@ export async function transpileExpression(
 
 interface NextCall {
   writer: Writer;
-  sym: LiteralCuSymbol | LiteralPropertyAccess;
+  sym: CuSymbol | PropertyAccess;
 }
 
-type JsSrcAndNextCall = [JsSrc, NextCall | undefined];
+type JsSrcAndNextCall = [JsSrc, NextCall | null];
 
 async function transpileExpressionWithNextCall(
   ast: Form,
@@ -68,160 +79,171 @@ async function transpileExpressionWithNextCall(
     if (TranspileError.is(rw)) {
       return rw;
     }
-    return [rw, undefined];
+    return [rw, null];
   }
 
-  switch (ast.t) {
-    case "String":
-      return [JSON.stringify(ast.v), undefined];
-    // Intentional fall-through
-    case "ReservedSymbol": // eslint-disable-line no-fallthrough
-    case "Integer32": // eslint-disable-line no-fallthrough
-    case "Float64":
-      return [`${ast.v}`, undefined];
-    case "Symbol": {
-      const r = EnvF.referTo(env, ast);
-      if (TranspileError.is(r)) {
-        return r;
-      }
-      if (isDynamicVar(r.writer)) {
-        return await expandDynamicVar(r.writer);
-      }
-      if (EnvF.writerIsAtReplTopLevel(env, r)) {
-        return [pseudoTopLevelReference(ast.v), { writer: r.writer, sym: ast }];
-      }
-      return [ast.v, { writer: r.writer, sym: ast }];
+  if (isCuString(ast)) {
+    return [JSON.stringify(ast), null];
+  }
+  if (isReservedSymbol(ast)) {
+    const v = ast.valueOf();
+    return [v == null ? "null" : String(v), null];
+  }
+  if (isInteger32(ast) || isFloat64(ast)) {
+    return [String(ast), null];
+  }
+  if (isCuSymbol(ast)) {
+    const r = EnvF.referTo(env, ast);
+    if (TranspileError.is(r)) {
+      return r;
     }
-    case "PropertyAccess": {
-      // TODO: Properly Access inside Namespace
-      const r = EnvF.referTo(env, ast);
-      if (TranspileError.is(r)) {
-        return r;
-      }
-      if (isDynamicVar(r.writer)) {
-        return await expandDynamicVar(r.writer);
-      }
-      if (EnvF.writerIsAtReplTopLevel(env, r)) {
-        return [
-          pseudoTopLevelReferenceToPropertyAccess(ast),
-          { writer: r.writer, sym: ast },
-        ];
-      }
-      return [ast.v.join("."), { writer: r.writer, sym: ast }];
+    if (isDynamicVar(r.writer)) {
+      return await expandDynamicVar(r.writer);
     }
-    case "Array": {
-      const elementsSrc = await transpileJoinWithComma(ast.v, env);
-      if (TranspileError.is(elementsSrc)) {
-        return elementsSrc;
-      }
-      return [`[${elementsSrc}]`, undefined];
+    if (EnvF.writerIsAtReplTopLevel(env, r)) {
+      return [
+        pseudoTopLevelReference(ast.value),
+        { writer: r.writer, sym: ast },
+      ];
     }
-    case "Object": {
-      const kvSrc = await transpileLiteralObject(ast, env);
-      if (TranspileError.is(kvSrc)) {
-        return kvSrc;
-      }
-      return [kvSrc, undefined];
+    return [ast.value, { writer: r.writer, sym: ast }];
+  }
+  if (isPropertyAccess(ast)) {
+    // TODO: Properly Access inside Namespace
+    const r = EnvF.referTo(env, ast);
+    if (TranspileError.is(r)) {
+      return r;
     }
-    case "List": {
-      const [funcForm, ...args] = ast.v;
-      if (funcForm === undefined) {
-        return new TranspileError("Invalid function call: empty");
-      }
+    if (isDynamicVar(r.writer)) {
+      return await expandDynamicVar(r.writer);
+    }
+    if (EnvF.writerIsAtReplTopLevel(env, r)) {
+      return [
+        pseudoTopLevelReferenceToPropertyAccess(ast),
+        { writer: r.writer, sym: ast },
+      ];
+    }
+    return [ast.value.join("."), { writer: r.writer, sym: ast }];
+  }
+  if (isCuArray(ast)) {
+    const elementsSrc = await transpileJoinWithComma(ast, env);
+    if (TranspileError.is(elementsSrc)) {
+      return elementsSrc;
+    }
+    return [`[${elementsSrc}]`, null];
+  }
+  if (isCuObject(ast)) {
+    const kvSrc = await transpileCuObject(ast, env);
+    if (TranspileError.is(kvSrc)) {
+      return kvSrc;
+    }
+    return [kvSrc, null];
+  }
+  if (isList(ast)) {
+    const [funcForm, ...args] = ast.values;
+    if (funcForm === undefined) {
+      return new TranspileError("Invalid function call: empty");
+    }
 
-      const funcSrcAndNextCall = await transpileExpressionWithNextCall(
-        funcForm,
-        env,
+    const funcSrcAndNextCall = await transpileExpressionWithNextCall(
+      funcForm,
+      env,
+    );
+    if (TranspileError.is(funcSrcAndNextCall)) {
+      return funcSrcAndNextCall;
+    }
+
+    const [funcSrc, nc] = funcSrcAndNextCall;
+
+    if (nc == null) {
+      const argsSrc = await transpileJoinWithComma(args, env);
+      if (TranspileError.is(argsSrc)) {
+        return argsSrc;
+      }
+      return [`(${funcSrc})(${argsSrc})`, null];
+    }
+
+    const { writer, sym } = nc;
+    if (isContextualKeyword(writer)) {
+      return new TranspileError(
+        `\`${showSymbolAccess(sym)}\` must be used with \`${
+          writer.companion
+        }\`!`,
       );
-      if (TranspileError.is(funcSrcAndNextCall)) {
-        return funcSrcAndNextCall;
-      }
-
-      const [funcSrc, nc] = funcSrcAndNextCall;
-
-      if (nc === undefined) {
-        const argsSrc = await transpileJoinWithComma(args, env);
-        if (TranspileError.is(argsSrc)) {
-          return argsSrc;
-        }
-        return [`(${funcSrc})(${argsSrc})`, undefined];
-      }
-
-      const { writer, sym } = nc;
-      if (isContextualKeyword(writer)) {
-        return new TranspileError(
-          `\`${showSymbolAccess(sym)}\` must be used with \`${
-            writer.companion
-          }\`!`,
-        );
-      }
-      if (isNamespace(writer)) {
-        return new TranspileError(
-          `\`${showSymbolAccess(
-            sym,
-          )}\` is just a namespace. Doesn't represent a function!`,
-        );
-      }
-
-      if (
-        canBePseudoTopLevelReferenced(writer) ||
-        isProvidedConst(writer) ||
-        isDynamicVar(writer)
-      ) {
-        const argsSrc = await transpileJoinWithComma(args, env);
-        if (TranspileError.is(argsSrc)) {
-          return argsSrc;
-        }
-        return [`${funcSrc}(${argsSrc})`, undefined];
-      }
-      if (isMarkedFunctionWithEnv(writer)) {
-        const argsSrc = await transpileJoinWithComma(args, env);
-        if (TranspileError.is(argsSrc)) {
-          return argsSrc;
-        }
-        return [`${funcSrc}.call(${CU_ENV},${argsSrc})`, undefined];
-      }
-
-      if (isMarkedDirectWriter(writer)) {
-        const src = await writer.call(env, ...args);
-        return TranspileError.is(src) ? src : [src, undefined];
-      }
-
-      if (isMacro(writer)) {
-        const generatedForm = await writer.expand(env, ...args);
-        if (TranspileError.is(generatedForm)) {
-          return generatedForm;
-        }
-        return await transpileExpressionWithNextCall(generatedForm, env);
-      }
-
-      throw ExpectNever(writer);
     }
-    case "Unquote":
-      return new TranspileError("Unquote should be used inside quasiQuote");
-    case "Splice":
-      return new TranspileError("Splice should be used inside quasiQuote");
-    default:
-      throw ExpectNever(ast);
+    if (isNamespace(writer)) {
+      return new TranspileError(
+        `\`${showSymbolAccess(
+          sym,
+        )}\` is just a namespace. Doesn't represent a function!`,
+      );
+    }
+
+    if (
+      canBePseudoTopLevelReferenced(writer) ||
+      isProvidedConst(writer) ||
+      isDynamicVar(writer)
+    ) {
+      const argsSrc = await transpileJoinWithComma(args, env);
+      if (TranspileError.is(argsSrc)) {
+        return argsSrc;
+      }
+      return [`${funcSrc}(${argsSrc})`, null];
+    }
+    if (isMarkedFunctionWithEnv(writer)) {
+      const argsSrc = await transpileJoinWithComma(args, env);
+      if (TranspileError.is(argsSrc)) {
+        return argsSrc;
+      }
+      return [`${funcSrc}.call(${CU_ENV},${argsSrc})`, null];
+    }
+
+    if (isMarkedDirectWriter(writer)) {
+      const src = await writer.call(env, ...args);
+      return TranspileError.is(src) ? src : [src, null];
+    }
+
+    if (isMacro(writer)) {
+      const generatedForm = await writer.expand(env, ...args);
+      if (TranspileError.is(generatedForm)) {
+        return generatedForm;
+      }
+      return await transpileExpressionWithNextCall(generatedForm, env);
+    }
+
+    throw ExpectNever(writer);
   }
+  if (isUnquote(ast)) {
+    return new TranspileError("Unquote must be used inside quasiQuote");
+  }
+  if (isSplice(ast)) {
+    return new TranspileError("Splice must be used inside quasiQuote");
+  }
+
+  throw ExpectNever(ast);
 }
 
-async function transpileLiteralObject(
-  ast: LiteralObject,
+async function transpileCuObject(
+  ast: CuObject<Form, Form, Form, Form>,
   env: Env,
 ): Promise<JsSrc | TranspileError> {
   let objectContents = "";
-  for (const kv of ast.v) {
+  for (const kv of ast) {
     let kvSrc: JsSrc;
     if (isKeyValue(kv)) {
-      const [k, v] = kv;
-      // TODO: only CuSymbol and LiteralArray with only one element should be valid.
-      const kSrc = isCuSymbol(k) ? k.v : await transpileExpression(k, env);
-      if (TranspileError.is(kSrc)) {
-        return kSrc;
+      const { key, value } = kv;
+      let kSrc: JsSrc;
+      if (isCuSymbol(key)) {
+        kSrc = key.value;
+      } else {
+        const r = await transpileComputedKeyOrExpression(key, env);
+        if (TranspileError.is(r)) {
+          return r;
+        }
+        kSrc = r;
       }
 
-      const vSrc = await transpileExpression(v, env);
+      const vSrc = await transpileExpression(value, env);
       if (TranspileError.is(vSrc)) {
         return vSrc;
       }
@@ -233,9 +255,9 @@ async function transpileLiteralObject(
         return f;
       }
       if (EnvF.writerIsAtReplTopLevel(env, f)) {
-        kvSrc = `${kv.v}: ${pseudoTopLevelReference(kv.v)}`;
+        kvSrc = `${kv.value}: ${pseudoTopLevelReference(kv.value)}`;
       } else {
-        kvSrc = kv.v;
+        kvSrc = kv.value;
       }
     } else if (isUnquote(kv)) {
       return new TranspileError("Unquote must be used inside quasiQuote");
@@ -245,6 +267,25 @@ async function transpileLiteralObject(
     objectContents = `${objectContents}${kvSrc},`;
   }
   return `{${objectContents}}`;
+}
+
+export async function transpileComputedKeyOrExpression(
+  key: ComputedKey<Form> | Form,
+  env: Env,
+): Promise<JsSrc | TranspileError> {
+  if (isComputedKey(key)) {
+    const r = await transpileExpression(key.value, env);
+    if (TranspileError.is(r)) {
+      return r;
+    }
+    return `[${r}]`;
+  } else {
+    const r = await transpileExpression(key, env);
+    if (TranspileError.is(r)) {
+      return r;
+    }
+    return r;
+  }
 }
 
 export async function transpileBlock(
@@ -308,19 +349,6 @@ export async function transpileString(
     return forms;
   }
   return await transpileBlock(forms, env);
-}
-
-export function asCall(form: Form): Call | undefined {
-  if (!isList(form)) {
-    return;
-  }
-  const id = form.v[0];
-  if (id === undefined) {
-    return;
-  }
-  if (isCuSymbol(id) || isPropertyAccess(id)) {
-    return form as Call;
-  }
 }
 
 // TODO: accept only expression form (not a statement)
