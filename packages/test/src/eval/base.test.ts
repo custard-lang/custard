@@ -138,7 +138,17 @@ describe("evalForm", () => {
     });
   });
 
-  describe("(fn (a r g s) (f) (o) (r) (m) (s))", () => {
+  describe("(fn name? (a r g s) (f) (o) (r) (m) (s))", () => {
+    testEvalBlockOf({
+      src: "(fn name (x) (plusF x 9) ) (name 2)",
+      expected: 11,
+      setUpConfig,
+    });
+    testEvalFormOf({
+      src: "((fn name(x) (plusF x 9) ) 3)",
+      expected: 12,
+      setUpConfig,
+    });
     testEvalFormOf({
       src: "( (fn (x) (plusF x 3)) 2 )",
       expected: 5,
@@ -160,6 +170,21 @@ describe("evalForm", () => {
       setUpConfig,
     });
     testEvalFormOf({ src: "( (fn () 3) 2 )", expected: 3, setUpConfig });
+    testEvalBlockOf({
+      src: "(fn name ()) (name)",
+      expected: undefined,
+      setUpConfig,
+    });
+    testEvalFormOf({
+      src: "((fn name ()))",
+      expected: undefined,
+      setUpConfig,
+    });
+    testEvalFormOf({
+      src: "((fn name() (const y 3)))",
+      expected: undefined,
+      setUpConfig,
+    });
     testEvalFormOf({
       src: "((fn ()))",
       expected: undefined,
@@ -187,6 +212,24 @@ describe("evalForm", () => {
     testEvalFormOf({
       src: "( (fn (x x) x) 1 )",
       expected: new TranspileError('Variable "x" is already defined!'),
+      setUpConfig,
+    });
+    testEvalBlockOf({
+      // TODO: This might be an error
+      src: "(const name (fn anotherName (x) (plusF x 9) )) (plusF (name 2) (anotherName 3))",
+      expected: 23,
+      setUpConfig,
+    });
+    testEvalFormOf({
+      src: "( (fn name) 1 )",
+      expected: new TranspileError("No argument list is given to a `fn`!"),
+      setUpConfig,
+    });
+    testEvalFormOf({
+      src: "( (fn) 1 )",
+      expected: new TranspileError(
+        "No name or argument list is given to a `fn`!",
+      ),
       setUpConfig,
     });
   });
@@ -896,6 +939,11 @@ describe("evalBlock", () => {
       expected: 48,
       setUpConfig,
     });
+    testEvalBlockOf({
+      src: "(let n 0) (procedure p (x) (assign n (plusF 45 x)) (when true (return n)) -1) (p 2)",
+      expected: 47,
+      setUpConfig,
+    });
   });
 
   describe("(generatorFn (a r g s) f o r m s)", () => {
@@ -1162,6 +1210,8 @@ describe("evalBlock", () => {
   });
 
   describe("recursive calls", () => {
+    // TODO: Test (fn) with name.
+
     testEvalBlockOf({
       src: "(const f (fn (x) (return 1) (f x)))",
       expected: new TranspileError(

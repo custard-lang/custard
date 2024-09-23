@@ -1,4 +1,4 @@
-import { type Id, type JsSrc, type LiteralPropertyAccess } from "./types.js";
+import { type Id, type JsSrc, type PropertyAccess } from "../types.js";
 
 // _cu$ is the reserved prefix of Custard
 export const CU_ENV = "_cu$env";
@@ -14,9 +14,9 @@ export function pseudoTopLevelReference(id: Id): JsSrc {
 }
 
 export function pseudoTopLevelReferenceToPropertyAccess(
-  id: LiteralPropertyAccess,
+  id: PropertyAccess,
 ): JsSrc {
-  const [id0, ...ids] = id.v;
+  const [id0, ...ids] = id.value;
   return `_cu$env.transpileState.topLevelValues.get(${JSON.stringify(
     id0,
   )}).${ids.join(".")}`;

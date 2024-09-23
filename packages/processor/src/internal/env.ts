@@ -1,31 +1,33 @@
 import * as path from "node:path";
 
 import {
-  isRecursiveConst,
-  TranspileError,
   type Writer,
-  type FilePath,
-  type Id,
+  isRecursiveConst,
   isNamespace,
-  type LiteralPropertyAccess,
-  type LiteralCuSymbol,
-  isCuSymbol,
-  isPropertyAccess,
-  type JsSrc,
   type Scope,
   canBePseudoTopLevelReferenced,
-  type CompleteProvidedSymbolsConfig,
-  type Namespace,
-  aConst,
   isWriter,
   type ScopeOptions,
   defaultScopeOptions,
   defaultAsyncScopeOptions,
-  type Env,
   type HowToRefer,
-  type ReaderInput,
   type TranspileState,
 } from "./types.js";
+import {
+  TranspileError,
+  type FilePath,
+  type Id,
+  type PropertyAccess,
+  type CuSymbol,
+  isCuSymbol,
+  isPropertyAccess,
+  type JsSrc,
+  type CompleteProvidedSymbolsConfig,
+  type Namespace,
+  aConst,
+  type Env,
+  type ReaderInput,
+} from "../types.js";
 import * as References from "./references.js";
 import * as ScopeF from "./scope.js";
 import { isDeeperThanOrEqual, isShallowerThan } from "./scope-path.js";
@@ -58,7 +60,7 @@ export function init<State extends TranspileState>(
 
 export function find(
   env: Env,
-  symLike: LiteralCuSymbol | LiteralPropertyAccess,
+  symLike: CuSymbol | PropertyAccess,
 ): Writer | undefined {
   const r = findWithIsAtTopLevel(env, symLike);
   if (r === undefined) {
@@ -74,7 +76,7 @@ export interface WriterWithIsAtTopLevel {
 
 export function findWithIsAtTopLevel(
   env: Env,
-  symLike: LiteralCuSymbol | LiteralPropertyAccess,
+  symLike: CuSymbol | PropertyAccess,
 ): WriterWithIsAtTopLevel | undefined {
   const r = findCore(env, symLike, false);
   if (TranspileError.is(r)) {
@@ -85,14 +87,14 @@ export function findWithIsAtTopLevel(
 
 export function referTo(
   env: Env,
-  symLike: LiteralCuSymbol | LiteralPropertyAccess,
+  symLike: CuSymbol | PropertyAccess,
 ): WriterWithIsAtTopLevel | TranspileError {
   return findCore(env, symLike, true);
 }
 
 function findCore(
   { scopes, references }: Env,
-  symLike: LiteralCuSymbol | LiteralPropertyAccess,
+  symLike: CuSymbol | PropertyAccess,
   doRefer: boolean,
 ): WriterWithIsAtTopLevel | TranspileError {
   const topLevelI = scopes.length - TOP_LEVEL_OFFSET;
@@ -117,10 +119,10 @@ function findCore(
   }
 
   if (isCuSymbol(symLike)) {
-    return byId(symLike.v);
+    return byId(symLike.value);
   }
   if (isPropertyAccess(symLike)) {
-    const [id, ...restIds] = symLike.v;
+    const [id, ...restIds] = symLike.value;
 
     const r = byId(
       assertNonNull(id, "Assertion failed: empty PropertyAccess!"),
@@ -136,7 +138,7 @@ function findCore(
       const subW = module[part];
       if (subW == null) {
         return new TranspileError(
-          `\`${part}\` is not defined in \`${symLike.v
+          `\`${part}\` is not defined in \`${symLike.value
             .slice(0, i - 1)
             .join(".")}\`!`,
         );

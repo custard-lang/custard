@@ -1,3 +1,25 @@
-export class Splice<T> {
+import type { Empty } from "../../util/types.js";
+
+interface SpliceBrand {
+  readonly _SpliceBrand: unique symbol;
+}
+
+class SpliceBase<T, X extends Empty = Empty> {
+  // Looks like this is a false positive.
+  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+  extension = {} as X;
+
   constructor(public readonly value: T) {}
+}
+
+export interface Splice<T, X extends Empty = Empty>
+  extends SpliceBase<T, X>,
+    SpliceBrand {}
+
+export function splice<T, X extends Empty = Empty>(value: T): Splice<T, X> {
+  return new SpliceBase(value) as Splice<T, X>;
+}
+
+export function isSplice(v: unknown): v is Splice<unknown> {
+  return v instanceof SpliceBase;
 }

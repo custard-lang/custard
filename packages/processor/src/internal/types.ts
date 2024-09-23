@@ -1,177 +1,176 @@
-import { ExpectNever, expectNever } from "../util/error.js";
+import { ExpectNever } from "../util/error.js";
 import { type Awaitable, type Empty } from "../util/types.js";
 
 import * as s from "../lib/spec.js";
+import { type List, isList, list } from "./types/list.js";
+import { type CuArray, cuArray, isCuArray } from "./types/cu-array.js";
+import { CuObject, isCuObject } from "./types/cu-object.js";
+import { type Integer32, integer32, isInteger32 } from "./types/integer32.js";
+import { type Float64, float64, isFloat64 } from "./types/float64.js";
+import { type CuString, cuString, isCuString } from "./types/cu-string.js";
+import {
+  type ReservedSymbol,
+  reservedSymbol,
+  isReservedSymbol,
+} from "./types/reserved-symbol.js";
+import { type CuSymbol, cuSymbol, isCuSymbol } from "./types/cu-symbol.js";
+import {
+  type PropertyAccess,
+  propertyAccess,
+  isPropertyAccess,
+} from "./types/property-access.js";
+import { type Unquote, unquote, isUnquote } from "./types/unquote.js";
+import { type Splice, splice, isSplice } from "./types/splice.js";
+import {
+  type ComputedKey,
+  isComputedKey,
+  isKeyValue,
+  type KeyValue,
+} from "./types/key-value.js";
 
 export type Block<X extends Empty = Empty> = Array<Form<X>>;
 
 export type Form<X extends Empty = Empty> =
-  | LiteralList<X>
-  | LiteralArray<X>
-  | LiteralObject<X>
+  | List<Form<X>, X>
+  | CuArray<Form<X>, X>
+  | CuObject<Form<X>, Form<X>, Form<X>, Form<X>, X>
   | Atom<X>
-  | LiteralUnquote<X>
-  | LiteralSplice<X>;
+  | Unquote<Form<X>, X>
+  | Splice<Form<X>, X>;
 
-// The ***Base interfaces are necessary to avoid circular references. But I'm not sure why this works!
-interface ListBase<X extends Empty = Empty> {
-  t: "List";
-  v: Array<Form<X>>;
+export function locatedList(
+  v: Array<Form<Location>>,
+  l: Location,
+): List<Form<Location>, Location> {
+  const a = list(...v);
+  a.extension = l;
+  return a as List<Form<Location>, Location>;
 }
 
-export type LiteralList<X extends Empty = Empty> = ListBase<X> & X;
-
-export function emptyList(l: Location): LiteralList<Location> {
-  return { ...l, t: "List", v: [] };
+export function locatedCuArray(
+  v: Array<Form<Location>>,
+  l: Location,
+): CuArray<Form<Location>, Location> {
+  const a = cuArray(...v);
+  a.extension = l;
+  return a as CuArray<Form<Location>, Location>;
 }
 
-export function isList<X extends Empty>(v: Form<X>): v is LiteralList<X> {
-  return v.t === "List";
+export function locatedCuObject(
+  v: Array<
+    | KeyValue<Form<Location>, Form<Location>, Form<Location>, Location>
+    | CuSymbol<Location>
+    | Unquote<Form<Location>, Location>
+  >,
+  l: Location,
+): CuObject<
+  Form<Location>,
+  Form<Location>,
+  Form<Location>,
+  Form<Location>,
+  Location
+> {
+  const o = new CuObject(v);
+  o.extension = l;
+  return o;
 }
 
-export function list(...v: Form[]): LiteralList {
-  return { t: "List", v };
+interface ValidCallBrand {
+  readonly _ValidCallBrand: unique symbol;
 }
 
-interface CallBase<X extends Empty = Empty> {
-  t: "List";
-  v: [LiteralCuSymbol<X> | LiteralPropertyAccess<X>, ...Array<Form<X>>];
+export interface Call<X extends Empty = Empty>
+  extends List<Form<X>, X>,
+    ValidCallBrand {}
+
+export function isValidCall<X extends Empty = Empty>(v: Form<X>): v is Call<X> {
+  return (
+    isList(v) &&
+    v.values.length > 0 &&
+    (isCuSymbol(v.values[0]) || isPropertyAccess(v.values[0]))
+  );
 }
 
-export type Call<X extends Empty = Empty> = CallBase<X> & X;
-
-export interface LiteralArrayBase<X extends Empty = Empty> {
-  t: "Array";
-  v: Array<Form<X>>;
-}
-
-export type LiteralArray<X extends Empty = Empty> = LiteralArrayBase<X> & X;
-
-export function isLiteralArray<X extends Empty = Empty>(
-  v: Form<X>,
-): v is LiteralArray<X> {
-  return v.t === "Array";
-}
-
-export interface LiteralObjectBase<X extends Empty = Empty> {
-  t: "Object";
-  v: Array<KeyValue<X> | LiteralCuSymbol<X> | LiteralUnquote<X>>;
-}
-
-export type LiteralObject<X extends Empty = Empty> = LiteralObjectBase<X> & X;
-
-export function isLiteralObject<X extends Empty = Empty>(
-  v: Form<X>,
-): v is LiteralObject<X> {
-  return v.t === "Object";
-}
-
-// TODO: Perhaps key should be either an Atom or LiteralArray;
-export type KeyValue<X extends Empty = Empty> = [Form<X>, Form<X>];
-
-// This is used to see the element of the LiteralObject, that's why its
-// argument is `Form | KeyValue`, unlike the other is* functions.
-export function isKeyValue<X extends Empty = Empty>(
-  v: Form<X> | KeyValue<X>,
-): v is KeyValue<X> {
-  return Array.isArray(v);
+export function functionIdOfCall<X extends Empty = Empty>(
+  v: Call<X>,
+): CuSymbol<X> {
+  return v.values[0] as CuSymbol<X>;
 }
 
 // The `Cu` prefix is only to avoid conflicts with TypeScript's builtin types.
 export type Atom<X extends Empty = Empty> =
-  | LiteralInteger32<X>
-  | LiteralFloat64<X>
-  | LiteralString<X>
+  | Integer32<X>
+  | Float64<X>
+  | CuString<X>
   | ReservedSymbol<X>
-  | LiteralCuSymbol<X>
-  | LiteralPropertyAccess<X>;
+  | CuSymbol<X>
+  | PropertyAccess<X>;
 
-export type LiteralInteger32<X extends Empty = Empty> = {
-  t: "Integer32";
-  v: number;
-} & X;
+export function locatedInteger32(v: number, l: Location): Integer32<Location> {
+  const i = integer32(v);
+  i.extension = l;
+  return i as Integer32<Location>;
+}
 
-export type LiteralFloat64<X extends Empty = Empty> = {
-  t: "Float64";
-  v: number;
-} & X;
+export function locatedFloat64(v: number, l: Location): Float64<Location> {
+  const f = float64(v);
+  f.extension = l;
+  return f as Float64<Location>;
+}
 
-export type LiteralString<X extends Empty = Empty> = {
-  t: "String";
-  v: string;
-} & X;
+export function locatedCuString(v: string, l: Location): CuString<Location> {
+  const s = cuString(v);
+  s.extension = l;
+  return s as CuString<Location>;
+}
 
-export type ReservedSymbol<X extends Empty = Empty> = {
-  t: "ReservedSymbol";
-  v: boolean | null;
-} & X;
-
-export type LiteralCuSymbol<X extends Empty = Empty> = {
-  t: "Symbol";
-  v: string;
-} & X;
-
-export function locatedCuSymbol(
-  v: string,
+export function locatedReservedSymbol(
+  v: boolean | null,
   l: Location,
-): LiteralCuSymbol<Location> {
-  return { ...l, t: "Symbol", v };
+): ReservedSymbol<Location> {
+  const s = reservedSymbol(v);
+  s.extension = l;
+  return s as ReservedSymbol<Location>;
 }
 
-export function cuSymbol(v: string): LiteralCuSymbol {
-  return { t: "Symbol", v };
+export function locatedCuSymbol(v: string, l: Location): CuSymbol<Location> {
+  const s = cuSymbol(v);
+  s.extension = l;
+  return s as CuSymbol<Location>;
 }
 
-export function isCuSymbol<X extends Empty = Empty>(
-  v: Form<X>,
-): v is LiteralCuSymbol<X> {
-  return v.t === "Symbol";
+export function locatedPropertyAccess(
+  v: string[],
+  l: Location,
+): PropertyAccess<Location> {
+  const p = propertyAccess(...v);
+  p.extension = l;
+  return p as PropertyAccess<Location>;
 }
 
-export type LiteralPropertyAccess<X extends Empty = Empty> = X & {
-  t: "PropertyAccess";
-  v: string[];
-};
-
-export function isPropertyAccess<X extends Empty = Empty>(
-  v: Form<X>,
-): v is LiteralPropertyAccess<X> {
-  return v.t === "PropertyAccess";
-}
-
-export function showSymbolAccess(
-  sym: LiteralCuSymbol | LiteralPropertyAccess,
-): string {
-  switch (sym.t) {
-    case "Symbol":
-      return sym.v;
-    case "PropertyAccess":
-      return sym.v.join(".");
-    default:
-      return expectNever(sym) as string;
+export function showSymbolAccess(sym: CuSymbol | PropertyAccess): string {
+  if (isCuSymbol(sym)) {
+    return sym.value;
   }
+  return sym.value.join(".");
 }
 
-export type LiteralUnquote<X extends Empty = Empty> = X & {
-  t: "Unquote";
-  v: Form<X>;
-};
-
-export function isUnquote<X extends Empty = Empty>(
-  v: Form<X>,
-): v is LiteralUnquote<X> {
-  return v.t === "Unquote";
+export function locatedUnquote(
+  v: Form<Location>,
+  l: Location,
+): Unquote<Form<Location>, Location> {
+  const u = unquote(v);
+  u.extension = l;
+  return u as Unquote<Form<Location>, Location>;
 }
 
-export type LiteralSplice<X extends Empty = Empty> = X & {
-  t: "Splice";
-  v: Form<X>;
-};
-
-export function isSplice<X extends Empty = Empty>(
-  v: Form<X>,
-): v is LiteralSplice<X> {
-  return v.t === "Splice";
+export function locatedSplice(
+  v: Form<Location>,
+  l: Location,
+): Splice<Form<Location>, Location> {
+  const s = splice(v);
+  s.extension = l;
+  return s as Splice<Form<Location>, Location>;
 }
 
 export interface ReaderInput {
@@ -192,21 +191,24 @@ export const unknownLocation: Location = Object.freeze({
   f: "THIS_SHOULD_NOT_BE_SHOWN",
 });
 
-export function formatForError(f: Form): string {
+export function formatForError(f: Form | ComputedKey<Form>): string {
   return `\`${formatForErrorUnticked(f)}\``;
 }
 
-export function formatForErrorUnticked(f: Form): string {
-  switch (f.t) {
-    case "List":
-      return `(List${formatForErrorElement(f.v, formatForErrorShallow)})`;
-    case "Array":
-      return `(Array${formatForErrorElement(f.v, formatForErrorShallow)})`;
-    case "Object":
-      return `(Object${formatForErrorElement(f.v, formatForErrorKV)})`;
-    default:
-      return formatForErrorEtc(f);
+function formatForErrorUnticked(f: Form | ComputedKey<Form>): string {
+  if (isList(f)) {
+    return `(List${formatForErrorElement(f.values, formatForErrorShallow)})`;
   }
+  if (isCuArray(f)) {
+    return `(Array${formatForErrorElement(f, formatForErrorShallow)})`;
+  }
+  if (isCuObject(f)) {
+    return `(Object${formatForErrorElement(f.keyValues, formatForErrorKV)})`;
+  }
+  if (isComputedKey(f)) {
+    return `(ComputedKey ${formatForErrorShallow(f.value)})`;
+  }
+  return formatForErrorEtc(f);
 }
 
 function formatForErrorElement<T>(forms: T[], fx: (f: T) => string): string {
@@ -221,47 +223,57 @@ function formatForErrorElement<T>(forms: T[], fx: (f: T) => string): string {
 }
 
 function formatForErrorKV(
-  kv: KeyValue | LiteralCuSymbol | LiteralUnquote,
+  kv: KeyValue<Form, Form, Form> | CuSymbol | Unquote<Form>,
 ): string {
   if (isKeyValue(kv)) {
-    return `${formatForErrorShallow(kv[0])}: ${formatForErrorShallow(kv[1])}`;
+    const value = kv.value;
+    if (isComputedKey(kv.key)) {
+      return `[${formatForErrorShallow(kv.key.value)}]: ${formatForErrorShallow(value)}`;
+    }
+    return `${formatForErrorShallow(kv.key)}: ${formatForErrorShallow(value)}`;
   }
   return formatForErrorShallow(kv);
 }
 
 function formatForErrorShallow(f: Form): string {
-  switch (f.t) {
-    case "List":
-      return `(List ..)`;
-    case "Array":
-      return `(Array ..)`;
-    case "Object":
-      return `(Object ..)`;
-    default:
-      return formatForErrorEtc(f);
+  if (isList(f)) {
+    return `(List ..)`;
   }
+  if (isCuArray(f)) {
+    return `(Array ..)`;
+  }
+  if (isCuObject(f)) {
+    return `(Object ..)`;
+  }
+  return formatForErrorEtc(f);
 }
 
-function formatForErrorEtc(f: Atom | LiteralUnquote | LiteralSplice): string {
-  switch (f.t) {
-    case "Integer32":
-    case "Float64":
-      return `(${f.t} ${f.v})`;
-    case "String":
-      return `(String ${JSON.stringify(f.v)})`;
-    case "ReservedSymbol":
-      return `(ReservedSymbol ${f.v ?? "none"})`;
-    case "Symbol":
-      return `(Symbol ${f.v})`;
-    case "PropertyAccess":
-      return `(PropertyAccess ${f.v.join(".")})`;
-    case "Unquote":
-      return `$${formatForErrorUnticked(f.v)}`;
-    case "Splice":
-      return `..${formatForErrorUnticked(f.v)}`;
-    default:
-      throw ExpectNever(f);
+function formatForErrorEtc(f: Atom | Unquote<Form> | Splice<Form>): string {
+  if (isInteger32(f)) {
+    return `(Integer32 ${String(f)})`;
   }
+  if (isFloat64(f)) {
+    return `(Float64 ${String(f)})`;
+  }
+  if (isCuString(f)) {
+    return `(String ${JSON.stringify(f)})`;
+  }
+  if (isReservedSymbol(f)) {
+    return `(ReservedSymbol ${f.valueOf() ?? "none"})`;
+  }
+  if (isCuSymbol(f)) {
+    return `(Symbol ${f.value})`;
+  }
+  if (isPropertyAccess(f)) {
+    return `(PropertyAccess ${f.value.join(".")})`;
+  }
+  if (isUnquote(f)) {
+    return `$${formatForErrorUnticked(f.value)}`;
+  }
+  if (isSplice(f)) {
+    return `..${formatForErrorUnticked(f.value)}`;
+  }
+  throw ExpectNever(f);
 }
 
 export interface ProvidedSymbolsConfig {
@@ -348,9 +360,7 @@ export const defaultScopeOptions = { isAsync: false, isGenerator: false };
 
 export const defaultAsyncScopeOptions = { isAsync: true, isGenerator: false };
 
-// NOTE: I give up defining this as a unique symbol due to
-// vite's behavior similar to https://github.com/vitejs/vite/issues/9528
-const WriterKindKey = "_cu$WriterKind";
+const WriterKindKey = Symbol("WriterKind");
 export interface AnyWriter<K extends number> {
   readonly [WriterKindKey]: K;
 }
@@ -501,14 +511,26 @@ export type DynamicVarFunction = (
 export interface DynamicVar extends AnyWriter<8> {
   call: DynamicVarFunction;
 }
-export function aDynamicVar(call: DynamicVarFunction): DynamicVar {
-  return { [WriterKindKey]: 8, call };
-}
 export function isDynamicVar(x: Writer): x is DynamicVar {
   return x[WriterKindKey] === 8;
 }
 export function markAsDynamicVar(call: DynamicVarFunction): DynamicVar {
   return { [WriterKindKey]: 8, call };
+}
+
+export type MacroBody = (
+  env: Env,
+  ...forms: Form[]
+) => Awaitable<Form | TranspileError>;
+
+export interface Macro extends AnyWriter<9> {
+  readonly expand: MacroBody;
+}
+export function markAsMacro(expand: MacroBody): Macro {
+  return { [WriterKindKey]: 9, expand };
+}
+export function isMacro(x: Writer): x is Macro {
+  return x[WriterKindKey] === 9;
 }
 
 export type Writer =
@@ -520,7 +542,8 @@ export type Writer =
   | MarkedDirectWriter
   | MarkedFunctionWithEnv
   | ProvidedConst
-  | DynamicVar;
+  | DynamicVar
+  | Macro;
 
 export type CanBePseudoTopLevelReferenced =
   | Var

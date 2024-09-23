@@ -27,6 +27,7 @@
   "homepage": "https://github.com/igrep/custard#readme",
   "devDependencies": {
     "@types/node": "^20.12.7",
+    "@vitest/expect": "^2.1.1",
     "typescript": "^5.4.4",
     "vitest": "^1.4.0"
   },

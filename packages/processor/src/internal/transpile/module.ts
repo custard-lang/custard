@@ -1,23 +1,25 @@
 import * as EnvF from "../env.js";
 import { loadModule } from "../definitions.js";
 import {
-  canBePseudoTopLevelReferenced,
-  type LiteralCuSymbol,
+  type CuSymbol,
   type Env,
-  exportableStatement,
   type Form,
   type Id,
   isCuSymbol,
-  isWriter,
   type JsSrc,
   markAsDirectWriter,
-  ordinaryStatement,
   TranspileError,
+} from "../../types.js";
+import {
+  canBePseudoTopLevelReferenced,
+  ordinaryStatement,
+  isWriter,
+  exportableStatement,
 } from "../types.js";
 import { pseudoTopLevelAssignment } from "../cu-env.js";
 import { transpileExpression } from "../transpile.js";
 
-import { isExportableStatement } from "../../lib/base/common.js";
+import { isExportableStatement } from "../call.js";
 
 export const _cu$import = markAsDirectWriter(
   async (env: Env, ...forms: Form[]): Promise<JsSrc | TranspileError> => {
@@ -26,10 +28,10 @@ export const _cu$import = markAsDirectWriter(
       return moduleId;
     }
 
-    const foundModule = await EnvF.findModule(env, moduleId.v);
+    const foundModule = await EnvF.findModule(env, moduleId.value);
     if (foundModule === undefined) {
       return new TranspileError(
-        `No module \`${moduleId.v}\` registered in the Module Paths`,
+        `No module \`${moduleId.value}\` registered in the Module Paths`,
       );
     }
 
@@ -39,7 +41,7 @@ export const _cu$import = markAsDirectWriter(
       return ns;
     }
 
-    const r = EnvF.set(env, moduleId.v, ns);
+    const r = EnvF.set(env, moduleId.value, ns);
     if (TranspileError.is(r)) {
       return r;
     }
@@ -49,30 +51,30 @@ export const _cu$import = markAsDirectWriter(
         const awaitImportUrl = `await import(${JSON.stringify(foundModule.u)})`;
         if (EnvF.isAtTopLevel(env)) {
           EnvF.setImportedModulesJsId(env, foundModule, {
-            id: moduleId.v,
+            id: moduleId.value,
             isPseudoTopLevel: true,
           });
 
-          return pseudoTopLevelAssignment(moduleId.v, awaitImportUrl);
+          return pseudoTopLevelAssignment(moduleId.value, awaitImportUrl);
         }
 
         EnvF.setImportedModulesJsId(env, foundModule, {
-          id: moduleId.v,
+          id: moduleId.value,
           isPseudoTopLevel: false,
         });
-        return `const ${moduleId.v}=${awaitImportUrl}`;
+        return `const ${moduleId.value}=${awaitImportUrl}`;
       }
       case "module": {
         EnvF.setImportedModulesJsId(env, foundModule, {
-          id: moduleId.v,
+          id: moduleId.value,
           isPseudoTopLevel: false,
         });
 
         const modulePathJson = JSON.stringify(foundModule.r);
         if (EnvF.isAtTopLevel(env)) {
-          return `import * as ${moduleId.v} from ${modulePathJson}`;
+          return `import * as ${moduleId.value} from ${modulePathJson}`;
         }
-        return `const ${moduleId.v}=await import(${modulePathJson})`;
+        return `const ${moduleId.value}=await import(${modulePathJson})`;
       }
     }
   },
@@ -86,10 +88,10 @@ export const importAnyOf = markAsDirectWriter(
       return moduleId;
     }
 
-    const foundModule = await EnvF.findModule(env, moduleId.v);
+    const foundModule = await EnvF.findModule(env, moduleId.value);
     if (foundModule === undefined) {
       return new TranspileError(
-        `No module \`${moduleId.v}\` registered in the Module Paths`,
+        `No module \`${moduleId.value}\` registered in the Module Paths`,
       );
     }
     // TODO: Transpile if the module is a .cstd module
@@ -161,7 +163,7 @@ export const importAnyOf = markAsDirectWriter(
 function validateArgsOfImport(
   forms: Form[],
   formId: Id,
-): TranspileError | LiteralCuSymbol {
+): TranspileError | CuSymbol {
   if (forms.length !== 1) {
     return new TranspileError(
       `The number of arguments of \`${formId}\` must be 1.`,

@@ -22,9 +22,13 @@ export const _cu$instanceof = transpiling2(
 export const _cu$new = markAsDirectWriter(
   async (
     env: Env,
-    klass: Form,
+    klass?: Form,
     ...args: Form[]
   ): Promise<JsSrc | TranspileError> => {
+    if (klass === undefined) {
+      return new TranspileError("`new` must be followed by an expression!");
+    }
+
     const klassSrc = await transpileExpression(klass, env);
     if (TranspileError.is(klassSrc)) {
       return klassSrc;
