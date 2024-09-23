@@ -12,8 +12,8 @@ import {
   locatedCuArray,
   locatedCuObject,
   locatedList,
-  Location,
-  Form,
+  type Location,
+  type Form,
   locatedUnquote,
   locatedSplice,
 } from "@custard-lang/processor/dist/internal/types.js";

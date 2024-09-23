@@ -56,7 +56,7 @@ export {
   keyValue,
   KeyValue,
   isComputedKey,
-  ComputedKey,
+  type ComputedKey,
   computedKey,
   type KeyValueKey,
 } from "./internal/types/key-value.js";

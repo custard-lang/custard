@@ -13,9 +13,9 @@ import {
   type CompleteProvidedSymbolsConfig,
   type TranspileOptions,
   isInteger32,
-  Integer32,
-  Float64,
-  CuString,
+  type Integer32,
+  type Float64,
+  type CuString,
   isFloat64,
   isCuString,
 } from "@custard-lang/processor/dist/types.js";

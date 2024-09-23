@@ -22,9 +22,8 @@ import {
   isCuObject,
   isUnquote,
   isSplice,
-  ComputedKey,
+  type ComputedKey,
   isComputedKey,
-  List,
 } from "../types.js";
 import {
   canBePseudoTopLevelReferenced,

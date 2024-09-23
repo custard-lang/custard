@@ -32,10 +32,10 @@ import {
   isFloat64,
   isCuString,
   isReservedSymbol,
-  Integer32,
-  Float64,
-  CuString,
-  ReservedSymbol,
+  type Integer32,
+  type Float64,
+  type CuString,
+  type ReservedSymbol,
 } from "../types.js";
 import { evalBlock, evalForm } from "../internal/eval.js";
 import { findIdAsJsSrc, srcPathForErrorMessage } from "../internal/env.js";

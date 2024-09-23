@@ -3,10 +3,10 @@ import { type Empty } from "../../util/types.js";
 export class List<T, X extends Empty = Empty> {
   constructor(values: T[]);
   constructor(values: T[], extension: X);
-  // Looks like this is a false positive.
-  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
   constructor(
     public values: T[],
+    // Looks like this is a false positive.
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     public extension: X = {} as X,
   ) {}
 
