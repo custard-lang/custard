@@ -1,7 +1,13 @@
 import * as path from "node:path";
 import { describe, expect, test } from "vitest";
 
-import { type Config, testEvalBlockOf, testEvalFormOf } from "../test.js";
+import {
+  type Config,
+  testEvalBlockOf,
+  testEvalFormOf,
+  testFormAsModule,
+  testFormInRepl,
+} from "../test.js";
 import { withNewPath } from "../test/tmp-file.js";
 import { writeAndEval } from "../test/eval.js";
 
@@ -35,7 +41,7 @@ describe("evalForm", () => {
     modulePaths.set("js", `${standardModuleRoot}/js.js`);
 
     return {
-      options: { srcPath },
+      optionsForRepl: { srcPath },
       providedSymbols: {
         from: srcPath,
         modulePaths,
@@ -50,7 +56,7 @@ describe("evalForm", () => {
     const srcPathForErrorMessage = `${path.normalize(srcPath)}//(REPL)`;
 
     const contents1 = "(plusF 4.1 5.2)";
-    testEvalFormOf({
+    testFormInRepl({
       src: `(meta.readString "${contents1}")`,
       expected: readBlock({
         contents: contents1,
@@ -60,12 +66,21 @@ describe("evalForm", () => {
     });
 
     const contents2 = "(const x 9.2) (plusF 4.1 5.2) (let y 0.1)";
-    testEvalFormOf({
+    testFormInRepl({
       src: `(meta.readString "${contents2}")`,
       expected: readBlock({
         contents: contents2,
         path: srcPathForErrorMessage,
       }),
+      setUpConfig,
+    });
+
+    testFormAsModule({
+      src: '(meta.readString "1")',
+      expected: new TranspileError(
+        "`readString` is NOT currently available except in REPL or a macro definition.",
+      ),
+      fails: true, // TODO
       setUpConfig,
     });
   });
@@ -79,7 +94,7 @@ describe("evalForm", () => {
     const extraOptionsSrc = `{ mayHaveResult: true }`;
 
     test("transpiled source code can be `eval`ed as a JavaScript code 1.", async () => {
-      const { options, providedSymbols } = setUpConfig();
+      const { optionsForRepl: options, providedSymbols } = setUpConfig();
       const env = assertNonError(
         await initializeForRepl(options, providedSymbols),
       );
@@ -99,7 +114,7 @@ describe("evalForm", () => {
     });
 
     test("transpiled source code can be `eval`ed as a JavaScript code 2.", async () => {
-      const { options, providedSymbols } = setUpConfig();
+      const { optionsForRepl: options, providedSymbols } = setUpConfig();
       const env = assertNonError(
         await initializeForRepl(options, providedSymbols),
       );
@@ -120,15 +135,24 @@ describe("evalForm", () => {
   });
 
   describe("meta.evaluate", () => {
-    testEvalFormOf({
+    testFormInRepl({
       src: '(meta.evaluate (meta.readString "(plusF 4.1 5.2)"))',
       expected: 4.1 + 5.2,
       setUpConfig,
     });
 
-    testEvalFormOf({
+    testFormInRepl({
       src: '(meta.evaluate (meta.readString "(const x 9.2) (let y 0.1) (plusF x y)"))',
       expected: 9.2 + 0.1,
+      setUpConfig,
+    });
+
+    testFormAsModule({
+      src: "(meta.evaluate (meta.list))",
+      expected: new TranspileError(
+        "`evaluate` is NOT currently available except in REPL or a macro definition.",
+      ),
+      fails: true, // TODO
       setUpConfig,
     });
   });
@@ -144,6 +168,7 @@ describe("evalForm", () => {
     testEvalBlockOf({
       src: "(meta.macro unless (b f t) (meta.quasiQuote (if (not $b) $f else $t))) (text (unless false 1 2) (unless true 1 2))",
       expected: "12",
+      fails: "asModule", // TODO
       setUpConfig,
     });
   });

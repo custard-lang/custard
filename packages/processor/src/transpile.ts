@@ -19,9 +19,10 @@ export async function transpileModule(
   if (env instanceof Error) {
     return env;
   }
-  const r1 = await transpileBlock(ast, env, extraOptions);
-  if (TranspileError.is(r1)) {
-    return r1;
+
+  const r = await transpileBlock(ast, env, extraOptions);
+  if (TranspileError.is(r)) {
+    return r;
   }
-  return `${env.transpileState.importsSrc}\n${r1}`;
+  return `${env.transpileState.importsSrc}\n${r}`;
 }

@@ -17,7 +17,7 @@ function setUpConfig(): Config {
     jsTopLevels: ["Date", "Object"],
   });
   return {
-    options: defaultTranspileOptions(),
+    optionsForRepl: defaultTranspileOptions(),
     providedSymbols: {
       from: fileOfImportMetaUrl(import.meta.url),
       ...providedSymbols,

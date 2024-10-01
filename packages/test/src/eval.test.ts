@@ -16,7 +16,7 @@ describe("evalBlock", () => {
     const srcPath = fileOfImportMetaUrl(import.meta.url);
 
     return {
-      options: { srcPath },
+      optionsForRepl: { srcPath },
       providedSymbols: {
         from: srcPath,
         modulePaths,

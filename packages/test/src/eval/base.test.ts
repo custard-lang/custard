@@ -1,7 +1,13 @@
 import { describe } from "vitest";
 import * as path from "node:path";
 
-import { type Config, testEvalBlockOf, testEvalFormOf } from "../test.js";
+import {
+  type Config,
+  testEvalBlockOf,
+  testEvalFormOf,
+  testFormAsModule,
+  testFormInRepl,
+} from "../test.js";
 
 import {
   defaultTranspileOptions,
@@ -11,6 +17,7 @@ import {
 import { standardModuleRoot } from "@custard-lang/processor/dist/definitions.js";
 import { implicitlyImporting } from "@custard-lang/processor/dist/provided-symbols-config.js";
 import { fileOfImportMetaUrl } from "@custard-lang/processor/dist/util/path.js";
+import { tmpDir } from "../test/tmp-file.js";
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/restrict-template-expressions, @typescript-eslint/no-unsafe-assignment */
 
@@ -21,7 +28,7 @@ const providedSymbols = {
 
 function setUpConfig(): Config {
   return {
-    options: defaultTranspileOptions(),
+    optionsForRepl: defaultTranspileOptions(),
     providedSymbols,
   };
 }
@@ -215,10 +222,12 @@ describe("evalForm", () => {
       setUpConfig,
     });
     testEvalBlockOf({
-      // TODO: This might be an error
       src: "(const name (fn anotherName (x) (plusF x 9) )) (plusF (name 2) (anotherName 3))",
-      expected: 23,
+      expected: new TranspileError(
+        "No variable `anotherName` is defined! NOTE: If you want to define `anotherName` recursively, wrap the declaration(s) with `recursive`.",
+      ),
       setUpConfig,
+      fails: true,
     });
     testEvalFormOf({
       src: "( (fn name) 1 )",
@@ -613,7 +622,7 @@ describe("evalForm", () => {
 
   function setUpConfigOfTranspileOptions(srcPath: FilePath): () => Config {
     return () => ({
-      options: { srcPath },
+      optionsForRepl: { srcPath },
       providedSymbols,
     });
   }
@@ -621,34 +630,44 @@ describe("evalForm", () => {
   describe("cu$thisFile", () => {
     const thisFilePath = fileOfImportMetaUrl(import.meta.url);
     const thisFilePathRelative = path.relative(process.cwd(), thisFilePath);
-    testEvalFormOf({
+    testFormInRepl({
       src: "cu$thisFile",
       expected: path.normalize(thisFilePath),
       setUpConfig: setUpConfigOfTranspileOptions(thisFilePathRelative),
     });
 
-    testEvalFormOf({
+    testFormInRepl({
       src: "cu$thisFile",
       expected: new TranspileError(
         `${process.cwd()} is a directory! \`cu$thisFile\` is only allowed in a file`,
       ),
       setUpConfig: setUpConfigOfTranspileOptions("."),
     });
+
+    // TODO: testFormAsModule
   });
 
   describe("cu$directoryOfThisFile", () => {
     const thisFilePath = fileOfImportMetaUrl(import.meta.url);
     const thisFilePathRelative = path.relative(process.cwd(), thisFilePath);
-    testEvalFormOf({
+    testFormInRepl({
       src: "cu$directoryOfThisFile",
       expected: path.normalize(path.dirname(thisFilePath)),
       setUpConfig: setUpConfigOfTranspileOptions(thisFilePathRelative),
     });
 
-    testEvalFormOf({
+    testFormInRepl({
       src: "cu$directoryOfThisFile",
       expected: process.cwd(),
       setUpConfig: setUpConfigOfTranspileOptions("."),
+    });
+
+    // `testFormAsModule` creates a file  in the project tmp directory
+    // regardless of `thisFilePath`.
+    testFormAsModule({
+      src: "cu$directoryOfThisFile",
+      expected: path.normalize(tmpDir),
+      setUpConfig: setUpConfigOfTranspileOptions(thisFilePathRelative),
     });
   });
 

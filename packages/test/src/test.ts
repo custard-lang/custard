@@ -4,12 +4,10 @@ import { equals, type Tester } from "@vitest/expect";
 import { assertNonError } from "@custard-lang/processor/dist/util/error.js";
 import type { Awaitable } from "@custard-lang/processor/dist/util/types.js";
 
-import { readBlock, readStr } from "@custard-lang/processor/dist/reader.js";
-import { evalBlock, evalForm } from "@custard-lang/processor/dist/eval.js";
-import { initializeForRepl } from "@custard-lang/processor/dist/env.js";
+import { readBlock } from "@custard-lang/processor/dist/reader.js";
+import { evalBlock } from "@custard-lang/processor/dist/eval.js";
 import {
   type Block,
-  type Form,
   type CompleteProvidedSymbolsConfig,
   type TranspileOptions,
   isInteger32,
@@ -19,6 +17,9 @@ import {
   isFloat64,
   isCuString,
 } from "@custard-lang/processor/dist/types.js";
+import { initializeForRepl, transpileModule } from "@custard-lang/processor";
+import { withNewPath } from "./test/tmp-file.js";
+import { writeAndEval } from "./test/eval.js";
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/restrict-template-expressions, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-assignment */
 
@@ -51,55 +52,59 @@ function primitiveFormsAreEqualHelper(
   );
 }
 
+// TODO: Unify into `testForm`
 export function testEvalFormOf({
   src,
   expected,
   only,
   setUpConfig,
+  fails,
 }: {
   src: string;
   expected: any;
-  only?: true | undefined;
+  only?: boolean | "inRepl" | "asModule";
+  fails?: boolean | "inRepl" | "asModule";
   setUpConfig: () => Awaitable<Config>;
 }): void {
-  const t = only ? test.only : test;
-  t(`\`${src}\` => ${JSON.stringify(expected)}`, async () => {
-    const c = setUpConfig();
-    const { options, providedSymbols } = c instanceof Promise ? await c : c;
-    const env = assertNonError(
-      await initializeForRepl(options, providedSymbols),
-    );
-    const result = await evalForm(
-      assertNonError(readStr({ contents: src, path: "test" }) as Form),
-      env,
-    );
-    if (!(expected instanceof Error) && result instanceof Error) {
-      throw result;
-    }
-    expect(result).toEqual(expected);
-  });
+  const inReplOptions = {
+    src,
+    expected,
+    only: only === "inRepl" || only === true,
+    fails: fails === "inRepl" || fails === true,
+    setUpConfig,
+  };
+  const asModuleOptions = {
+    src,
+    expected,
+    only: only === "asModule" || only === true,
+    fails: fails === "asModule" || fails === true,
+    setUpConfig,
+  };
+  testFormInRepl(inReplOptions);
+  testFormAsModule(asModuleOptions);
 }
 
-export function testEvalBlockOf({
+export function testFormInRepl({
   src,
   expected,
   only,
+  fails,
   setUpConfig,
 }: {
   src: string;
   expected: any;
-  only?: true | undefined;
+  only?: boolean;
+  fails?: boolean;
   setUpConfig: () => Awaitable<Config>;
 }): void {
-  const t = only ? test.only : test;
-  t(`\`${src}\` => ${JSON.stringify(expected)}`, async () => {
-    const c = setUpConfig();
-    const { options, providedSymbols } = c instanceof Promise ? await c : c;
+  const t = fails ? test.fails : only ? test.only : test;
+  t(`\`${src}\` =(evalBlock)=> ${JSON.stringify(expected)}`, async () => {
+    const { optionsForRepl: options, providedSymbols } = await setUpConfig();
     const env = assertNonError(
       await initializeForRepl(options, providedSymbols),
     );
     const result = await evalBlock(
-      assertNonError(readBlock({ contents: src, path: "test" }) as Block),
+      assertNonError(readBlock({ contents: src, path: "test" })) as Block,
       env,
     );
     if (!(expected instanceof Error) && result instanceof Error) {
@@ -109,7 +114,44 @@ export function testEvalBlockOf({
   });
 }
 
+export function testFormAsModule({
+  src,
+  expected,
+  only,
+  fails,
+  setUpConfig,
+}: {
+  src: string;
+  expected: any;
+  only?: boolean;
+  fails?: boolean;
+  setUpConfig: () => Awaitable<Config>;
+}): void {
+  const t = fails ? test.fails : only ? test.only : test;
+  t(`\`${src}\` =(transpileModule)=> ${JSON.stringify(expected)}`, async () => {
+    const { providedSymbols } = await setUpConfig();
+    await withNewPath(async ({ src: srcPath, dest }) => {
+      const jsSrc = await transpileModule(
+        assertNonError(readBlock({ contents: src, path: srcPath })) as Block,
+        { srcPath },
+        providedSymbols,
+        { mayHaveResult: true },
+      );
+      if (expected instanceof Error) {
+        expect(jsSrc).toEqual(expected);
+        return;
+      }
+
+      const result = await writeAndEval(dest, assertNonError(jsSrc));
+      expect(result).toEqual(expected);
+    });
+  });
+}
+
+// TODO: Unify into `testForm`
+export const testEvalBlockOf = testEvalFormOf;
+
 export interface Config {
-  options: TranspileOptions;
+  optionsForRepl: TranspileOptions;
   providedSymbols: CompleteProvidedSymbolsConfig;
 }

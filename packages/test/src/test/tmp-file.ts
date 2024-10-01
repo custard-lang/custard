@@ -11,7 +11,10 @@ import { projectRootFromImportMetaUrl } from "@custard-lang/processor/dist/util/
 
 let count = 0;
 
-const tmpDir = [projectRootFromImportMetaUrl(import.meta.url), "tmp"].join("/");
+export const tmpDir = [
+  projectRootFromImportMetaUrl(import.meta.url),
+  "tmp",
+].join("/");
 
 export interface SrcAndDestPaths {
   src: FilePath;
