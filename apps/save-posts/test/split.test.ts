@@ -10,17 +10,22 @@ import * as iso8601ForFs from "../src/iso8601ForFs.mjs";
 
 describe("split.cstd", () => {
   beforeAll(() => {
-    execFileSync(os.platform() === "win32" ? "npm.cmd" : "npm", [
-      "--prefix=../../",
-      "run",
-      "--",
-      "custard",
-      "transpile",
-      "-p",
-      "./apps/save-posts/.provided-symbols.cstd",
-      "./apps/save-posts/src/split.cstd",
-      "./apps/save-posts/src/iso8601ForFs.cstd",
-    ]);
+    const isWindows = os.platform() === "win32";
+    execFileSync(
+      isWindows ? "npm.cmd" : "npm",
+      [
+        "--prefix=../../",
+        "run",
+        "--",
+        "custard",
+        "transpile",
+        "-p",
+        "./apps/save-posts/.provided-symbols.cstd",
+        "./apps/save-posts/src/split.cstd",
+        "./apps/save-posts/src/iso8601ForFs.cstd",
+      ],
+      { shell: isWindows },
+    );
   });
 
   const postCount = 45;
