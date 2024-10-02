@@ -106,6 +106,7 @@ REPLとmoduleで大きく設計を変えないといけないようだ。具体�
     - [x] inernal/transpile/module.test.ts に`transpileModule`を使ったテストがあるので、そこでやっていることを`test.ts`のユーティリティー（`testEvalBlockOf`・`testEvalFormOf`）にまとめる
         - `meta.test.ts`で使っている`withNewPath`と`writaAndEval`も使えるかな？
     - [x] `testEvalBlockOf`と`testEvalFormOf`を一つにしてそれらしい名前にする
+- [ ] split.test.ts は実装と共に削除した方がよさそう。多分今後も使わない（あるいはテストを修正する）
 - [ ] moduleの循環import検出
     - やはり処理が重たいらしいので必要なときだけONするよう設定したい
 - [ ] 1文字プロパティー名をやめる: プロパティー名のminifyは別のレイヤーでやる
