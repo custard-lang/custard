@@ -1,7 +1,7 @@
 import { describe } from "vitest";
 
-import { testEvalBlockOf, testEvalFormOf } from "../test.js";
-import type { Config } from "../test.js";
+import { testEvalBlockOf, testEvalFormOf } from "../helpers.js";
+import type { Config } from "../helpers.js";
 
 import {
   type ModulePaths,

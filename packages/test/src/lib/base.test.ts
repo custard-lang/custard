@@ -7,7 +7,7 @@ import {
   testEvalFormOf,
   testFormAsModule,
   testFormInRepl,
-} from "../test.js";
+} from "../helpers.js";
 
 import {
   defaultTranspileOptions,
@@ -17,7 +17,7 @@ import {
 import { standardModuleRoot } from "@custard-lang/processor/dist/definitions.js";
 import { implicitlyImporting } from "@custard-lang/processor/dist/provided-symbols-config.js";
 import { fileOfImportMetaUrl } from "@custard-lang/processor/dist/util/path.js";
-import { tmpDir } from "../test/tmp-file.js";
+import { tmpDir } from "../helpers/tmp-file.js";
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/restrict-template-expressions, @typescript-eslint/no-unsafe-assignment */
 

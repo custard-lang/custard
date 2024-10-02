@@ -1,6 +1,6 @@
 import { describe } from "vitest";
 
-import { type Config, testEvalBlockOf } from "./test.js";
+import { type Config, testEvalBlockOf } from "./helpers.js";
 
 import { standardModuleRoot } from "@custard-lang/processor/dist/definitions.js";
 import { type ModulePaths } from "@custard-lang/processor/dist/types.js";

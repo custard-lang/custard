@@ -7,9 +7,9 @@ import {
   testEvalFormOf,
   testFormAsModule,
   testFormInRepl,
-} from "../test.js";
-import { withNewPath } from "../test/tmp-file.js";
-import { writeAndEval } from "../test/eval.js";
+} from "../helpers.js";
+import { withNewPath } from "../helpers/tmp-file.js";
+import { writeAndEval } from "../helpers/eval.js";
 
 import { assertNonError } from "@custard-lang/processor/dist/util/error.js";
 
