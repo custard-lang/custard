@@ -3,8 +3,7 @@ import { describe, expect, test } from "vitest";
 
 import {
   type Config,
-  testEvalBlockOf,
-  testEvalFormOf,
+  testForm,
   testFormAsModule,
   testFormInRepl,
 } from "../helpers.js";
@@ -156,14 +155,14 @@ describe("evalForm", () => {
   });
 
   describe("meta.macro", () => {
-    testEvalFormOf({
+    testForm({
       src: "(meta.macro (b f t) (meta.quasiQuote (if (not $b) then $f else $t)))",
       expected: new TranspileError(
         "meta.macro needs a name of the macro as a symbol, but got `(List (Symbol b) ...)`",
       ),
       setUpConfig,
     });
-    testEvalBlockOf({
+    testForm({
       src: "(meta.macro unless (b f t) (meta.quasiQuote (if (not $b) $f else $t))) (text (unless false 1 2) (unless true 1 2))",
       expected: "12",
       fails: "asModule", // TODO
@@ -172,7 +171,7 @@ describe("evalForm", () => {
   });
 
   describe("meta.quote", () => {
-    testEvalBlockOf({
+    testForm({
       src: "(const xs []) (const y 10) (meta.quote (plusF 4.1 $y ...$xs a.b.c))",
       expected: meta_.list<Form>(
         meta_.symbol("plusF"),
@@ -186,7 +185,7 @@ describe("evalForm", () => {
   });
 
   describe("meta.quasiQuote", () => {
-    testEvalFormOf({
+    testForm({
       src: '(meta.quasiQuote ((const x 9.2)\n(let y (minusF 10 (timesF "3"))) [x\n(dividedByF) () [] { x: y y }] ))',
       expected: meta_.list<Form>(
         meta_.list<Form>(
@@ -220,7 +219,7 @@ describe("evalForm", () => {
       setUpConfig,
     });
 
-    testEvalBlockOf({
+    testForm({
       src: `(let v1 (meta.symbol "varName"))(meta.quasiQuote ((const x $v1)\n(let y (minusF 10 (timesF $v1))) [x\n(dividedByF) [] { x: y $v1 }] ))`,
       expected: meta_.list<Form>(
         meta_.list(
@@ -253,7 +252,7 @@ describe("evalForm", () => {
       setUpConfig,
     });
 
-    testEvalBlockOf({
+    testForm({
       src: '(const vars [(meta.symbol "varName") "varName2" 9 {}]) (meta.quasiQuote (const xs [12 ...$vars]))',
       expected: meta_.list<Form>(
         meta_.symbol("const"),

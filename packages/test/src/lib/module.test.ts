@@ -1,6 +1,6 @@
 import { describe } from "vitest";
 
-import { testEvalBlockOf } from "../helpers.js";
+import { testForm } from "../helpers.js";
 import type { Config } from "../helpers.js";
 
 import { type ModulePaths } from "@custard-lang/processor/dist/types.js";
@@ -26,13 +26,13 @@ describe("evalBlock", () => {
     };
   }
 
-  testEvalBlockOf({
+  testForm({
     src: "(import a) a.a",
     expected: "Module A",
     setUpConfig,
   });
 
-  testEvalBlockOf({
+  testForm({
     src: "(export (const b 1) (const c (plusF b 1))) c",
     expected: 2,
     setUpConfig,

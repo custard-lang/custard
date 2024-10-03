@@ -1,6 +1,6 @@
 import { describe } from "vitest";
 
-import { type Config, testEvalBlockOf } from "./helpers.js";
+import { type Config, testForm } from "./helpers.js";
 
 import { standardModuleRoot } from "@custard-lang/processor/dist/definitions.js";
 import { type ModulePaths } from "@custard-lang/processor/dist/types.js";
@@ -27,13 +27,13 @@ describe("evalBlock", () => {
   }
 
   describe("structuredClone, provided by `jsTopLevels`", () => {
-    testEvalBlockOf({
+    testForm({
       src: "(const a { p: 1 }) (notEquals a (structuredClone a))",
       expected: true,
       setUpConfig,
     });
 
-    testEvalBlockOf({
+    testForm({
       src: "(const a { p: 1 }) (const b (structuredClone a)) (equals a.p b.p)",
       expected: true,
       setUpConfig,

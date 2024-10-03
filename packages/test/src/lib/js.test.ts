@@ -1,5 +1,5 @@
 import { describe } from "vitest";
-import { type Config, testEvalBlockOf, testEvalFormOf } from "../helpers.js";
+import { type Config, testForm } from "../helpers.js";
 
 import { defaultTranspileOptions } from "@custard-lang/processor/dist/types.js";
 import { standardModuleRoot } from "@custard-lang/processor/dist/definitions.js";
@@ -26,12 +26,12 @@ function setUpConfig(): Config {
 }
 
 describe("evalForm", () => {
-  testEvalFormOf({
+  testForm({
     src: "(instanceof (new Date) Date)",
     expected: true,
     setUpConfig,
   });
-  testEvalFormOf({
+  testForm({
     src: "(instanceof (new Object) Date)",
     expected: false,
     setUpConfig,
@@ -39,7 +39,7 @@ describe("evalForm", () => {
 });
 
 describe("evalBlock", () => {
-  testEvalBlockOf({
+  testForm({
     src: "(const bd (new Date 2022 3 16)) (bd.getYear)",
     expected: 122,
     setUpConfig,

@@ -1,6 +1,6 @@
 import { describe } from "vitest";
 
-import { testEvalBlockOf, testEvalFormOf } from "../helpers.js";
+import { testForm } from "../helpers.js";
 import type { Config } from "../helpers.js";
 
 import {
@@ -32,17 +32,17 @@ describe("evalForm", () => {
   }
 
   describe("async.scope", () => {
-    testEvalFormOf({
+    testForm({
       src: "(async.scope (plusF 4.1 5.2))",
       expected: 9.3,
       setUpConfig,
     });
-    testEvalFormOf({
+    testForm({
       src: "(async.scope (async.await (Promise.resolve 5)))",
       expected: 5,
       setUpConfig,
     });
-    testEvalFormOf({
+    testForm({
       src: "(async.scope (forEach _unused [] (async.await (Promise.resolve 0))) (async.await (Promise.resolve 10)))",
       expected: 10,
       setUpConfig,
@@ -50,12 +50,12 @@ describe("evalForm", () => {
   });
 
   describe("async.fn", () => {
-    testEvalFormOf({
+    testForm({
       src: "((async.fn (x) (plusF x 5.2)) 4.1)",
       expected: 9.3,
       setUpConfig,
     });
-    testEvalFormOf({
+    testForm({
       src: "((async.fn () (while false (async.await (Promise.resolve 0))) (async.await (Promise.resolve 10))))",
       expected: 10,
       setUpConfig,
@@ -63,12 +63,12 @@ describe("evalForm", () => {
   });
 
   describe("async.procedure", () => {
-    testEvalFormOf({
+    testForm({
       src: "((async.procedure (x) (plusF x 5.2)) 4.1)",
       expected: undefined,
       setUpConfig,
     });
-    testEvalFormOf({
+    testForm({
       src: "((async.procedure () (for (let i 0) false true (async.await (Promise.resolve 0))) (return (async.await (Promise.resolve 10)))))",
       expected: 10,
       setUpConfig,
@@ -76,7 +76,7 @@ describe("evalForm", () => {
   });
 
   describe("async.generatorFn", () => {
-    testEvalBlockOf({
+    testForm({
       src: "(const f (async.generatorFn (xs) (async.forEach x xs (yield x)))) (let r 0) (async.forEach x (f [1]) (assign r (plusF r x))) r",
       expected: 1,
       setUpConfig,
@@ -84,12 +84,12 @@ describe("evalForm", () => {
   });
 
   describe("async.await", () => {
-    testEvalFormOf({
+    testForm({
       src: "(async.await (Promise.resolve 5))",
       expected: 5,
       setUpConfig,
     });
-    testEvalFormOf({
+    testForm({
       src: "(scope (async.await (Promise.resolve 5)))",
       expected: new TranspileError(
         "`async.await` in a non-async function or scope is not allowed.",
@@ -99,12 +99,12 @@ describe("evalForm", () => {
   });
 
   describe("async.forEach", () => {
-    testEvalBlockOf({
+    testForm({
       src: "(let r 1) (async.forEach x ((async.generatorFn () (yield (async.await (Promise.resolve 0))))) (assign r (timesF r x))) r",
       expected: 0,
       setUpConfig,
     });
-    testEvalBlockOf({
+    testForm({
       src: "(scope (async.forEach x ((async.generatorFn () (yield (async.await (Promise.resolve 0)))))))",
       expected: new TranspileError(
         "`async.forEach` in a non-async function or scope is not allowed.",

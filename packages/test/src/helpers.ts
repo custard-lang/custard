@@ -52,8 +52,7 @@ function primitiveFormsAreEqualHelper(
   );
 }
 
-// TODO: Unify into `testForm`
-export function testEvalFormOf({
+export function testForm({
   src,
   expected,
   only,
@@ -147,9 +146,6 @@ export function testFormAsModule({
     });
   });
 }
-
-// TODO: Unify into `testForm`
-export const testEvalBlockOf = testEvalFormOf;
 
 export interface Config {
   optionsForRepl: TranspileOptions;
