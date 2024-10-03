@@ -78,9 +78,8 @@ describe("evalForm", () => {
     testFormAsModule({
       src: '(meta.readString "1")',
       expected: new TranspileError(
-        "`readString` is NOT currently available except in REPL or a macro definition.",
+        "`meta.readString` is NOT currently available except in REPL or a macro definition.",
       ),
-      fails: true, // TODO
       setUpConfig,
     });
   });
@@ -150,9 +149,8 @@ describe("evalForm", () => {
     testFormAsModule({
       src: "(meta.evaluate (meta.list))",
       expected: new TranspileError(
-        "`evaluate` is NOT currently available except in REPL or a macro definition.",
+        "`meta.evaluate` is NOT currently available except in REPL or a macro definition.",
       ),
-      fails: true, // TODO
       setUpConfig,
     });
   });

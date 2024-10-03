@@ -164,17 +164,15 @@ async function transpileExpressionWithNextCall(
 
     const { writer, sym } = nc;
     if (isContextualKeyword(writer)) {
+      const symbolAcessSrc = showSymbolAccess(sym);
       return new TranspileError(
-        `\`${showSymbolAccess(sym)}\` must be used with \`${
-          writer.companion
-        }\`!`,
+        `\`${symbolAcessSrc}\` must be used with \`${writer.companion}\`!`,
       );
     }
     if (isNamespace(writer)) {
+      const symbolAcessSrc = showSymbolAccess(sym);
       return new TranspileError(
-        `\`${showSymbolAccess(
-          sym,
-        )}\` is just a namespace. Doesn't represent a function!`,
+        `\`${symbolAcessSrc}\` is just a namespace. Doesn't represent a function!`,
       );
     }
 
@@ -190,6 +188,13 @@ async function transpileExpressionWithNextCall(
       return [`${funcSrc}(${argsSrc})`, null];
     }
     if (isMarkedFunctionWithEnv(writer)) {
+      if (env.transpileState.mode !== "repl") {
+        const symbolAcessSrc = showSymbolAccess(sym);
+        return new TranspileError(
+          `\`${symbolAcessSrc}\` is NOT currently available except in REPL or a macro definition.`,
+        );
+      }
+
       const argsSrc = await transpileJoinWithComma(args, env);
       if (TranspileError.is(argsSrc)) {
         return argsSrc;
