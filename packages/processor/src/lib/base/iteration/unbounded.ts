@@ -1,6 +1,6 @@
 import * as EnvF from "../../../internal/env.js";
 import {
-  transpileBlock,
+  transpileStatements,
   transpileExpression,
 } from "../../../internal/transpile.js";
 import {
@@ -8,7 +8,9 @@ import {
   type Env,
   type Form,
   isCuSymbol,
+  ktvalOther,
   type JsSrc,
+  type Ktvals,
   markAsDirectWriter,
   showSymbolAccess,
   functionIdOfCall,
@@ -27,7 +29,7 @@ export const _cu$while = markAsDirectWriter(
     env: Env,
     bool?: Form,
     ...rest: Block
-  ): Promise<JsSrc | TranspileError> => {
+  ): Promise<Ktvals<JsSrc> | TranspileError> => {
     if (bool === undefined) {
       return new TranspileError(
         "No conditional expression given to a `while` statement!",
@@ -48,13 +50,19 @@ export const _cu$while = markAsDirectWriter(
 
     EnvF.pushInherited(env);
 
-    const statementsSrc = await transpileBlock(rest, env);
+    const statementsSrc = await transpileStatements(rest, env);
     if (TranspileError.is(statementsSrc)) {
       return statementsSrc;
     }
 
     EnvF.pop(env);
-    return `while(${boolSrc}){${statementsSrc}}`;
+    return [
+      ktvalOther("while("),
+      ...boolSrc,
+      ktvalOther("){"),
+      ...statementsSrc,
+      ktvalOther("}"),
+    ];
   },
   ordinaryStatement,
 );
@@ -66,7 +74,7 @@ export const _cu$for = markAsDirectWriter(
     bool?: Form,
     final?: Form,
     ...rest: Block
-  ): Promise<JsSrc | TranspileError> => {
+  ): Promise<Ktvals<JsSrc> | TranspileError> => {
     EnvF.pushInherited(env);
 
     if (initialStatement === undefined) {
@@ -109,27 +117,49 @@ export const _cu$for = markAsDirectWriter(
     if (TranspileError.is(finalSrc)) {
       return finalSrc;
     }
-    const statementsSrc = await transpileBlock(rest, env);
+    const statementsSrc = await transpileStatements(rest, env);
     if (TranspileError.is(statementsSrc)) {
       return statementsSrc;
     }
 
     EnvF.pop(env);
-    return `for(${initialStatementSrc};${boolSrc};${finalSrc}){${statementsSrc}}`;
+    return [
+      ktvalOther("for("),
+      ...initialStatementSrc,
+      ktvalOther(";"),
+      ...boolSrc,
+      ktvalOther(";"),
+      ...finalSrc,
+      ktvalOther("){"),
+      ...statementsSrc,
+      ktvalOther("}"),
+    ];
   },
   ordinaryStatement,
 );
 
 export const forEach = markAsDirectWriter(
   buildForEach(
-    (assignee: JsSrc, iterableSrc: JsSrc, statementsSrc: JsSrc): JsSrc =>
-      `for(const ${assignee} of ${iterableSrc}){${statementsSrc}}`,
+    (
+      assignee: JsSrc,
+      iterableSrc: Ktvals<JsSrc>,
+      statementsSrc: Ktvals<JsSrc>,
+    ): Ktvals<JsSrc> => [
+      ktvalOther(`for (const ${assignee} of `),
+      ...iterableSrc,
+      ktvalOther("){"),
+      ...statementsSrc,
+      ktvalOther("}"),
+    ],
   ),
   ordinaryStatement,
 );
 
 export const recursive = markAsDirectWriter(
-  async (env: Env, ...consts: Block): Promise<JsSrc | TranspileError> => {
+  async (
+    env: Env,
+    ...consts: Block
+  ): Promise<Ktvals<JsSrc> | TranspileError> => {
     if (consts.length < 1) {
       return new TranspileError("No `const` statements given to `recursive`!");
     }
@@ -161,7 +191,7 @@ export const recursive = markAsDirectWriter(
       }
     }
 
-    return await transpileBlock(consts, env);
+    return await transpileStatements(consts, env);
   },
   ordinaryStatement,
 );

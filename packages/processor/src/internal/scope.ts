@@ -1,8 +1,10 @@
 import { _cu$export, _cu$import, importAnyOf } from "./transpile/module.js";
 import {
   aProvidedConst,
+  ktvalOther,
   type Id,
   type JsSrc,
+  type Ktvals,
   type Scope,
   type ScopeOptions,
   type Writer,
@@ -33,12 +35,12 @@ export function destroy({ definitions }: Scope, id: Id): void {
 
 export function tmpVarOf(
   scope: Scope,
-  exp: JsSrc,
-): { statement: JsSrc; id: Id } {
+  exp: Ktvals<JsSrc>,
+): { statement: Ktvals<JsSrc>; id: Id } {
   const id = `_cu$t$${scope.temporaryVariablesCount++}`;
   return {
     id,
-    statement: `const ${id}=${exp};\n`,
+    statement: [ktvalOther(`const ${id}=`), ...exp, ktvalOther(";\n")],
   };
 }
 

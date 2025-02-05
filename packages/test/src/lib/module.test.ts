@@ -7,6 +7,8 @@ import { type ModulePaths } from "@custard-lang/processor/dist/types.js";
 import { standardModuleRoot } from "@custard-lang/processor/dist/definitions.js";
 import { fileOfImportMetaUrl } from "@custard-lang/processor/dist/util/path.js";
 
+// TODO: Move this to internal/transpile/module.test.ts
+
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/restrict-template-expressions */
 
 describe("evalBlock", () => {

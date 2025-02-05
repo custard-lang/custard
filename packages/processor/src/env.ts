@@ -9,7 +9,8 @@ import { init, readerInputOf } from "./internal/env.js";
 import { transpileString } from "./internal/transpile.js";
 import { transpileModule, transpileRepl } from "./internal/transpile-state.js";
 import type { TranspileModule, TranspileRepl } from "./internal/types.js";
-import { evalString } from "./internal/eval.js";
+import { evalString } from "./eval.js";
+import { _cu$eval } from "./internal/isolated-eval.js";
 export { readerInputOf } from "./internal/env.js";
 
 export async function initializeForModule(
@@ -26,6 +27,7 @@ export async function initializeForModule(
     return imports;
   }
   env.transpileState.importsSrc = imports;
+  await _cu$eval(imports, [], env);
   return env;
 }
 
@@ -43,5 +45,6 @@ export async function initializeForRepl(
   if (r instanceof Error) {
     return r;
   }
+
   return env;
 }

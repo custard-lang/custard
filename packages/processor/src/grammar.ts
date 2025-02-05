@@ -300,7 +300,11 @@ function symbolOrPropertyAccess(
         );
       }
       if (parts.length > 1) {
-        return locatedPropertyAccess(parts, { l, c, f });
+        return locatedPropertyAccess(parts as [string, ...string[]], {
+          l,
+          c,
+          f,
+        });
       }
       return locatedCuSymbol(v, { l, c, f });
     }

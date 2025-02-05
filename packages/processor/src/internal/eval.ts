@@ -1,52 +1,36 @@
-import { type Env, type ReaderInput, type TranspileRepl } from "./types.js";
-import { type Block, type Form } from "../types.js";
-import { transpileBlockCore, transpileExpression } from "./transpile.js";
+import { type Env, type TranspileRepl } from "./types.js";
+import { type Form, type Block } from "../types.js";
 import { _cu$eval } from "./isolated-eval.js";
 
-import { ParseError } from "../grammar.js";
-import { readBlock } from "../reader.js";
+import { transpileBlockCore } from "./transpile.js";
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-return */
 
-// TODO: Delete
 export async function evalForm(
-  ast: Form,
+  form: Form,
   env: Env<TranspileRepl>,
 ): Promise<any | Error> {
-  const jsSrc = await transpileExpression(ast, env);
-  if (jsSrc instanceof Error) {
-    return jsSrc;
-  }
-  try {
-    return await _cu$eval("", jsSrc, env);
-  } catch (e) {
-    return e;
-  }
+  return await evalBlock([form], env);
 }
 
 export async function evalBlock(
   forms: Block,
   env: Env<TranspileRepl>,
 ): Promise<any | Error> {
-  const jsMod = await transpileBlockCore(forms, env, { mayHaveResult: true });
-  if (jsMod instanceof Error) {
-    return jsMod;
+  const resultKtvalsOffset = await transpileBlockCore(forms, env, {
+    mayHaveResult: true,
+  });
+
+  if (resultKtvalsOffset instanceof Error) {
+    return resultKtvalsOffset;
   }
 
-  try {
-    return await _cu$eval(jsMod[0], jsMod[1], env);
-  } catch (e) {
-    return e;
-  }
-}
-
-export async function evalString(
-  input: ReaderInput,
-  env: Env<TranspileRepl>,
-): Promise<any | Error> {
-  const forms = readBlock(input);
-  if (ParseError.is(forms)) {
-    return forms;
-  }
-  return await evalBlock(forms, env);
+  const notYetEvaluatedBeforeLastStatement =
+    env.transpileState.transpiledSrc.slice(
+      env.transpileState.evaluatedUpTo,
+      resultKtvalsOffset,
+    );
+  const lastStatement =
+    env.transpileState.transpiledSrc.slice(resultKtvalsOffset);
+  return await _cu$eval(notYetEvaluatedBeforeLastStatement, lastStatement, env);
 }

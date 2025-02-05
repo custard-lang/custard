@@ -8,16 +8,19 @@ import { readBlock } from "@custard-lang/processor/dist/reader.js";
 import { transpileBlock } from "@custard-lang/processor/dist/internal/transpile.js";
 import { transpileModule } from "@custard-lang/processor/dist/internal/transpile-state.js";
 import {
-  type Block,
   type Env,
   isNamespace,
-  type JsSrc,
   type ModulePaths,
-  TranspileError,
 } from "@custard-lang/processor/dist/internal/types.js";
-import { cuSymbol } from "@custard-lang/processor/dist/types.js";
+import {
+  TranspileError,
+  type Block,
+  type JsSrc,
+  cuSymbol,
+} from "@custard-lang/processor/dist/types.js";
 import { fileOfImportMetaUrl } from "@custard-lang/processor/dist/util/path.js";
 import { standardModuleRoot } from "@custard-lang/processor/dist/internal/definitions.js";
+import { transpileKtvalsForModule } from "@custard-lang/processor/dist/internal/isolated-eval.js";
 
 describe("transpileBlock", () => {
   const subject = async (
@@ -35,17 +38,25 @@ describe("transpileBlock", () => {
       implicitStatements: "",
       jsTopLevels: [],
     });
-
     const srcPath = fileOfImportMetaUrl(import.meta.url);
-    const env = EnvF.init(transpileModule({ srcPath }), {
+    const completeProvidedSymbolsConfig = {
       from: srcPath,
       ...providedSymbolsConfig,
-    });
-    const jsSrc = await transpileBlock(
-      assertNonError(readBlock({ contents, path: srcPath })) as Block,
-      env,
+    };
+
+    const inputBlock = assertNonError(
+      readBlock({ contents, path: srcPath }),
+    ) as Block;
+    const options = { srcPath };
+    const env = EnvF.init(
+      transpileModule(options),
+      completeProvidedSymbolsConfig,
     );
-    return [jsSrc, env];
+    const jsSrc = await transpileBlock(inputBlock, env);
+    if (TranspileError.is(jsSrc)) {
+      return [jsSrc, env];
+    }
+    return [transpileKtvalsForModule(jsSrc, env), env];
   };
 
   describe("(import id)", () => {
@@ -96,14 +107,14 @@ describe("transpileBlock", () => {
 
   describe("export id or declarations", () => {
     test("can export several from const/let declarations", async () => {
-      const [jsMod, _env] = await subject(
+      const [jsMod] = await subject(
         "(importAnyOf base)(export (const a 1) (const b 2) (let c 3))",
       );
       const src = assertNonError(jsMod) as JsSrc;
       const imports =
         'import{standardModuleRoot}from"@custard-lang/processor/dist/lib/base.js";\n;\n';
       expect(src.trim()).toEqual(
-        `${imports}export const a=1;\nexport const b=2;\nexport let c=3;\n;`,
+        `${imports}export const a=1;\nexport const b=2;\nexport let c=3;`,
       );
     });
 

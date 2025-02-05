@@ -15,14 +15,21 @@ import {
   ordinaryStatement,
   isWriter,
   exportableStatement,
+  type Ktvals,
+  ktvalImport,
+  ktvalOther,
+  ktvalImportStartAs,
+  ktvalExport,
 } from "../types.js";
-import { pseudoTopLevelAssignment } from "../cu-env.js";
 import { transpileExpression } from "../transpile.js";
 
 import { isExportableStatement } from "../call.js";
 
 export const _cu$import = markAsDirectWriter(
-  async (env: Env, ...forms: Form[]): Promise<JsSrc | TranspileError> => {
+  async (
+    env: Env,
+    ...forms: Form[]
+  ): Promise<Ktvals<JsSrc> | TranspileError> => {
     const moduleId = validateArgsOfImport(forms, "import");
     if (TranspileError.is(moduleId)) {
       return moduleId;
@@ -46,43 +53,41 @@ export const _cu$import = markAsDirectWriter(
       return r;
     }
 
+    const isTopLevel = EnvF.isAtTopLevel(env);
+    EnvF.setImportedModulesJsId(env, foundModule, {
+      id: moduleId.value,
+      isTopLevel,
+    });
+
+    if (isTopLevel) {
+      return [ktvalImportStartAs(foundModule.u, foundModule.r, moduleId.value)];
+    }
+
+    let specifier: string;
     switch (env.transpileState.mode) {
       case "repl": {
-        const awaitImportUrl = `await import(${JSON.stringify(foundModule.u)})`;
-        if (EnvF.isAtTopLevel(env)) {
-          EnvF.setImportedModulesJsId(env, foundModule, {
-            id: moduleId.value,
-            isPseudoTopLevel: true,
-          });
-
-          return pseudoTopLevelAssignment(moduleId.value, awaitImportUrl);
-        }
-
-        EnvF.setImportedModulesJsId(env, foundModule, {
-          id: moduleId.value,
-          isPseudoTopLevel: false,
-        });
-        return `const ${moduleId.value}=${awaitImportUrl}`;
+        specifier = foundModule.u;
+        break;
       }
       case "module": {
-        EnvF.setImportedModulesJsId(env, foundModule, {
-          id: moduleId.value,
-          isPseudoTopLevel: false,
-        });
-
-        const modulePathJson = JSON.stringify(foundModule.r);
-        if (EnvF.isAtTopLevel(env)) {
-          return `import * as ${moduleId.value} from ${modulePathJson}`;
-        }
-        return `const ${moduleId.value}=await import(${modulePathJson})`;
+        specifier = foundModule.r;
+        break;
       }
     }
+    return [
+      ktvalOther(
+        `const ${moduleId.value}=await import(${JSON.stringify(specifier)})`,
+      ),
+    ];
   },
   ordinaryStatement,
 );
 
 export const importAnyOf = markAsDirectWriter(
-  async (env: Env, ...forms: Form[]): Promise<JsSrc | TranspileError> => {
+  async (
+    env: Env,
+    ...forms: Form[]
+  ): Promise<Ktvals<JsSrc> | TranspileError> => {
     const moduleId = validateArgsOfImport(forms, "importAnyOf");
     if (TranspileError.is(moduleId)) {
       return moduleId;
@@ -108,54 +113,31 @@ export const importAnyOf = markAsDirectWriter(
       }
     }
 
+    const isTopLevel = EnvF.isAtTopLevel(env);
+    for (const id of ids) {
+      EnvF.setImportedModulesJsId(env, foundModule, {
+        id,
+        isTopLevel,
+      });
+    }
+
+    if (isTopLevel) {
+      return [ktvalImport(foundModule.u, foundModule.r, ids)];
+    }
+
+    let specifierForNonTopLevel: string;
     switch (env.transpileState.mode) {
       case "repl": {
-        const awaitImportUrl = `await import(${JSON.stringify(foundModule.u)})`;
-        if (EnvF.isAtTopLevel(env)) {
-          let jsModule = "";
-          for (const id of ids) {
-            // TODO: Use tmp variable to avoid calling `import` multiple times
-            const awaitImportDotId = `(${awaitImportUrl}).${id}`;
-            jsModule = `${jsModule}${pseudoTopLevelAssignment(
-              id,
-              awaitImportDotId,
-            )};\n`;
-          }
-
-          for (const id of ids) {
-            EnvF.setImportedModulesJsId(env, foundModule, {
-              id,
-              isPseudoTopLevel: true,
-            });
-          }
-          return jsModule;
-        }
-
-        for (const id of ids) {
-          EnvF.setImportedModulesJsId(env, foundModule, {
-            id,
-            isPseudoTopLevel: false,
-          });
-        }
-        return `const{${ids.join(", ")}}=${awaitImportUrl};\n`;
+        specifierForNonTopLevel = foundModule.u;
+        break;
       }
       case "module": {
-        for (const id of ids) {
-          EnvF.setImportedModulesJsId(env, foundModule, {
-            id,
-            isPseudoTopLevel: false,
-          });
-        }
-
-        const modulePathJson = JSON.stringify(foundModule.r);
-        if (EnvF.isAtTopLevel(env)) {
-          return `import{${ids.join(", ")}}from${modulePathJson};\n`;
-        }
-
-        const awaitImportRelativePath = `await import(${modulePathJson})`;
-        return `const{${ids.join(", ")}}=${awaitImportRelativePath};\n`;
+        specifierForNonTopLevel = foundModule.r;
+        break;
       }
     }
+    const awaitImportUrl = `await import(${JSON.stringify(specifierForNonTopLevel)})`;
+    return [ktvalOther(`const{${ids.join(", ")}}=${awaitImportUrl};\n`)];
   },
   ordinaryStatement,
 );
@@ -177,7 +159,10 @@ function validateArgsOfImport(
 }
 
 export const _cu$export = markAsDirectWriter(
-  async (env: Env, ...forms: Form[]): Promise<JsSrc | TranspileError> => {
+  async (
+    env: Env,
+    ...forms: Form[]
+  ): Promise<Ktvals<JsSrc> | TranspileError> => {
     if (forms.length === 0) {
       return new TranspileError(
         "The number of arguments of `export` must be at least 1.",
@@ -188,7 +173,7 @@ export const _cu$export = markAsDirectWriter(
       return new TranspileError("`export` must be used at the top level.");
     }
 
-    let result = "";
+    const result: Ktvals<JsSrc> = [];
     for (const form of forms) {
       if (!isExportableStatement(env, form)) {
         return new TranspileError(
@@ -199,12 +184,7 @@ export const _cu$export = markAsDirectWriter(
       if (TranspileError.is(r)) {
         return r;
       }
-
-      if (env.transpileState.mode === "module") {
-        result = `${result}export ${r};\n`;
-      } else {
-        result = `${result}${r};\n`;
-      }
+      result.push(ktvalExport(), ...r);
     }
     return result;
   },

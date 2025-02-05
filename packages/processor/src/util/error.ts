@@ -19,6 +19,7 @@ export function expectNever(_: never): any {
 }
 
 // e.g. throw ExpectNever(x);
-export function ExpectNever(_: never): Error {
-  return new Error("Assertion failure: Unreachable!");
+export function ExpectNever(x: never): Error {
+  // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+  return new Error(`Assertion failure: Unreachable: ${x}`);
 }

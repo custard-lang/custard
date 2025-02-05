@@ -4,7 +4,7 @@ import { type Awaitable, type Empty } from "../util/types.js";
 import * as s from "../lib/spec.js";
 import { type List, isList, list } from "./types/list.js";
 import { type CuArray, cuArray, isCuArray } from "./types/cu-array.js";
-import { CuObject, isCuObject } from "./types/cu-object.js";
+import { CuObject, cuObject, isCuObject } from "./types/cu-object.js";
 import { type Integer32, integer32, isInteger32 } from "./types/integer32.js";
 import { type Float64, float64, isFloat64 } from "./types/float64.js";
 import { type CuString, cuString, isCuString } from "./types/cu-string.js";
@@ -26,7 +26,15 @@ import {
   isComputedKey,
   isKeyValue,
   type KeyValue,
+  keyValue,
+  type KeyValueKey,
+  computedKey,
 } from "./types/key-value.js";
+import { type Id } from "./types/id.js";
+import { type Ktvals } from "./types/ktval.js";
+
+export * from "./types/ktval.js";
+export * from "./types/id.js";
 
 export type Block<X extends Empty = Empty> = Array<Form<X>>;
 
@@ -140,7 +148,7 @@ export function locatedCuSymbol(v: string, l: Location): CuSymbol<Location> {
 }
 
 export function locatedPropertyAccess(
-  v: string[],
+  v: [string, ...string[]],
   l: Location,
 ): PropertyAccess<Location> {
   const p = propertyAccess(...v);
@@ -276,6 +284,128 @@ function formatForErrorEtc(f: Atom | Unquote<Form> | Splice<Form>): string {
   throw ExpectNever(f);
 }
 
+export function jsValueToForm(v: unknown): Form | TranspileError {
+  if (
+    isInteger32(v) ||
+    isFloat64(v) ||
+    isCuString(v) ||
+    isReservedSymbol(v) ||
+    isCuSymbol(v) ||
+    isPropertyAccess(v)
+  ) {
+    return v;
+  }
+
+  if (v === null || typeof v === "boolean") {
+    return reservedSymbol(v);
+  }
+  if (v === undefined) {
+    return reservedSymbol(null);
+  }
+  if (typeof v === "number") {
+    return float64(v);
+  }
+  if (typeof v === "string") {
+    return cuString(v);
+  }
+
+  if (isList(v)) {
+    const r = list<Form>();
+    for (const item of v) {
+      const f = jsValueToForm(item);
+      if (TranspileError.is(f)) {
+        return f;
+      }
+      r.values.push(f);
+    }
+    return r;
+  }
+
+  if (Array.isArray(v)) {
+    const r = cuArray<Form>();
+    for (const item of v) {
+      const f = jsValueToForm(item);
+      if (TranspileError.is(f)) {
+        return f;
+      }
+      r.push(f);
+    }
+    return r;
+  }
+
+  if (isCuObject(v)) {
+    const r = cuObject<Form, Form, Form, Form>();
+    for (const keyValueOrSymbolOrUnquote of v) {
+      if (isKeyValue(keyValueOrSymbolOrUnquote)) {
+        let key: KeyValueKey<Form, Form>;
+        if (isComputedKey(keyValueOrSymbolOrUnquote.key)) {
+          const computed = jsValueToForm(keyValueOrSymbolOrUnquote.key.value);
+          if (TranspileError.is(computed)) {
+            return computed;
+          }
+          key = computedKey(computed);
+        } else {
+          const keyTmp = jsValueToForm(keyValueOrSymbolOrUnquote.key);
+          if (TranspileError.is(keyTmp)) {
+            return keyTmp;
+          }
+          key = keyTmp as KeyValueKey<Form, Form>;
+        }
+
+        const value = jsValueToForm(keyValueOrSymbolOrUnquote.value);
+        if (TranspileError.is(value)) {
+          return value;
+        }
+        r.keyValues.push(keyValue(key, value));
+        continue;
+      }
+      const f = jsValueToForm(keyValueOrSymbolOrUnquote.value);
+      if (TranspileError.is(f)) {
+        return f;
+      }
+      r.keyValues.push(unquote(f));
+    }
+    return r;
+  }
+
+  if (isUnquote(v)) {
+    const unquoted = jsValueToForm(v.value);
+    if (TranspileError.is(unquoted)) {
+      return unquoted;
+    }
+    return unquote(unquoted);
+  }
+
+  if (isSplice(v)) {
+    const spliced = jsValueToForm(v.value);
+    if (TranspileError.is(spliced)) {
+      return spliced;
+    }
+    return splice(spliced);
+  }
+
+  if (v instanceof Function || v instanceof Promise || typeof v === "symbol") {
+    return new TranspileError(
+      `Cannot convert a ${v.constructor.name} to a Form.`,
+    );
+  }
+
+  // Ordinary objects
+  const r = cuObject<Form, Form, Form, Form>();
+  for (const [key, value] of Object.entries(v)) {
+    const keyForm = jsValueToForm(key);
+    if (TranspileError.is(keyForm)) {
+      return keyForm;
+    }
+    const valueForm = jsValueToForm(value);
+    if (TranspileError.is(valueForm)) {
+      return valueForm;
+    }
+    r.keyValues.push(keyValue(keyForm as CuString, valueForm));
+  }
+  return r;
+}
+
 export interface ProvidedSymbolsConfig {
   // TODO: quoteされたFormにする。最終的にはProvidedSymbolsConfig全体を専用のマクロで設定する仕様に
   implicitStatements: string;
@@ -308,16 +438,12 @@ export function defaultTranspileOptions(): TranspileOptions {
   return { srcPath: process.cwd() };
 }
 
-export type Id = string;
-
 export type FilePath = string;
 
 export interface JsModule {
-  readonly imports: JsSrc;
-  readonly body: JsSrc;
+  readonly imports: Ktvals<JsSrc>;
+  readonly body: Ktvals<JsSrc>;
 }
-
-export type JsModuleWithResult = JsModule & { lastExpression: JsSrc };
 
 export type JsSrc = string;
 
@@ -342,10 +468,8 @@ export interface Env<State extends TranspileState = TranspileState> {
 
 export interface HowToRefer {
   id: Id;
-  isPseudoTopLevel: IsPseudoTopLevel;
+  isTopLevel: boolean;
 }
-
-export type IsPseudoTopLevel = boolean;
 
 export interface Scope {
   isAsync: boolean;
@@ -430,7 +554,7 @@ export function isNamespace(x: Writer): x is Namespace {
 export type DirectWriter = (
   env: Env,
   ...forms: Form[]
-) => Awaitable<JsSrc | TranspileError>;
+) => Awaitable<Ktvals<JsSrc> | TranspileError>;
 export interface MarkedDirectWriter extends AnyWriter<5> {
   readonly call: DirectWriter;
   readonly kind: DirectWriterKindFlags;
@@ -506,7 +630,7 @@ export function isProvidedConst(x: Writer): x is ProvidedConst {
 
 export type DynamicVarFunction = (
   env: Env,
-) => Awaitable<JsSrc | TranspileError>;
+) => Awaitable<Ktvals<JsSrc> | TranspileError>;
 
 export interface DynamicVar extends AnyWriter<8> {
   call: DynamicVarFunction;
@@ -518,10 +642,7 @@ export function markAsDynamicVar(call: DynamicVarFunction): DynamicVar {
   return { [WriterKindKey]: 8, call };
 }
 
-export type MacroBody = (
-  env: Env,
-  ...forms: Form[]
-) => Awaitable<Form | TranspileError>;
+export type MacroBody = (...xs: any[]) => Awaitable<any | TranspileError>;
 
 export interface Macro extends AnyWriter<9> {
   readonly expand: MacroBody;
@@ -565,17 +686,28 @@ export interface References {
 
 export type TranspileState = TranspileRepl | TranspileModule;
 
-export type TranspileRepl = TranspileOptions & {
-  mode: "repl";
-  // `topLevelValues` must contain literally any values.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  topLevelValues: Map<Id, any>;
-};
+export interface TranspileStateCore {
+  transpiledSrc: Ktvals<JsSrc>;
+  evaluatedUpTo: number;
+  currentBlockIndex: number;
+  lastEvaluationResult: any; // TODO: Remove this. Perhaps unnecessary.
+  topLevelValues: TopLevelValues;
+  // ^ When transpiling into the module it's used for macro,
+  //   while in the REPL, it is used for both macro and the REPL session.
+}
 
-export type TranspileModule = TranspileOptions & {
+export interface TranspileRepl extends TranspileStateCore, TranspileOptions {
+  mode: "repl";
+}
+
+export interface TranspileModule extends TranspileStateCore, TranspileOptions {
   mode: "module";
-  importsSrc: JsSrc;
-};
+  importsSrc: Ktvals<JsSrc>;
+}
+
+// `TopLevelValues` must contain literally any values.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type TopLevelValues = Map<Id, any>;
 
 export interface Ref {
   readonly referer: ScopePath;

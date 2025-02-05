@@ -8,6 +8,8 @@ import { TranspileError } from "./types.js";
 
 import { transpileBlock } from "./internal/transpile.js";
 import { initializeForModule } from "./env.js";
+import { transpileKtvalsForModule } from "./internal/isolated-eval.js";
+import { clearTranspiledSrc } from "./internal/transpile-state.js";
 
 export async function transpileModule(
   ast: Block,
@@ -24,5 +26,11 @@ export async function transpileModule(
   if (TranspileError.is(r)) {
     return r;
   }
-  return `${env.transpileState.importsSrc}\n${r}`;
+  clearTranspiledSrc(env.transpileState);
+  const importsJs = transpileKtvalsForModule(
+    env.transpileState.importsSrc,
+    env,
+  );
+  const blockJs = transpileKtvalsForModule(r, env);
+  return `${importsJs}\n${blockJs}`;
 }

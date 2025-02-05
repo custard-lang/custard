@@ -5,10 +5,10 @@ export class PropertyAccess<X extends Empty = Empty> {
   // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
   public extension: X = {} as X;
 
-  constructor(public readonly value: string[]) {}
+  constructor(public readonly value: [string, ...string[]]) {}
 }
 
-export function propertyAccess(...v: string[]): PropertyAccess {
+export function propertyAccess(...v: [string, ...string[]]): PropertyAccess {
   return new PropertyAccess(v);
 }
 

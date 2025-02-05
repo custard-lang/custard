@@ -6,6 +6,7 @@ import {
   type FilePath,
   markAsDirectWriter,
   TranspileError,
+  type Ktvals,
   type JsSrc,
   type Form,
   isUnquote,
@@ -38,7 +39,11 @@ import {
   type ReservedSymbol,
 } from "../types.js";
 import { evalBlock, evalForm } from "../internal/eval.js";
-import { findIdAsJsSrc, srcPathForErrorMessage } from "../internal/env.js";
+import {
+  findIdAsJsSrc,
+  isAtTopLevel,
+  srcPathForErrorMessage,
+} from "../internal/env.js";
 
 import type { ParseError } from "../grammar.js";
 import { readBlock } from "../reader.js";
@@ -46,11 +51,12 @@ import { standardModuleRoot } from "../definitions.js";
 import { transpileExpression } from "../internal/transpile.js";
 
 import { buildAsyncFn } from "./common.js";
-import { ordinaryStatement } from "../internal/types.js";
+import { ktvalOther, ordinaryStatement } from "../internal/types.js";
 import { tryToSet } from "./base/common.js";
 import { _cu$eval } from "../internal/isolated-eval.js";
 import type { Awaitable } from "../util/types.js";
 import { ExpectNever } from "../util/error.js";
+import { evalForMacro } from "../internal/eval/core.js";
 
 export { transpileModule } from "../transpile.js";
 export {
@@ -109,7 +115,11 @@ export const macro = markAsDirectWriter(
     name?: Form,
     args?: Form,
     ...block: Form[]
-  ): Promise<JsSrc | TranspileError> => {
+  ): Promise<Ktvals<JsSrc> | TranspileError> => {
+    if (!isAtTopLevel(env)) {
+      return new TranspileError("`meta.macro` must be used at the top level.");
+    }
+
     if (name === undefined) {
       return new TranspileError("meta.macro needs a name of the macro");
     }
@@ -119,32 +129,49 @@ export const macro = markAsDirectWriter(
       );
     }
 
+    const evalResult = await evalForMacro(env);
+    if (TranspileError.is(evalResult)) {
+      return evalResult;
+    }
+
     const fnSrc = await buildAsyncFn("macro", env, null, args, block);
     if (TranspileError.is(fnSrc)) {
       return fnSrc;
     }
 
-    const fn = (await _cu$eval("", fnSrc, env)) as (
-      ...args: Form[]
-    ) => Awaitable<Form | TranspileError>;
-    const r = tryToSet(name, env, () => {
+    const fn = (await _cu$eval([], fnSrc, env)) as (
+      ...xs: any[]
+    ) => Awaitable<any | TranspileError>;
+    const setResult = tryToSet(name, env, () => {
       return markAsMacro(
-        async (_env: Env, ...args: Form[]): Promise<Form | TranspileError> =>
-          await fn(...args),
+        async (_env: Env, ...args: Form[]): Promise<Form | TranspileError> => {
+          try {
+            // Awaitable should also be `await`ed.
+            // eslint-disable-next-line @typescript-eslint/return-await
+            return await fn(...args);
+          } catch (e) {
+            return new TranspileError(
+              `Error when expanding the macro ${name.value}`,
+              { cause: e },
+            );
+          }
+        },
       );
     });
-    if (r instanceof TranspileError) {
-      return r;
+    if (TranspileError.is(setResult)) {
+      return setResult;
     }
-
     // Generated function is just stored in env. No need to return the source code.
-    return "";
+    return [];
   },
   ordinaryStatement,
 );
 
 export const quote = markAsDirectWriter(
-  async (env: Env, ...forms: Block): Promise<JsSrc | TranspileError> => {
+  async (
+    env: Env,
+    ...forms: Block
+  ): Promise<Ktvals<JsSrc> | TranspileError> => {
     const [form] = forms;
     if (forms.length !== 1 || form === undefined) {
       return new TranspileError("quote expects exactly one form");
@@ -157,7 +184,10 @@ export const quote = markAsDirectWriter(
 );
 
 export const quasiQuote = markAsDirectWriter(
-  async (env: Env, ...forms: Block): Promise<JsSrc | TranspileError> => {
+  async (
+    env: Env,
+    ...forms: Block
+  ): Promise<Ktvals<JsSrc> | TranspileError> => {
     const [form] = forms;
     if (forms.length !== 1 || form === undefined) {
       return new TranspileError("quasiQuote expects exactly one form");
@@ -170,7 +200,7 @@ async function traverse(
   form: Form,
   env: Env,
   unquote: boolean,
-): Promise<JsSrc | TranspileError> {
+): Promise<Ktvals<JsSrc> | TranspileError> {
   if (isList(form)) {
     return await traverseList(form, env, unquote);
   }
@@ -219,7 +249,7 @@ async function traverseList(
   form: List<Form>,
   env: Env,
   unquote: boolean,
-): Promise<JsSrc | TranspileError> {
+): Promise<Ktvals<JsSrc> | TranspileError> {
   const elementsSrc = await mapJoinE(
     form.values,
     async (f) => await traverse(f, env, unquote),
@@ -228,14 +258,14 @@ async function traverseList(
     return elementsSrc;
   }
   const funcSrc = await findThisModulesJsId(env, "list");
-  return `${funcSrc}(${elementsSrc})`;
+  return [...funcSrc, ktvalOther("("), ...elementsSrc, ktvalOther(")")];
 }
 
 async function traverseArray(
   form: Form[],
   env: Env,
   unquote: boolean,
-): Promise<JsSrc | TranspileError> {
+): Promise<Ktvals<JsSrc> | TranspileError> {
   const elementsSrc = await mapJoinE(
     form,
     async (f) => await traverse(f, env, unquote),
@@ -244,17 +274,17 @@ async function traverseArray(
     return elementsSrc;
   }
   const funcSrc = await findThisModulesJsId(env, "array");
-  return `${funcSrc}(${elementsSrc})`;
+  return [...funcSrc, ktvalOther("("), ...elementsSrc, ktvalOther(")")];
 }
 
 async function traverseCuObject(
   form: CuObject<Form, Form, Form, Form>,
   env: Env,
   unquote: boolean,
-): Promise<JsSrc | TranspileError> {
+): Promise<Ktvals<JsSrc> | TranspileError> {
   const elementsSrc = await mapJoinE(
     form.keyValues,
-    async (f): Promise<JsSrc | TranspileError> => {
+    async (f): Promise<Ktvals<JsSrc> | TranspileError> => {
       if (isKeyValue(f)) {
         return await traverseKeyValue(f, env, unquote);
       }
@@ -265,14 +295,14 @@ async function traverseCuObject(
     return elementsSrc;
   }
   const funcSrc = await findThisModulesJsId(env, "object");
-  return `${funcSrc}(${elementsSrc})`;
+  return [...funcSrc, ktvalOther("("), ...elementsSrc, ktvalOther(")")];
 }
 
 async function traverseKeyValue(
   f: KeyValue<Form, Form, Form>,
   env: Env,
   unquote: boolean,
-): Promise<JsSrc | TranspileError> {
+): Promise<Ktvals<JsSrc> | TranspileError> {
   const keySrc = isComputedKey(f.key)
     ? await traverseComputedKey(f.key, env, unquote)
     : await traverse(f.key, env, unquote);
@@ -286,31 +316,38 @@ async function traverseKeyValue(
   }
 
   const funcSrc = await findThisModulesJsId(env, "keyValue");
-  return `${funcSrc}(${keySrc},${valueSrc})`;
+  return [
+    ...funcSrc,
+    ktvalOther("("),
+    ...keySrc,
+    ktvalOther(","),
+    ...valueSrc,
+    ktvalOther(")"),
+  ];
 }
 
 async function traverseComputedKey(
   form: ComputedKey<Form>,
   env: Env,
   unquote: boolean,
-): Promise<JsSrc | TranspileError> {
+): Promise<Ktvals<JsSrc> | TranspileError> {
   const r = await traverse(form.value, env, unquote);
   if (TranspileError.is(r)) {
     return r;
   }
-  return `[${r}]`;
+  return [ktvalOther("("), ...r, ktvalOther("]")];
 }
 
 async function quoteUnquote(
   form: Unquote<Form>,
   env: Env,
-): Promise<JsSrc | TranspileError> {
+): Promise<Ktvals<JsSrc> | TranspileError> {
   const elementSrc = await traverse(form.value, env, false);
   if (TranspileError.is(elementSrc)) {
     return elementSrc;
   }
   const funcSrc = await findThisModulesJsId(env, "unquote");
-  return `${funcSrc}(${elementSrc})`;
+  return [...funcSrc, ktvalOther("("), ...elementSrc, ktvalOther(")")];
 }
 
 // TODO: Error if not in a list, array or object
@@ -318,67 +355,67 @@ async function traverseSplice(
   form: Splice<Form>,
   env: Env,
   unquote: boolean,
-): Promise<JsSrc | TranspileError> {
+): Promise<Ktvals<JsSrc> | TranspileError> {
   const s = await traverse(form.value, env, unquote);
   if (TranspileError.is(s)) {
     return s;
   }
-  return `...${s}`;
+  return [ktvalOther("..."), ...s];
 }
 
 async function quotePropertyAccess(
   form: PropertyAccess,
   env: Env,
-): Promise<JsSrc> {
+): Promise<Ktvals<JsSrc>> {
   const elementsSrc = form.value.map((id) => JSON.stringify(id)).join(",");
   const funcSrc = await findThisModulesJsId(env, "propertyAccess");
-  return `${funcSrc}(${elementsSrc})`;
+  return [...funcSrc, ktvalOther(`(${elementsSrc})`)];
 }
 
-async function quoteCuSymbol(form: CuSymbol, env: Env): Promise<JsSrc> {
+async function quoteCuSymbol(form: CuSymbol, env: Env): Promise<Ktvals<JsSrc>> {
   const elementsSrc = JSON.stringify(form.value);
   const funcSrc = await findThisModulesJsId(env, "symbol");
-  return `${funcSrc}(${elementsSrc})`;
+  return [...funcSrc, ktvalOther(`(${elementsSrc})`)];
 }
 
 async function quoteValueOf(
   form: Integer32 | Float64 | CuString | ReservedSymbol,
   env: Env,
   constructorId: Id,
-): Promise<JsSrc | TranspileError> {
+): Promise<Ktvals<JsSrc> | TranspileError> {
   const elementsSrc = JSON.stringify(form.valueOf());
   const funcSrc = await findThisModulesJsId(env, constructorId);
-  return `${funcSrc}(${elementsSrc})`;
+  return [...funcSrc, ktvalOther(`(${elementsSrc})`)];
 }
 
 async function quoteSplice(
   form: Splice<Form>,
   env: Env,
-): Promise<JsSrc | TranspileError> {
+): Promise<Ktvals<JsSrc> | TranspileError> {
   const elementSrc = await traverse(form.value, env, false);
   if (TranspileError.is(elementSrc)) {
     return elementSrc;
   }
   const funcSrc = await findThisModulesJsId(env, "splice");
-  return `${funcSrc}(${elementSrc})`;
+  return [...funcSrc, ktvalOther("("), ...elementSrc, ktvalOther(")")];
 }
 
 async function mapJoinE<T>(
   xs: T[],
-  f: (x: T) => Promise<JsSrc | TranspileError>,
-): Promise<JsSrc | TranspileError> {
-  let result = "";
+  f: (x: T) => Promise<Ktvals<JsSrc> | TranspileError>,
+): Promise<Ktvals<JsSrc> | TranspileError> {
+  const result: Ktvals<JsSrc> = [];
   for (const x of xs) {
     const r = await f(x);
     if (TranspileError.is(r)) {
       return r;
     }
-    result = `${result}${r},`;
+    result.push(...r, ktvalOther(","));
   }
   return result;
 }
 
-async function findThisModulesJsId(env: Env, id: Id): Promise<JsSrc> {
+async function findThisModulesJsId(env: Env, id: Id): Promise<Ktvals<JsSrc>> {
   const r = await findIdAsJsSrc(env, metaModulePath, id);
   if (r == null) {
     throw new TranspileError(

@@ -12,6 +12,7 @@ import {
   defaultAsyncScopeOptions,
   type HowToRefer,
   type TranspileState,
+  ktvalOther,
 } from "./types.js";
 import {
   TranspileError,
@@ -22,8 +23,10 @@ import {
   isCuSymbol,
   isPropertyAccess,
   type JsSrc,
+  type Ktvals,
   type CompleteProvidedSymbolsConfig,
   type Namespace,
+  ktvalRefer,
   aConst,
   type Env,
   type ReaderInput,
@@ -36,7 +39,6 @@ import { escapeRegExp } from "../util/regexp.js";
 import { resolveModulePaths } from "../provided-symbols-config.js";
 import { parseAbsoluteUrl } from "../util/path.js";
 import { stat } from "node:fs/promises";
-import { pseudoTopLevelReference } from "./cu-env.js";
 
 // To distinguish jsTopLevels and the top level scope of the code,
 // assign the second scope as the top level.
@@ -247,21 +249,10 @@ export function isAtTopLevel({ scopes }: Env): boolean {
   return scopes.length <= TOP_LEVEL_OFFSET;
 }
 
-export function isAtReplTopLevel(env: Env): boolean {
-  return isAtTopLevel(env) && env.transpileState.mode === "repl";
-}
-
-export function writerIsAtReplTopLevel(
-  env: Env,
-  r: WriterWithIsAtTopLevel,
-): boolean {
-  return r.canBeAtPseudoTopLevel && env.transpileState.mode === "repl";
-}
-
 export function tmpVarOf(
   { scopes }: Env<TranspileState>,
-  exp: JsSrc,
-): { statement: JsSrc; id: Id } {
+  exp: Ktvals<JsSrc>,
+): { statement: Ktvals<JsSrc>; id: Id } {
   return ScopeF.tmpVarOf(scopes[0], exp);
 }
 
@@ -286,7 +277,7 @@ export async function findIdAsJsSrc(
   env: Env,
   moduleName: string,
   id: Id,
-): Promise<JsSrc | undefined> {
+): Promise<Ktvals<JsSrc> | undefined> {
   const { k } = await modulePathAndUrl(env, moduleName);
 
   const howToReferOrMap = env.importedModuleJsIds.get(k);
@@ -299,15 +290,9 @@ export async function findIdAsJsSrc(
     if (howToRefer == null) {
       return;
     }
-    if (howToRefer.isPseudoTopLevel) {
-      return pseudoTopLevelReference(howToRefer.id);
-    }
-    return howToRefer.id;
+    return [ktvalRefer(howToRefer.id)];
   }
-  if (howToReferOrMap.isPseudoTopLevel) {
-    return `${pseudoTopLevelReference(howToReferOrMap.id)}.${id}`;
-  }
-  return `${howToReferOrMap.id}.${id}`;
+  return [ktvalRefer(howToReferOrMap.id), ktvalOther(`.${id}`)];
 }
 
 async function modulePathAndUrl(

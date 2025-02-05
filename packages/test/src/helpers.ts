@@ -107,6 +107,9 @@ export function testFormInRepl({
       env,
     );
     if (!(expected instanceof Error) && result instanceof Error) {
+      if (result.cause instanceof Error) {
+        throw result.cause;
+      }
       throw result;
     }
     expect(result).toEqual(expected);
@@ -140,8 +143,14 @@ export function testFormAsModule({
         expect(jsSrc).toEqual(expected);
         return;
       }
+      if (jsSrc instanceof Error) {
+        if (jsSrc.cause instanceof Error) {
+          throw jsSrc.cause;
+        }
+        throw jsSrc;
+      }
 
-      const result = await writeAndEval(dest, assertNonError(jsSrc));
+      const result = await writeAndEval(dest, jsSrc);
       expect(result).toEqual(expected);
     });
   });

@@ -2,21 +2,26 @@ import {
   transpileExpression,
   transpileJoinWithComma,
 } from "../internal/transpile.js";
-import type { Env, Form, JsSrc } from "../types.js";
+import type { Env, Form, JsSrc, Ktvals } from "../types.js";
 import {
   markAsDirectWriter,
   markAsDynamicVar,
   TranspileError,
+  ktvalOther,
 } from "../types.js";
 import { transpiling2 } from "./base/common.js";
 
-export const _cu$null = markAsDynamicVar(() => "null");
+export const _cu$null = markAsDynamicVar(() => [ktvalOther("null")]);
 
-export const _cu$undefined = markAsDynamicVar(() => "void 0");
+export const _cu$undefined = markAsDynamicVar(() => [ktvalOther("void 0")]);
 
 export const _cu$instanceof = transpiling2(
   "js.instanceof",
-  (a: JsSrc, b: JsSrc) => `${a} instanceof ${b}`,
+  (a: Ktvals<JsSrc>, b: Ktvals<JsSrc>) => [
+    ...a,
+    ktvalOther(" instanceof "),
+    ...b,
+  ],
 );
 
 export const _cu$new = markAsDirectWriter(
@@ -24,7 +29,7 @@ export const _cu$new = markAsDirectWriter(
     env: Env,
     klass?: Form,
     ...args: Form[]
-  ): Promise<JsSrc | TranspileError> => {
+  ): Promise<Ktvals<JsSrc> | TranspileError> => {
     if (klass === undefined) {
       return new TranspileError("`new` must be followed by an expression!");
     }
@@ -37,6 +42,12 @@ export const _cu$new = markAsDirectWriter(
     if (TranspileError.is(argsSrc)) {
       return argsSrc;
     }
-    return `new (${klassSrc})(${argsSrc})`;
+    return [
+      ktvalOther("new ("),
+      ...klassSrc,
+      ktvalOther(")("),
+      ...argsSrc,
+      ktvalOther(")"),
+    ];
   },
 );

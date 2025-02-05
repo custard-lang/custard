@@ -31,6 +31,7 @@ import * as meta_ from "@custard-lang/processor/dist/lib/meta.js";
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/restrict-template-expressions */
 
 describe("evalForm", () => {
+  // TODO: Peel off this describe
   const srcPath = fileOfImportMetaUrl(import.meta.url);
   function setUpConfig(): Config {
     const modulePaths: ModulePaths = new Map();
@@ -165,8 +166,36 @@ describe("evalForm", () => {
     testForm({
       src: "(meta.macro unless (b f t) (meta.quasiQuote (if (not $b) $f else $t))) (text (unless false 1 2) (unless true 1 2))",
       expected: "12",
-      fails: "asModule", // TODO
       setUpConfig,
+    });
+
+    testForm({
+      src: "(const c 999) (meta.macro getC () (meta.quasiQuote (plusF $c c))) (getC)",
+      expected: 999 + 999,
+      setUpConfig,
+    });
+    testForm({
+      src: '((fn () (meta.macro doNothing () "do nothing") (doNothing)))',
+      expected: new TranspileError(
+        "`meta.macro` must be used at the top level.",
+      ),
+      setUpConfig,
+    });
+    // TODO: Splice `let` and `const` declarations in macro to test hygine
+
+    describe("when a macro updates an external variable, the execution results may differ between the REPL and the output module.", () => {
+      const src =
+        "(let count 0) (meta.macro inc () (incrementF count) count) (text (inc) (inc) count)";
+      testFormInRepl({
+        src,
+        expected: "122",
+        setUpConfig,
+      });
+      testFormAsModule({
+        src,
+        expected: "120",
+        setUpConfig,
+      });
     });
   });
 
