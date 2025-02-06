@@ -1,8 +1,8 @@
 import { type Env, type TranspileRepl } from "./types.js";
 import { type Form, type Block } from "../types.js";
-import { _cu$eval } from "./isolated-eval.js";
 
 import { transpileBlockCore } from "./transpile.js";
+import { evalKtvals } from "./ktvals.js";
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-return */
 
@@ -32,5 +32,9 @@ export async function evalBlock(
     );
   const lastStatement =
     env.transpileState.transpiledSrc.slice(resultKtvalsOffset);
-  return await _cu$eval(notYetEvaluatedBeforeLastStatement, lastStatement, env);
+  return await evalKtvals(
+    notYetEvaluatedBeforeLastStatement,
+    lastStatement,
+    env,
+  );
 }

@@ -53,10 +53,10 @@ import { transpileExpression } from "../internal/transpile.js";
 import { buildAsyncFn } from "./common.js";
 import { ktvalOther, ordinaryStatement } from "../internal/types.js";
 import { tryToSet } from "./base/common.js";
-import { _cu$eval } from "../internal/isolated-eval.js";
 import type { Awaitable } from "../util/types.js";
 import { ExpectNever } from "../util/error.js";
 import { evalForMacro } from "../internal/eval/core.js";
+import { evalKtvals } from "../internal/ktvals.js";
 
 export { transpileModule } from "../transpile.js";
 export {
@@ -139,7 +139,7 @@ export const macro = markAsDirectWriter(
       return fnSrc;
     }
 
-    const fn = (await _cu$eval([], fnSrc, env)) as (
+    const fn = (await evalKtvals([], fnSrc, env)) as (
       ...xs: any[]
     ) => Awaitable<any | TranspileError>;
     const setResult = tryToSet(name, env, () => {

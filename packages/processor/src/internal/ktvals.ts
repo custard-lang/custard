@@ -1,34 +1,28 @@
+import {
+  type KtvalAssign,
+  KtvalAssignDestructuringArrayT,
+  KtvalAssignDestructuringObjectT,
+  KtvalAssignSimpleT,
+  KtvalAssignT,
+  KtvalExportT,
+  KtvalFunctionPostludeT,
+  KtvalImportStartAsT,
+  KtvalImportT,
+  ktvalOther,
+  KtvalOtherT,
+  KtvalReferT,
+  type Ktvals,
+} from "./types/ktval.js";
+import type { Env, JsSrc, TranspileModule } from "./types.js";
+import { CU_ENV } from "./cu-env.js";
+import { importModuleFromJsSrc } from "../util/eval.js";
+import { tmpVarOf } from "./env.js";
+import { ExpectNever } from "../util/error.js";
+
 // This module is inherently unsafe!
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-return */
 
-import { ExpectNever } from "../util/error.js";
-import { importModuleFromJsSrc } from "../util/eval.js";
-
-import { CU_ENV } from "./cu-env.js";
-import { tmpVarOf } from "./env.js";
-import {
-  type Env,
-  type JsSrc,
-  type Ktvals,
-  KtvalReferT,
-  KtvalAssignT,
-  KtvalOtherT,
-  KtvalImportT,
-  KtvalImportStartAsT,
-  KtvalExportT,
-  KtvalFunctionPostludeT,
-  ktvalOther,
-  KtvalAssignDestructuringArrayT,
-  KtvalAssignSimpleT,
-  KtvalAssignDestructuringObjectT,
-  type KtvalAssign,
-  type TranspileModule,
-} from "./types.js";
-
-// TODO: Rename with this file. I was worried that the function itself can be referred
-//       (and rewritten) by the user code because I used `eval` to implement
-//       this for the first time.
-export async function _cu$eval(
+export async function evalKtvals(
   body: Ktvals<JsSrc>,
   lastExpression: Ktvals<JsSrc>,
   env: Env,

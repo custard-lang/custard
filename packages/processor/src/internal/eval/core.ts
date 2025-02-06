@@ -1,12 +1,12 @@
-import { _cu$eval } from "../isolated-eval.js";
 import { type Env, TranspileError } from "../types.js";
+import { evalKtvals } from "../ktvals.js";
 
 export async function evalForMacro(
   env: Env,
 ): Promise<undefined | TranspileError> {
   const { transpileState } = env;
   try {
-    return await _cu$eval(
+    return await evalKtvals(
       transpileState.transpiledSrc.slice(transpileState.evaluatedUpTo),
       [],
       env,

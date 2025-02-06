@@ -10,7 +10,8 @@ import { transpileString } from "./internal/transpile.js";
 import { transpileModule, transpileRepl } from "./internal/transpile-state.js";
 import type { TranspileModule, TranspileRepl } from "./internal/types.js";
 import { evalString } from "./eval.js";
-import { _cu$eval } from "./internal/isolated-eval.js";
+
+import { evalKtvals } from "./internal/ktvals.js";
 export { readerInputOf } from "./internal/env.js";
 
 export async function initializeForModule(
@@ -27,7 +28,7 @@ export async function initializeForModule(
     return imports;
   }
   env.transpileState.importsSrc = imports;
-  await _cu$eval(imports, [], env);
+  await evalKtvals(imports, [], env);
   return env;
 }
 
