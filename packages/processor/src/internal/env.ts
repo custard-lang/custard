@@ -34,7 +34,7 @@ import {
 import * as References from "./references.js";
 import * as ScopeF from "./scope.js";
 import { isDeeperThanOrEqual, isShallowerThan } from "./scope-path.js";
-import { assertNonNull, expectNever } from "../util/error.js";
+import { assertNonNull, ExpectNever } from "../util/error.js";
 import { escapeRegExp } from "../util/regexp.js";
 import { resolveModulePaths } from "../provided-symbols-config.js";
 import { parseAbsoluteUrl } from "../util/path.js";
@@ -157,7 +157,7 @@ function findCore(
     }
     return { writer: lastW, canBeAtPseudoTopLevel };
   }
-  return expectNever(symLike) as WriterWithIsAtTopLevel;
+  throw ExpectNever(symLike);
 }
 
 export function isDefinedInThisScope({ scopes }: Env, id: Id): boolean {
