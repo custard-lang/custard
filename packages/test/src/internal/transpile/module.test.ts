@@ -21,6 +21,7 @@ import {
 import { fileOfImportMetaUrl } from "@custard-lang/processor/dist/util/path.js";
 import { standardModuleRoot } from "@custard-lang/processor/dist/internal/definitions.js";
 import { transpileKtvalsForModule } from "@custard-lang/processor/dist/internal/isolated-eval.js";
+import { Config, testForm } from "../../helpers.js";
 
 describe("transpileBlock", () => {
   const subject = async (
@@ -157,5 +158,35 @@ describe("transpileBlock", () => {
         new TranspileError("`export` must be used at the top level."),
       );
     });
+  });
+});
+
+describe("evaluation of `import` and `export`", () => {
+  function setUpConfig(): Config {
+    const modulePaths: ModulePaths = new Map();
+    modulePaths.set("a", "../../../assets/a.mjs");
+    modulePaths.set("base", `${standardModuleRoot}//base.js`);
+    const srcPath = fileOfImportMetaUrl(import.meta.url);
+    return {
+      optionsForRepl: { srcPath },
+      providedSymbols: {
+        from: srcPath,
+        modulePaths,
+        implicitStatements: "(importAnyOf base)",
+        jsTopLevels: [],
+      },
+    };
+  }
+
+  testForm({
+    src: "(import a) a.a",
+    expected: "Module A",
+    setUpConfig,
+  });
+
+  testForm({
+    src: "(export (const b 1) (const c (plusF b 1))) c",
+    expected: 2,
+    setUpConfig,
   });
 });
