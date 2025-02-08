@@ -139,104 +139,6 @@ describe("(if bool x else y)", () => {
   });
 });
 
-describe("(fn name? (a r g s) (f) (o) (r) (m) (s))", () => {
-  testForm({
-    src: "(fn name (x) (plusF x 9) ) (name 2)",
-    expected: 11,
-    setUpConfig,
-  });
-  testForm({
-    src: "((fn name(x) (plusF x 9) ) 3)",
-    expected: 12,
-    setUpConfig,
-  });
-  testForm({
-    src: "( (fn (x) (plusF x 3)) 2 )",
-    expected: 5,
-    setUpConfig,
-  });
-  testForm({
-    src: "( (fn (x y) (plusF x y)) 2 5 )",
-    expected: 7,
-    setUpConfig,
-  });
-  testForm({
-    src: "( (fn ({ x y }) (plusF x y)) { x: 1 y: 9 } )",
-    expected: 10,
-    setUpConfig,
-  });
-  testForm({
-    src: "( (fn ({ x: v1 y: v2 }) (minusF v1 v2)) { x: 1 y: 9 } )",
-    expected: -8,
-    setUpConfig,
-  });
-  testForm({ src: "( (fn () 3) 2 )", expected: 3, setUpConfig });
-  testForm({
-    src: "(fn name ()) (name)",
-    expected: undefined,
-    setUpConfig,
-  });
-  testForm({
-    src: "((fn name ()))",
-    expected: undefined,
-    setUpConfig,
-  });
-  testForm({
-    src: "((fn name() (const y 3)))",
-    expected: undefined,
-    setUpConfig,
-  });
-  testForm({
-    src: "((fn ()))",
-    expected: undefined,
-    setUpConfig,
-  });
-  testForm({
-    src: "((fn () (const y 3)))",
-    expected: undefined,
-    setUpConfig,
-  });
-  testForm({
-    src: "( (fn x x) 1 )",
-    expected: new TranspileError(
-      "Arguments for a function must be a list of symbols! But `(Symbol x)` is not!",
-    ),
-    setUpConfig,
-  });
-  testForm({
-    src: "( (fn (x 1) x) 1 )",
-    expected: new TranspileError(
-      "fn's assignee must be a symbol or an object literal, but `(Integer32 1)` is not!",
-    ),
-    setUpConfig,
-  });
-  testForm({
-    src: "( (fn (x x) x) 1 )",
-    expected: new TranspileError('Variable "x" is already defined!'),
-    setUpConfig,
-  });
-  testForm({
-    src: "(const name (fn anotherName (x) (plusF x 9) )) (plusF (name 2) (anotherName 3))",
-    expected: new TranspileError(
-      "No variable `anotherName` is defined! NOTE: If you want to define `anotherName` recursively, wrap the declaration(s) with `recursive`.",
-    ),
-    setUpConfig,
-    fails: true,
-  });
-  testForm({
-    src: "( (fn name) 1 )",
-    expected: new TranspileError("No argument list is given to a `fn`!"),
-    setUpConfig,
-  });
-  testForm({
-    src: "( (fn) 1 )",
-    expected: new TranspileError(
-      "No name or argument list is given to a `fn`!",
-    ),
-    setUpConfig,
-  });
-});
-
 describe("(scope e x p r s)", () => {
   testForm({
     src: "(scope)",
@@ -931,6 +833,102 @@ describe("(fn (a r g s) (f) (o) (r) (m) (s))", () => {
   testForm({
     src: "(const f (fn ([v1 v2]) (timesF v1 v2))) (f [2 9])",
     expected: 18,
+    setUpConfig,
+  });
+
+  testForm({
+    src: "(fn name (x) (plusF x 9) ) (name 2)",
+    expected: 11,
+    setUpConfig,
+  });
+  testForm({
+    src: "((fn name(x) (plusF x 9) ) 3)",
+    expected: 12,
+    setUpConfig,
+  });
+  testForm({
+    src: "( (fn (x) (plusF x 3)) 2 )",
+    expected: 5,
+    setUpConfig,
+  });
+  testForm({
+    src: "( (fn (x y) (plusF x y)) 2 5 )",
+    expected: 7,
+    setUpConfig,
+  });
+  testForm({
+    src: "( (fn ({ x y }) (plusF x y)) { x: 1 y: 9 } )",
+    expected: 10,
+    setUpConfig,
+  });
+  testForm({
+    src: "( (fn ({ x: v1 y: v2 }) (minusF v1 v2)) { x: 1 y: 9 } )",
+    expected: -8,
+    setUpConfig,
+  });
+  testForm({ src: "( (fn () 3) 2 )", expected: 3, setUpConfig });
+  testForm({
+    src: "(fn name ()) (name)",
+    expected: undefined,
+    setUpConfig,
+  });
+  testForm({
+    src: "((fn name ()))",
+    expected: undefined,
+    setUpConfig,
+  });
+  testForm({
+    src: "((fn name() (const y 3)))",
+    expected: undefined,
+    setUpConfig,
+  });
+  testForm({
+    src: "((fn ()))",
+    expected: undefined,
+    setUpConfig,
+  });
+  testForm({
+    src: "((fn () (const y 3)))",
+    expected: undefined,
+    setUpConfig,
+  });
+  testForm({
+    src: "( (fn x x) 1 )",
+    expected: new TranspileError(
+      "Arguments for a function must be a list of symbols! But `(Symbol x)` is not!",
+    ),
+    setUpConfig,
+  });
+  testForm({
+    src: "( (fn (x 1) x) 1 )",
+    expected: new TranspileError(
+      "fn's assignee must be a symbol or an object literal, but `(Integer32 1)` is not!",
+    ),
+    setUpConfig,
+  });
+  testForm({
+    src: "( (fn (x x) x) 1 )",
+    expected: new TranspileError('Variable "x" is already defined!'),
+    setUpConfig,
+  });
+  testForm({
+    src: "(const name (fn anotherName (x) (plusF x 9) )) (plusF (name 2) (anotherName 3))",
+    expected: new TranspileError(
+      "No variable `anotherName` is defined! NOTE: If you want to define `anotherName` recursively, wrap the declaration(s) with `recursive`.",
+    ),
+    setUpConfig,
+    fails: true,
+  });
+  testForm({
+    src: "( (fn name) 1 )",
+    expected: new TranspileError("No argument list is given to a `fn`!"),
+    setUpConfig,
+  });
+  testForm({
+    src: "( (fn) 1 )",
+    expected: new TranspileError(
+      "No name or argument list is given to a `fn`!",
+    ),
     setUpConfig,
   });
 });
