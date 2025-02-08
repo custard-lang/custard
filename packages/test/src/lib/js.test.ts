@@ -1,4 +1,3 @@
-import { describe } from "vitest";
 import { type Config, testForm } from "../helpers.js";
 
 import { defaultTranspileOptions } from "@custard-lang/processor/dist/types.js";
@@ -25,23 +24,19 @@ function setUpConfig(): Config {
   };
 }
 
-describe("evalForm", () => {
-  testForm({
-    src: "(instanceof (new Date) Date)",
-    expected: true,
-    setUpConfig,
-  });
-  testForm({
-    src: "(instanceof (new Object) Date)",
-    expected: false,
-    setUpConfig,
-  });
+testForm({
+  src: "(instanceof (new Date) Date)",
+  expected: true,
+  setUpConfig,
+});
+testForm({
+  src: "(instanceof (new Object) Date)",
+  expected: false,
+  setUpConfig,
 });
 
-describe("evalBlock", () => {
-  testForm({
-    src: "(const bd (new Date 2022 3 16)) (bd.getYear)",
-    expected: 122,
-    setUpConfig,
-  });
+testForm({
+  src: "(const bd (new Date 2022 3 16)) (bd.getYear)",
+  expected: 122,
+  setUpConfig,
 });
