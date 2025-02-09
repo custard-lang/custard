@@ -30,7 +30,6 @@ import * as meta_ from "@custard-lang/processor/dist/lib/meta.js";
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/restrict-template-expressions */
 
-// TODO: Peel off this describe
 const srcPath = fileOfImportMetaUrl(import.meta.url);
 function setUpConfig(): Config {
   const modulePaths: ModulePaths = new Map();
