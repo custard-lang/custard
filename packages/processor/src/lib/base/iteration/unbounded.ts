@@ -19,8 +19,8 @@ import {
 import { aRecursiveConst, ordinaryStatement } from "../../../internal/types.js";
 import { asCall, isStatement } from "../../../internal/call.js";
 
-import { buildForEach } from "../common.js";
 import { _cu$const } from "../safe.js";
+import { buildForEach } from "../../internal.js";
 
 export * from "../iteration.js";
 

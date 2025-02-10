@@ -9,7 +9,8 @@ import {
   TranspileError,
   ktvalOther,
 } from "../types.js";
-import { transpiling2 } from "./base/common.js";
+
+import { transpiling2 } from "./internal.js";
 
 export const _cu$null = markAsDynamicVar(() => [ktvalOther("null")]);
 

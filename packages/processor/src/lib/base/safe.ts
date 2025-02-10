@@ -35,6 +35,7 @@ import {
   markAsDynamicVar,
   TranspileError,
 } from "../../types.js";
+
 import {
   buildFn,
   buildProcedure,
@@ -46,7 +47,7 @@ import {
   transpilingForVariableDeclaration,
   transpilingForVariableMutation,
   transpilingFunctionArguments,
-} from "./common.js";
+} from "../internal.js";
 
 export { standardModuleRoot } from "../../definitions.js";
 

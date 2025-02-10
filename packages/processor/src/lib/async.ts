@@ -13,13 +13,13 @@ import {
   TranspileError,
 } from "../types.js";
 import {
+  buildAsyncFn,
   buildFn,
   buildForEach,
   buildProcedure,
   buildScope,
   transpiling1Unmarked,
-} from "./base/common.js";
-import { buildAsyncFn } from "./common.js";
+} from "./internal.js";
 
 export const _cu$await = markAsDirectWriter(
   async (env: Env, a: Form, ...unused: Form[]) => {

@@ -50,9 +50,8 @@ import { readBlock } from "../reader.js";
 import { standardModuleRoot } from "../definitions.js";
 import { transpileExpression } from "../internal/transpile.js";
 
-import { buildAsyncFn } from "./common.js";
+import { buildAsyncFn, tryToSet } from "./internal.js";
 import { ktvalOther, ordinaryStatement } from "../internal/types.js";
-import { tryToSet } from "./base/common.js";
 import type { Awaitable } from "../util/types.js";
 import { ExpectNever } from "../util/error.js";
 import { evalForMacro } from "../internal/eval/core.js";
