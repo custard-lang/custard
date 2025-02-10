@@ -108,6 +108,12 @@ REPLとmoduleで大きく設計を変えないといけないようだ。具体�
 
 どうも`module`と`repl`とで挙動を一貫させるのが難しそうなので、ドキュメントで警告するか。内部の値を更新する系の関数などを全部禁止（するか警告を出すか）できたらよさそう。
 
+どうせWasmターゲットの独自の言語にするのはほぼ確定路線なので、JS由来以外の操作をイミュータブルにすることで問題を発生しにくくすることは出来そう
+
+# レコード型
+
+共有する系のラベルはなるべくJSの`Symbol`みたいなものを使うよう誘導したいが、動的型付け言語だとちょっと難しいかな
+
 # TODO
 
 - [ ] split.test.ts は実装と共に削除した方がよさそう。多分今後も使わない（あるいはテストを修正する）
@@ -132,11 +138,6 @@ REPLとmoduleで大きく設計を変えないといけないようだ。具体�
     - ややこしいし`data` URIを使ってtranspileすればよくない？
         - そうすると今度は結果をどうやって返すかが気になるね。最後の式を`export default`する？
             - そうだ別に`export default`でいいんだ。`exportDefault`を作ろう
-- [ ] replの`contextId`が不正なのか、workerの`env`が`undefined`になってしまうケースがあるらしい
-    - repl.tsで呼んでいるworker.onceを並行して呼び出すとバグるとか？
-- [ ] replにおけるトップレベルの変数の参照方法: 常に`_cu$env.transpileState.topLevelValues`を使うのは冗長なので、一時的な変数に入れるなどの工夫をした方がいいかも
-    - `topLevelValues`を`Object.create(null)`で作ったオブジェクトにしたら`let { ... } = _cu$env.transpileState.topLevelValues`と書けるのでもっと簡潔にできるな！
-    - ただ、その場合`incrementF`などを使う場合に備えて書き戻しの処理も書かないと
 - [ ] もうちょっと非同期なAPIを減らしたい
     - <https://twitter.com/mizchi/status/1675093894231621632>
         - Promile.all の件で本当に考えないといけないことは、個別のawaitの是非みたいな些事ではなく、ドメイン層の不要な部分に async が伝搬することを防ぐ設計だったり、非同期API含むインフラ層を値オブジェクトで抽象してテストコードを書きやすくするとか、そういうことな気がしてきた
@@ -144,7 +145,6 @@ REPLとmoduleで大きく設計を変えないといけないようだ。具体�
         - nodeのライブラリ作ったり読んだりしてて思うのは、複雑なライブラリの内部は徹底的に非同期を排した作りにして外からステップ実行できるようにしないと、内部キャッシュのライフサイクル管理できなくなる
 - [ ] providedSymbolsConfig.modulePaths における `npm:`の解釈
 - [ ] public APIの整理: 特に src/types.ts
-- [ ] rest構文: 関数の引数、配列リテラル、オブジェクトリテラル
 - [ ] 入れ子のdestructuring
 - [ ] exportのvalidation: 複数同じ名前をexportしないように。普通の`export`は`default`を受け付けない（代わりに`exportDefault`を使えという
 - [ ] ESLintの設定を改善: <https://zenn.dev/teppeis/articles/2023-04-typescript-5_0-verbatim-module-syntax>
@@ -167,7 +167,6 @@ REPLとmoduleで大きく設計を変えないといけないようだ。具体�
     - [x] `fn (...)`が出力する`() => { ... }`と整合性がとれなくなるので、`fn`は`function`の省略形なので、`function`の省略形として`fn`を使うことにする
         - まあ現状`this`が使えないので別にいい気もするけど
         - `macro`と共に実装済み。
-- [ ] `lib/**/common.ts`は`lib/internal.ts`にrename
 - [ ] `types.ts`の`Form`に対する`is***`系関数は、生のJavaScriptのオブジェクト（`number`とか）に対しても`true`を返すようにする
     - が、`Form`型専用のバージョンもないと困るし、全く別バージョンとして提供するべきだなあ。
         - `lib/base`に生JSバージョンを置くか。
