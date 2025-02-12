@@ -22,8 +22,8 @@ import { keyValue } from "@custard-lang/processor/dist/types.js";
 describe("readStr", () => {
   const path = "test";
 
-  const inputOf = (contents: string) => ({ path, contents } as const);
-  const location = (l: number, c: number) => ({ f: path, l, c } as const);
+  const inputOf = (contents: string) => ({ path, contents }) as const;
+  const location = (l: number, c: number) => ({ f: path, l, c }) as const;
 
   describe("Integer32", () => {
     test("`123` -> `123`", () => {

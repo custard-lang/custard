@@ -30,8 +30,6 @@ export function cuObject<V, KU, KA, U, X extends Empty = Empty>(
   return new CuObject<V, KU, KA, U, X>(v, {} as X);
 }
 
-export function isCuObject(
-  v: unknown,
-): v is CuObject<unknown> {
+export function isCuObject(v: unknown): v is CuObject<unknown> {
   return v instanceof CuObject;
 }
