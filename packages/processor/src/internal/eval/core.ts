@@ -6,7 +6,7 @@ export async function evalForMacro(
 ): Promise<undefined | TranspileError> {
   const { transpileState } = env;
   try {
-    return await evalKtvals(
+    await evalKtvals(
       transpileState.transpiledSrc.slice(transpileState.evaluatedUpTo),
       [],
       env,

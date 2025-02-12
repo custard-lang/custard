@@ -10,7 +10,6 @@ function transpileStateCore(): TranspileStateCore {
     transpiledSrc: [],
     evaluatedUpTo: 0,
     currentBlockIndex: 0,
-    lastEvaluationResult: undefined,
     topLevelValues: new Map(),
   };
 }

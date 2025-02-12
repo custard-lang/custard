@@ -22,8 +22,8 @@
   },
   "homepage": "https://github.com/igrep/custard#readme",
   "devDependencies": {
-    "@types/node": "^20.12.7",
-    "typescript": "^5.4.4"
+    "@types/node": "^22.13.1",
+    "typescript": "^5.7.3"
   },
   "dependencies": {
   }

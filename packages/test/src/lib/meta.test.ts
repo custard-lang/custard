@@ -28,7 +28,7 @@ import { fileOfImportMetaUrl } from "@custard-lang/processor/dist/util/path.js";
 // with `(import meta)`.
 import * as meta_ from "@custard-lang/processor/dist/lib/meta.js";
 
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/restrict-template-expressions */
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-assignment */
 
 const srcPath = fileOfImportMetaUrl(import.meta.url);
 function setUpConfig(): Config {

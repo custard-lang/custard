@@ -24,11 +24,11 @@
   "dependencies": {
     "@atproto/api": "^0.7.4",
     "@custard-lang/processor": "^0.0.2",
-    "date-fns": "^3.0.6",
-    "read": "^3.0.1"
+    "date-fns": "^4.1.0",
+    "read": "^4.1.0"
   },
   "devDependencies": {
     "@custard-lang/command": "^0.0.2",
-    "vitest": "^1.1.1"
+    "vitest": "^3.0.5"
   }
 }

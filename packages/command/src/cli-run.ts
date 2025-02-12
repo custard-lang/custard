@@ -8,6 +8,8 @@ const result = transpileProgram
     "Path to the JavaScript engine to run",
     "node",
   )
+  .argument("[file]")
+  .arguments("[args...]")
   .parse();
 
 (async () => {

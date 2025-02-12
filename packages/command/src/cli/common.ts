@@ -26,7 +26,8 @@ export const transpileProgram = program
     "Path to provided symbols config file.",
     "./.provided-symbols.cstd",
   )
-  .option("-v, --verbose", "Enable verbose output.");
+  .option("-v, --verbose", "Enable verbose output.")
+  .arguments("[files...]");
 
 export async function transpileMain(
   opts: { providedSymbols: string; verbose?: true | undefined },
@@ -95,7 +96,7 @@ export async function transpileMain(
       throw block;
     }
     const sp = path.parse(srcPath);
-    const destPath = path.join(`${sp.dir}`, `${sp.name}.mjs`);
+    const destPath = path.join(sp.dir, `${sp.name}.mjs`);
     const transpiled = await transpileModule(
       block,
       { srcPath },

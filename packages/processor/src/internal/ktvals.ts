@@ -20,7 +20,7 @@ import { tmpVarOf } from "./env.js";
 import { ExpectNever } from "../util/error.js";
 
 // This module is inherently unsafe!
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 export async function evalKtvals(
   body: Ktvals<JsSrc>,
@@ -38,7 +38,7 @@ export async function evalKtvals(
   // console.log(`${f}\n//------------------`);
 
   const mod = await importModuleFromJsSrc(f);
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-call,  @typescript-eslint/no-unsafe-member-access, @typescript-eslint/return-await
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
   return await mod.default(env);
 }
 

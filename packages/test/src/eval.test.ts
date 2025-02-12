@@ -6,8 +6,6 @@ import { standardModuleRoot } from "@custard-lang/processor/dist/definitions.js"
 import { type ModulePaths } from "@custard-lang/processor/dist/types.js";
 import { fileOfImportMetaUrl } from "@custard-lang/processor/dist/util/path.js";
 
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/restrict-template-expressions */
-
 function setUpConfig(): Config {
   const modulePaths: ModulePaths = new Map();
   modulePaths.set("base", `${standardModuleRoot}/base.js`);

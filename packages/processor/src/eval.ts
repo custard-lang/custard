@@ -14,6 +14,9 @@ import {
 } from "./internal/eval.js";
 import { clearTranspiledSrc } from "./internal/transpile-state.js";
 
+// This module is inherently unsafe!
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment */
+
 export async function evalForm(
   form: Form,
   env: Env<TranspileRepl>,

@@ -336,7 +336,7 @@ function transpileLocalAssignee(
       if (TranspileError.is(r0)) {
         return r0;
       }
-      assignee = `${assignee}${`${kvOrSym.value},`}`;
+      assignee = `${assignee}${kvOrSym.value},`;
     }
     return `${assignee}}`;
   }
@@ -348,7 +348,7 @@ function transpileLocalAssignee(
         if (TranspileError.is(r0)) {
           return r0;
         }
-        assignee = `${assignee}${`${form.value},`}`;
+        assignee = `${assignee}${form.value},`;
         continue;
       }
 
@@ -634,8 +634,8 @@ export function buildForEach(
 ): DirectWriter {
   return async (
     env: Env,
-    id: Form,
-    iterable: Form,
+    id?: Form,
+    iterable?: Form,
     ...statements: Block
   ): Promise<Ktvals<JsSrc> | TranspileError> => {
     EnvF.pushInherited(env);

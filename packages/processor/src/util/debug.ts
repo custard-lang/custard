@@ -16,7 +16,6 @@ const DEBUG_LOG_PREFIX = process.env.CUSTARD_DEBUG_LOG_PREFIX;
 const DEBUG_LOG_PATH =
   DEBUG_LOG_PREFIX && `${DEBUG_LOG_PREFIX}${threadId}.log.js`;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function writeDebugOut<T>(x: T): T {
   if (DEBUG_LOG_PATH) {
     // TODO: Implement our custom serializer

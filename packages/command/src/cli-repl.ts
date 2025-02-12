@@ -17,7 +17,7 @@ import {
   readerInputOf,
 } from "@custard-lang/processor";
 
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 const rl = readline.createInterface({ input, output });
 

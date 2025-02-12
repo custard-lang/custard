@@ -3,8 +3,6 @@ import type { Empty } from "../../util/types.js";
 export class ReservedSymbol<X extends Empty = Empty> {
   readonly #value: boolean | null;
 
-  // Looks like this is a false positive.
-  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
   public extension: X = {} as X;
 
   constructor(value: boolean | null) {

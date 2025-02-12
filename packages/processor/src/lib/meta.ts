@@ -73,6 +73,8 @@ export {
   keyValue,
 } from "../types.js";
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 // TODO: Make readString env-free
 export const readString = markAsFunctionWithEnv(
   (
@@ -89,7 +91,6 @@ export const readString = markAsFunctionWithEnv(
 );
 
 export const evaluate = markAsFunctionWithEnv(
-  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
   (env: Env, formOrBlock?: Form | Block): any | Error => {
     if (formOrBlock === undefined) {
       throw new Error("No form or block given to `evaluate`!");
@@ -145,8 +146,6 @@ export const macro = markAsDirectWriter(
       return markAsMacro(
         async (_env: Env, ...args: Form[]): Promise<Form | TranspileError> => {
           try {
-            // Awaitable should also be `await`ed.
-            // eslint-disable-next-line @typescript-eslint/return-await
             return await fn(...args);
           } catch (e) {
             return new TranspileError(

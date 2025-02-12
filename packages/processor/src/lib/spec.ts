@@ -26,7 +26,7 @@ export class ValidationError extends Error {
   // NOTE: Use this instead of instanceof to avoid https://github.com/vitejs/vite/issues/9528
   _cu$isValidationError = true;
   static is(e: unknown): e is ValidationError {
-    return (e as { [key: string]: unknown })?._cu$isValidationError === true;
+    return (e as { [key: string]: unknown } | null)?._cu$isValidationError === true;
   }
 }
 

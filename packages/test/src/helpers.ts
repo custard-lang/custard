@@ -21,7 +21,7 @@ import { initializeForRepl, transpileModule } from "@custard-lang/processor";
 import { withNewPath } from "./helpers/tmp-file.js";
 import { writeAndEval } from "./helpers/eval.js";
 
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/restrict-template-expressions, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment */
 
 function primitiveFormsAreEqual(
   a: unknown,

@@ -3,18 +3,15 @@ import * as path from "node:path";
 
 import globals from "globals";
 
-import { FlatCompat } from "@eslint/eslintrc";
-
 import parser from "@typescript-eslint/parser";
-import typeScriptEslint from "@typescript-eslint/eslint-plugin";
+import tseslint from 'typescript-eslint';
+import love from 'eslint-config-love'
 import promise from "eslint-plugin-promise";
 import noIgnoreReturnedUnion from "eslint-plugin-no-ignore-returned-union";
 
 const baseDirectory = dirOfImportMetaUrl(import.meta.url)
 
-const compat = new FlatCompat({ baseDirectory });
-
-export default [
+export default tseslint.config(
   {
     ignores: [
       "**/*.d.ts",
@@ -23,11 +20,11 @@ export default [
       "**/*.mjs",
     ],
   },
-  ...compat.extends(
-    "plugin:promise/recommended",
-    "love",
-  ),
+  promise.configs['flat/recommended'],
+  tseslint.configs.strictTypeChecked,
+  tseslint.configs.stylisticTypeChecked,
   {
+    ...love,
     files: ["**/*.ts"],
     languageOptions: {
       globals: {
@@ -45,7 +42,7 @@ export default [
       },
     },
     plugins: {
-      "@typescript-eslint": typeScriptEslint,
+      "@typescript-eslint": tseslint.plugin,
       promise,
       "eslint-plugin-no-ignore-returned-union": noIgnoreReturnedUnion,
     },
@@ -81,12 +78,33 @@ export default [
       "@typescript-eslint/semi": "off",
       "@typescript-eslint/space-before-function-paren": "off",
       "@typescript-eslint/space-infix-ops": "off",
-      "@typescript-eslint/member-delimiter-style": "off",
+      "@typescript-eslint/explicit-function-return-type": ["error", {
+        allowConciseArrowFunctionExpressionsStartingWithVoid: true,
+        allowDirectConstAssertionInArrowFunctions: true,
+        allowExpressions: false,
+        allowFunctionsWithoutTypeParameters: false,
+        allowHigherOrderFunctions: false,
+        allowIIFEs: true,
+        allowTypedFunctionExpressions: true,
+      }],
       "@typescript-eslint/consistent-indexed-object-style": ["error", "index-signature"],
       "@typescript-eslint/strict-boolean-expressions": ["error", {
         allowNullableBoolean: true,
         allowNullableString: true,
         allowNullableObject: true,
+      }],
+      "@typescript-eslint/restrict-template-expressions": ["error", {
+        allowBoolean: true,
+        allowNumber: true,
+      }],
+      "@typescript-eslint/array-type": ["error", {
+        default: "array-simple",
+        readonly: "array-simple",
+      }],
+      "@typescript-eslint/return-await": "error",
+      "@typescript-eslint/no-unnecessary-condition": ["error", {
+        allowConstantLoopConditions: true,
+        checkTypePredicates: false,
       }],
     },
   },
@@ -97,7 +115,7 @@ export default [
       "eslint-plugin-no-ignore-returned-union/no-ignore-returned-union": "off",
     },
   },
-];
+);
 
 function fileOfImportMetaUrl(importMetaUrl) {
   return dropLeadingSlashOnWindows(new URL(importMetaUrl).pathname);

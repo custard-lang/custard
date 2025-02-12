@@ -1,8 +1,8 @@
 import type { Empty } from "../../util/types.js";
 
+// Looks like false positive
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
 export class Integer32<X extends Empty = Empty> extends Number {
-  // Looks like this is a false positive.
-  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
   public extension: X = {} as X;
 }
 

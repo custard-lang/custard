@@ -36,6 +36,8 @@ describe("split.cstd", () => {
   });
   const outDir = "tmp";
   const pathOfPostAt = (i: number): string => {
+    // The only line using `any`:
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
     const fileName = iso8601ForFs.toFileName(
       assertNonNull(input[i], `Not found at ${i}`).indexedAt,
       ".json",

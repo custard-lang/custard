@@ -252,6 +252,8 @@ async function transpileExpressionWithNextCall(
       if (TranspileError.is(evalForMacroResult)) {
         return evalForMacroResult;
       }
+      // Macro returns any by definition
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const jsValue = await writer.expand(env, ...args);
       if (TranspileError.is(jsValue)) {
         return jsValue;

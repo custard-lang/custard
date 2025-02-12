@@ -4,8 +4,6 @@ export type TokenKind = string;
 
 export type EOF = null;
 
-// Intentionally naming the variable the same as the type
-// eslint-disable-next-line @typescript-eslint/no-redeclare
 export const EOF: EOF = null;
 
 export interface TokenAndRE {

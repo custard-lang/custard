@@ -16,6 +16,8 @@ import {
   reservedSymbol,
 } from "@custard-lang/processor/dist/types.js";
 
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-empty-function  */
+
 describe("jsValueToForm", () => {
   test("converts JS values into a Form", () => {
     const actual = jsValueToForm([

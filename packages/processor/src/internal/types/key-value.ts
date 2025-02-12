@@ -4,8 +4,6 @@ import type { CuSymbol } from "./cu-symbol.js";
 import type { Unquote } from "./unquote.js";
 
 export class KeyValue<V, A = unknown, U = unknown, X extends Empty = Empty> {
-  // Looks like this is a false positive.
-  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
   constructor(
     public key: KeyValueKey<A, U, X>,
     public value: V,

@@ -14,8 +14,6 @@ export class CuObject<
     public keyValues: Array<
       KeyValue<V, KU, KA, X> | CuSymbol<X> | Unquote<U, X>
     >,
-    // Looks like this is a false positive.
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     public extension: X = {} as X,
   ) {}
 
@@ -29,13 +27,11 @@ export class CuObject<
 export function cuObject<V, KU, KA, U, X extends Empty = Empty>(
   ...v: Array<KeyValue<V, KU, KA, X> | CuSymbol<X> | Unquote<U, X>>
 ): CuObject<V, KU, KA, U, X> {
-  // Looks like this is a false positive.
-  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
   return new CuObject<V, KU, KA, U, X>(v, {} as X);
 }
 
 export function isCuObject(
   v: unknown,
-): v is CuObject<unknown, unknown, unknown, unknown> {
+): v is CuObject<unknown> {
   return v instanceof CuObject;
 }

@@ -5,8 +5,6 @@ interface UnquoteBrand {
 }
 
 class UnquoteBase<T, X extends Empty = Empty> {
-  // Looks like this is a false positive.
-  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
   extension = {} as X;
 
   constructor(public readonly value: T) {}

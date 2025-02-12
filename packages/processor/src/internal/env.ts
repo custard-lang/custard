@@ -250,7 +250,7 @@ export function isAtTopLevel({ scopes }: Env): boolean {
 }
 
 export function tmpVarOf(
-  { scopes }: Env<TranspileState>,
+  { scopes }: Env,
   exp: Ktvals<JsSrc>,
 ): { statement: Ktvals<JsSrc>; id: Id } {
   return ScopeF.tmpVarOf(scopes[0], exp);

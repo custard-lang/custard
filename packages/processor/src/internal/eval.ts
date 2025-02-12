@@ -4,7 +4,8 @@ import { type Form, type Block } from "../types.js";
 import { transpileBlockCore } from "./transpile.js";
 import { evalKtvals } from "./ktvals.js";
 
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-return */
+// This module is inherently unsafe!
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 export async function evalForm(
   form: Form,

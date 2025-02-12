@@ -417,8 +417,6 @@ export type CompleteProvidedSymbolsConfig = ProvidedSymbolsConfig & {
   from: FilePath;
 };
 
-// Intentionally naming the variable the same as the type
-// eslint-disable-next-line @typescript-eslint/no-redeclare
 export const ProvidedSymbolsConfig: s.Spec<ProvidedSymbolsConfig> = s.withId(
   "ProvidedSymbolsConfig",
   s.record({
@@ -453,7 +451,7 @@ export class TranspileError extends Error {
   // NOTE: Use this instead of instanceof to avoid https://github.com/vitejs/vite/issues/9528
   _cu$isTranspileError = true;
   static is(e: unknown): e is TranspileError {
-    return !!((e as { [key: string]: unknown })
+    return !!((e as { [key: string]: unknown } | null)
       ?._cu$isTranspileError as boolean);
   }
 }
@@ -642,6 +640,8 @@ export function markAsDynamicVar(call: DynamicVarFunction): DynamicVar {
   return { [WriterKindKey]: 8, call };
 }
 
+// This must receive literally any values by definition.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type MacroBody = (...xs: any[]) => Awaitable<any | TranspileError>;
 
 export interface Macro extends AnyWriter<9> {
@@ -690,7 +690,6 @@ export interface TranspileStateCore {
   transpiledSrc: Ktvals<JsSrc>;
   evaluatedUpTo: number;
   currentBlockIndex: number;
-  lastEvaluationResult: any; // TODO: Remove this. Perhaps unnecessary.
   topLevelValues: TopLevelValues;
   // ^ When transpiling into the module it's used for macro,
   //   while in the REPL, it is used for both macro and the REPL session.

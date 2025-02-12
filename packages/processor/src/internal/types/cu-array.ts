@@ -7,8 +7,6 @@ interface CuArrayBrand {
 class CuArrayBase<T, X extends Empty = Empty> extends Array<T> {
   constructor();
   constructor(extension: X);
-  // Looks like this is a false positive.
-  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
   constructor(public extension: X = {} as X) {
     super();
   }

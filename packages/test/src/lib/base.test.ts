@@ -18,8 +18,6 @@ import { implicitlyImporting } from "@custard-lang/processor/dist/provided-symbo
 import { fileOfImportMetaUrl } from "@custard-lang/processor/dist/util/path.js";
 import { tmpDir } from "../helpers/tmp-file.js";
 
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/restrict-template-expressions, @typescript-eslint/no-unsafe-assignment */
-
 const providedSymbols = {
   from: fileOfImportMetaUrl(import.meta.url),
   ...implicitlyImporting(`${standardModuleRoot}/base.js`),

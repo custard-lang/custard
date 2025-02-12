@@ -16,7 +16,7 @@ function dropLeadingSlashOnWindows(pathname: string): string {
 }
 
 export function parseAbsoluteUrl(pathname: string): [string, string] | null {
-  const md = pathname.match(/^(node|npm|file):(.*)/);
+  const md = /^(node|npm|file):(.*)/.exec(pathname);
   if (md === null) {
     return null;
   }

@@ -80,7 +80,7 @@ export class ParseError extends Error {
   // NOTE: Use this instead of instanceof to avoid https://github.com/vitejs/vite/issues/9528
   _cu$isParseError = true;
   static is(e: unknown): e is ParseError {
-    return (e as { [key: string]: unknown })?._cu$isParseError === true;
+    return (e as { [key: string]: unknown } | null)?._cu$isParseError === true;
   }
 }
 

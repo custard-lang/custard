@@ -22,13 +22,8 @@ import { keyValue } from "@custard-lang/processor/dist/types.js";
 describe("readStr", () => {
   const path = "test";
 
-  // It's obvious from the definition!
-  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-  const inputOf = (contents: string) => ({ path, contents });
-
-  // It's obvious from the definition!
-  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-  const location = (l: number, c: number) => ({ f: path, l, c });
+  const inputOf = (contents: string) => ({ path, contents } as const);
+  const location = (l: number, c: number) => ({ f: path, l, c } as const);
 
   describe("Integer32", () => {
     test("`123` -> `123`", () => {
