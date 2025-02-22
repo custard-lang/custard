@@ -19,6 +19,8 @@
     "@vitest/coverage-v8": "^3.0.5",
     "eslint": "^9.19.0",
     "eslint-config-love": "^118.0.0",
+    "@typescript-eslint/parser": "8.23.0",
+    "typescript-eslint": "8.20.0",
     "eslint-plugin-n": "^17.15.1",
     "eslint-plugin-no-ignore-returned-union": "^0.6.2",
     "eslint-plugin-promise": "^7.2.1",
