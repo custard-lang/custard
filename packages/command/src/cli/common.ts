@@ -17,8 +17,10 @@ import {
   ValidationError,
   initializeForRepl,
   readerInputOf,
+  Form,
 } from "@custard-lang/processor";
 import { assertNonError } from "@custard-lang/processor/dist/util/error.js";
+import { isParseError } from "@custard-lang/processor/src/grammar.js";
 
 export const transpileProgram = program
   .option(
@@ -46,7 +48,7 @@ export async function transpileMain(
   if (env instanceof Error) {
     throw env;
   }
-  let providedSymbolsBlock: Block | ParseError;
+  let providedSymbolsBlock: Block | ParseError<Form>;
   try {
     providedSymbolsBlock = readBlock(
       readerInputOf(env, await fs.readFile(providedSymbolsPath, "utf-8")),
@@ -68,7 +70,7 @@ export async function transpileMain(
       throw e;
     }
   }
-  if (ParseError.is(providedSymbolsBlock)) {
+  if (isParseError(providedSymbolsBlock)) {
     throw providedSymbolsBlock;
   }
   const providedSymbolsConfig = ProvidedSymbolsConfig.validate(

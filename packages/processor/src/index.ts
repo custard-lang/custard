@@ -1,5 +1,6 @@
 export { defaultProvidedSymbolsConfig } from "./default-provided-symbols.js";
-export { ParseError } from "./grammar.js";
+export { type ParseError } from "./grammar.js";
+export { isParseError } from "./grammar.js";
 export { readStr } from "./reader.js";
 export { implicitlyImporting } from "./provided-symbols-config.js";
 export { readBlock } from "./reader.js";

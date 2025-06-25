@@ -1,5 +1,11 @@
-import { form, ParseError, tokens } from "./grammar.js";
-import { SpaceSkippingScanner, EOF } from "./scanner.js";
+import {
+  form,
+  isParseError,
+  ParseError,
+  ParseErrorSkipping,
+  tokens,
+} from "./grammar.js";
+import { isEof, SpaceSkippingScanner } from "./scanner.js";
 import {
   type Block,
   type Form,
@@ -7,29 +13,45 @@ import {
   type Location,
 } from "./types.js";
 
-export function readStr(input: ReaderInput): Form<Location> | ParseError {
+export function readStr(
+  input: ReaderInput,
+): Form<Location> | ParseError<Form<Location>> {
   const s = new SpaceSkippingScanner(tokens, input);
-  const parsed = form(s);
-  if (ParseError.is(parsed)) {
+  const parsed = form<Form<Location>>(s, (r) => r);
+  if (isParseError(parsed)) {
     return parsed;
   }
   const left = s.next();
-  if (left !== EOF) {
-    return new ParseError(`Unexpected token left!: ${left.t}: "${left.v[0]}"`);
+  if (!isEof(left)) {
+    const { f, l, c } = left;
+    return new ParseErrorSkipping(
+      `Unexpected token left!: "${left.m[0]}" at line ${l}, column ${c} of ${f}`,
+      left,
+      () => parsed,
+    );
   }
   return parsed;
 }
 
-export function readBlock(input: ReaderInput): Block<Location> | ParseError {
+export function readBlock(
+  input: ReaderInput,
+): Block<Location> | ParseError<Form<Location>> {
   const s = new SpaceSkippingScanner(tokens, input);
   const result = [];
-  let f: Form<Location> | ParseError;
+  let f: Form<Location> | ParseError<Form<Location>>;
   while (!s.isAtEof()) {
-    f = form(s);
-    if (ParseError.is(f)) {
+    f = form(s, (r) => r);
+    if (isParseError(f)) {
       return f;
     }
     result.push(f);
   }
   return result;
+}
+
+export function readResumably(
+  input: ReaderInput,
+): Form<Location> | ParseError<Form<Location>> {
+  const s = new SpaceSkippingScanner(tokens, input);
+  return form(s, (r) => r);
 }

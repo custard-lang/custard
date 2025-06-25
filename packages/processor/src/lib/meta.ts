@@ -81,7 +81,7 @@ export const readString = markAsFunctionWithEnv(
     env: Env,
     contents?: string,
     path: FilePath = srcPathForErrorMessage(env),
-  ): Block | ParseError => {
+  ): Block | ParseError<Form> => {
     if (contents === undefined) {
       throw new Error("No string given to `readString`!");
     }

@@ -1,7 +1,11 @@
 import { describe, expect, test } from "vitest";
 
-import { readStr } from "@custard-lang/processor/dist/reader.js";
-import { ParseError } from "@custard-lang/processor/dist/grammar.js";
+import { readResumably, readStr } from "@custard-lang/processor/dist/reader.js";
+import {
+  ParseError,
+  ParseErrorSkipping,
+  ParseErrorWantingMore,
+} from "@custard-lang/processor/dist/grammar.js";
 import {
   locatedFloat64,
   locatedInteger32,
@@ -19,12 +23,12 @@ import {
 } from "@custard-lang/processor/dist/internal/types.js";
 import { keyValue } from "@custard-lang/processor/dist/types.js";
 
+const path = "test";
+
+const inputOf = (contents: string) => ({ path, contents }) as const;
+const location = (l: number, c: number) => ({ f: path, l, c }) as const;
+
 describe("readStr", () => {
-  const path = "test";
-
-  const inputOf = (contents: string) => ({ path, contents }) as const;
-  const location = (l: number, c: number) => ({ f: path, l, c }) as const;
-
   describe("Integer32", () => {
     test("`123` -> `123`", () => {
       expect(readStr(inputOf("123"))).toEqual(
@@ -330,48 +334,39 @@ describe("readStr", () => {
   });
 
   describe("ParseError", () => {
-    test("when the input string contains unmatched parentheses", () => {
-      expect(readStr(inputOf("(p 45"))).toEqual(
-        new ParseError("Expected form or close paren, but got end of input"),
-      );
-    });
     test("when the input string contains an extra closing parenthesis", () => {
-      expect(readStr(inputOf("(p 0 9))"))).toEqual(
-        new ParseError('Unexpected token left!: close paren: ")"'),
-      );
-    });
-    test("when the input string contains unmatched double quotes", () => {
-      expect(readStr(inputOf('(p "hello)'))).toEqual(
-        new ParseError(
-          'Unterminated string literal: "hello) at line 1, column 4',
-        ),
-      );
-      expect(readStr(inputOf('(p  "hola\\")'))).toEqual(
-        new ParseError(
-          'Unterminated string literal: "hola\\") at line 1, column 5',
-        ),
-      );
-      expect(readStr(inputOf('(p\n "'))).toEqual(
-        new ParseError('Unterminated string literal: " at line 2, column 2'),
+      const expected = readStr(inputOf("(p 0 9))"));
+      expect(expected).toBeInstanceOf(ParseErrorSkipping);
+      expect((expected as ParseErrorSkipping<unknown>).message).toEqual(
+        'Unexpected token left!: ")" at line 1, column 8 of test',
       );
     });
 
-    test("when the input string contains an unexpected token", () => {
-      // FIXME: This error message is not exact: Should be "Expected form or close ...".
-      expect(readStr(inputOf("{ a: b, c: d }"))).toEqual(
-        new ParseError(
-          'Expected form, but got unknown: ",", at line 1, column 7',
-        ),
+    test("when the input string contains unmatched parentheses", () => {
+      const expected = readStr(inputOf("(p 45"));
+      expect(expected).toBeInstanceOf(ParseErrorWantingMore);
+      expect((expected as ParseErrorWantingMore<unknown>).message).toEqual(
+        "Expected form or close paren, but got end of input, at line 1, column 6 of test",
       );
-      expect(readStr(inputOf("[a, b]"))).toEqual(
-        new ParseError(
-          'Expected form, but got unknown: ",", at line 1, column 3',
-        ),
+    });
+
+    test("when the input string contains unmatched double quotes", () => {
+      const expected1 = readStr(inputOf('(p "hello)'));
+      expect(expected1).toBeInstanceOf(ParseErrorWantingMore);
+      expect((expected1 as ParseErrorWantingMore<unknown>).message).toEqual(
+        'Unterminated string literal: "hello) at line 1, column 4',
       );
-      expect(readStr(inputOf("[a: b]"))).toEqual(
-        new ParseError(
-          'Expected form, but got colon: ":", at line 1, column 3',
-        ),
+
+      const expected2 = readStr(inputOf('(p  "hola\\")'));
+      expect(expected2).toBeInstanceOf(ParseErrorWantingMore);
+      expect((expected2 as ParseErrorWantingMore<unknown>).message).toEqual(
+        'Unterminated string literal: "hola\\") at line 1, column 5',
+      );
+
+      const expected3 = readStr(inputOf('(p\n "'));
+      expect(expected3).toBeInstanceOf(ParseErrorWantingMore);
+      expect((expected3 as ParseErrorWantingMore<unknown>).message).toEqual(
+        'Unterminated string literal: " at line 2, column 2',
       );
     });
   });

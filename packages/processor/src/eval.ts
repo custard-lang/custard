@@ -5,7 +5,7 @@ import {
   type ReaderInput,
   type TranspileRepl,
 } from "./types.js";
-import { ParseError } from "./grammar.js";
+import { isParseError } from "./grammar.js";
 import { readBlock } from "./reader.js";
 
 import {
@@ -40,7 +40,7 @@ export async function evalString(
   env: Env<TranspileRepl>,
 ): Promise<any | Error> {
   const forms = readBlock(input);
-  if (ParseError.is(forms)) {
+  if (isParseError(forms)) {
     return forms;
   }
   return await evalBlock(forms, env);

@@ -20,7 +20,7 @@ import {
 } from "@custard-lang/processor/dist/types.js";
 import { fileOfImportMetaUrl } from "@custard-lang/processor/dist/util/path.js";
 import { standardModuleRoot } from "@custard-lang/processor/dist/internal/definitions.js";
-import { transpileKtvalsForModule } from "@custard-lang/processor/dist/internal/isolated-eval.js";
+import { transpileKtvalsForModule } from "@custard-lang/processor/dist/internal/ktvals.js";
 import { Config, testForm } from "../../helpers.js";
 
 describe("transpileBlock", () => {

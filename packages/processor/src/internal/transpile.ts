@@ -46,7 +46,7 @@ import { CU_ENV } from "./cu-env.js";
 import { type Env } from "./types.js";
 import * as EnvF from "./env.js";
 import { readBlock } from "../reader.js";
-import { ParseError } from "../grammar.js";
+import { isParseError } from "../grammar.js";
 import { isStatement } from "./call.js";
 import { evalForMacro } from "./eval/core.js";
 import { clearTranspiledSrc } from "./transpile-state.js";
@@ -404,7 +404,7 @@ export async function transpileString(
   env: Env<TranspileModule>,
 ): Promise<Ktvals<JsSrc> | Error> {
   const forms = readBlock(input);
-  if (ParseError.is(forms)) {
+  if (isParseError(forms)) {
     return forms;
   }
   const mod = await transpileBlock(forms, env);

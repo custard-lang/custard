@@ -1,10 +1,20 @@
-import { type Location, type ReaderInput } from "./internal/types.js";
+import type { FilePath, Location, ReaderInput } from "./types.ts";
 
 export type TokenKind = string;
 
-export type EOF = null;
+export interface Eof extends Location {
+  t: "EOF";
+}
 
-export const EOF: EOF = null;
+export function eof(l: Location): Eof {
+  return { t: "EOF", ...l };
+}
+
+export function isEof(
+  v: Omit<MatchedToken, "t"> | MatchedToken | Eof,
+): v is Eof {
+  return "t" in v && v.t === "EOF";
+}
 
 export interface TokenAndRE {
   t: TokenKind;
@@ -13,24 +23,20 @@ export interface TokenAndRE {
 
 export interface MatchedToken extends Location {
   t: TokenKind;
-  v: RegExpExecArray;
+  m: RegExpExecArray;
 }
-
-export const UNKNOWN_TOKEN: TokenAndRE = {
-  t: "unknown",
-  r: /\S+/y,
-};
 
 export class SpaceSkippingScanner {
   readonly #res: TokenAndRE[];
-  readonly #input: ReaderInput;
+  readonly #path: FilePath;
+  #contents: string;
   #position = 0;
 
   #line = 1;
   // Last position of linebreak.
   #lastLinebreakAt = 0;
 
-  #lastToken: MatchedToken | EOF;
+  #lastToken: MatchedToken | Eof;
 
   constructor(res: TokenAndRE[], input: ReaderInput) {
     for (const { t, r } of res) {
@@ -42,23 +48,25 @@ export class SpaceSkippingScanner {
     }
 
     this.#res = res;
-    this.#input = input;
+    this.#path = input.path;
+    this.#contents = input.contents;
     this.#lastToken = this.#next();
   }
 
-  next(): MatchedToken | EOF {
+  next(): MatchedToken | Eof {
     const lastToken = this.#lastToken;
     this.#lastToken = this.#next();
     return lastToken;
   }
 
-  #next(): MatchedToken | EOF {
-    // Skip spaces and record linebreak positions.
-    const spacesMd = this.#scan(/\s*/y);
-    if (spacesMd === EOF) {
-      return EOF;
+  #next(): MatchedToken | Eof {
+    // Skip spaces and record linebreak positions. This regexp defnitely matches.
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const spacesMd = this.scan(/\s*/y)!;
+    if (isEof(spacesMd)) {
+      return spacesMd;
     }
-    const spaces = spacesMd.v[0];
+    const spaces = spacesMd.m[0];
     let i = spaces.length - 1;
     for (const c of spaces) {
       if (c === "\n") {
@@ -71,46 +79,58 @@ export class SpaceSkippingScanner {
     }
 
     for (const { t, r } of this.#res) {
-      const v = this.#scan(r);
-      if (v !== EOF) {
-        return { t, ...v };
+      const v = this.scan(r);
+      if (v === null) {
+        continue;
       }
+      if (isEof(v)) {
+        return v;
+      }
+      return { t, ...v };
     }
-
-    const unknown = this.#scan(UNKNOWN_TOKEN.r);
-    if (unknown !== EOF) {
-      return {
-        t: UNKNOWN_TOKEN.t,
-        ...unknown,
-      };
-    }
-    return EOF;
+    throw new Error(
+      `No token found at ${this.#position}. You must give token definitions matching any characters.`,
+    );
   }
 
-  peek(): MatchedToken | EOF {
+  peek(): MatchedToken | Eof {
     return this.#lastToken;
   }
 
   isAtEof(): boolean {
-    return this.#lastToken === EOF;
+    return this.#lastToken.t === "EOF";
   }
 
-  #scan(r: RegExp): Omit<MatchedToken, "t"> | EOF {
-    if (this.#position >= this.#input.contents.length) {
-      return EOF;
+  scan(r: RegExp): Omit<MatchedToken, "t"> | Eof | null {
+    if (this.#position >= this.#contents.length) {
+      return eof({
+        l: this.#line,
+        c: this.#position - this.#lastLinebreakAt + 1,
+        f: this.#path,
+      });
     }
 
     r.lastIndex = this.#position;
-    const md = r.exec(this.#input.contents);
-    if (md === EOF) {
-      return EOF;
+    const m = r.exec(this.#contents);
+    if (m === null) {
+      return null;
     }
     this.#position = r.lastIndex;
     return {
-      v: md,
+      m,
       l: this.#line,
-      c: md.index - this.#lastLinebreakAt + 1,
-      f: this.#input.path,
+      c: m.index - this.#lastLinebreakAt + 1,
+      f: this.#path,
     };
+  }
+
+  feed(contents: string): void {
+    // When the scanner reaches the end of the input,
+    // the string fed next should start from the beginning of the line.
+    this.#lastLinebreakAt = 0;
+    this.#position = 0;
+    ++this.#line;
+
+    this.#contents = contents;
   }
 }
