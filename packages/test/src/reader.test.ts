@@ -2,7 +2,7 @@ import { describe, expect, test } from "vitest";
 
 import { readResumably, readStr } from "@custard-lang/processor/dist/reader.js";
 import {
-  ParseError,
+  isParseError,
   ParseErrorSkipping,
   ParseErrorWantingMore,
 } from "@custard-lang/processor/dist/grammar.js";
@@ -369,5 +369,85 @@ describe("readStr", () => {
         'Unterminated string literal: " at line 2, column 2',
       );
     });
+  });
+});
+
+describe("readResumably", () => {
+  test("can resume parsing complex structures with all syntax elements", () => {
+    // Most complex test case using all the syntax rules:
+    // number, string, array, list, object, unquote, splice, symbol, property access
+    // prettier-ignore
+    const complexTokens = [
+      "{",
+      // string key with property access value
+      '"', "k", "e", "y", "1", '"', ":", " ", "obj.prop", ".", "value", ",", " ",
+      // computed key with array value containing numbers and strings
+      "[", "(", "plusF", " ", "1", " ", "2", ")", "]", ":", " ", "[", "123", ",", " ", '"', "t", "e", "s", "t", '"', "]", ",", " ",
+      // symbol key with list value containing unquote and splice
+      "data", ":", " ", "(", "list", " ", "$", "var", " ", "...", "$", "items", ")",
+      " ", "}"
+    ];
+
+    const fullInput = complexTokens.join("");
+    const expected = readStr(inputOf(fullInput));
+
+    if (isParseError(expected)) {
+      throw expected;
+    }
+
+    // Test resumability at every token boundary
+    for (let i = 1; i < complexTokens.length; i++) {
+      const partialInput = complexTokens.slice(0, i).join("");
+      const remainingInput = complexTokens.slice(i).join("");
+
+      const partialResult = readResumably(inputOf(partialInput));
+
+      // Should get ParseErrorWantingMore for incomplete input
+      expect(partialResult).toBeInstanceOf(ParseErrorWantingMore);
+      const resumedResult = (
+        partialResult as ParseErrorWantingMore<Form<Location>>
+      ).resume(remainingInput);
+
+      // Should match the expected result
+      expect(resumedResult).toEqual(expected);
+    }
+  });
+
+  test("handles deeply nested structure with string character-level splitting", () => {
+    // Complex nested structure with string that needs character-level testing
+    // prettier-ignore
+    const nestedTokens = [
+      "[",
+      // Object with string value split at character level
+      "{", " ", "name", ":", " ", '"', "h", "e", "l", "l", "o", " ", "w", "o", "r", "l", "d", '"', " ", "}",
+      ",", " ",
+      // Array with property access and unquote
+      "[", "obj.method", ",", " ", "$", "variable", "]",
+      ",", " ",
+      // Function call with splice
+      "(", "concat", " ", "...", "$", "args", ")",
+      "]"
+    ];
+
+    const fullInput = nestedTokens.join("");
+    const expected = readStr(inputOf(fullInput));
+
+    if (isParseError(expected)) {
+      throw expected;
+    }
+
+    // Test at every position to ensure string characters can be resumed
+    for (let i = 1; i < nestedTokens.length; i++) {
+      const partialInput = nestedTokens.slice(0, i).join("");
+      const remainingInput = nestedTokens.slice(i).join("");
+
+      const partialResult = readResumably(inputOf(partialInput));
+      expect(partialResult).toBeInstanceOf(ParseErrorWantingMore);
+
+      const resumedResult = (
+        partialResult as ParseErrorWantingMore<Form<Location>>
+      ).resume(remainingInput);
+      expect(resumedResult).toEqual(expected);
+    }
   });
 });
