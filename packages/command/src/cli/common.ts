@@ -18,9 +18,9 @@ import {
   initializeForRepl,
   readerInputOf,
   Form,
+  isParseError,
 } from "@custard-lang/processor";
 import { assertNonError } from "@custard-lang/processor/dist/util/error.js";
-import { isParseError } from "@custard-lang/processor/src/grammar.js";
 
 export const transpileProgram = program
   .option(
