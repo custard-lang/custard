@@ -97,6 +97,18 @@ export class SpaceSkippingScanner {
     return this.#lastToken;
   }
 
+  overwriteLastToken(token: MatchedToken): void {
+    this.#lastToken = token;
+  }
+
+  // for debugging purposes
+  getPosition(): number {
+    return this.#position;
+  }
+  getContents(): string {
+    return this.#contents;
+  }
+
   isAtEof(): boolean {
     return this.#lastToken.t === "EOF";
   }

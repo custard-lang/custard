@@ -3,9 +3,9 @@ import type { CuString } from "./cu-string.js";
 import type { CuSymbol } from "./cu-symbol.js";
 import type { Unquote } from "./unquote.js";
 
-export class KeyValue<V, A = unknown, U = unknown, X extends Empty = Empty> {
+export class KeyValue<V, C = unknown, U = unknown, X extends Empty = Empty> {
   constructor(
-    public key: KeyValueKey<A, U, X>,
+    public key: KeyValueKey<C, U, X>,
     public value: V,
   ) {}
 }

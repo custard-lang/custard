@@ -6,19 +6,19 @@ import type { Unquote } from "./unquote.js";
 export class CuObject<
   V,
   KU = unknown,
-  KA = unknown,
+  KC = unknown,
   U = unknown,
   X extends Empty = Empty,
 > {
   constructor(
     public keyValues: Array<
-      KeyValue<V, KU, KA, X> | CuSymbol<X> | Unquote<U, X>
+      KeyValue<V, KU, KC, X> | CuSymbol<X> | Unquote<U, X>
     >,
     public extension: X = {} as X,
   ) {}
 
   [Symbol.iterator](): IterableIterator<
-    KeyValue<V, KU, KA, X> | CuSymbol<X> | Unquote<U, X>
+    KeyValue<V, KU, KC, X> | CuSymbol<X> | Unquote<U, X>
   > {
     return this.keyValues[Symbol.iterator]();
   }

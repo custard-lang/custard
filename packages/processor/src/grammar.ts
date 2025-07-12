@@ -41,24 +41,25 @@ import {
 } from "./types.js";
 
 export const tokens: TokenAndRE[] = [
-  {t: "open paren", r: /\(/y},
-  {t: "close paren", r: /\)/y},
+  { t: "open paren", r: /\(/y },
+  { t: "close paren", r: /\)/y },
 
-  {t: "open bracket", r: /\[/y},
-  {t: "close bracket", r: /\]/y},
+  { t: "open bracket", r: /\[/y },
+  { t: "close bracket", r: /\]/y },
 
-  {t: "open brace", r: /\{/y},
-  {t: "close brace", r: /\}/y},
+  { t: "open brace", r: /\{/y },
+  { t: "close brace", r: /\}/y },
 
-  {t: "colon", r: /:/y},
-  {t: "string", r: /"(?:\\.|[^\\"])*"?/y},
-  {t: "number", r: /-?\d+(?<fractional>\.\d+)?/y},
-  {t: "symbol or property access", r: /[a-z_][\w$.]*/iy},
+  { t: "colon", r: /:/y },
+  { t: "string", r: /"(?:\\.|[^\\"])*"?/y },
+  { t: "number", r: /-?\d+(?<fractional>\.\d+)?/y },
+  { t: "symbol or property access", r: /[a-z_][\w$.]*/iy },
 
-  {t: "unquote sign", r: /\$/y},
-  {t: "splice sign", r: /\.\.\./y},
-  {t: "UNKNOWN", r: /[^()\[\]{}:"\-\d,a-z_$.\s]+/y},
+  { t: "unquote sign", r: /\$/y },
+  { t: "splice sign", r: /\.\.\./y },
+  { t: "UNKNOWN", r: /[^()\[\]{}:"\-\da-z_$.\s]*/y },
 ];
+const tokenInsideString = /(?:\\.|[^\\"])*"?/y;
 
 export type ParseError<R> = ParseErrorWantingMore<R> | ParseErrorSkipping<R>;
 
@@ -68,17 +69,20 @@ class ParseErrorBase extends Error {
 
   constructor(message: string, matchedToken: MatchedToken | Eof) {
     super(message);
-    const {f, l, c} = matchedToken;
-    this.location = {l, c, f};
+    const { f, l, c } = matchedToken;
+    this.location = { l, c, f };
   }
 }
 
-function buildCommonErrorMessage(messageOrExpected: string, matchedToken: MatchedToken | Eof): string {
-  const {f, l, c} = matchedToken;
+function buildCommonErrorMessage(
+  messageOrExpected: string,
+  matchedToken: MatchedToken | Eof,
+): string {
+  const { f, l, c } = matchedToken;
   if (isEof(matchedToken)) {
     return `Expected ${messageOrExpected}, but got end of input, at line ${l}, column ${c} of ${f}`;
   }
-  const {t, m} = matchedToken;
+  const { t, m } = matchedToken;
   return `Expected ${messageOrExpected}, but got ${t}: "${m[0]}", at line ${l}, column ${c} of ${f}`;
 }
 
@@ -147,32 +151,34 @@ export function form<R>(
     return token;
   }
 
-  const {l, c, f} = token;
+  const { l, c, f } = token;
   switch (token.t) {
     case "open paren":
-      return listP(s, {l, c, f}, k);
+      return listP(s, { l, c, f }, k);
     case "open bracket":
-      return cuArrayP(s, {l, c, f}, k);
+      return cuArrayP(s, { l, c, f }, k);
     case "open brace":
-      return cuObjectP(s, {l, c, f}, k);
+      return cuObjectP(s, { l, c, f }, k);
     case "string":
       // eslint-disable-next-line eslint-plugin-no-ignore-returned-union/no-ignore-returned-union
       s.next(); // Drop the peeked token
-      return string(s, token, k);
+      return stringP(s, token, k);
     case "number":
       // eslint-disable-next-line eslint-plugin-no-ignore-returned-union/no-ignore-returned-union
       s.next(); // Drop the peeked token
-      return number(token, k);
+      return numberP(token, k);
     case "symbol or property access":
       // eslint-disable-next-line eslint-plugin-no-ignore-returned-union/no-ignore-returned-union
       s.next(); // Drop the peeked token
       return symbolOrPropertyAccess(s, token, k);
     case "unquote sign":
-      return unquoteP(s, {l, c, f}, k);
+      return unquoteP(s, { l, c, f }, k);
     case "splice sign":
-      return spliceP(s, {l, c, f}, k);
+      return spliceP(s, { l, c, f }, k);
     default:
-      return k(ParseErrorSkipping.ofCommonMessage("form", token, () => form(s, k)));
+      return k(
+        ParseErrorSkipping.ofCommonMessage("form", token, () => form(s, k)),
+      );
   }
 }
 
@@ -212,12 +218,12 @@ function cuObjectP<R>(
   k: (
     result:
       | CuObject<
-      Form<Location>,
-      Form<Location>,
-      Form<Location>,
-      Form<Location>,
-      Location
-    >
+          Form<Location>,
+          Form<Location>,
+          Form<Location>,
+          Form<Location>,
+          Location
+        >
       | ParseError<R>,
   ) => R | ParseError<R>,
 ): R | ParseError<R> {
@@ -267,11 +273,11 @@ function untilClose<R, F>(
     }
 
     // call form then, append
-    return fn(s, (kfn) => {
-      if (isParseError(kfn)) {
-        return k(kfn);
+    return fn(s, (fnResult) => {
+      if (isParseError(fnResult)) {
+        return k(fnResult);
       }
-      result.push(kfn);
+      result.push(fnResult);
       return loop();
     });
   }
@@ -294,79 +300,84 @@ function keyValueOrSymbolOrStringOrUnquote<R>(
     if (isParseError(key)) {
       return k(key);
     }
-    const colonOrOther = handleEof(s, "colon, close brace, or form", () =>
-      keyValueOrSymbolOrStringOrUnquote(s, k),
-    );
-    if (colonOrOther instanceof ParseErrorWantingMore) {
-      return colonOrOther;
-    }
+    return (function colonAndValue(): R | ParseError<R> {
+      const colonOrOther = handleEof(
+        s,
+        "colon, close brace, or form",
+        colonAndValue,
+      );
+      if (colonOrOther instanceof ParseErrorWantingMore) {
+        return colonOrOther;
+      }
 
-    if (colonOrOther.t === "colon") {
-      return (function keyValueOrSymbolOrStringOrUnquoteAgain():
-        | R
-        | ParseError<R> {
-        // eslint-disable-next-line eslint-plugin-no-ignore-returned-union/no-ignore-returned-union
-        s.next(); // drop colon (or other invalid token)
+      if (colonOrOther.t === "colon") {
+        return (function keyValueOrSymbolOrStringOrUnquoteAgain():
+          | R
+          | ParseError<R> {
+          // eslint-disable-next-line eslint-plugin-no-ignore-returned-union/no-ignore-returned-union
+          s.next(); // drop colon
 
-        return form(s, (value) => {
-          if (isParseError(value)) {
-            return k(value);
-          }
-
-          if (isCuArray(key)) {
-            const [computedKeyForm, ...rest] = key;
-            if (computedKeyForm === undefined) {
-              const {l, c} = key.extension;
-              return k(
-                ParseErrorSkipping.ofCommonMessage(
-                  `No form given to a computed key at line ${l}, column ${c}`,
-                  colonOrOther,
-                  keyValueOrSymbolOrStringOrUnquoteAgain,
-                ),
-              );
+          return form(s, (value) => {
+            if (isParseError(value)) {
+              return k(value);
             }
-            if (rest.length > 0) {
-              const {l, c} = key.extension;
-              return k(
-                ParseErrorSkipping.ofCommonMessage(
-                  `Expected a computed key, but array at line ${l}, column ${c}`,
-                  colonOrOther,
-                  keyValueOrSymbolOrStringOrUnquoteAgain,
-                ),
-              );
+            if (isCuArray(key)) {
+              const [computedKeyForm, ...rest] = key;
+              if (computedKeyForm === undefined) {
+                const { l, c } = key.extension;
+                return k(
+                  ParseErrorSkipping.ofCommonMessage(
+                    `No form given to a computed key at line ${l}, column ${c}`,
+                    colonOrOther,
+                    keyValueOrSymbolOrStringOrUnquoteAgain,
+                  ),
+                );
+              }
+              if (rest.length > 0) {
+                const { l, c } = key.extension;
+                return k(
+                  ParseErrorSkipping.ofCommonMessage(
+                    `Expected a computed key, but array at line ${l}, column ${c}`,
+                    colonOrOther,
+                    keyValueOrSymbolOrStringOrUnquoteAgain,
+                  ),
+                );
+              }
+              return k(keyValue(computedKey(computedKeyForm), value));
             }
-            return k(keyValue(computedKey(computedKeyForm), value));
-          }
-          if (isCuSymbol(key) || isCuString(key) || isUnquote(key)) {
-            return k(keyValue(key, value));
-          }
 
-          const {l, c} = key.extension;
-          return k(
-            ParseErrorSkipping.ofCommonMessage(
-              `key of an object must be a symbol, string, or computed key, but ${key.constructor.name} at line ${l}, column ${c}`,
-              colonOrOther,
-              keyValueOrSymbolOrStringOrUnquoteAgain,
-            ),
-          );
-        });
-      })();
-    }
-    if (isCuSymbol(key) || isUnquote(key)) {
-      return k(key);
-    }
-    const {l, c} = key.extension;
-    return k(
-      ParseErrorSkipping.ofCommonMessage(
-        `key of an object without a value must be a symbol, but ${key.constructor.name} at line ${l}, column ${c}`,
-        colonOrOther,
-        () => keyValueOrSymbolOrStringOrUnquote(s, k),
-      ),
-    );
+            if (isCuSymbol(key) || isCuString(key) || isUnquote(key)) {
+              return k(keyValue(key, value));
+            }
+
+            const { l, c } = key.extension;
+            return k(
+              ParseErrorSkipping.ofCommonMessage(
+                `key of an object must be a symbol, string, or computed key, but ${key.constructor.name} at line ${l}, column ${c}`,
+                colonOrOther,
+                keyValueOrSymbolOrStringOrUnquoteAgain,
+              ),
+            );
+          });
+        })();
+      }
+
+      if (isCuSymbol(key) || isUnquote(key)) {
+        return k(key);
+      }
+      const { l, c } = key.extension;
+      return k(
+        new ParseErrorSkipping(
+          `Key of an object without a value must be a symbol, but ${key.constructor.name} at line ${l}, column ${c}`,
+          colonOrOther,
+          () => keyValueOrSymbolOrStringOrUnquote(s, k),
+        ),
+      );
+    })();
   });
 }
 
-function string<R>(
+function stringP<R>(
   s: SpaceSkippingScanner,
   token: MatchedToken,
   k: (result: CuString<Location> | ParseError<R>) => R | ParseError<R>,
@@ -382,48 +393,57 @@ function string<R>(
     return k(
       new ParseErrorWantingMore(
         `Unterminated string literal: ${stringLiteral} at line ${l}, column ${c}`,
-        eof({l, c, f}),
+        eof({ l, c, f }),
         function stringResume(more: string): R | ParseError<R> {
           s.feed(more);
-          const remaining = s.scan(/(?:\\.|[^\\"])*"?/y);
+          const remaining = s.scan(tokenInsideString);
           if (remaining === null || isEof(remaining)) {
             return new ParseErrorWantingMore(
               "Unterminated string literal",
-              eof({l, c, f}),
+              eof({ l, c, f }),
               stringResume,
             );
           }
           result += remaining.m[0];
           if (result.endsWith('"')) {
+            s.overwriteLastToken({
+              t: "string",
+              m: [result] as RegExpExecArray,
+              l,
+              c,
+              f,
+            });
+            // eslint-disable-next-line eslint-plugin-no-ignore-returned-union/no-ignore-returned-union
+            s.next(); // drop the last token inside the string literal
             return k(
-              locatedCuString(JSON.parse(result) as string, {l, c, f}),
+              locatedCuString(JSON.parse(result) as string, { l, c, f }),
             );
           }
           return new ParseErrorWantingMore(
             `Still unterminated string literal: ${result}`,
-            eof({l, c: c + result.length, f}),
+            eof({ l, c: c + result.length, f }),
             stringResume,
           );
         },
       ),
     );
   }
-  return k(locatedCuString(JSON.parse(stringLiteral) as string, {l, c, f}));
+  return k(locatedCuString(JSON.parse(stringLiteral) as string, { l, c, f }));
 }
 
-function number<R>(
+function numberP<R>(
   token: MatchedToken,
   k: (
     result: Integer32<Location> | Float64<Location> | ParseError<R>,
   ) => R | ParseError<R>,
 ): R | ParseError<R> {
-  const {l, c, f, m} = token;
+  const { l, c, f, m } = token;
 
   if (m.groups?.fractional === undefined) {
-    return k(locatedInteger32(parseInt(m[0]), {l, c, f}));
+    return k(locatedInteger32(parseInt(m[0]), { l, c, f }));
   }
 
-  return k(locatedFloat64(parseFloat(m[0]), {l, c, f}));
+  return k(locatedFloat64(parseFloat(m[0]), { l, c, f }));
 }
 
 function symbolOrPropertyAccess<R>(
@@ -431,17 +451,17 @@ function symbolOrPropertyAccess<R>(
   token: MatchedToken,
   k: (result: Form<Location> | ParseError<R>) => R | ParseError<R>,
 ): R | ParseError<R> {
-  const {l, c, f} = token;
+  const { l, c, f } = token;
   const v = token.m[0];
   switch (v) {
     case "true":
-      return k(locatedReservedSymbol(true, {l, c, f}));
+      return k(locatedReservedSymbol(true, { l, c, f }));
 
     case "false":
-      return k(locatedReservedSymbol(false, {l, c, f}));
+      return k(locatedReservedSymbol(false, { l, c, f }));
 
     case "none":
-      return k(locatedReservedSymbol(null, {l, c, f}));
+      return k(locatedReservedSymbol(null, { l, c, f }));
 
     default: {
       // TODO: Insufficient validation
@@ -468,7 +488,7 @@ function symbolOrPropertyAccess<R>(
           }),
         );
       }
-      return k(locatedCuSymbol(v, {l, c, f}));
+      return k(locatedCuSymbol(v, { l, c, f }));
     }
   }
 }
