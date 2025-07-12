@@ -10,6 +10,7 @@
     "test:detailed": "vitest --reporter verbose",
     "lint": "eslint --ext ts src",
     "fix:lint": "eslint --ext ts --fix src",
+    "test:once": "vitest run",
     "test:coverage": "vitest run --coverage"
   },
   "repository": {
