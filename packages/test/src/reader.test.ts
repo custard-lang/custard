@@ -21,7 +21,37 @@ import {
   locatedUnquote,
   locatedSplice,
 } from "@custard-lang/processor/dist/internal/types.js";
-import { keyValue } from "@custard-lang/processor/dist/types.js";
+import {
+  computedKey,
+  cuArray,
+  cuObject,
+  cuString,
+  cuSymbol,
+  CuSymbol,
+  float64,
+  integer32,
+  isComputedKey,
+  isCuArray,
+  isCuObject,
+  isCuString,
+  isCuSymbol,
+  isFloat64,
+  isInteger32,
+  isKeyValue,
+  isList,
+  isPropertyAccess,
+  isReservedSymbol,
+  isSplice,
+  isUnquote,
+  keyValue,
+  list,
+  propertyAccess,
+  reservedSymbol,
+  splice,
+  unquote,
+  Unquote,
+} from "@custard-lang/processor/dist/types.js";
+import { ExpectNever } from "@custard-lang/processor/src/util/error.js";
 
 const path = "test";
 
@@ -373,81 +403,153 @@ describe("readStr", () => {
 });
 
 describe("readResumably", () => {
-  test("can resume parsing complex structures with all syntax elements", () => {
+  describe("can resume parsing complex structures from anywhere", () => {
     // Most complex test case using all the syntax rules:
     // number, string, array, list, object, unquote, splice, symbol, property access
     // prettier-ignore
-    const complexTokens = [
+    const tokens1 = [
       "{",
       // string key with property access value
-      '"', "k", "e", "y", "1", '"', ":", " ", "obj.prop", ".", "value", ",", " ",
+      '"', "k", "e", "y", "1", '"', ":", " ", "obj.prop.value", " ",
       // computed key with array value containing numbers and strings
-      "[", "(", "plusF", " ", "1", " ", "2", ")", "]", ":", " ", "[", "123", ",", " ", '"', "t", "e", "s", "t", '"', "]", ",", " ",
+      "[", "(", "plusF", " ", "1", " ", "2", ")", "]", ":", " ", "[", "123", " ", '"', "t", "e", "s", "t", '"', "]", " ",
       // symbol key with list value containing unquote and splice
       "data", ":", " ", "(", "list", " ", "$", "var", " ", "...", "$", "items", ")",
       " ", "}"
     ];
+    for (let i = 0; i < tokens1.length - 1; ++i) {
+      // Test resumability at every token boundary
+      test(`1-${i}`, () => {
+        const fullInput = tokens1.join("");
+        const expected = readStr(inputOf(fullInput));
+        if (isParseError(expected)) {
+          throw expected;
+        }
 
-    const fullInput = complexTokens.join("");
-    const expected = readStr(inputOf(fullInput));
+        const partialInput = tokens1.slice(0, i).join("");
+        const partialResult = readResumably(inputOf(partialInput));
+        // Should get ParseErrorWantingMore for incomplete input
+        expect(partialResult).toBeInstanceOf(ParseErrorWantingMore);
 
-    if (isParseError(expected)) {
-      throw expected;
+        const remainingInput = tokens1.slice(i).join("");
+        const resumedResult = (
+          partialResult as ParseErrorWantingMore<Form<Location>>
+        ).resume(remainingInput);
+
+        if (resumedResult instanceof Error) {
+          throw resumedResult;
+        }
+        expect(forgetLocationOfForm(resumedResult)).toEqual(
+          forgetLocationOfForm(expected),
+        );
+      });
     }
 
-    // Test resumability at every token boundary
-    for (let i = 1; i < complexTokens.length; i++) {
-      const partialInput = complexTokens.slice(0, i).join("");
-      const remainingInput = complexTokens.slice(i).join("");
-
-      const partialResult = readResumably(inputOf(partialInput));
-
-      // Should get ParseErrorWantingMore for incomplete input
-      expect(partialResult).toBeInstanceOf(ParseErrorWantingMore);
-      const resumedResult = (
-        partialResult as ParseErrorWantingMore<Form<Location>>
-      ).resume(remainingInput);
-
-      // Should match the expected result
-      expect(resumedResult).toEqual(expected);
-    }
-  });
-
-  test("handles deeply nested structure with string character-level splitting", () => {
-    // Complex nested structure with string that needs character-level testing
+    // [{ name: "hello world" }, [obj.method, $variable], (concat ...$args)]
     // prettier-ignore
-    const nestedTokens = [
+    const tokens2 = [
       "[",
       // Object with string value split at character level
       "{", " ", "name", ":", " ", '"', "h", "e", "l", "l", "o", " ", "w", "o", "r", "l", "d", '"', " ", "}",
-      ",", " ",
+      " ",
       // Array with property access and unquote
-      "[", "obj.method", ",", " ", "$", "variable", "]",
-      ",", " ",
+      "[", "obj.method", " ", "$", "variable", "]",
+      " ",
       // Function call with splice
       "(", "concat", " ", "...", "$", "args", ")",
       "]"
     ];
+    for (let i = 0; i < tokens2.length - 1; ++i) {
+      test(`2-${i}`, () => {
+        const fullInput = tokens2.join("");
+        const expected = readStr(inputOf(fullInput));
+        if (isParseError(expected)) {
+          throw expected;
+        }
 
-    const fullInput = nestedTokens.join("");
-    const expected = readStr(inputOf(fullInput));
+        const partialInput = tokens2.slice(0, i).join("");
+        const partialResult = readResumably(inputOf(partialInput));
+        expect(partialResult).toBeInstanceOf(ParseErrorWantingMore);
 
-    if (isParseError(expected)) {
-      throw expected;
-    }
-
-    // Test at every position to ensure string characters can be resumed
-    for (let i = 1; i < nestedTokens.length; i++) {
-      const partialInput = nestedTokens.slice(0, i).join("");
-      const remainingInput = nestedTokens.slice(i).join("");
-
-      const partialResult = readResumably(inputOf(partialInput));
-      expect(partialResult).toBeInstanceOf(ParseErrorWantingMore);
-
-      const resumedResult = (
-        partialResult as ParseErrorWantingMore<Form<Location>>
-      ).resume(remainingInput);
-      expect(resumedResult).toEqual(expected);
+        const remainingInput = tokens2.slice(i).join("");
+        const resumedResult = (
+          partialResult as ParseErrorWantingMore<Form<Location>>
+        ).resume(remainingInput);
+        if (resumedResult instanceof Error) {
+          throw resumedResult;
+        }
+        expect(forgetLocationOfForm(resumedResult)).toEqual(
+          forgetLocationOfForm(expected),
+        );
+      });
     }
   });
 });
+
+function forgetLocationOfForm(form: Form<Location>): Form {
+  // Remove the location information from the form.
+  // Used to compare forms without location information.
+
+  if (isList(form)) {
+    return list(...form.values.map(forgetLocationOfForm));
+  }
+
+  if (isCuArray(form)) {
+    return cuArray(...form.map(forgetLocationOfForm));
+  }
+
+  if (isCuObject(form)) {
+    return cuObject(
+      ...form.keyValues.map((kv) => {
+        if (isKeyValue(kv)) {
+          const { key } = kv;
+          const k = isComputedKey(key)
+            ? computedKey(forgetLocationOfForm(key.value))
+            : forgetLocationOfForm(key);
+          return keyValue(k, forgetLocationOfForm(kv.value));
+        }
+        if (isCuSymbol(kv)) {
+          return forgetLocationOfForm(kv) as CuSymbol;
+        }
+        if (isUnquote(kv)) {
+          return forgetLocationOfForm(kv) as Unquote<Form>;
+        }
+        throw ExpectNever(kv);
+      }),
+    );
+  }
+
+  if (isInteger32(form)) {
+    return integer32(form.valueOf());
+  }
+
+  if (isFloat64(form)) {
+    return float64(form.valueOf());
+  }
+
+  if (isCuString(form)) {
+    return cuString(form.valueOf());
+  }
+
+  if (isReservedSymbol(form)) {
+    return reservedSymbol(form.valueOf());
+  }
+
+  if (isCuSymbol(form)) {
+    return cuSymbol(form.value);
+  }
+
+  if (isPropertyAccess(form)) {
+    return propertyAccess(...form.value);
+  }
+
+  if (isUnquote(form)) {
+    return unquote(forgetLocationOfForm(form.value));
+  }
+
+  if (isSplice(form)) {
+    return splice(forgetLocationOfForm(form.value));
+  }
+
+  throw ExpectNever(form);
+}
