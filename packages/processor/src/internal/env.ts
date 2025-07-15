@@ -257,8 +257,16 @@ export function tmpVarOf(
 }
 
 export function srcPathForErrorMessage({ transpileState }: Env): FilePath {
-  const prefix = transpileState.mode === "repl" ? "//(REPL)" : "";
-  return `${path.normalize(transpileState.srcPath)}${prefix}`;
+  const normalizedPath = path.normalize(transpileState.srcPath);
+  if (transpileState.mode === "repl") {
+    return replPromptPrefixOfNormalizedPath(normalizedPath);
+  }
+  return normalizedPath;
+}
+
+// TODO: Put this in a better directory.
+export function replPromptPrefixOfNormalizedPath(path: FilePath): string {
+  return `${path}//(REPL)`;
 }
 
 export function readerInputOf(env: Env, contents: string): ReaderInput {

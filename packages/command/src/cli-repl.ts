@@ -17,6 +17,7 @@ import {
   isParseErrorSkipping,
   isParseErrorWantingMore,
   Location,
+  replPromptPrefixOfNormalizedPath,
 } from "@custard-lang/processor";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -83,11 +84,16 @@ export function assertNonError<T>(v: T | Error): T {
 }
 
 (async () => {
+  const cwd = process.cwd();
   const env = assertNonError(
     await initializeForRepl(defaultTranspileOptions(), {
-      from: process.cwd(),
+      from: cwd,
       ...implicitlyImporting(`${standardModuleRoot}/base.js`),
     }),
   );
-  await readEvaluatePrintLoop(env, { l: 1, c: 1, f: "(REPL)" });
+  await readEvaluatePrintLoop(env, {
+    l: 1,
+    c: 1,
+    f: replPromptPrefixOfNormalizedPath(cwd),
+  });
 })();

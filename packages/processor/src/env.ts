@@ -12,7 +12,10 @@ import type { TranspileModule, TranspileRepl } from "./internal/types.js";
 import { evalString } from "./eval.js";
 
 import { evalKtvals } from "./internal/ktvals.js";
-export { readerInputOf } from "./internal/env.js";
+export {
+  readerInputOf,
+  replPromptPrefixOfNormalizedPath,
+} from "./internal/env.js";
 
 export async function initializeForModule(
   options: TranspileOptions,

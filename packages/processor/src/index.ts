@@ -18,6 +18,7 @@ export {
   type TranspileModule,
   type TranspileOptions,
   type Location,
+  TranspileError,
   defaultTranspileOptions,
 } from "./types.js";
 export { evalBlock, evalForm } from "./eval.js";
@@ -27,4 +28,5 @@ export {
   initializeForRepl,
   initializeForModule,
   readerInputOf,
+  replPromptPrefixOfNormalizedPath,
 } from "./env.js";
