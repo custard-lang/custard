@@ -60,7 +60,11 @@ async function readEvaluatePrintLoop(
         }
         break;
       }
-      console.log(await evalCustard(form, env));
+      try {
+        console.log(assertNonError(await evalCustard(form, env)));
+      } catch (e) {
+        console.error(e);
+      }
       location = form.extension;
     }
   } catch (err) {
