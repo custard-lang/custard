@@ -44,6 +44,7 @@ import {
   isSplice,
   isUnquote,
   keyValue,
+  KeyValueKey,
   list,
   propertyAccess,
   reservedSymbol,
@@ -506,7 +507,10 @@ function forgetLocationOfForm(form: Form<Location>): Form {
           const k = isComputedKey(key)
             ? computedKey(forgetLocationOfForm(key.value))
             : forgetLocationOfForm(key);
-          return keyValue(k, forgetLocationOfForm(kv.value));
+          return keyValue(
+            k as KeyValueKey<Form, Form>,
+            forgetLocationOfForm(kv.value),
+          );
         }
         if (isCuSymbol(kv)) {
           return forgetLocationOfForm(kv) as CuSymbol;

@@ -142,6 +142,18 @@ export function isParseError<R>(r: unknown): r is ParseError<R> {
   return r instanceof ParseErrorBase;
 }
 
+export function isParseErrorWantingMore<R>(
+  r: unknown,
+): r is ParseErrorWantingMore<R> {
+  return r instanceof ParseErrorWantingMore;
+}
+
+export function isParseErrorSkipping<R>(
+  r: unknown,
+): r is ParseErrorSkipping<R> {
+  return r instanceof ParseErrorSkipping;
+}
+
 export function form<R>(
   s: SpaceSkippingScanner,
   k: (result: Form<Location> | ParseError<R>) => R | ParseError<R>,

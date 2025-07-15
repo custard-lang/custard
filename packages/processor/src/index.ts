@@ -1,7 +1,11 @@
 export { defaultProvidedSymbolsConfig } from "./default-provided-symbols.js";
 export { type ParseError } from "./grammar.js";
-export { isParseError } from "./grammar.js";
-export { readStr } from "./reader.js";
+export {
+  isParseError,
+  isParseErrorSkipping,
+  isParseErrorWantingMore,
+} from "./grammar.js";
+export { readStr, readResumably } from "./reader.js";
 export { implicitlyImporting } from "./provided-symbols-config.js";
 export { readBlock } from "./reader.js";
 export { transpileModule } from "./transpile.js";
@@ -13,6 +17,7 @@ export {
   type TranspileRepl,
   type TranspileModule,
   type TranspileOptions,
+  type Location,
   defaultTranspileOptions,
 } from "./types.js";
 export { evalBlock, evalForm } from "./eval.js";

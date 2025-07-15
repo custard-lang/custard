@@ -4,11 +4,8 @@ import * as readline from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
 
 import {
-  readStr,
   type Env,
   type Form,
-  ParseError,
-  isParseError,
   evalForm,
   standardModuleRoot,
   defaultTranspileOptions,
@@ -16,36 +13,19 @@ import {
   initializeForRepl,
   implicitlyImporting,
   readerInputOf,
+  readResumably,
+  isParseErrorSkipping,
+  isParseErrorWantingMore,
+  Location,
 } from "@custard-lang/processor";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 const rl = readline.createInterface({ input, output });
 
-// READ
-function read(str: string, env: Env): Form | ParseError<Form> {
-  return readStr(readerInputOf(env, str));
-}
-
 // EVAL
 async function evalCustard(ast: Form, env: Env<TranspileRepl>): Promise<any> {
   return await evalForm(ast, env);
-}
-
-// PRINT: TODO
-// function print(exp: any): string {
-// }
-
-async function readEvaluatePrint(
-  str: string,
-  env: Env<TranspileRepl>,
-): Promise<void> {
-  const r0 = read(str, env);
-  if (isParseError(r0)) {
-    console.error(r0);
-    return;
-  }
-  console.log(await evalCustard(r0, env));
 }
 
 function finalize(): void {
@@ -53,20 +33,46 @@ function finalize(): void {
   input.destroy();
 }
 
-async function loop(env: Env<TranspileRepl>): Promise<void> {
+async function readEvaluatePrintLoop(
+  env: Env<TranspileRepl>,
+  location: Location,
+): Promise<void> {
   try {
     while (true) {
-      const answer = await rl.question("custard> ");
+      const answer = await ask(location, ">>>");
       if (answer === "") {
         finalize();
         break;
       }
-      await readEvaluatePrint(answer, env);
+      let form = readResumably(readerInputOf(env, answer));
+      while (true) {
+        if (isParseErrorSkipping(form)) {
+          console.warn("ParseErrorSkipping", form.message);
+          form = form.resume();
+          continue;
+        }
+        if (isParseErrorWantingMore(form)) {
+          ({ location } = form);
+          const more = await ask(location, "...");
+          form = form.resume(more);
+          continue;
+        }
+        break;
+      }
+      console.log(await evalCustard(form, env));
+      location = form.extension;
     }
   } catch (err) {
     finalize();
     throw err;
   }
+}
+
+async function ask(
+  { l, c, f }: Location,
+  promptPrefix: string,
+): Promise<string> {
+  return await rl.question(`${f}:${l},${c}:${promptPrefix} `);
 }
 
 export function assertNonError<T>(v: T | Error): T {
@@ -77,12 +83,11 @@ export function assertNonError<T>(v: T | Error): T {
 }
 
 (async () => {
-  await loop(
-    assertNonError(
-      await initializeForRepl(defaultTranspileOptions(), {
-        from: process.cwd(),
-        ...implicitlyImporting(`${standardModuleRoot}/base.js`),
-      }),
-    ),
+  const env = assertNonError(
+    await initializeForRepl(defaultTranspileOptions(), {
+      from: process.cwd(),
+      ...implicitlyImporting(`${standardModuleRoot}/base.js`),
+    }),
   );
+  await readEvaluatePrintLoop(env, { l: 1, c: 1, f: "(REPL)" });
 })();
