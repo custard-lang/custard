@@ -7,6 +7,7 @@ export {
   type Atom,
   type Location,
   type ReaderInput,
+  readerInput,
   functionIdOfCall,
   formatForError,
   aConst,

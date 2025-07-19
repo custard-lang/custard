@@ -20,6 +20,8 @@ import {
   type Form,
   locatedUnquote,
   locatedSplice,
+  type ReaderInput,
+  readerInput,
 } from "@custard-lang/processor/dist/internal/types.js";
 import {
   computedKey,
@@ -56,7 +58,7 @@ import { ExpectNever } from "@custard-lang/processor/src/util/error.js";
 
 const path = "test";
 
-const inputOf = (contents: string) => ({ path, contents }) as const;
+const inputOf = (contents: string): ReaderInput => readerInput(path, contents);
 const location = (l: number, c: number) => ({ f: path, l, c }) as const;
 
 describe("readStr", () => {

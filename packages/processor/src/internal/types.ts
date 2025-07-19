@@ -184,6 +184,15 @@ export function locatedSplice(
 export interface ReaderInput {
   readonly path: FilePath;
   readonly contents: string;
+  readonly initialLineNumber: number;
+}
+
+export function readerInput(
+  path: FilePath,
+  contents: string,
+  initialLineNumber = 1,
+): ReaderInput {
+  return { path, contents, initialLineNumber };
 }
 
 export interface Location {

@@ -11,6 +11,7 @@ import {
   type Env,
   isNamespace,
   type ModulePaths,
+  readerInput,
 } from "@custard-lang/processor/dist/internal/types.js";
 import {
   TranspileError,
@@ -46,7 +47,7 @@ describe("transpileBlock", () => {
     };
 
     const inputBlock = assertNonError(
-      readBlock({ contents, path: srcPath }),
+      readBlock(readerInput(srcPath, contents)),
     ) as Block;
     const options = { srcPath };
     const env = EnvF.init(

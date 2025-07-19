@@ -51,7 +51,11 @@ import { standardModuleRoot } from "../definitions.js";
 import { transpileExpression } from "../internal/transpile.js";
 
 import { buildAsyncFn, tryToSet } from "./internal.js";
-import { ktvalOther, ordinaryStatement } from "../internal/types.js";
+import {
+  ktvalOther,
+  ordinaryStatement,
+  readerInput,
+} from "../internal/types.js";
 import type { Awaitable } from "../util/types.js";
 import { ExpectNever } from "../util/error.js";
 import { evalForMacro } from "../internal/eval/core.js";
@@ -81,12 +85,15 @@ export const readString = markAsFunctionWithEnv(
     env: Env,
     contents?: string,
     path: FilePath = srcPathForErrorMessage(env),
+    // It wasn't actually inferred by my TypeScriipt
+    // eslint-disable-next-line @typescript-eslint/no-inferrable-types
+    line: number = 1,
   ): Block | ParseError<Form> => {
     if (contents === undefined) {
       throw new Error("No string given to `readString`!");
     }
 
-    return readBlock({ contents, path });
+    return readBlock(readerInput(path, contents, line));
   },
 );
 

@@ -32,7 +32,7 @@ export class SpaceSkippingScanner {
   #contents: string;
   #position = 0;
 
-  #line = 1;
+  #line: number;
   // Last position of linebreak.
   #lastLinebreakAt = 0;
 
@@ -50,6 +50,7 @@ export class SpaceSkippingScanner {
     this.#res = res;
     this.#path = input.path;
     this.#contents = input.contents;
+    this.#line = input.initialLineNumber;
     this.#lastToken = this.#next();
   }
 

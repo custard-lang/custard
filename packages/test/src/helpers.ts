@@ -16,6 +16,7 @@ import {
   type CuString,
   isFloat64,
   isCuString,
+  readerInput,
 } from "@custard-lang/processor/dist/types.js";
 import { initializeForRepl, transpileModule } from "@custard-lang/processor";
 import { withNewPath } from "./helpers/tmp-file.js";
@@ -103,7 +104,7 @@ export function testFormInRepl({
       await initializeForRepl(options, providedSymbols),
     );
     const result = await evalBlock(
-      assertNonError(readBlock({ contents: src, path: "test" })) as Block,
+      assertNonError(readBlock(readerInput("test", src))) as Block,
       env,
     );
     if (!(expected instanceof Error) && result instanceof Error) {
@@ -134,7 +135,7 @@ export function testFormAsModule({
     const { providedSymbols } = await setUpConfig();
     await withNewPath(async ({ src: srcPath, dest }) => {
       const jsSrc = await transpileModule(
-        assertNonError(readBlock({ contents: src, path: srcPath })) as Block,
+        assertNonError(readBlock(readerInput(srcPath, src))) as Block,
         { srcPath },
         providedSymbols,
         { mayHaveResult: true },

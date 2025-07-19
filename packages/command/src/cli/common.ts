@@ -17,6 +17,7 @@ import {
   ValidationError,
   initializeForRepl,
   readerInputOf,
+  readerInput,
   Form,
   isParseError,
 } from "@custard-lang/processor";
@@ -62,10 +63,12 @@ export async function transpileMain(
           `Provided symbols config file not found at ${providedSymbolsPath}. Using the default`,
         );
       }
-      providedSymbolsBlock = readBlock({
-        contents: defaultProvidedSymbolsConfig,
-        path: "@custard-lang/processor/src/default-provided-symbols.ts",
-      });
+      providedSymbolsBlock = readBlock(
+        readerInput(
+          "@custard-lang/processor/src/default-provided-symbols.ts",
+          defaultProvidedSymbolsConfig,
+        ),
+      );
     } else {
       throw e;
     }
@@ -89,10 +92,9 @@ export async function transpileMain(
     if (opts.verbose) {
       console.info(`Transpiling ${srcPath}...`);
     }
-    const block = readBlock({
-      path: srcPath,
-      contents: await fs.readFile(srcPath, "utf-8"),
-    });
+    const block = readBlock(
+      readerInput(srcPath, await fs.readFile(srcPath, "utf-8")),
+    );
     if (block instanceof Error) {
       console.error("Error when parsing the source file.");
       throw block;

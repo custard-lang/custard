@@ -13,6 +13,7 @@ import {
   type HowToRefer,
   type TranspileState,
   ktvalOther,
+  readerInput,
 } from "./types.js";
 import {
   TranspileError,
@@ -269,8 +270,12 @@ export function replPromptPrefixOfNormalizedPath(path: FilePath): string {
   return `${path}//(REPL)`;
 }
 
-export function readerInputOf(env: Env, contents: string): ReaderInput {
-  return { path: srcPathForErrorMessage(env), contents };
+export function readerInputOf(
+  env: Env,
+  contents: string,
+  initialLineNumber = 1,
+): ReaderInput {
+  return readerInput(srcPathForErrorMessage(env), contents, initialLineNumber);
 }
 
 export function setImportedModulesJsId(

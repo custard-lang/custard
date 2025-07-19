@@ -20,6 +20,7 @@ export {
   type Location,
   TranspileError,
   defaultTranspileOptions,
+  readerInput,
 } from "./types.js";
 export { evalBlock, evalForm } from "./eval.js";
 export { standardModuleRoot } from "./definitions.js";

@@ -13,6 +13,7 @@ import { writeAndEval } from "../helpers/eval.js";
 import { assertNonError } from "@custard-lang/processor/dist/util/error.js";
 
 import {
+  readerInput,
   TranspileError,
   type FilePath,
   type Form,
@@ -56,20 +57,14 @@ describe("meta.readString", () => {
   const contents1 = "(plusF 4.1 5.2)";
   testFormInRepl({
     src: `(meta.readString "${contents1}")`,
-    expected: readBlock({
-      contents: contents1,
-      path: srcPathForErrorMessage,
-    }),
+    expected: readBlock(readerInput(srcPathForErrorMessage, contents1)),
     setUpConfig,
   });
 
   const contents2 = "(const x 9.2) (plusF 4.1 5.2) (let y 0.1)";
   testFormInRepl({
     src: `(meta.readString "${contents2}")`,
-    expected: readBlock({
-      contents: contents2,
-      path: srcPathForErrorMessage,
-    }),
+    expected: readBlock(readerInput(srcPathForErrorMessage, contents2)),
     setUpConfig,
   });
 
@@ -99,10 +94,7 @@ describe("meta.transpileModule", () => {
     await withNewPath(async ({ src, dest }) => {
       const transpileOptionsSrc = `{ srcPath: ${JSON.stringify(src)} }`;
       const proviedSymbolsSrc = proviedSymbolsSrcFrom(src);
-      const input = {
-        contents: `(async.await (meta.transpileModule (meta.readString "(plusF 4.1 5.2)") ${transpileOptionsSrc} ${proviedSymbolsSrc} ${extraOptionsSrc}))`,
-        path: "test",
-      };
+      const input = readerInput("test", `(async.await (meta.transpileModule (meta.readString "(plusF 4.1 5.2)") ${transpileOptionsSrc} ${proviedSymbolsSrc} ${extraOptionsSrc}))`)
       const result = assertNonError(
         await evalForm(assertNonError(readStr(input)) as Form, env),
       );
@@ -119,10 +111,7 @@ describe("meta.transpileModule", () => {
     await withNewPath(async ({ src, dest }) => {
       const transpileOptionsSrc = `{ srcPath: ${JSON.stringify(src)} }`;
       const proviedSymbolsSrc = proviedSymbolsSrcFrom(src);
-      const input = {
-        contents: `(async.await (meta.transpileModule (meta.readString "(const x 9.2) (let y 0.1) (plusF x y)") ${transpileOptionsSrc} ${proviedSymbolsSrc} ${extraOptionsSrc}))`,
-        path: "test",
-      };
+      const input = readerInput("test", `(async.await (meta.transpileModule (meta.readString "(const x 9.2) (let y 0.1) (plusF x y)") ${transpileOptionsSrc} ${proviedSymbolsSrc} ${extraOptionsSrc}))`)
       const result = assertNonError(
         await evalForm(assertNonError(readStr(input)) as Form, env),
       );

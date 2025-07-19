@@ -45,7 +45,7 @@ async function readEvaluatePrintLoop(
         finalize();
         break;
       }
-      let form = readResumably(readerInputOf(env, answer));
+      let form = readResumably(readerInputOf(env, answer, location.l));
       while (true) {
         if (isParseErrorSkipping(form)) {
           console.warn("ParseErrorSkipping", form.message);
@@ -53,7 +53,7 @@ async function readEvaluatePrintLoop(
           continue;
         }
         if (isParseErrorWantingMore(form)) {
-          ({ location } = form);
+          setDownToNextLine(location);
           const more = await ask(location, "...");
           form = form.resume(more);
           continue;
@@ -65,7 +65,7 @@ async function readEvaluatePrintLoop(
       } catch (e) {
         console.error(e);
       }
-      location = form.extension;
+      setDownToNextLine(location);
     }
   } catch (err) {
     finalize();
@@ -73,11 +73,15 @@ async function readEvaluatePrintLoop(
   }
 }
 
-async function ask(
-  { l, c, f }: Location,
-  promptPrefix: string,
-): Promise<string> {
-  return await rl.question(`${f}:${l},${c}:${promptPrefix} `);
+function setDownToNextLine(location: Location): void {
+  // The next position in the prompt should be
+  // the beginning of the next line
+  location.l++;
+  location.c = 1; // Currently, the prompt doesn't show the column number, though.
+}
+
+async function ask({ l, f }: Location, promptPrefix: string): Promise<string> {
+  return await rl.question(`${f}:${l}:${promptPrefix} `);
 }
 
 export function assertNonError<T>(v: T | Error): T {
