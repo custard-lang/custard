@@ -94,7 +94,10 @@ describe("meta.transpileModule", () => {
     await withNewPath(async ({ src, dest }) => {
       const transpileOptionsSrc = `{ srcPath: ${JSON.stringify(src)} }`;
       const proviedSymbolsSrc = proviedSymbolsSrcFrom(src);
-      const input = readerInput("test", `(async.await (meta.transpileModule (meta.readString "(plusF 4.1 5.2)") ${transpileOptionsSrc} ${proviedSymbolsSrc} ${extraOptionsSrc}))`)
+      const input = readerInput(
+        "test",
+        `(async.await (meta.transpileModule (meta.readString "(plusF 4.1 5.2)") ${transpileOptionsSrc} ${proviedSymbolsSrc} ${extraOptionsSrc}))`,
+      );
       const result = assertNonError(
         await evalForm(assertNonError(readStr(input)) as Form, env),
       );
@@ -111,7 +114,10 @@ describe("meta.transpileModule", () => {
     await withNewPath(async ({ src, dest }) => {
       const transpileOptionsSrc = `{ srcPath: ${JSON.stringify(src)} }`;
       const proviedSymbolsSrc = proviedSymbolsSrcFrom(src);
-      const input = readerInput("test", `(async.await (meta.transpileModule (meta.readString "(const x 9.2) (let y 0.1) (plusF x y)") ${transpileOptionsSrc} ${proviedSymbolsSrc} ${extraOptionsSrc}))`)
+      const input = readerInput(
+        "test",
+        `(async.await (meta.transpileModule (meta.readString "(const x 9.2) (let y 0.1) (plusF x y)") ${transpileOptionsSrc} ${proviedSymbolsSrc} ${extraOptionsSrc}))`,
+      );
       const result = assertNonError(
         await evalForm(assertNonError(readStr(input)) as Form, env),
       );
