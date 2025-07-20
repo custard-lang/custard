@@ -23,13 +23,13 @@
   },
   "homepage": "https://github.com/igrep/custard#readme",
   "devDependencies": {
-    "@types/node": "^22.13.1",
-    "typescript": "^5.7.3",
-    "vitest": "^3.0.5"
+    "@types/node": "^24.0.15",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
   },
   "dependencies": {
-    "@commander-js/extra-typings": "^13.1.0",
+    "@commander-js/extra-typings": "^14.0.0",
     "@custard-lang/processor": "^0.0.2",
-    "glob": "^11.0.1"
+    "glob": "^11.0.3"
   }
 }

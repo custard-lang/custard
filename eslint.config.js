@@ -24,8 +24,6 @@ export default tseslint.config(
   tseslint.configs.strictTypeChecked,
   tseslint.configs.stylisticTypeChecked,
   {
-    ...love,
-    files: ["**/*.ts"],
     languageOptions: {
       globals: {
         ...globals.builtin,
@@ -41,6 +39,10 @@ export default tseslint.config(
         extraFileExtensions: [],
       },
     },
+  },
+  {
+    ...love,
+    files: ["**/*.ts"],
     plugins: {
       "@typescript-eslint": tseslint.plugin,
       promise,

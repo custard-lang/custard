@@ -17,23 +17,23 @@
     "prepare": "npm run build"
   },
   "devDependencies": {
-    "@vitest/coverage-v8": "^3.0.5",
-    "eslint": "^9.19.0",
-    "eslint-config-love": "^118.0.0",
-    "@typescript-eslint/parser": "8.23.0",
-    "typescript-eslint": "8.20.0",
-    "eslint-plugin-n": "^17.15.1",
+    "@vitest/coverage-v8": "^3.2.4",
+    "eslint": "^9.31.0",
+    "eslint-config-love": "^121.0.0",
+    "@typescript-eslint/parser": "8.37.0",
+    "typescript-eslint": "8.37.0",
+    "eslint-plugin-n": "^17.21.0",
     "eslint-plugin-no-ignore-returned-union": "^0.6.2",
     "eslint-plugin-promise": "^7.2.1",
-    "globals": "^15.14.0",
-    "prettier": "^3.5.0",
+    "globals": "^16.3.0",
+    "prettier": "^3.6.2",
     "rimraf": "^6.0.1",
-    "typescript": "^5.7.3",
-    "vitest": "^3.0.5"
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
   },
   "workspaces": [
     "packages/*",
     "apps/*"
   ],
-  "packageManager": "npm@10.7.0+sha512.157ca5c98497363817c7797cd814fc45242f0a818843787c61d44518a36fa373effdb2ac70ae29756931fe89f04e91c3a86c3ea1e2dfe11c659fd595cb103195"
+  "packageManager": "npm@11.4.2"
 }

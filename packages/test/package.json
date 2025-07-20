@@ -27,10 +27,10 @@
   },
   "homepage": "https://github.com/igrep/custard#readme",
   "devDependencies": {
-    "@types/node": "^22.13.1",
-    "@vitest/expect": "^3.0.5",
-    "typescript": "^5.7.3",
-    "vitest": "^3.0.5"
+    "@types/node": "^24.0.15",
+    "@vitest/expect": "^3.2.4",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
   },
   "dependencies": {
     "@custard-lang/processor": "file:../processor"
