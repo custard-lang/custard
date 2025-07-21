@@ -1,6 +1,8 @@
 import { threadId } from "node:worker_threads";
 import { appendFileSync, writeFileSync } from "node:fs";
 
+/* eslint-disable no-console */
+
 export function pr<T>(x: T, ...msgs: unknown[]): T {
   if (msgs.length > 0) {
     console.log(...[...msgs, x]);

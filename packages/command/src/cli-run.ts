@@ -15,6 +15,7 @@ const result = transpileProgram
 (async () => {
   const [cstdPath, ...args] = result.args;
   if (cstdPath === undefined) {
+    // eslint-disable-next-line no-console
     console.error("No .cstd file specified");
     process.exit(1);
   }
@@ -26,6 +27,7 @@ const result = transpileProgram
   }
 
   if (opts.verbose) {
+    // eslint-disable-next-line no-console
     console.log("Running", mjsPath);
   }
   spawn(opts.withEngine, ["--", mjsPath, ...args], { stdio: "inherit" });

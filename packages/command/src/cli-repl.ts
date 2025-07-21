@@ -48,6 +48,7 @@ async function readEvaluatePrintLoop(
       let form = readResumably(readerInputOf(env, answer, location.l));
       while (true) {
         if (isParseErrorSkipping(form)) {
+          // eslint-disable-next-line no-console
           console.warn("ParseErrorSkipping", form.message);
           form = form.resume();
           continue;
@@ -61,8 +62,10 @@ async function readEvaluatePrintLoop(
         break;
       }
       try {
+        // eslint-disable-next-line no-console
         console.log(assertNonError(await evalCustard(form, env)));
       } catch (e) {
+        // eslint-disable-next-line no-console
         console.error(e);
       }
       setDownToNextLine(location);

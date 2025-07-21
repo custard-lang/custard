@@ -59,21 +59,25 @@ describe("split.cstd", () => {
   });
 
   it("should split the input.json by 20 posts and make a backup for the input file", async () => {
+    // eslint-disable-next-line no-console
     console.log("Make backup for the input file");
     expect(input).toEqual(
       JSON.parse(await readFile(`${inputPath}.bk`, "utf-8")),
     );
 
+    // eslint-disable-next-line no-console
     console.log("Split the first 20 posts");
     expect(input.slice(0, 20)).toEqual(
       JSON.parse(await readFile(pathOfPostAt(0), "utf-8")),
     );
 
+    // eslint-disable-next-line no-console
     console.log("Split the second 20 posts");
     expect(input.slice(20, 40)).toEqual(
       JSON.parse(await readFile(pathOfPostAt(20), "utf-8")),
     );
 
+    // eslint-disable-next-line no-console
     console.log("Split the rest 5 posts");
     expect(input.slice(40, 45)).toEqual(
       JSON.parse(await readFile(pathOfPostAt(40), "utf-8")),

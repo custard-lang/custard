@@ -59,6 +59,7 @@ export async function transpileMain(
     /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
     if (e instanceof Error && (e as { [key: string]: any }).code === "ENOENT") {
       if (opts.verbose) {
+        // eslint-disable-next-line no-console
         console.info(
           `Provided symbols config file not found at ${providedSymbolsPath}. Using the default`,
         );
@@ -80,6 +81,7 @@ export async function transpileMain(
     assertNonError(await evalBlock(providedSymbolsBlock, env)),
   );
   if (ValidationError.is(providedSymbolsConfig)) {
+    // eslint-disable-next-line no-console
     console.error("Error when validating the provided symbols config.");
     throw providedSymbolsConfig;
   }
@@ -90,12 +92,14 @@ export async function transpileMain(
   });
   for await (const srcPath of srcs) {
     if (opts.verbose) {
+      // eslint-disable-next-line no-console
       console.info(`Transpiling ${srcPath}...`);
     }
     const block = readBlock(
       readerInput(srcPath, await fs.readFile(srcPath, "utf-8")),
     );
     if (block instanceof Error) {
+      // eslint-disable-next-line no-console
       console.error("Error when parsing the source file.");
       throw block;
     }
@@ -110,11 +114,13 @@ export async function transpileMain(
       },
     );
     if (transpiled instanceof Error) {
+      // eslint-disable-next-line no-console
       console.error("Error when transpiling the source file.");
       throw transpiled;
     }
     await fs.writeFile(destPath, transpiled, "utf-8");
     if (opts.verbose) {
+      // eslint-disable-next-line no-console
       console.info("Transpiled to", destPath);
     }
 

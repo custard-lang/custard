@@ -51,6 +51,7 @@ export default tseslint.config(
     rules: {
       "import/no-unresolved": "off",
       "eslint-plugin-no-ignore-returned-union/no-ignore-returned-union": "error",
+      "no-console": "error",
       "@typescript-eslint/no-namespace": "off",
       "@typescript-eslint/no-misused-promises": "error",
       "@typescript-eslint/no-floating-promises": [
