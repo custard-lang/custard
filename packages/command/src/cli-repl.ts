@@ -41,7 +41,7 @@ async function readEvaluatePrintLoop(
   try {
     while (true) {
       const answer = await ask(location, ">>>");
-      if (answer === "") {
+      if (answer === ":q" || answer === ":quit") {
         finalize();
         break;
       }
