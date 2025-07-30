@@ -460,7 +460,7 @@ export class TranspileError extends Error {
   // NOTE: Use this instead of instanceof to avoid https://github.com/vitejs/vite/issues/9528
   _cu$isTranspileError = true;
   static is(e: unknown): e is TranspileError {
-    return !!((e as { [key: string]: unknown } | null)
+    return ((e as { [key: string]: unknown } | null)
       ?._cu$isTranspileError as boolean);
   }
 }
