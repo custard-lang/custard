@@ -91,14 +91,6 @@ export interface Call<X extends Empty = Empty>
   extends List<Form<X>, X>,
     ValidCallBrand {}
 
-export function isValidCall<X extends Empty = Empty>(v: Form<X>): v is Call<X> {
-  return (
-    isList(v) &&
-    v.values.length > 0 &&
-    (isCuSymbol(v.values[0]) || isPropertyAccess(v.values[0]))
-  );
-}
-
 export function functionIdOfCall<X extends Empty = Empty>(
   v: Call<X>,
 ): CuSymbol<X> {
@@ -201,12 +193,6 @@ export interface Location {
   f: FilePath;
   // Add lexical binding information like Racket's syntax object?
 }
-
-export const unknownLocation: Location = Object.freeze({
-  l: -1,
-  c: -1,
-  f: "THIS_SHOULD_NOT_BE_SHOWN",
-});
 
 export function formatForError(f: Form | ComputedKey<Form>): string {
   return `\`${formatForErrorUnticked(f)}\``;
@@ -460,14 +446,14 @@ export class TranspileError extends Error {
   // NOTE: Use this instead of instanceof to avoid https://github.com/vitejs/vite/issues/9528
   _cu$isTranspileError = true;
   static is(e: unknown): e is TranspileError {
-    return ((e as { [key: string]: unknown } | null)
-      ?._cu$isTranspileError as boolean);
+    return (e as { [key: string]: unknown } | null)
+      ?._cu$isTranspileError as boolean;
   }
 }
 
 export interface Env<State extends TranspileState = TranspileState> {
   readonly scopes: [Scope, ...Scope[]];
-  readonly references: References; // References in the Progaram
+  readonly references: References; // References in the Program
   readonly modules: ModulePaths; // Mapping from module name to its path.
   readonly transpileState: State;
   readonly importedModuleJsIds: Map<FilePath, HowToRefer | Map<Id, HowToRefer>>;
