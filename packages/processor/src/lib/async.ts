@@ -1,10 +1,10 @@
-import * as EnvF from "../internal/env.js";
+import * as ContextF from "../internal/context.js";
 import {
   defaultAsyncScopeOptions,
   ordinaryStatement,
 } from "../internal/types.js";
 import {
-  type Env,
+  type Context,
   type Form,
   type JsSrc,
   type Ktvals,
@@ -22,8 +22,8 @@ import {
 } from "./internal.js";
 
 export const _cu$await = markAsDirectWriter(
-  async (env: Env, a: Form, ...unused: Form[]) => {
-    if (!EnvF.isInAsyncContext(env)) {
+  async (context: Context, a: Form, ...unused: Form[]) => {
+    if (!ContextF.isInAsyncContext(context)) {
       return new TranspileError(
         "`async.await` in a non-async function or scope is not allowed.",
       );
@@ -31,20 +31,20 @@ export const _cu$await = markAsDirectWriter(
     return await transpiling1Unmarked("await", (s: Ktvals<JsSrc>) => [
       ktvalOther("await "),
       ...s,
-    ])(env, a, ...unused);
+    ])(context, a, ...unused);
   },
 );
 
 export const fn = markAsDirectWriter(
   async (
-    env: Env,
+    context: Context,
     nameOrArgs?: Form,
     argsOrFirstForm?: Form,
     ...block: Form[]
   ): Promise<Ktvals<JsSrc> | TranspileError> => {
     return await buildAsyncFn(
       "async.fn",
-      env,
+      context,
       nameOrArgs,
       argsOrFirstForm,
       block,
@@ -54,14 +54,14 @@ export const fn = markAsDirectWriter(
 
 export const procedure = markAsDirectWriter(
   async (
-    env: Env,
+    context: Context,
     nameOrArgs?: Form,
     argsOrFirstForm?: Form,
     ...block: Form[]
   ): Promise<Ktvals<JsSrc> | TranspileError> => {
     return await buildProcedure(
       "async.procedure",
-      env,
+      context,
       nameOrArgs,
       argsOrFirstForm,
       block,
@@ -73,14 +73,14 @@ export const procedure = markAsDirectWriter(
 
 export const generatorFn = markAsDirectWriter(
   async (
-    env: Env,
+    context: Context,
     nameOrArgs?: Form,
     argsOrFirstForm?: Form,
     ...block: Form[]
   ): Promise<Ktvals<JsSrc> | TranspileError> => {
     return await buildFn(
       "async.generatorFn",
-      env,
+      context,
       nameOrArgs,
       argsOrFirstForm,
       block,
@@ -92,14 +92,14 @@ export const generatorFn = markAsDirectWriter(
 
 export const generatorProcedure = markAsDirectWriter(
   async (
-    env: Env,
+    context: Context,
     nameOrArgs?: Form,
     argsOrFirstForm?: Form,
     ...block: Form[]
   ): Promise<Ktvals<JsSrc> | TranspileError> => {
     return await buildProcedure(
       "async.generatorProcedure",
-      env,
+      context,
       nameOrArgs,
       argsOrFirstForm,
       block,
@@ -117,10 +117,10 @@ export const scope = buildScope(
 
 export const forEach = markAsDirectWriter(
   async (
-    env: Env,
+    context: Context,
     ...forms: Form[]
   ): Promise<Ktvals<JsSrc> | TranspileError> => {
-    if (!EnvF.isInAsyncContext(env)) {
+    if (!ContextF.isInAsyncContext(context)) {
       return new TranspileError(
         "`async.forEach` in a non-async function or scope is not allowed.",
       );
@@ -137,7 +137,7 @@ export const forEach = markAsDirectWriter(
         ...statementsSrc,
         ktvalOther("}"),
       ],
-    )(env, ...forms);
+    )(context, ...forms);
   },
   ordinaryStatement,
 );

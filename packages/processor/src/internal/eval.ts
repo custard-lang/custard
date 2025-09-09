@@ -1,4 +1,4 @@
-import { type Env, type TranspileRepl } from "./types.js";
+import { type Context, type TranspileRepl } from "./types.js";
 import { type Form, type Block } from "../types.js";
 
 import { transpileBlockCore } from "./transpile.js";
@@ -9,16 +9,16 @@ import { evalKtvals } from "./ktvals.js";
 
 export async function evalForm(
   form: Form,
-  env: Env<TranspileRepl>,
+  context: Context<TranspileRepl>,
 ): Promise<any | Error> {
-  return await evalBlock([form], env);
+  return await evalBlock([form], context);
 }
 
 export async function evalBlock(
   forms: Block,
-  env: Env<TranspileRepl>,
+  context: Context<TranspileRepl>,
 ): Promise<any | Error> {
-  const resultKtvalsOffset = await transpileBlockCore(forms, env, {
+  const resultKtvalsOffset = await transpileBlockCore(forms, context, {
     mayHaveResult: true,
   });
 
@@ -27,15 +27,15 @@ export async function evalBlock(
   }
 
   const notYetEvaluatedBeforeLastStatement =
-    env.transpileState.transpiledSrc.slice(
-      env.transpileState.evaluatedUpTo,
+    context.transpileState.transpiledSrc.slice(
+      context.transpileState.evaluatedUpTo,
       resultKtvalsOffset,
     );
   const lastStatement =
-    env.transpileState.transpiledSrc.slice(resultKtvalsOffset);
+    context.transpileState.transpiledSrc.slice(resultKtvalsOffset);
   return await evalKtvals(
     notYetEvaluatedBeforeLastStatement,
     lastStatement,
-    env,
+    context,
   );
 }

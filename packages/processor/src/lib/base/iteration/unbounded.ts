@@ -1,11 +1,11 @@
-import * as EnvF from "../../../internal/env.js";
+import * as ContextF from "../../../internal/context.js";
 import {
   transpileStatements,
   transpileExpression,
 } from "../../../internal/transpile.js";
 import {
   type Block,
-  type Env,
+  type Context,
   type Form,
   isCuSymbol,
   ktvalOther,
@@ -26,7 +26,7 @@ export * from "../iteration.js";
 
 export const _cu$while = markAsDirectWriter(
   async (
-    env: Env,
+    context: Context,
     bool?: Form,
     ...rest: Block
   ): Promise<Ktvals<JsSrc> | TranspileError> => {
@@ -36,26 +36,26 @@ export const _cu$while = markAsDirectWriter(
       );
     }
 
-    if (isStatement(env, bool)) {
+    if (isStatement(context, bool)) {
       const id = showSymbolAccess(functionIdOfCall(bool));
       return new TranspileError(
         `The conditional expression in a \`for\` must be an expression! But \`${id}\` is a statement!`,
       );
     }
 
-    const boolSrc = await transpileExpression(bool, env);
+    const boolSrc = await transpileExpression(bool, context);
     if (TranspileError.is(boolSrc)) {
       return boolSrc;
     }
 
-    EnvF.pushInherited(env);
+    ContextF.pushInherited(context);
 
-    const statementsSrc = await transpileStatements(rest, env);
+    const statementsSrc = await transpileStatements(rest, context);
     if (TranspileError.is(statementsSrc)) {
       return statementsSrc;
     }
 
-    EnvF.pop(env);
+    ContextF.pop(context);
     return [
       ktvalOther("while("),
       ...boolSrc,
@@ -69,13 +69,13 @@ export const _cu$while = markAsDirectWriter(
 
 export const _cu$for = markAsDirectWriter(
   async (
-    env: Env,
+    context: Context,
     initialStatement?: Form,
     bool?: Form,
     final?: Form,
     ...rest: Block
   ): Promise<Ktvals<JsSrc> | TranspileError> => {
-    EnvF.pushInherited(env);
+    ContextF.pushInherited(context);
 
     if (initialStatement === undefined) {
       return new TranspileError(
@@ -95,7 +95,7 @@ export const _cu$for = markAsDirectWriter(
       );
     }
 
-    if (isStatement(env, bool)) {
+    if (isStatement(context, bool)) {
       const id = showSymbolAccess(functionIdOfCall(bool));
       return new TranspileError(
         `The conditional expression in a \`for\` must be an expression! But \`${id}\` is a statement!`,
@@ -104,25 +104,25 @@ export const _cu$for = markAsDirectWriter(
 
     const initialStatementSrc = await transpileExpression(
       initialStatement,
-      env,
+      context,
     );
     if (TranspileError.is(initialStatementSrc)) {
       return initialStatementSrc;
     }
-    const boolSrc = await transpileExpression(bool, env);
+    const boolSrc = await transpileExpression(bool, context);
     if (TranspileError.is(boolSrc)) {
       return boolSrc;
     }
-    const finalSrc = await transpileExpression(final, env);
+    const finalSrc = await transpileExpression(final, context);
     if (TranspileError.is(finalSrc)) {
       return finalSrc;
     }
-    const statementsSrc = await transpileStatements(rest, env);
+    const statementsSrc = await transpileStatements(rest, context);
     if (TranspileError.is(statementsSrc)) {
       return statementsSrc;
     }
 
-    EnvF.pop(env);
+    ContextF.pop(context);
     return [
       ktvalOther("for("),
       ...initialStatementSrc,
@@ -157,7 +157,7 @@ export const forEach = markAsDirectWriter(
 
 export const recursive = markAsDirectWriter(
   async (
-    env: Env,
+    context: Context,
     ...consts: Block
   ): Promise<Ktvals<JsSrc> | TranspileError> => {
     if (consts.length < 1) {
@@ -171,7 +171,7 @@ export const recursive = markAsDirectWriter(
           "All arguments in `recursive` must be `const` declarations!",
         );
       }
-      const declName = EnvF.find(env, functionIdOfCall(call));
+      const declName = ContextF.find(context, functionIdOfCall(call));
       if (declName !== _cu$const) {
         return new TranspileError(
           "All declarations in `recursive` must be `const`!",
@@ -185,13 +185,13 @@ export const recursive = markAsDirectWriter(
       if (!isCuSymbol(id)) {
         return new TranspileError(`${JSON.stringify(id)} is not a symbol!`);
       }
-      const r = EnvF.set(env, id.value, aRecursiveConst());
+      const r = ContextF.set(context, id.value, aRecursiveConst());
       if (TranspileError.is(r)) {
         return r;
       }
     }
 
-    return await transpileStatements(consts, env);
+    return await transpileStatements(consts, context);
   },
   ordinaryStatement,
 );

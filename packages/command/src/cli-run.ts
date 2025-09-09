@@ -1,8 +1,8 @@
 import { spawn } from "node:child_process";
 
-import { transpileMain, transpileProgram } from "./cli/common.js";
+import { transpileMain, commonProgram } from "./cli/common.js";
 
-const result = transpileProgram
+const result = commonProgram
   .option(
     "-w, --with-engine <path>",
     "Path to the JavaScript engine to run",

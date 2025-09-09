@@ -1,36 +1,43 @@
 import type {
   Block,
+  FilePath,
+  FilePathAndStat,
   JsSrc,
-  CompleteProvidedSymbolsConfig,
+  ProvidedSymbolsConfig,
   TranspileOptions,
 } from "./types.js";
 import { TranspileError } from "./types.js";
 
 import { transpileBlock } from "./internal/transpile.js";
-import { initializeForModule } from "./env.js";
+import { initializeForModule } from "./context.js";
 import { clearTranspiledSrc } from "./internal/transpile-state.js";
 import { transpileKtvalsForModule } from "./internal/ktvals.js";
 
 export async function transpileModule(
   ast: Block,
   transpileOptions: TranspileOptions,
-  providedSymbols: CompleteProvidedSymbolsConfig,
+  providedSymbols: ProvidedSymbolsConfig,
+  providedSymbolsPath: FilePath,
   extraOptions: { mayHaveResult: boolean } = { mayHaveResult: false },
 ): Promise<JsSrc | Error> {
-  const env = await initializeForModule(transpileOptions, providedSymbols);
-  if (env instanceof Error) {
-    return env;
+  const context = await initializeForModule(
+    transpileOptions,
+    providedSymbols,
+    providedSymbolsPath,
+  );
+  if (context instanceof Error) {
+    return context;
   }
 
-  const r = await transpileBlock(ast, env, extraOptions);
+  const r = await transpileBlock(ast, context, extraOptions);
   if (TranspileError.is(r)) {
     return r;
   }
-  clearTranspiledSrc(env.transpileState);
+  clearTranspiledSrc(context.transpileState);
   const importsJs = transpileKtvalsForModule(
-    env.transpileState.importsSrc,
-    env,
+    context.transpileState.importsSrc,
+    context,
   );
-  const blockJs = transpileKtvalsForModule(r, env);
+  const blockJs = transpileKtvalsForModule(r, context);
   return `${importsJs}\n${blockJs}`;
 }

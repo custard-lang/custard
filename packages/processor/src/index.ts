@@ -1,4 +1,3 @@
-export { defaultProvidedSymbolsConfig } from "./default-provided-symbols.js";
 export { type ParseError } from "./grammar.js";
 export {
   isParseError,
@@ -10,7 +9,8 @@ export { implicitlyImporting } from "./provided-symbols-config.js";
 export { readBlock } from "./reader.js";
 export { transpileModule } from "./transpile.js";
 export {
-  type Env,
+  type Environment,
+  type Context,
   type Form,
   type Block,
   ProvidedSymbolsConfig,
@@ -21,13 +21,10 @@ export {
   TranspileError,
   defaultTranspileOptions,
   readerInput,
+  assumeIsFile,
 } from "./types.js";
 export { evalBlock, evalForm } from "./eval.js";
 export { standardModuleRoot } from "./definitions.js";
 export { ValidationError } from "./lib/spec.js";
-export {
-  initializeForRepl,
-  initializeForModule,
-  readerInputOf,
-  replPromptPrefixOfNormalizedPath,
-} from "./env.js";
+export * as EnvironmentF from "./environment.js";
+export * as ContextF from "./context.js";

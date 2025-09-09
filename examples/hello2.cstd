@@ -1,0 +1,2 @@
+(const hello2 "Hello, world! 2")
+(console.log hello2)

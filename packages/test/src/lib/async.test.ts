@@ -6,6 +6,7 @@ import type { Config } from "../helpers.js";
 import {
   type ModulePaths,
   TranspileError,
+  assumeIsFile,
 } from "@custard-lang/processor/dist/types.js";
 import { standardModuleRoot } from "@custard-lang/processor/dist/definitions.js";
 import { fileOfImportMetaUrl } from "@custard-lang/processor/dist/util/path.js";
@@ -18,13 +19,13 @@ function setUpConfig(): Config {
   const srcPath = fileOfImportMetaUrl(import.meta.url);
 
   return {
-    optionsForRepl: { srcPath },
+    optionsForRepl: { src: assumeIsFile(srcPath) },
     providedSymbols: {
-      from: srcPath,
       modulePaths,
       implicitStatements: "(importAnyOf base)(import async)",
       jsTopLevels: ["Promise"],
     },
+    providedSymbolsPath: srcPath,
   };
 }
 

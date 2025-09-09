@@ -1,6 +1,9 @@
+import type { FilePath } from "./internal/types.js";
+
 // TODO: Reconsider what to export or not.
 export {
-  type Env,
+  type Context,
+  type Environment,
   type Form,
   type Block,
   type Call,
@@ -17,20 +20,23 @@ export {
   showSymbolAccess,
   markAsDirectWriter,
   markAsDynamicVar,
-  markAsFunctionWithEnv,
+  markAsFunctionWithContext,
   type Macro,
   markAsMacro,
   isMacro,
   ProvidedSymbolsConfig,
-  type CompleteProvidedSymbolsConfig,
   type Namespace,
   type ModulePaths,
   type TranspileOptions,
   type TranspileModule,
   type TranspileRepl,
+  type TranspileState,
   defaultTranspileOptions,
   type Id,
   type FilePath,
+  type FilePathAndStat,
+  assumeIsFile,
+  normalizeFilePathAndStat,
   type Ktval,
   type Ktvals,
   type KtvalRefer,
@@ -92,3 +98,9 @@ export {
 } from "./internal/types/property-access.js";
 export { isUnquote, unquote, type Unquote } from "./internal/types/unquote.js";
 export { isSplice, splice, type Splice } from "./internal/types/splice.js";
+
+export interface ReadStringOptions {
+  readonly path?: FilePath;
+  readonly isDirectory?: boolean;
+  readonly line?: number;
+}

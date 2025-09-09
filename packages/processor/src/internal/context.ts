@@ -14,6 +14,8 @@ import {
   type TranspileState,
   ktvalOther,
   readerInput,
+  ProvidedSymbolsConfig,
+  FilePathAndStat,
 } from "./types.js";
 import {
   TranspileError,
@@ -25,11 +27,10 @@ import {
   isPropertyAccess,
   type JsSrc,
   type Ktvals,
-  type CompleteProvidedSymbolsConfig,
   type Namespace,
   ktvalRefer,
   aConst,
-  type Env,
+  type Context,
   type ReaderInput,
 } from "../types.js";
 import * as References from "./references.js";
@@ -47,25 +48,35 @@ const TOP_LEVEL_OFFSET = 1;
 
 export function init<State extends TranspileState>(
   state: State,
-  providedSymbolsConfig: CompleteProvidedSymbolsConfig,
-): Env<State> {
+  providedSymbolsConfig: ProvidedSymbolsConfig,
+  providedSymbolsConfigPath: FilePathAndStat,
+): Context<State> | TranspileError {
   const topLevelScope = ScopeF.init(defaultAsyncScopeOptions);
   ScopeF.addPrimitives(topLevelScope);
   ScopeF.addProvidedConsts(topLevelScope, providedSymbolsConfig.jsTopLevels);
+  const modules = resolveModulePaths(
+    providedSymbolsConfig,
+    providedSymbolsConfigPath,
+  );
+  if (modules instanceof Error) {
+    return new TranspileError("Error during resolving module paths", {
+      cause: modules,
+    });
+  }
   return {
     scopes: [topLevelScope],
     references: References.init(),
-    modules: resolveModulePaths(providedSymbolsConfig),
+    modules,
     transpileState: state,
     importedModuleJsIds: new Map(),
   };
 }
 
 export function find(
-  env: Env,
+  context: Context,
   symLike: CuSymbol | PropertyAccess,
 ): Writer | undefined {
-  const r = findWithIsAtTopLevel(env, symLike);
+  const r = findWithIsAtTopLevel(context, symLike);
   if (r === undefined) {
     return r;
   }
@@ -78,10 +89,10 @@ export interface WriterWithIsAtTopLevel {
 }
 
 export function findWithIsAtTopLevel(
-  env: Env,
+  context: Context,
   symLike: CuSymbol | PropertyAccess,
 ): WriterWithIsAtTopLevel | undefined {
-  const r = findCore(env, symLike, false);
+  const r = findCore(context, symLike, false);
   if (TranspileError.is(r)) {
     return undefined;
   }
@@ -89,14 +100,14 @@ export function findWithIsAtTopLevel(
 }
 
 export function referTo(
-  env: Env,
+  context: Context,
   symLike: CuSymbol | PropertyAccess,
 ): WriterWithIsAtTopLevel | TranspileError {
-  return findCore(env, symLike, true);
+  return findCore(context, symLike, true);
 }
 
 function findCore(
-  { scopes, references }: Env,
+  { scopes, references }: Context,
   symLike: CuSymbol | PropertyAccess,
   doRefer: boolean,
 ): WriterWithIsAtTopLevel | TranspileError {
@@ -161,21 +172,21 @@ function findCore(
   throw ExpectNever(symLike);
 }
 
-export function isDefinedInThisScope({ scopes }: Env, id: Id): boolean {
+export function isDefinedInThisScope({ scopes }: Context, id: Id): boolean {
   const w = ScopeF.get(scopes[0], id);
   return w !== undefined && !isRecursiveConst(w);
 }
 
-export function isInAsyncContext({ scopes: [current] }: Env): boolean {
+export function isInAsyncContext({ scopes: [current] }: Context): boolean {
   return current.isAsync;
 }
 
-export function isInGeneratorContext({ scopes: [current] }: Env): boolean {
+export function isInGeneratorContext({ scopes: [current] }: Context): boolean {
   return current.isGenerator;
 }
 
 export function set(
-  { scopes, references: { referenceById, currentScope } }: Env,
+  { scopes, references: { referenceById, currentScope } }: Context,
   id: Id,
   writer: Writer,
 ): undefined | TranspileError {
@@ -195,19 +206,19 @@ export function set(
 }
 
 export function push(
-  { scopes, references }: Env,
+  { scopes, references }: Context,
   scopeOptions: ScopeOptions = defaultScopeOptions,
 ): void {
   References.appendNewScope(references);
   scopes.unshift(ScopeF.init(scopeOptions));
 }
 
-export function pushInherited(env: Env): void {
-  const { isAsync, isGenerator } = env.scopes[0];
-  push(env, { isAsync, isGenerator });
+export function pushInherited(context: Context): void {
+  const { isAsync, isGenerator } = context.scopes[0];
+  push(context, { isAsync, isGenerator });
 }
 
-export function pop({ scopes, references }: Env): void {
+export function pop({ scopes, references }: Context): void {
   References.returnToPreviousScope(references);
   // eslint-disable-next-line eslint-plugin-no-ignore-returned-union/no-ignore-returned-union
   scopes.shift();
@@ -216,84 +227,98 @@ export function pop({ scopes, references }: Env): void {
 export interface ModulePathAndUrl {
   u: string; // Absolute URL
   r: FilePath; // Relative path
-  k: string; // Used for key in Env.importedModuleJsIds
+  k: string; // Used for key in Context.importedModuleJsIds
 }
 
 export async function findModule(
-  env: Env,
+  context: Context,
   id: Id,
 ): Promise<ModulePathAndUrl | undefined> {
-  const { modules } = env;
+  const { modules } = context;
   const modFullPath = modules.get(id);
   if (modFullPath === undefined) {
     return;
   }
 
-  return await modulePathAndUrl(env, modFullPath);
+  return await modulePathAndUrl(context, modFullPath);
 }
 
-export function getCurrentScope({ scopes: [current] }: Env): Scope {
+export function getCurrentScope({ scopes: [current] }: Context): Scope {
   return current;
 }
 
 export function mergeNamespaceIntoCurrentScope(
-  { scopes }: Env,
+  { scopes }: Context,
   ns: Namespace,
 ): void {
-  const { definitions } = assertNonNull(scopes[0], "Empty scopes in an env!");
+  const { definitions } = assertNonNull(
+    scopes[0],
+    "Empty scopes in an context!",
+  );
   for (const [id, v] of Object.entries(ns)) {
     definitions.set(id, isWriter(v) ? v : aConst());
   }
 }
 
-export function isAtTopLevel({ scopes }: Env): boolean {
+export function isAtTopLevel({ scopes }: Context): boolean {
   return scopes.length <= TOP_LEVEL_OFFSET;
 }
 
 export function tmpVarOf(
-  { scopes }: Env,
+  { scopes }: Context,
   exp: Ktvals<JsSrc>,
 ): { statement: Ktvals<JsSrc>; id: Id } {
   return ScopeF.tmpVarOf(scopes[0], exp);
 }
 
-export function srcPathForErrorMessage({ transpileState }: Env): FilePath {
-  const normalizedPath = path.normalize(transpileState.srcPath);
-  if (transpileState.mode === "repl") {
-    return replPromptPrefixOfNormalizedPath(normalizedPath);
+export function srcPathForErrorMessage({
+  transpileState,
+}: Context): FilePathAndStat {
+  const { src, mode } = transpileState;
+  const normalizedPath = path.normalize(src.path);
+  if (mode === "repl") {
+    return {
+      ...src,
+      path: replPromptPrefixOfNormalizedPath({ ...src, path: normalizedPath }),
+    };
   }
-  return normalizedPath;
+  return { ...src, path: normalizedPath };
 }
 
 // TODO: Put this in a better directory.
-export function replPromptPrefixOfNormalizedPath(path: FilePath): string {
-  return `${path}//(REPL)`;
+export function replPromptPrefixOfNormalizedPath(
+  pathAndStat: FilePathAndStat,
+): string {
+  return pathAndStat.isDirectory
+    ? `${pathAndStat.path}//<NO FILE>`
+    : pathAndStat.path;
 }
 
 export function readerInputOf(
-  env: Env,
+  context: Context,
   contents: string,
   initialLineNumber = 1,
 ): ReaderInput {
-  return readerInput(srcPathForErrorMessage(env), contents, initialLineNumber);
+  const srcPath = srcPathForErrorMessage(context);
+  return readerInput(srcPath, contents, initialLineNumber);
 }
 
 export function setImportedModulesJsId(
-  env: Env,
+  context: Context,
   { k }: ModulePathAndUrl,
   howToRefer: HowToRefer,
 ): void {
-  env.importedModuleJsIds.set(k, howToRefer);
+  context.importedModuleJsIds.set(k, howToRefer);
 }
 
 export async function findIdAsJsSrc(
-  env: Env,
+  context: Context,
   moduleName: string,
   id: Id,
 ): Promise<Ktvals<JsSrc> | undefined> {
-  const { k } = await modulePathAndUrl(env, moduleName);
+  const { k } = await modulePathAndUrl(context, moduleName);
 
-  const howToReferOrMap = env.importedModuleJsIds.get(k);
+  const howToReferOrMap = context.importedModuleJsIds.get(k);
   if (howToReferOrMap == null) {
     return;
   }
@@ -309,12 +334,14 @@ export async function findIdAsJsSrc(
 }
 
 async function modulePathAndUrl(
-  env: Env,
+  context: Context,
   moduleName: string,
 ): Promise<ModulePathAndUrl> {
   const {
-    transpileState: { srcPath },
-  } = env;
+    transpileState: {
+      src: { path: srcPath },
+    },
+  } = context;
   const schemeAndPath = parseAbsoluteUrl(moduleName);
   if (schemeAndPath !== null) {
     if (schemeAndPath[0] === "npm") {

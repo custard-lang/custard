@@ -1,8 +1,8 @@
-import * as EnvF from "../env.js";
+import * as ContextF from "../context.js";
 import { loadModule } from "../definitions.js";
 import {
   type CuSymbol,
-  type Env,
+  type Context,
   type Form,
   type Id,
   isCuSymbol,
@@ -27,7 +27,7 @@ import { isExportableStatement } from "../call.js";
 
 export const _cu$import = markAsDirectWriter(
   async (
-    env: Env,
+    context: Context,
     ...forms: Form[]
   ): Promise<Ktvals<JsSrc> | TranspileError> => {
     const moduleId = validateArgsOfImport(forms, "import");
@@ -35,7 +35,7 @@ export const _cu$import = markAsDirectWriter(
       return moduleId;
     }
 
-    const foundModule = await EnvF.findModule(env, moduleId.value);
+    const foundModule = await ContextF.findModule(context, moduleId.value);
     if (foundModule === undefined) {
       return new TranspileError(
         `No module \`${moduleId.value}\` registered in the Module Paths`,
@@ -48,13 +48,13 @@ export const _cu$import = markAsDirectWriter(
       return ns;
     }
 
-    const r = EnvF.set(env, moduleId.value, ns);
+    const r = ContextF.set(context, moduleId.value, ns);
     if (TranspileError.is(r)) {
       return r;
     }
 
-    const isTopLevel = EnvF.isAtTopLevel(env);
-    EnvF.setImportedModulesJsId(env, foundModule, {
+    const isTopLevel = ContextF.isAtTopLevel(context);
+    ContextF.setImportedModulesJsId(context, foundModule, {
       id: moduleId.value,
       isTopLevel,
     });
@@ -64,7 +64,7 @@ export const _cu$import = markAsDirectWriter(
     }
 
     let specifier: string;
-    switch (env.transpileState.mode) {
+    switch (context.transpileState.mode) {
       case "repl": {
         specifier = foundModule.u;
         break;
@@ -85,7 +85,7 @@ export const _cu$import = markAsDirectWriter(
 
 export const importAnyOf = markAsDirectWriter(
   async (
-    env: Env,
+    context: Context,
     ...forms: Form[]
   ): Promise<Ktvals<JsSrc> | TranspileError> => {
     const moduleId = validateArgsOfImport(forms, "importAnyOf");
@@ -93,7 +93,7 @@ export const importAnyOf = markAsDirectWriter(
       return moduleId;
     }
 
-    const foundModule = await EnvF.findModule(env, moduleId.value);
+    const foundModule = await ContextF.findModule(context, moduleId.value);
     if (foundModule === undefined) {
       return new TranspileError(
         `No module \`${moduleId.value}\` registered in the Module Paths`,
@@ -104,7 +104,7 @@ export const importAnyOf = markAsDirectWriter(
     if (TranspileError.is(ns)) {
       return ns;
     }
-    EnvF.mergeNamespaceIntoCurrentScope(env, ns);
+    ContextF.mergeNamespaceIntoCurrentScope(context, ns);
 
     const ids: Id[] = [];
     for (const [id, w] of Object.entries(ns)) {
@@ -113,9 +113,9 @@ export const importAnyOf = markAsDirectWriter(
       }
     }
 
-    const isTopLevel = EnvF.isAtTopLevel(env);
+    const isTopLevel = ContextF.isAtTopLevel(context);
     for (const id of ids) {
-      EnvF.setImportedModulesJsId(env, foundModule, {
+      ContextF.setImportedModulesJsId(context, foundModule, {
         id,
         isTopLevel,
       });
@@ -126,7 +126,7 @@ export const importAnyOf = markAsDirectWriter(
     }
 
     let specifierForNonTopLevel: string;
-    switch (env.transpileState.mode) {
+    switch (context.transpileState.mode) {
       case "repl": {
         specifierForNonTopLevel = foundModule.u;
         break;
@@ -160,7 +160,7 @@ function validateArgsOfImport(
 
 export const _cu$export = markAsDirectWriter(
   async (
-    env: Env,
+    context: Context,
     ...forms: Form[]
   ): Promise<Ktvals<JsSrc> | TranspileError> => {
     if (forms.length === 0) {
@@ -169,18 +169,18 @@ export const _cu$export = markAsDirectWriter(
       );
     }
 
-    if (!EnvF.isAtTopLevel(env)) {
+    if (!ContextF.isAtTopLevel(context)) {
       return new TranspileError("`export` must be used at the top level.");
     }
 
     const result: Ktvals<JsSrc> = [];
     for (const form of forms) {
-      if (!isExportableStatement(env, form)) {
+      if (!isExportableStatement(context, form)) {
         return new TranspileError(
           "The arguments of `export` must be a const/let declaration.",
         );
       }
-      const r = await transpileExpression(form, env);
+      const r = await transpileExpression(form, context);
       if (TranspileError.is(r)) {
         return r;
       }

@@ -1,6 +1,9 @@
 import { type Config, testForm } from "../helpers.js";
 
-import { defaultTranspileOptions } from "@custard-lang/processor/dist/types.js";
+import {
+  assumeIsFile,
+  defaultTranspileOptions,
+} from "@custard-lang/processor/dist/types.js";
 import { standardModuleRoot } from "@custard-lang/processor/dist/definitions.js";
 import * as ProvidedSymbolsConfig from "@custard-lang/processor/dist/provided-symbols-config.js";
 import { fileOfImportMetaUrl } from "@custard-lang/processor/dist/util/path.js";
@@ -17,10 +20,8 @@ function setUpConfig(): Config {
   });
   return {
     optionsForRepl: defaultTranspileOptions(),
-    providedSymbols: {
-      from: fileOfImportMetaUrl(import.meta.url),
-      ...providedSymbols,
-    },
+    providedSymbols,
+    providedSymbolsPath: fileOfImportMetaUrl(import.meta.url),
   };
 }
 

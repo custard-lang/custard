@@ -1,7 +1,7 @@
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 
-import * as EnvF from "../../internal/env.js";
+import * as ContextF from "../../internal/context.js";
 import {
   transpileComputedKeyOrExpression,
   transpileExpression,
@@ -25,7 +25,7 @@ import {
   aVar,
   type Block,
   type CuSymbol,
-  type Env,
+  type Context,
   type Form,
   type Id,
   isCuSymbol,
@@ -52,20 +52,20 @@ import {
 export { standardModuleRoot } from "../../definitions.js";
 
 export const note = markAsDirectWriter(
-  async (_env: Env, ..._args: Form[]): Promise<Ktvals<JsSrc>> =>
+  async (_context: Context, ..._args: Form[]): Promise<Ktvals<JsSrc>> =>
     await Promise.resolve([ktvalOther("void 0")]),
 );
 
 export const annotate = markAsDirectWriter(
   async (
-    env: Env,
+    context: Context,
     ...argsOrFirstForm: Form[]
   ): Promise<Ktvals<JsSrc> | TranspileError> => {
     const lastArg = argsOrFirstForm[argsOrFirstForm.length - 1];
     if (lastArg === undefined) {
       return [];
     }
-    return await transpileExpression(lastArg, env);
+    return await transpileExpression(lastArg, context);
   },
 );
 
@@ -89,7 +89,7 @@ export const _cu$let = transpilingForVariableDeclaration(
 
 export const _cu$return = markAsDirectWriter(
   async (
-    env: Env,
+    context: Context,
     ...argsOrFirstForm: Form[]
   ): Promise<Ktvals<JsSrc> | TranspileError> => {
     if (argsOrFirstForm.length > 1) {
@@ -101,7 +101,7 @@ export const _cu$return = markAsDirectWriter(
     if (arg === undefined) {
       return [ktvalOther("return")];
     }
-    const argSrc = await transpileExpression(arg, env);
+    const argSrc = await transpileExpression(arg, context);
     if (TranspileError.is(argSrc)) {
       return argSrc;
     }
@@ -112,18 +112,18 @@ export const _cu$return = markAsDirectWriter(
 
 export const when = markAsDirectWriter(
   async (
-    env: Env,
+    context: Context,
     bool?: Form,
     ...rest: Block
   ): Promise<Ktvals<JsSrc> | TranspileError> => {
     if (bool === undefined) {
       return new TranspileError("No expressions given to a `when` statement!");
     }
-    const boolSrc = await transpileExpression(bool, env);
+    const boolSrc = await transpileExpression(bool, context);
     if (TranspileError.is(boolSrc)) {
       return boolSrc;
     }
-    const statementsSrc = await transpileStatements(rest, env);
+    const statementsSrc = await transpileStatements(rest, context);
     if (TranspileError.is(statementsSrc)) {
       return statementsSrc;
     }
@@ -229,7 +229,7 @@ export const any = transpiling2("any", (a: Ktvals<JsSrc>, b: Ktvals<JsSrc>) => [
 export const assign = transpilingForAssignment(
   "assign",
   async (
-    env: Env,
+    context: Context,
     id: Form,
     exp?: Ktvals<JsSrc>,
   ): Promise<Ktvals<JsSrc> | TranspileError> => {
@@ -243,7 +243,7 @@ export const assign = transpilingForAssignment(
       sym: CuSymbol,
       e: Ktvals<JsSrc>,
     ): Ktvals<JsSrc> | TranspileError {
-      const r = EnvF.findWithIsAtTopLevel(env, sym);
+      const r = ContextF.findWithIsAtTopLevel(context, sym);
       if (r === undefined || !isVar(r.writer)) {
         return new TranspileError(
           `\`${sym.value}\` is not a name of a variable declared by \`let\` or a mutable property!`,
@@ -260,7 +260,7 @@ export const assign = transpilingForAssignment(
     }
 
     if (isCuObject(id)) {
-      const { id: tmpVar, statement } = EnvF.tmpVarOf(env, exp);
+      const { id: tmpVar, statement } = ContextF.tmpVarOf(context, exp);
       const src = statement;
       for (const kvOrSym of id) {
         if (isKeyValue(kvOrSym)) {
@@ -277,7 +277,7 @@ export const assign = transpilingForAssignment(
               ktvalOther(`${tmpVar}.${key.value}`),
             ]);
           } else {
-            const kSrc = await transpileComputedKeyOrExpression(key, env);
+            const kSrc = await transpileComputedKeyOrExpression(key, context);
             if (TranspileError.is(kSrc)) {
               return kSrc;
             }
@@ -307,7 +307,7 @@ export const assign = transpilingForAssignment(
     }
 
     if (isCuArray(id)) {
-      const { id: tmpVar, statement } = EnvF.tmpVarOf(env, exp);
+      const { id: tmpVar, statement } = ContextF.tmpVarOf(context, exp);
       const src = statement;
       for (const [k, v] of id.entries()) {
         if (isCuSymbol(v)) {
@@ -339,7 +339,7 @@ export const scope = buildScope("scope", "function", defaultScopeOptions);
 
 export const _cu$if = markAsDirectWriter(
   async (
-    env: Env,
+    context: Context,
     bool?: Form,
     ...rest: Form[]
   ): Promise<Ktvals<JsSrc> | TranspileError> => {
@@ -347,7 +347,7 @@ export const _cu$if = markAsDirectWriter(
       return new TranspileError("No expressions given to an `if` expression!");
     }
 
-    const boolSrc = await transpileExpression(bool, env);
+    const boolSrc = await transpileExpression(bool, context);
     if (TranspileError.is(boolSrc)) {
       return boolSrc;
     }
@@ -357,7 +357,7 @@ export const _cu$if = markAsDirectWriter(
     const falseForms: Form[] = [];
     let elseIsFound = false;
     for (const form of rest) {
-      if (isCuSymbol(form) && EnvF.find(env, form) === _cu$else) {
+      if (isCuSymbol(form) && ContextF.find(context, form) === _cu$else) {
         if (elseIsFound) {
           return new TranspileError(
             "`else` is specified more than once in an `if` expression!",
@@ -385,12 +385,12 @@ export const _cu$if = markAsDirectWriter(
       return new TranspileError("`else` not specified for an `if` expression!");
     }
 
-    const ifTrueSrc = await transpileJoinWithComma(trueForms, env);
+    const ifTrueSrc = await transpileJoinWithComma(trueForms, context);
     if (TranspileError.is(ifTrueSrc)) {
       return ifTrueSrc;
     }
 
-    const ifFalseSrc = await transpileJoinWithComma(falseForms, env);
+    const ifFalseSrc = await transpileJoinWithComma(falseForms, context);
     if (TranspileError.is(ifFalseSrc)) {
       return ifFalseSrc;
     }
@@ -412,7 +412,7 @@ export const _cu$else = aContextualKeyword("if");
 // TODO: refactor with a feature to define syntax
 export const _cu$try = markAsDirectWriter(
   async (
-    env: Env,
+    context: Context,
     ...statements: Form[]
   ): Promise<Ktvals<JsSrc> | TranspileError> => {
     const trys: Ktvals<JsSrc> = [];
@@ -426,28 +426,28 @@ export const _cu$try = markAsDirectWriter(
     let state: State = initial;
     let catchVarName: Id | undefined;
 
-    EnvF.pushInherited(env);
+    ContextF.pushInherited(context);
     for (const form of statements) {
       let isCatch = false;
       let isFinally = false;
       let transpiled: Ktvals<JsSrc> | TranspileError;
       if (isCuSymbol(form)) {
-        isCatch = EnvF.find(env, form) === _cu$catch;
-        isFinally = EnvF.find(env, form) === _cu$finally;
+        isCatch = ContextF.find(context, form) === _cu$catch;
+        isFinally = ContextF.find(context, form) === _cu$finally;
       }
       switch (state) {
         case initial:
           if (isCatch) {
-            EnvF.pop(env);
+            ContextF.pop(context);
             state = catchFound;
             continue;
           }
           if (isFinally) {
-            EnvF.pop(env);
+            ContextF.pop(context);
             state = finallyFound;
             continue;
           }
-          transpiled = await transpileExpression(form, env);
+          transpiled = await transpileExpression(form, context);
           if (TranspileError.is(transpiled)) {
             return transpiled;
           }
@@ -467,8 +467,8 @@ export const _cu$try = markAsDirectWriter(
               );
             }
             if (isCuSymbol(form)) {
-              EnvF.pushInherited(env);
-              const r = EnvF.set(env, form.value, aConst());
+              ContextF.pushInherited(context);
+              const r = ContextF.set(context, form.value, aConst());
               if (TranspileError.is(r)) {
                 return r;
               }
@@ -481,12 +481,12 @@ export const _cu$try = markAsDirectWriter(
           }
 
           if (isFinally) {
-            EnvF.pop(env);
+            ContextF.pop(context);
             state = finallyFound;
             continue;
           }
 
-          transpiled = await transpileExpression(form, env);
+          transpiled = await transpileExpression(form, context);
           if (TranspileError.is(transpiled)) {
             return transpiled;
           }
@@ -505,10 +505,10 @@ export const _cu$try = markAsDirectWriter(
           }
 
           if (finallys.length === 0) {
-            EnvF.pushInherited(env);
+            ContextF.pushInherited(context);
           }
 
-          transpiled = await transpileExpression(form, env);
+          transpiled = await transpileExpression(form, context);
           if (TranspileError.is(transpiled)) {
             return transpiled;
           }
@@ -517,7 +517,7 @@ export const _cu$try = markAsDirectWriter(
       }
     }
 
-    EnvF.pop(env);
+    ContextF.pop(context);
 
     if (state === initial) {
       return new TranspileError(
@@ -558,14 +558,14 @@ export const _cu$throw = transpiling1(
 
 export const fn = markAsDirectWriter(
   async (
-    env: Env,
+    context: Context,
     nameOrArgs?: Form,
     argsOrFirstForm?: Form,
     ...block: Form[]
   ): Promise<Ktvals<JsSrc> | TranspileError> => {
     return await buildFn(
       "fn",
-      env,
+      context,
       nameOrArgs,
       argsOrFirstForm,
       block,
@@ -577,14 +577,14 @@ export const fn = markAsDirectWriter(
 
 export const procedure = markAsDirectWriter(
   async (
-    env: Env,
+    context: Context,
     nameOrArgs?: Form,
     argsOrFirstForm?: Form,
     ...block: Form[]
   ): Promise<Ktvals<JsSrc> | TranspileError> => {
     return await buildProcedure(
       "procedure",
-      env,
+      context,
       nameOrArgs,
       argsOrFirstForm,
       block,
@@ -596,14 +596,14 @@ export const procedure = markAsDirectWriter(
 
 export const generatorFn = markAsDirectWriter(
   async (
-    env: Env,
+    context: Context,
     nameOrArgs?: Form,
     argsOrFirstForm?: Form,
     ...block: Form[]
   ): Promise<Ktvals<JsSrc> | TranspileError> => {
     return await buildFn(
       "generatorFn",
-      env,
+      context,
       nameOrArgs,
       argsOrFirstForm,
       block,
@@ -615,14 +615,14 @@ export const generatorFn = markAsDirectWriter(
 
 export const generatorProcedure = markAsDirectWriter(
   async (
-    env: Env,
+    context: Context,
     name?: Form,
     argsOrFirstForm?: Form,
     ...block: Form[]
   ): Promise<Ktvals<JsSrc> | TranspileError> => {
     return await buildProcedure(
       "generatorProcedure",
-      env,
+      context,
       name,
       argsOrFirstForm,
       block,
@@ -634,7 +634,7 @@ export const generatorProcedure = markAsDirectWriter(
 
 export const _cu$yield = markAsDirectWriter(
   async (
-    env: Env,
+    context: Context,
     a?: Form,
     ...unused: Form[]
   ): Promise<Ktvals<JsSrc> | TranspileError> => {
@@ -642,7 +642,7 @@ export const _cu$yield = markAsDirectWriter(
       return new TranspileError("`yield` must be followed by an expression!");
     }
 
-    if (!EnvF.isInGeneratorContext(env)) {
+    if (!ContextF.isInGeneratorContext(context)) {
       return new TranspileError(
         "`yield` must be used in a generator function!",
       );
@@ -650,14 +650,14 @@ export const _cu$yield = markAsDirectWriter(
     return await transpiling1Unmarked("yield", (s: Ktvals<JsSrc>) => [
       ktvalOther("yield "),
       ...s,
-    ])(env, a, ...unused);
+    ])(context, a, ...unused);
   },
   ordinaryStatement,
 );
 
 export const text = markAsDirectWriter(
   async (
-    env: Env,
+    context: Context,
     ...argsOrFirstForm: Form[]
   ): Promise<Ktvals<JsSrc> | TranspileError> => {
     const esc = (s: string): string => s.replace(/[$`\\]/g, "\\$&");
@@ -668,7 +668,7 @@ export const text = markAsDirectWriter(
         result.push(ktvalOther(esc(arg)));
         continue;
       }
-      const r = await transpileExpression(arg, env);
+      const r = await transpileExpression(arg, context);
       if (TranspileError.is(r)) {
         return r;
       }
@@ -680,9 +680,9 @@ export const text = markAsDirectWriter(
 
 export const cu$thisFile = markAsDynamicVar(
   async ({
-    transpileState: { srcPath },
-  }: Env): Promise<Ktvals<JsSrc> | TranspileError> => {
-    const srcFullPath = path.resolve(srcPath);
+    transpileState: { src: srcPath },
+  }: Context): Promise<Ktvals<JsSrc> | TranspileError> => {
+    const srcFullPath = path.resolve(srcPath.path);
     if ((await fs.stat(srcFullPath)).isDirectory()) {
       return new TranspileError(
         `${srcFullPath} is a directory! \`cu$thisFile\` is only allowed in a file`,
@@ -694,9 +694,9 @@ export const cu$thisFile = markAsDynamicVar(
 
 export const cu$directoryOfThisFile = markAsDynamicVar(
   async ({
-    transpileState: { srcPath },
-  }: Env): Promise<Ktvals<JsSrc> | TranspileError> => {
-    const srcFullPath = path.resolve(srcPath);
+    transpileState: { src: srcPath },
+  }: Context): Promise<Ktvals<JsSrc> | TranspileError> => {
+    const srcFullPath = path.resolve(srcPath.path);
     if ((await fs.stat(srcFullPath)).isDirectory()) {
       return [ktvalOther(JSON.stringify(srcFullPath))];
     }

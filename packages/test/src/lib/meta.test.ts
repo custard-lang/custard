@@ -1,4 +1,3 @@
-import * as path from "node:path";
 import { describe, expect, test } from "vitest";
 
 import {
@@ -14,24 +13,25 @@ import { assertNonError } from "@custard-lang/processor/dist/util/error.js";
 
 import {
   readerInput,
+  assumeIsFile,
+  normalizeFilePathAndStat,
   TranspileError,
-  type FilePath,
   type Form,
-  type JsSrc,
   type ModulePaths,
+  FilePathAndStat,
 } from "@custard-lang/processor/dist/types.js";
 import { standardModuleRoot } from "@custard-lang/processor/dist/definitions.js";
 import { evalForm } from "@custard-lang/processor/dist/eval.js";
 import { readBlock, readStr } from "@custard-lang/processor/dist/reader.js";
-import { initializeForRepl } from "@custard-lang/processor/dist/env.js";
+import { initializeForRepl } from "@custard-lang/processor/dist/context.js";
 import { fileOfImportMetaUrl } from "@custard-lang/processor/dist/util/path.js";
-// import * as meta causes an error vitest perhaps because `meta` confliects
+// import * as meta causes an error vitest perhaps because `meta` conflicts
 // with `(import meta)`.
 import * as meta_ from "@custard-lang/processor/dist/lib/meta.js";
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-assignment */
 
-const srcPath = fileOfImportMetaUrl(import.meta.url);
+const srcPathAndStat = assumeIsFile(fileOfImportMetaUrl(import.meta.url));
 function setUpConfig(): Config {
   const modulePaths: ModulePaths = new Map();
   modulePaths.set("base", `${standardModuleRoot}/base.js`);
@@ -40,19 +40,19 @@ function setUpConfig(): Config {
   modulePaths.set("js", `${standardModuleRoot}/js.js`);
 
   return {
-    optionsForRepl: { srcPath },
+    optionsForRepl: { src: srcPathAndStat },
     providedSymbols: {
-      from: srcPath,
       modulePaths,
       implicitStatements:
         "(importAnyOf base)(import meta)(import async)(import js)",
       jsTopLevels: ["Map"],
     },
+    providedSymbolsPath: srcPathAndStat.path,
   };
 }
 
 describe("meta.readString", () => {
-  const srcPathForErrorMessage = `${path.normalize(srcPath)}//(REPL)`;
+  const srcPathForErrorMessage = normalizeFilePathAndStat(srcPathAndStat);
 
   const contents1 = "(plusF 4.1 5.2)";
   testFormInRepl({
@@ -79,47 +79,56 @@ describe("meta.readString", () => {
 
 describe("meta.transpileModule", () => {
   const basePathJson = JSON.stringify(`${standardModuleRoot}/base.js`);
-  const proviedSymbolsSrcFrom = (src: FilePath): JsSrc => {
-    const fromSrc = JSON.stringify(src);
-    return `{ modulePaths: (js.new Map [["base" ${basePathJson}]]) implicitStatements: "(importAnyOf base)" jsTopLevels: [] from: ${fromSrc} }`;
-  };
+  const proviedSymbolsSrc = `{ modulePaths: (js.new Map [["base" ${basePathJson}]]) implicitStatements: "(importAnyOf base)" jsTopLevels: [] }`;
   const extraOptionsSrc = `{ mayHaveResult: true }`;
+  const testPathAndStat = assumeIsFile("test");
+  const toCstdSrc = (src: object): string => {
+    return JSON.stringify(src).replace(/,/g, "");
+  };
 
   test("transpiled source code can be `eval`ed as a JavaScript code 1.", async () => {
-    const { optionsForRepl: options, providedSymbols } = setUpConfig();
-    const env = assertNonError(
-      await initializeForRepl(options, providedSymbols),
+    const {
+      optionsForRepl: options,
+      providedSymbols,
+      providedSymbolsPath: srcPath,
+    } = setUpConfig();
+    const context = assertNonError(
+      await initializeForRepl(options, providedSymbols, srcPath),
     );
 
     await withNewPath(async ({ src, dest }) => {
-      const transpileOptionsSrc = `{ srcPath: ${JSON.stringify(src)} }`;
-      const proviedSymbolsSrc = proviedSymbolsSrcFrom(src);
+      const transpileOptionsSrc = `{ src: ${toCstdSrc(src)} }`;
+      const fromSrc = JSON.stringify(src.path);
       const input = readerInput(
-        "test",
-        `(async.await (meta.transpileModule (meta.readString "(plusF 4.1 5.2)") ${transpileOptionsSrc} ${proviedSymbolsSrc} ${extraOptionsSrc}))`,
+        testPathAndStat,
+        `(async.await (meta.transpileModule (meta.readString "(plusF 4.1 5.2)") ${transpileOptionsSrc} ${proviedSymbolsSrc} ${fromSrc} ${extraOptionsSrc}))`,
       );
       const result = assertNonError(
-        await evalForm(assertNonError(readStr(input)) as Form, env),
+        await evalForm(assertNonError(readStr(input)) as Form, context),
       );
       expect(await writeAndEval(dest, result)).toEqual(4.1 + 5.2);
     });
   });
 
   test("transpiled source code can be `eval`ed as a JavaScript code 2.", async () => {
-    const { optionsForRepl: options, providedSymbols } = setUpConfig();
-    const env = assertNonError(
-      await initializeForRepl(options, providedSymbols),
+    const {
+      optionsForRepl: options,
+      providedSymbols,
+      providedSymbolsPath: srcPath,
+    } = setUpConfig();
+    const context = assertNonError(
+      await initializeForRepl(options, providedSymbols, srcPath),
     );
 
     await withNewPath(async ({ src, dest }) => {
-      const transpileOptionsSrc = `{ srcPath: ${JSON.stringify(src)} }`;
-      const proviedSymbolsSrc = proviedSymbolsSrcFrom(src);
+      const transpileOptionsSrc = `{ src: ${toCstdSrc(src)} }`;
+      const fromSrc = JSON.stringify(src.path);
       const input = readerInput(
-        "test",
-        `(async.await (meta.transpileModule (meta.readString "(const x 9.2) (let y 0.1) (plusF x y)") ${transpileOptionsSrc} ${proviedSymbolsSrc} ${extraOptionsSrc}))`,
+        testPathAndStat,
+        `(async.await (meta.transpileModule (async.await (meta.readString "(const x 9.2) (let y 0.1) (plusF x y)")) ${transpileOptionsSrc} ${proviedSymbolsSrc} ${fromSrc} ${extraOptionsSrc}))`,
       );
       const result = assertNonError(
-        await evalForm(assertNonError(readStr(input)) as Form, env),
+        await evalForm(assertNonError(readStr(input)) as Form, context),
       );
       expect(await writeAndEval(dest, result)).toEqual(9.2 + 0.1);
     });
@@ -128,7 +137,7 @@ describe("meta.transpileModule", () => {
 
 describe("meta.evaluate", () => {
   testFormInRepl({
-    src: '(meta.evaluate (meta.readString "(plusF 4.1 5.2)"))',
+    src: '(meta.evaluate (async.await (meta.readString "(plusF 4.1 5.2)")))',
     expected: 4.1 + 5.2,
     setUpConfig,
   });

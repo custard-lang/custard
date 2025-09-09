@@ -1,7 +1,7 @@
-import * as EnvF from "./env.js";
+import * as ContextF from "./context.js";
 import {
   type Call,
-  type Env,
+  type Context,
   type Form,
   type Writer,
   functionIdOfCall,
@@ -12,16 +12,19 @@ import { isCuSymbol } from "./types/cu-symbol.js";
 import { isList } from "./types/list.js";
 import { isPropertyAccess } from "./types/property-access.js";
 
-export function isStatement(env: Env, form: Form): form is Call {
-  return isCallOf(env, form, isMarkedDirectStatementWriter);
+export function isStatement(context: Context, form: Form): form is Call {
+  return isCallOf(context, form, isMarkedDirectStatementWriter);
 }
 
-export function isExportableStatement(env: Env, form: Form): form is Call {
-  return isCallOf(env, form, isMarkedDirectExportableStatementWriter);
+export function isExportableStatement(
+  context: Context,
+  form: Form,
+): form is Call {
+  return isCallOf(context, form, isMarkedDirectExportableStatementWriter);
 }
 
 function isCallOf(
-  env: Env,
+  context: Context,
   form: Form,
   p: (w: Writer) => boolean,
 ): form is Call {
@@ -29,7 +32,7 @@ function isCallOf(
   if (call === undefined) {
     return false;
   }
-  const w = EnvF.find(env, functionIdOfCall(call));
+  const w = ContextF.find(context, functionIdOfCall(call));
   // TODO: More helpful error if the writer is not found
   return w !== undefined && p(w);
 }

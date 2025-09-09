@@ -1,7 +1,7 @@
 import {
   type Form,
   type Block,
-  type Env,
+  type Context,
   type ReaderInput,
   type TranspileRepl,
 } from "./types.js";
@@ -19,29 +19,29 @@ import { clearTranspiledSrc } from "./internal/transpile-state.js";
 
 export async function evalForm(
   form: Form,
-  env: Env<TranspileRepl>,
+  context: Context<TranspileRepl>,
 ): Promise<any | Error> {
-  const r = await internalEvalForm(form, env);
-  clearTranspiledSrc(env.transpileState);
+  const r = await internalEvalForm(form, context);
+  clearTranspiledSrc(context.transpileState);
   return r;
 }
 
 export async function evalBlock(
   forms: Block,
-  env: Env<TranspileRepl>,
+  context: Context<TranspileRepl>,
 ): Promise<any | Error> {
-  const r = await internalEvalBlock(forms, env);
-  clearTranspiledSrc(env.transpileState);
+  const r = await internalEvalBlock(forms, context);
+  clearTranspiledSrc(context.transpileState);
   return r;
 }
 
 export async function evalString(
   input: ReaderInput,
-  env: Env<TranspileRepl>,
+  context: Context<TranspileRepl>,
 ): Promise<any | Error> {
   const forms = readBlock(input);
   if (isParseError(forms)) {
     return forms;
   }
-  return await evalBlock(forms, env);
+  return await evalBlock(forms, context);
 }

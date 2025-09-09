@@ -2,7 +2,7 @@ import {
   transpileExpression,
   transpileJoinWithComma,
 } from "../internal/transpile.js";
-import type { Env, Form, JsSrc, Ktvals } from "../types.js";
+import type { Context, Form, JsSrc, Ktvals } from "../types.js";
 import {
   markAsDirectWriter,
   markAsDynamicVar,
@@ -27,7 +27,7 @@ export const _cu$instanceof = transpiling2(
 
 export const _cu$new = markAsDirectWriter(
   async (
-    env: Env,
+    context: Context,
     klass?: Form,
     ...args: Form[]
   ): Promise<Ktvals<JsSrc> | TranspileError> => {
@@ -35,11 +35,11 @@ export const _cu$new = markAsDirectWriter(
       return new TranspileError("`new` must be followed by an expression!");
     }
 
-    const klassSrc = await transpileExpression(klass, env);
+    const klassSrc = await transpileExpression(klass, context);
     if (TranspileError.is(klassSrc)) {
       return klassSrc;
     }
-    const argsSrc = await transpileJoinWithComma(args, env);
+    const argsSrc = await transpileJoinWithComma(args, context);
     if (TranspileError.is(argsSrc)) {
       return argsSrc;
     }

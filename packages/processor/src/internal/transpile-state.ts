@@ -1,12 +1,14 @@
 import { type TranspileOptions } from "../types.js";
-import type {
-  TranspileModule,
-  TranspileRepl,
-  TranspileStateCore,
+import {
+  normalizeSrcPath,
+  type TranspileModule,
+  type TranspileRepl,
+  type TranspileStateCore,
 } from "./types.js";
 
-function transpileStateCore(): TranspileStateCore {
+function transpileStateCore(options: TranspileOptions): TranspileStateCore {
   return {
+    ...normalizeSrcPath(options),
     transpiledSrc: [],
     evaluatedUpTo: 0,
     currentBlockIndex: 0,
@@ -17,16 +19,14 @@ function transpileStateCore(): TranspileStateCore {
 // In REPL without loading any file, use current directory as `srcPath`.
 export function transpileRepl(options: TranspileOptions): TranspileRepl {
   return {
-    ...options,
-    ...transpileStateCore(),
+    ...transpileStateCore(options),
     mode: "repl",
   };
 }
 
 export function transpileModule(options: TranspileOptions): TranspileModule {
   return {
-    ...options,
-    ...transpileStateCore(),
+    ...transpileStateCore(options),
     mode: "module",
     importsSrc: [],
   };

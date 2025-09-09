@@ -5,7 +5,7 @@ import {
   defaultAsyncScopeOptions,
   type DirectWriter,
   type DirectWriterKindFlags,
-  type Env,
+  type Context,
   exportableStatement,
   type Form,
   formatForError,
@@ -45,23 +45,23 @@ import {
   transpileJoinWithComma,
   transpileStatements,
 } from "../internal/transpile.js";
-import * as EnvF from "../internal/env.js";
+import * as ContextF from "../internal/context.js";
 import { isStatement } from "../internal/call.js";
 
 export function transpiling1Unmarked(
   formId: Id,
   f: (a: Ktvals<JsSrc>) => Ktvals<JsSrc>,
 ): (
-  env: Env,
+  context: Context,
   a: Form,
   ...unused: Form[]
 ) => Promise<Ktvals<JsSrc> | TranspileError> {
   return async (
-    env: Env,
+    context: Context,
     a: Form,
     ...unused: Form[]
   ): Promise<Ktvals<JsSrc> | TranspileError> => {
-    const ra = await transpileExpression(a, env);
+    const ra = await transpileExpression(a, context);
     if (TranspileError.is(ra)) {
       return ra;
     }
@@ -90,17 +90,17 @@ export function transpiling2(
 ): MarkedDirectWriter {
   return markAsDirectWriter(
     async (
-      env: Env,
+      context: Context,
       a: Form,
       b: Form,
       ...unused: Form[]
     ): Promise<Ktvals<JsSrc> | TranspileError> => {
-      const ra = await transpileExpression(a, env);
+      const ra = await transpileExpression(a, context);
       if (TranspileError.is(ra)) {
         return ra;
       }
 
-      const rb = await transpileExpression(b, env);
+      const rb = await transpileExpression(b, context);
       if (TranspileError.is(rb)) {
         return rb;
       }
@@ -121,10 +121,10 @@ export function transpilingFunctionArguments(
 ): MarkedDirectWriter {
   return markAsDirectWriter(
     async (
-      env: Env,
+      context: Context,
       ...args: Form[]
     ): Promise<Ktvals<JsSrc> | TranspileError> => {
-      const argSrcs = await transpileJoinWithComma(args, env);
+      const argSrcs = await transpileJoinWithComma(args, context);
       if (TranspileError.is(argSrcs)) {
         return argSrcs;
       }
@@ -137,7 +137,7 @@ export function transpilingFunctionArguments(
 export function transpilingForAssignment(
   formId: Id,
   f: (
-    env: Env,
+    context: Context,
     id: Form,
     exp?: Ktvals<JsSrc>,
   ) => Promise<Ktvals<JsSrc> | TranspileError>,
@@ -145,7 +145,7 @@ export function transpilingForAssignment(
 ): MarkedDirectWriter {
   return markAsDirectWriter(
     async (
-      env: Env,
+      context: Context,
       id: Form,
       value?: Form,
       another?: Form,
@@ -157,14 +157,14 @@ export function transpilingForAssignment(
       }
 
       if (value === undefined) {
-        return await f(env, id);
+        return await f(context, id);
       }
 
-      const exp = await transpileExpression(value, env);
+      const exp = await transpileExpression(value, context);
       if (TranspileError.is(exp)) {
         return exp;
       }
-      return await f(env, id, exp);
+      return await f(context, id, exp);
     },
     kind,
   );
@@ -182,16 +182,16 @@ export function transpilingForVariableDeclaration(
   return transpilingForAssignment(
     formId,
     async (
-      env: Env,
+      context: Context,
       sym: Form,
       exp?: Ktvals<JsSrc>,
     ): Promise<Ktvals<JsSrc> | TranspileError> => {
       let r: undefined | TranspileError;
 
-      if (EnvF.isAtTopLevel(env)) {
+      if (ContextF.isAtTopLevel(context)) {
         exp ??= [ktvalOther("void 0")];
         if (isCuSymbol(sym)) {
-          r = tryToSet(sym, env, newWriter);
+          r = tryToSet(sym, context, newWriter);
           if (TranspileError.is(r)) {
             return r;
           }
@@ -212,7 +212,10 @@ export function transpilingForVariableDeclaration(
               if (isCuSymbol(key)) {
                 keyKtvals = key.value;
               } else {
-                const kSrc = await transpileComputedKeyOrExpression(key, env);
+                const kSrc = await transpileComputedKeyOrExpression(
+                  key,
+                  context,
+                );
                 if (TranspileError.is(kSrc)) {
                   return kSrc;
                 }
@@ -225,7 +228,7 @@ export function transpilingForVariableDeclaration(
                   `${formId}'s assignee must be a symbol, but ${vFormatted} is not!`,
                 );
               }
-              r = tryToSet(value, env, newWriter);
+              r = tryToSet(value, context, newWriter);
               if (TranspileError.is(r)) {
                 return r;
               }
@@ -239,7 +242,7 @@ export function transpilingForVariableDeclaration(
               );
             }
 
-            r = tryToSet(kvOrSym, env, newWriter);
+            r = tryToSet(kvOrSym, context, newWriter);
             if (TranspileError.is(r)) {
               return r;
             }
@@ -256,7 +259,7 @@ export function transpilingForVariableDeclaration(
           );
           for (const v of sym) {
             if (isCuSymbol(v)) {
-              r = tryToSet(v, env, newWriter);
+              r = tryToSet(v, context, newWriter);
               if (TranspileError.is(r)) {
                 return r;
               }
@@ -278,7 +281,7 @@ export function transpilingForVariableDeclaration(
         );
       }
 
-      const assignee = transpileLocalAssignee(formId, env, sym, newWriter);
+      const assignee = transpileLocalAssignee(formId, context, sym, newWriter);
       if (TranspileError.is(assignee)) {
         return assignee;
       }
@@ -289,12 +292,12 @@ export function transpilingForVariableDeclaration(
 
 function transpileLocalAssignee(
   formId: Id,
-  env: Env,
+  context: Context,
   sym: Form,
   newWriter: () => Writer,
 ): JsSrc | TranspileError {
   if (isCuSymbol(sym)) {
-    const r = tryToSet(sym, env, newWriter);
+    const r = tryToSet(sym, context, newWriter);
     if (TranspileError.is(r)) {
       return r;
     }
@@ -319,7 +322,7 @@ function transpileLocalAssignee(
           );
         }
 
-        const r1 = tryToSet(value, env, newWriter);
+        const r1 = tryToSet(value, context, newWriter);
         if (TranspileError.is(r1)) {
           return r1;
         }
@@ -332,7 +335,7 @@ function transpileLocalAssignee(
         return new TranspileError("Unquote must be used inside quasiQuote");
       }
 
-      const r0 = tryToSet(kvOrSym, env, newWriter);
+      const r0 = tryToSet(kvOrSym, context, newWriter);
       if (TranspileError.is(r0)) {
         return r0;
       }
@@ -344,7 +347,7 @@ function transpileLocalAssignee(
     let assignee = "[";
     for (const form of sym) {
       if (isCuSymbol(form)) {
-        const r0 = tryToSet(form, env, newWriter);
+        const r0 = tryToSet(form, context, newWriter);
         if (TranspileError.is(r0)) {
           return r0;
         }
@@ -367,15 +370,15 @@ function transpileLocalAssignee(
 
 export function tryToSet(
   sym: CuSymbol,
-  env: Env,
+  context: Context,
   newWriter: () => Writer,
 ): undefined | TranspileError {
-  if (EnvF.isDefinedInThisScope(env, sym.value)) {
+  if (ContextF.isDefinedInThisScope(context, sym.value)) {
     return new TranspileError(
       `Variable ${JSON.stringify(sym.value)} is already defined!`,
     );
   }
-  const r = EnvF.set(env, sym.value, newWriter());
+  const r = ContextF.set(context, sym.value, newWriter());
   if (TranspileError.is(r)) {
     return r;
   }
@@ -387,7 +390,11 @@ export function transpilingForVariableMutation(
   otherwise: (jsExp: JsSrc) => Ktvals<JsSrc>,
 ): MarkedDirectWriter {
   return markAsDirectWriter(
-    (env: Env, sym: Form, another?: Form): Ktvals<JsSrc> | TranspileError => {
+    (
+      context: Context,
+      sym: Form,
+      another?: Form,
+    ): Ktvals<JsSrc> | TranspileError => {
       if (another !== undefined) {
         return new TranspileError(
           `\`${formId}\` must receive only one symbol!`,
@@ -400,7 +407,7 @@ export function transpilingForVariableMutation(
         );
       }
 
-      const r = EnvF.findWithIsAtTopLevel(env, sym);
+      const r = ContextF.findWithIsAtTopLevel(context, sym);
       if (r === undefined || !isVar(r.writer)) {
         return new TranspileError(
           `\`${sym.value}\` is not a name of a variable declared by \`let\` or a mutable property!`,
@@ -426,7 +433,7 @@ interface PreludeResult {
 
 function functionPrelude(
   formId: Id,
-  env: Env,
+  context: Context,
   nameOrArgs: Form | undefined | null,
   argsOrFirstForm: Form | undefined,
   scopeOptions: ScopeOptions,
@@ -471,11 +478,11 @@ function functionPrelude(
     );
   }
 
-  EnvF.push(env, scopeOptions);
+  ContextF.push(context, scopeOptions);
 
   const argPatterns: JsSrc[] = [];
   for (const arg of argsOrFirstForm) {
-    const argSrc = transpileLocalAssignee(formId, env, arg, aVar);
+    const argSrc = transpileLocalAssignee(formId, context, arg, aVar);
     if (TranspileError.is(argSrc)) {
       return argSrc;
     }
@@ -494,17 +501,17 @@ function functionPrelude(
 }
 
 function functionPostlude(
-  env: Env,
+  context: Context,
   { src, funName }: PreludeResult,
 ): Ktvals<JsSrc> | TranspileError {
-  EnvF.pop(env);
+  ContextF.pop(context);
   if (funName !== null) {
-    const r = tryToSet(funName, env, aConst);
+    const r = tryToSet(funName, context, aConst);
     if (TranspileError.is(r)) {
       return r;
     }
 
-    if (EnvF.isAtTopLevel(env)) {
+    if (ContextF.isAtTopLevel(context)) {
       return [ktvalFunctionPostlude(funName.value, src)];
     }
   }
@@ -513,7 +520,7 @@ function functionPostlude(
 
 export async function buildFn(
   formId: Id,
-  env: Env,
+  context: Context,
   nameOrArgs: Form | undefined | null,
   argsOrFirstForm: Form | undefined,
   block: Block,
@@ -522,7 +529,7 @@ export async function buildFn(
 ): Promise<Ktvals<JsSrc> | TranspileError> {
   const preludeResult = functionPrelude(
     formId,
-    env,
+    context,
     nameOrArgs,
     argsOrFirstForm,
     scopeOptions,
@@ -537,7 +544,7 @@ export async function buildFn(
   for (let i = 0; i < lastI; ++i) {
     // `i` is always less than `block.length` so it's safe to use `block[i]!`
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const src = await transpileExpression(block[i]!, env);
+    const src = await transpileExpression(block[i]!, context);
     if (TranspileError.is(src)) {
       return src;
     }
@@ -546,12 +553,12 @@ export async function buildFn(
 
   const lastStatement = block[lastI];
   if (lastStatement !== undefined) {
-    const lastSrc = await transpileExpression(lastStatement, env);
+    const lastSrc = await transpileExpression(lastStatement, context);
     if (TranspileError.is(lastSrc)) {
       return lastSrc;
     }
 
-    if (isStatement(env, lastStatement)) {
+    if (isStatement(context, lastStatement)) {
       preludeResult.src.push(ktvalOther("  "), ...lastSrc, ktvalOther(";\n"));
     } else {
       preludeResult.src.push(
@@ -561,12 +568,12 @@ export async function buildFn(
       );
     }
   }
-  return functionPostlude(env, preludeResult);
+  return functionPostlude(context, preludeResult);
 }
 
 export async function buildProcedure(
   formId: Id,
-  env: Env,
+  context: Context,
   nameOrArgs: Form | undefined,
   argsOrFirstForm: Form | undefined,
   block: Block,
@@ -575,7 +582,7 @@ export async function buildProcedure(
 ): Promise<Ktvals<JsSrc> | TranspileError> {
   const preludeResult = functionPrelude(
     formId,
-    env,
+    context,
     nameOrArgs,
     argsOrFirstForm,
     scopeOptions,
@@ -587,14 +594,14 @@ export async function buildProcedure(
 
   block = [...preludeResult.firstBlock, ...block];
   for (const form of block) {
-    const src = await transpileExpression(form, env);
+    const src = await transpileExpression(form, context);
     if (TranspileError.is(src)) {
       return src;
     }
     preludeResult.src.push(ktvalOther("  "), ...src, ktvalOther(";\n"));
   }
 
-  return functionPostlude(env, preludeResult);
+  return functionPostlude(context, preludeResult);
 }
 
 export function buildScope(
@@ -604,13 +611,13 @@ export function buildScope(
 ): MarkedDirectWriter {
   return markAsDirectWriter(
     async (
-      env: Env,
+      context: Context,
       ...block: Block
     ): Promise<Ktvals<JsSrc> | TranspileError> => {
       const argsList = list();
       const funcSrc = await buildFn(
         formId,
-        env,
+        context,
         null,
         argsList as Form,
         block,
@@ -633,12 +640,12 @@ export function buildForEach(
   ) => Ktvals<JsSrc>,
 ): DirectWriter {
   return async (
-    env: Env,
+    context: Context,
     id?: Form,
     iterable?: Form,
     ...statements: Block
   ): Promise<Ktvals<JsSrc> | TranspileError> => {
-    EnvF.pushInherited(env);
+    ContextF.pushInherited(context);
 
     if (id === undefined) {
       return new TranspileError(
@@ -646,7 +653,7 @@ export function buildForEach(
       );
     }
 
-    const assignee = transpileLocalAssignee("forEach", env, id, aConst);
+    const assignee = transpileLocalAssignee("forEach", context, id, aConst);
     if (TranspileError.is(assignee)) {
       return assignee;
     }
@@ -657,17 +664,17 @@ export function buildForEach(
       );
     }
 
-    const iterableSrc = await transpileExpression(iterable, env);
+    const iterableSrc = await transpileExpression(iterable, context);
     if (TranspileError.is(iterableSrc)) {
       return iterableSrc;
     }
 
-    const statementsSrc = await transpileStatements(statements, env);
+    const statementsSrc = await transpileStatements(statements, context);
     if (TranspileError.is(statementsSrc)) {
       return statementsSrc;
     }
 
-    EnvF.pop(env);
+    ContextF.pop(context);
 
     return build(assignee, iterableSrc, statementsSrc);
   };
@@ -675,14 +682,14 @@ export function buildForEach(
 
 export async function buildAsyncFn(
   formId: Id,
-  env: Env,
+  context: Context,
   name: Form | undefined | null,
   argsOrFirstForm: Form | undefined,
   block: Form[],
 ): Promise<Ktvals<JsSrc> | TranspileError> {
   return await buildFn(
     formId,
-    env,
+    context,
     name,
     argsOrFirstForm,
     block,

@@ -1,15 +1,15 @@
-import { type Env, TranspileError } from "../types.js";
+import { type Context, TranspileError } from "../types.js";
 import { evalKtvals } from "../ktvals.js";
 
 export async function evalForMacro(
-  env: Env,
+  context: Context,
 ): Promise<undefined | TranspileError> {
-  const { transpileState } = env;
+  const { transpileState } = context;
   try {
     await evalKtvals(
       transpileState.transpiledSrc.slice(transpileState.evaluatedUpTo),
       [],
-      env,
+      context,
     );
   } catch (e) {
     if (e instanceof Error) {

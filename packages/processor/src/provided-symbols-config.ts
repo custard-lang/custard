@@ -1,13 +1,14 @@
 import * as path from "node:path";
-import * as fs from "node:fs";
 
 import { isAbsoluteUrl } from "./util/path.js";
 
-import { type FilePath, type Id, type ProvidedSymbolsConfig } from "./types.js";
 import {
-  type CompleteProvidedSymbolsConfig,
   type ModulePaths,
-} from "./internal/types.js";
+  type FilePath,
+  type Id,
+  type ProvidedSymbolsConfig,
+  type FilePathAndStat,
+} from "./types.js";
 
 export function build({
   builtinModulePaths,
@@ -35,16 +36,18 @@ export function build({
   };
 }
 
-export function resolveModulePaths({
-  from,
-  modulePaths,
-}: CompleteProvidedSymbolsConfig): ModulePaths {
-  const fromDir = fs.statSync(from).isDirectory() ? from : path.dirname(from);
+export function resolveModulePaths(
+  { modulePaths }: ProvidedSymbolsConfig,
+  importFrom: FilePathAndStat,
+): ModulePaths {
+  const srcDir = importFrom.isDirectory
+    ? importFrom.path
+    : path.dirname(importFrom.path);
   const result: ModulePaths = new Map();
   for (const [moduleName, modulePath] of modulePaths) {
     const moduleFullPath = isAbsoluteUrl(modulePath)
       ? modulePath
-      : path.resolve(fromDir, modulePath);
+      : path.resolve(srcDir, modulePath);
     result.set(moduleName, moduleFullPath.replace(/\/\/+/g, "/"));
   }
   return result;

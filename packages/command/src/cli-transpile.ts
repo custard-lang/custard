@@ -1,5 +1,5 @@
-import { transpileMain, transpileProgram } from "./cli/common.js";
+import { transpileMain, commonProgram } from "./cli/common.js";
 
-const result = transpileProgram.parse();
+const result = commonProgram.parse();
 
 (async () => await transpileMain(result.opts(), result.args))();

@@ -173,3 +173,8 @@ export interface KtvalOther<Target> {
 export function ktvalOther<Target>(exp: Target): KtvalOther<Target> {
   return { t: KtvalOtherT, exp };
 }
+
+// TODO: Generalize this to any Target types.
+export function ktvalContext(): KtvalOther<string> {
+  return ktvalOther("_cu$c");
+}

@@ -13,10 +13,9 @@ import {
   KtvalReferT,
   type Ktvals,
 } from "./types/ktval.js";
-import type { Env, JsSrc, TranspileModule } from "./types.js";
-import { CU_ENV } from "./cu-env.js";
+import type { Context, JsSrc, TranspileModule } from "./types.js";
 import { importModuleFromJsSrc } from "../util/eval.js";
-import { tmpVarOf } from "./env.js";
+import { tmpVarOf } from "./context.js";
 import { ExpectNever } from "../util/error.js";
 
 // This module is inherently unsafe!
@@ -25,12 +24,12 @@ import { ExpectNever } from "../util/error.js";
 export async function evalKtvals(
   body: Ktvals<JsSrc>,
   lastExpression: Ktvals<JsSrc>,
-  env: Env,
+  context: Context,
 ): Promise<any> {
   // https://gist.github.com/tomhodgins/0e5a98610a1da2a98049614a4f170734
-  let f = `export default async (${CU_ENV})=>{${transpileKtvalsForEval(body, env)}`;
+  let f = `export default async (_cu$c)=>{${transpileKtvalsForEval(body, context)}`;
   if (lastExpression.length > 0) {
-    f = `${f}return ${transpileKtvalsForEval(lastExpression, env)}`;
+    f = `${f}return ${transpileKtvalsForEval(lastExpression, context)}`;
   }
   f = `${f}}`;
 
@@ -39,55 +38,58 @@ export async function evalKtvals(
 
   const mod = await importModuleFromJsSrc(f);
   // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-  return await mod.default(env);
+  return await mod.default(context);
 }
 
-export function transpileKtvalsForEval(ktvals: Ktvals<JsSrc>, env: Env): JsSrc {
+export function transpileKtvalsForEval(
+  ktvals: Ktvals<JsSrc>,
+  context: Context,
+): JsSrc {
   return ktvals
     .map((ktval) => {
       switch (ktval.t) {
         case KtvalReferT: {
           const idJson = JSON.stringify(ktval.id);
-          return `_cu$env.transpileState.topLevelValues.get(${idJson})`;
+          return `_cu$c.transpileState.topLevelValues.get(${idJson})`;
         }
 
         case KtvalAssignT: {
           switch (ktval.at) {
             case KtvalAssignSimpleT: {
               const idJson = JSON.stringify(ktval.assignee);
-              const expSrc = transpileKtvalsForEval(ktval.exp, env);
-              return `void _cu$env.transpileState.topLevelValues.set(${idJson},${expSrc});\n`;
+              const expSrc = transpileKtvalsForEval(ktval.exp, context);
+              return `void _cu$c.transpileState.topLevelValues.set(${idJson},${expSrc});\n`;
             }
 
             case KtvalAssignDestructuringArrayT: {
-              const { statement, id: tmpId } = tmpVarOf(env, ktval.exp);
+              const { statement, id: tmpId } = tmpVarOf(context, ktval.exp);
               const setsSrc = ktval.assignee
                 .map((id, i) => {
                   const idJson = JSON.stringify(id);
-                  return `void _cu$env.transpileState.topLevelValues.set(${idJson},${tmpId}[${i}]);\n`;
+                  return `void _cu$c.transpileState.topLevelValues.set(${idJson},${tmpId}[${i}]);\n`;
                 })
                 .join("");
-              return `${transpileKtvalsForEval(statement, env)}${setsSrc}`;
+              return `${transpileKtvalsForEval(statement, context)}${setsSrc}`;
             }
 
             case KtvalAssignDestructuringObjectT: {
-              const { statement, id: tmpId } = tmpVarOf(env, ktval.exp);
+              const { statement, id: tmpId } = tmpVarOf(context, ktval.exp);
               const setsSrc = ktval.assignee
                 .map((keyValue) => {
                   if (typeof keyValue === "string") {
                     const valueJson = JSON.stringify(keyValue);
-                    return `void _cu$env.transpileState.topLevelValues.set(${valueJson},${tmpId}.${keyValue});\n`;
+                    return `void _cu$c.transpileState.topLevelValues.set(${valueJson},${tmpId}.${keyValue});\n`;
                   }
                   const [key, value] = keyValue;
                   const valueJson = JSON.stringify(value);
                   const keySrc =
                     typeof key === "string"
                       ? `.${key}`
-                      : transpileKtvalsForEval(key, env);
-                  return `void _cu$env.transpileState.topLevelValues.set(${valueJson},${tmpId}${keySrc});\n`;
+                      : transpileKtvalsForEval(key, context);
+                  return `void _cu$c.transpileState.topLevelValues.set(${valueJson},${tmpId}${keySrc});\n`;
                 })
                 .join("");
-              return `${transpileKtvalsForEval(statement, env)}${setsSrc}`;
+              return `${transpileKtvalsForEval(statement, context)}${setsSrc}`;
             }
 
             default:
@@ -96,30 +98,30 @@ export function transpileKtvalsForEval(ktvals: Ktvals<JsSrc>, env: Env): JsSrc {
         }
 
         case KtvalFunctionPostludeT: {
-          const functionSrc = `${transpileKtvalsForEval(ktval.body, env)}}`;
+          const functionSrc = `${transpileKtvalsForEval(ktval.body, context)}}`;
           const idJson = JSON.stringify(ktval.id);
-          const set = `void _cu$env.transpileState.topLevelValues.set(${idJson},${functionSrc})`;
-          const get = `_cu$env.transpileState.topLevelValues.get(${idJson})`;
+          const set = `void _cu$c.transpileState.topLevelValues.set(${idJson},${functionSrc})`;
+          const get = `_cu$c.transpileState.topLevelValues.get(${idJson})`;
           return `(() => {\n${set}\nreturn ${get}\n})()`;
         }
 
         case KtvalImportT: {
           const specifierJson = JSON.stringify(ktval.specifierForRepl);
           const awaitImport = ktvalOther(`await import(${specifierJson})`);
-          const { statement, id: tmpId } = tmpVarOf(env, [awaitImport]);
+          const { statement, id: tmpId } = tmpVarOf(context, [awaitImport]);
           const importsSrc = ktval.ids
             .map((id) => {
               const idJson = JSON.stringify(id);
-              return `_cu$env.transpileState.topLevelValues.set(${idJson},${tmpId}.${id});\n`;
+              return `_cu$c.transpileState.topLevelValues.set(${idJson},${tmpId}.${id});\n`;
             })
             .join("");
-          return `${transpileKtvalsForEval(statement, env)}${importsSrc}`;
+          return `${transpileKtvalsForEval(statement, context)}${importsSrc}`;
         }
 
         case KtvalImportStartAsT: {
           const idJson = JSON.stringify(ktval.id);
           const specifierJson = JSON.stringify(ktval.specifierForRepl);
-          return `_cu$env.transpileState.topLevelValues.set(${idJson},await import(${specifierJson}));\n`;
+          return `_cu$c.transpileState.topLevelValues.set(${idJson},await import(${specifierJson}));\n`;
         }
 
         case KtvalExportT:
@@ -137,7 +139,7 @@ export function transpileKtvalsForEval(ktvals: Ktvals<JsSrc>, env: Env): JsSrc {
 
 export function transpileKtvalsForModule(
   ktvals: Ktvals<JsSrc>,
-  env: Env<TranspileModule>,
+  context: Context<TranspileModule>,
 ): JsSrc {
   return ktvals
     .map((ktval) => {
@@ -146,12 +148,12 @@ export function transpileKtvalsForModule(
           return ktval.id;
 
         case KtvalAssignT: {
-          const expSrc = transpileKtvalsForModule(ktval.exp, env);
-          return `${ktval.decl}${toJsAssignee(ktval, env)}=${expSrc};\n`;
+          const expSrc = transpileKtvalsForModule(ktval.exp, context);
+          return `${ktval.decl}${toJsAssignee(ktval, context)}=${expSrc};\n`;
         }
 
         case KtvalFunctionPostludeT: {
-          return `${transpileKtvalsForModule(ktval.body, env)}}`;
+          return `${transpileKtvalsForModule(ktval.body, context)}}`;
         }
 
         case KtvalImportT: {
@@ -178,7 +180,7 @@ export function transpileKtvalsForModule(
 
 function toJsAssignee(
   ktval: KtvalAssign<JsSrc>,
-  env: Env<TranspileModule>,
+  context: Context<TranspileModule>,
 ): JsSrc {
   switch (ktval.at) {
     case KtvalAssignSimpleT:
@@ -193,7 +195,7 @@ function toJsAssignee(
             if (typeof key === "string") {
               return `${key}:${value}`;
             }
-            return `${transpileKtvalsForModule(key, env)}:${value}`;
+            return `${transpileKtvalsForModule(key, context)}:${value}`;
           }
           return keyValue;
         })

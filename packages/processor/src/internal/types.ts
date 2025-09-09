@@ -1,5 +1,6 @@
 import { ExpectNever } from "../util/error.js";
 import { type Awaitable, type Empty } from "../util/types.js";
+import path from "node:path";
 
 import * as s from "../lib/spec.js";
 import { type List, isList, list } from "./types/list.js";
@@ -173,18 +174,17 @@ export function locatedSplice(
   return s as Splice<Form<Location>, Location>;
 }
 
-export interface ReaderInput {
-  readonly path: FilePath;
+export interface ReaderInput extends FilePathAndStat {
   readonly contents: string;
   readonly initialLineNumber: number;
 }
 
 export function readerInput(
-  path: FilePath,
+  path: FilePathAndStat,
   contents: string,
   initialLineNumber = 1,
 ): ReaderInput {
-  return { path, contents, initialLineNumber };
+  return { ...path, contents, initialLineNumber };
 }
 
 export interface Location {
@@ -408,10 +408,6 @@ export interface ProvidedSymbolsConfig {
   jsTopLevels: Id[];
 }
 
-export type CompleteProvidedSymbolsConfig = ProvidedSymbolsConfig & {
-  from: FilePath;
-};
-
 export const ProvidedSymbolsConfig: s.Spec<ProvidedSymbolsConfig> = s.withId(
   "ProvidedSymbolsConfig",
   s.record({
@@ -424,14 +420,39 @@ export const ProvidedSymbolsConfig: s.Spec<ProvidedSymbolsConfig> = s.withId(
 export type ModulePaths = Map<Id, FilePath>;
 
 export interface TranspileOptions {
-  srcPath: FilePath;
+  src: FilePathAndStat;
 }
 
 export function defaultTranspileOptions(): TranspileOptions {
-  return { srcPath: process.cwd() };
+  return { src: { path: process.cwd(), isDirectory: true } };
+}
+
+export function normalizeSrcPath(opts: TranspileOptions): TranspileOptions {
+  return {
+    ...opts,
+    src: normalizeFilePathAndStat(opts.src),
+  };
 }
 
 export type FilePath = string;
+
+export interface FilePathAndStat {
+  readonly path: FilePath;
+  readonly isDirectory: boolean;
+}
+
+export function assumeIsFile(path: FilePath): FilePathAndStat {
+  return { path, isDirectory: false };
+}
+
+export function normalizeFilePathAndStat(
+  filePathAndStat: FilePathAndStat,
+): FilePathAndStat {
+  return {
+    ...filePathAndStat,
+    path: path.normalize(filePathAndStat.path),
+  };
+}
 
 export interface JsModule {
   readonly imports: Ktvals<JsSrc>;
@@ -449,9 +470,18 @@ export class TranspileError extends Error {
     return (e as { [key: string]: unknown } | null)
       ?._cu$isTranspileError as boolean;
   }
+
+  static wrap(cause: unknown): TranspileError {
+    return new TranspileError(String(cause), { cause });
+  }
 }
 
-export interface Env<State extends TranspileState = TranspileState> {
+export interface Environment<State extends TranspileState = TranspileState> {
+  readonly f: FilePath;
+  readonly c: Map<FilePath, Context<State>>;
+}
+
+export interface Context<State extends TranspileState = TranspileState> {
   readonly scopes: [Scope, ...Scope[]];
   readonly references: References; // References in the Program
   readonly modules: ModulePaths; // Mapping from module name to its path.
@@ -545,7 +575,7 @@ export function isNamespace(x: Writer): x is Namespace {
 }
 
 export type DirectWriter = (
-  env: Env,
+  context: Context,
   ...forms: Form[]
 ) => Awaitable<Ktvals<JsSrc> | TranspileError>;
 export interface MarkedDirectWriter extends AnyWriter<5> {
@@ -598,18 +628,24 @@ export function isMarkedDirectExportableStatementWriter(
   return isMarkedDirectWriter(x) && x.kind.exportable;
 }
 
-// `FunctionWithEnv` must receive literally any values.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type FunctionWithEnv = (env: Env, ...rest: any[]) => any | Error;
-export interface MarkedFunctionWithEnv extends AnyWriter<6> {
-  readonly call: FunctionWithEnv;
+// `FunctionWithContext` must receive literally any values.
+export type FunctionWithContext = (
+  context: Context,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ...rest: any[]
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+) => any | Error;
+export interface MarkedFunctionWithContext extends AnyWriter<6> {
+  readonly call: FunctionWithContext;
 }
-export function markAsFunctionWithEnv(
-  call: FunctionWithEnv,
-): MarkedFunctionWithEnv {
+export function markAsFunctionWithContext(
+  call: FunctionWithContext,
+): MarkedFunctionWithContext {
   return { [WriterKindKey]: 6, call };
 }
-export function isMarkedFunctionWithEnv(x: Writer): x is MarkedFunctionWithEnv {
+export function isMarkedFunctionWithContext(
+  x: Writer,
+): x is MarkedFunctionWithContext {
   return x[WriterKindKey] === 6;
 }
 
@@ -622,7 +658,7 @@ export function isProvidedConst(x: Writer): x is ProvidedConst {
 }
 
 export type DynamicVarFunction = (
-  env: Env,
+  context: Context,
 ) => Awaitable<Ktvals<JsSrc> | TranspileError>;
 
 export interface DynamicVar extends AnyWriter<8> {
@@ -656,7 +692,7 @@ export type Writer =
   | RecursiveConst
   | Namespace
   | MarkedDirectWriter
-  | MarkedFunctionWithEnv
+  | MarkedFunctionWithContext
   | ProvidedConst
   | DynamicVar
   | Macro;
@@ -681,7 +717,7 @@ export interface References {
 
 export type TranspileState = TranspileRepl | TranspileModule;
 
-export interface TranspileStateCore {
+export interface TranspileStateCore extends TranspileOptions {
   transpiledSrc: Ktvals<JsSrc>;
   evaluatedUpTo: number;
   currentBlockIndex: number;
@@ -690,11 +726,11 @@ export interface TranspileStateCore {
   //   while in the REPL, it is used for both macro and the REPL session.
 }
 
-export interface TranspileRepl extends TranspileStateCore, TranspileOptions {
+export interface TranspileRepl extends TranspileStateCore {
   mode: "repl";
 }
 
-export interface TranspileModule extends TranspileStateCore, TranspileOptions {
+export interface TranspileModule extends TranspileStateCore {
   mode: "module";
   importsSrc: Ktvals<JsSrc>;
 }

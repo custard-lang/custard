@@ -2,16 +2,18 @@ import { describe, expect, test } from "vitest";
 
 import { assertNonError } from "@custard-lang/processor/dist/util/error.js";
 
-import * as EnvF from "@custard-lang/processor/dist/internal/env.js";
+import * as ContextF from "@custard-lang/processor/dist/internal/context.js";
 import * as ProvidedSymbolsConfigF from "@custard-lang/processor/dist/provided-symbols-config.js";
 import { readBlock } from "@custard-lang/processor/dist/reader.js";
 import { transpileBlock } from "@custard-lang/processor/dist/internal/transpile.js";
 import { transpileModule } from "@custard-lang/processor/dist/internal/transpile-state.js";
 import {
-  type Env,
+  type Context,
   isNamespace,
   type ModulePaths,
+  type TranspileModule,
   readerInput,
+  assumeIsFile,
 } from "@custard-lang/processor/dist/internal/types.js";
 import {
   TranspileError,
@@ -27,7 +29,7 @@ import { Config, testForm } from "../../helpers.js";
 describe("transpileBlock", () => {
   const subject = async (
     contents: string,
-  ): Promise<[JsSrc | TranspileError, Env]> => {
+  ): Promise<[JsSrc | TranspileError, Context]> => {
     const modulePaths: ModulePaths = new Map();
     modulePaths.set("base", `${standardModuleRoot}/base.js`);
     modulePaths.set("a", "../../../assets/a.mjs");
@@ -40,69 +42,68 @@ describe("transpileBlock", () => {
       implicitStatements: "",
       jsTopLevels: [],
     });
-    const srcPath = fileOfImportMetaUrl(import.meta.url);
-    const completeProvidedSymbolsConfig = {
-      from: srcPath,
-      ...providedSymbolsConfig,
-    };
+    const src = assumeIsFile(fileOfImportMetaUrl(import.meta.url));
 
     const inputBlock = assertNonError(
-      readBlock(readerInput(srcPath, contents)),
+      readBlock(readerInput(src, contents)),
     ) as Block;
-    const options = { srcPath };
-    const env = EnvF.init(
-      transpileModule(options),
-      completeProvidedSymbolsConfig,
-    );
-    const jsSrc = await transpileBlock(inputBlock, env);
+    const options = { src };
+    const context = assertNonError(
+      ContextF.init(transpileModule(options), providedSymbolsConfig, src),
+    ) as Context<TranspileModule>;
+    const jsSrc = await transpileBlock(inputBlock, context);
     if (TranspileError.is(jsSrc)) {
-      return [jsSrc, env];
+      return [jsSrc, context];
     }
-    return [transpileKtvalsForModule(jsSrc, env), env];
+    return [transpileKtvalsForModule(jsSrc, context), context];
   };
 
   describe("(import id)", () => {
     describe("given an id registered in the ModulePaths", () => {
       test("adds identifiers in the module, and returns an import for a relative path to the module", async () => {
-        const [jsMod, env] = await subject("(import a)");
+        const [jsMod, context] = await subject("(import a)");
         const src = assertNonError(jsMod) as JsSrc;
         expect(src.trim()).toEqual(
           'import * as a from "../../../assets/a.mjs";',
         );
-        expect(EnvF.find(env, cuSymbol("a"))).toSatisfy(isNamespace);
+        expect(ContextF.find(context, cuSymbol("a"))).toSatisfy(isNamespace);
       });
 
       test("adds identifiers in the module, and returns an import for a relative path to the module at the same directory", async () => {
-        const [jsMod, env] = await subject("(import sameDir)");
+        const [jsMod, context] = await subject("(import sameDir)");
         const src = assertNonError(jsMod) as JsSrc;
         expect(src.trim()).toEqual('import * as sameDir from "./same-dir.js";');
-        expect(EnvF.find(env, cuSymbol("sameDir"))).toSatisfy(isNamespace);
+        expect(ContextF.find(context, cuSymbol("sameDir"))).toSatisfy(
+          isNamespace,
+        );
       });
 
       test("adds identifiers in the module, and returns an import for a node library in node_modules", async () => {
-        const [jsMod, env] = await subject("(import typescript)");
+        const [jsMod, context] = await subject("(import typescript)");
         const src = assertNonError(jsMod) as JsSrc;
         expect(src.trim()).toEqual('import * as typescript from "typescript";');
-        expect(EnvF.find(env, cuSymbol("typescript"))).toSatisfy(isNamespace);
+        expect(ContextF.find(context, cuSymbol("typescript"))).toSatisfy(
+          isNamespace,
+        );
       });
 
       test("adds identifiers in the module, and returns an import for a node built-in library", async () => {
-        const [jsMod, env] = await subject("(import fs)");
+        const [jsMod, context] = await subject("(import fs)");
         const src = assertNonError(jsMod) as JsSrc;
         expect(src.trim()).toEqual('import * as fs from "node:fs/promises";');
-        expect(EnvF.find(env, cuSymbol("fs"))).toSatisfy(isNamespace);
+        expect(ContextF.find(context, cuSymbol("fs"))).toSatisfy(isNamespace);
       });
     });
 
     describe("given an id NOT registered in the ModulePaths", () => {
-      test("doesn't update the env, and returns an error", async () => {
-        const [err, env] = await subject("(import nonExistent)");
+      test("doesn't update the context, and returns an error", async () => {
+        const [err, context] = await subject("(import nonExistent)");
         expect(err).toEqual(
           new TranspileError(
             "No module `nonExistent` registered in the Module Paths",
           ),
         );
-        expect(EnvF.find(env, cuSymbol("a"))).toBeUndefined();
+        expect(ContextF.find(context, cuSymbol("a"))).toBeUndefined();
       });
     });
   });
@@ -121,7 +122,7 @@ describe("transpileBlock", () => {
     });
 
     test("returns an error if an export is not a const/let declaration", async () => {
-      const [r, _env] = await subject(
+      const [r, _context] = await subject(
         "(importAnyOf base)(export (fn () none))",
       );
       expect(r).toEqual(
@@ -132,7 +133,7 @@ describe("transpileBlock", () => {
     });
 
     test("returns an error if an export is not an exportable statement", async () => {
-      const [r, _env] = await subject(
+      const [r, _context] = await subject(
         "(importAnyOf base)(export (when true none))",
       );
       expect(r).toEqual(
@@ -143,7 +144,7 @@ describe("transpileBlock", () => {
     });
 
     test("returns an error if no declarations are provided", async () => {
-      const [r, _env] = await subject("(export)");
+      const [r, _context] = await subject("(export)");
       expect(r).toEqual(
         new TranspileError(
           "The number of arguments of `export` must be at least 1.",
@@ -152,7 +153,7 @@ describe("transpileBlock", () => {
     });
 
     test("returns an error if used in a non-top-level", async () => {
-      const [r, _env] = await subject(
+      const [r, _context] = await subject(
         "(importAnyOf base)(fn () (export (const a 1)))",
       );
       expect(r).toEqual(
@@ -169,13 +170,13 @@ describe("evaluation of `import` and `export`", () => {
     modulePaths.set("base", `${standardModuleRoot}//base.js`);
     const srcPath = fileOfImportMetaUrl(import.meta.url);
     return {
-      optionsForRepl: { srcPath },
+      optionsForRepl: { src: assumeIsFile(srcPath) },
       providedSymbols: {
-        from: srcPath,
         modulePaths,
         implicitStatements: "(importAnyOf base)",
         jsTopLevels: [],
       },
+      providedSymbolsPath: srcPath,
     };
   }
 

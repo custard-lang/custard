@@ -3,7 +3,10 @@ import { describe } from "vitest";
 import { type Config, testForm } from "./helpers.js";
 
 import { standardModuleRoot } from "@custard-lang/processor/dist/definitions.js";
-import { type ModulePaths } from "@custard-lang/processor/dist/types.js";
+import {
+  type ModulePaths,
+  assumeIsFile,
+} from "@custard-lang/processor/dist/types.js";
 import { fileOfImportMetaUrl } from "@custard-lang/processor/dist/util/path.js";
 
 function setUpConfig(): Config {
@@ -13,13 +16,13 @@ function setUpConfig(): Config {
   const srcPath = fileOfImportMetaUrl(import.meta.url);
 
   return {
-    optionsForRepl: { srcPath },
+    optionsForRepl: { src: assumeIsFile(srcPath) },
     providedSymbols: {
-      from: srcPath,
       modulePaths,
       implicitStatements: "(importAnyOf base)",
       jsTopLevels: ["structuredClone"],
     },
+    providedSymbolsPath: srcPath,
   };
 }
 

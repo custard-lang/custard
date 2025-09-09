@@ -8,8 +8,9 @@ import { readBlock } from "@custard-lang/processor/dist/reader.js";
 import { evalBlock } from "@custard-lang/processor/dist/eval.js";
 import {
   type Block,
-  type CompleteProvidedSymbolsConfig,
+  type ProvidedSymbolsConfig,
   type TranspileOptions,
+  type FilePath,
   isInteger32,
   type Integer32,
   type Float64,
@@ -17,8 +18,9 @@ import {
   isFloat64,
   isCuString,
   readerInput,
+  assumeIsFile,
 } from "@custard-lang/processor/dist/types.js";
-import { initializeForRepl, transpileModule } from "@custard-lang/processor";
+import { ContextF, transpileModule } from "@custard-lang/processor";
 import { withNewPath } from "./helpers/tmp-file.js";
 import { writeAndEval } from "./helpers/eval.js";
 
@@ -99,13 +101,23 @@ export function testFormInRepl({
 }): void {
   const t = fails ? test.fails : only ? test.only : test;
   t(`\`${src}\` =(evalBlock)=> ${JSON.stringify(expected)}`, async () => {
-    const { optionsForRepl: options, providedSymbols } = await setUpConfig();
-    const env = assertNonError(
-      await initializeForRepl(options, providedSymbols),
+    const {
+      optionsForRepl: options,
+      providedSymbols,
+      providedSymbolsPath,
+    } = await setUpConfig();
+    const context = assertNonError(
+      await ContextF.initializeForRepl(
+        options,
+        providedSymbols,
+        providedSymbolsPath,
+      ),
     );
     const result = await evalBlock(
-      assertNonError(readBlock(readerInput("test", src))) as Block,
-      env,
+      assertNonError(
+        readBlock(readerInput(assumeIsFile("test"), src)),
+      ) as Block,
+      context,
     );
     if (!(expected instanceof Error) && result instanceof Error) {
       if (result.cause instanceof Error) {
@@ -132,12 +144,13 @@ export function testFormAsModule({
 }): void {
   const t = fails ? test.fails : only ? test.only : test;
   t(`\`${src}\` =(transpileModule)=> ${JSON.stringify(expected)}`, async () => {
-    const { providedSymbols } = await setUpConfig();
+    const { providedSymbols, providedSymbolsPath } = await setUpConfig();
     await withNewPath(async ({ src: srcPath, dest }) => {
       const jsSrc = await transpileModule(
         assertNonError(readBlock(readerInput(srcPath, src))) as Block,
-        { srcPath },
+        { src: srcPath },
         providedSymbols,
+        providedSymbolsPath,
         { mayHaveResult: true },
       );
       if (expected instanceof Error) {
@@ -159,5 +172,6 @@ export function testFormAsModule({
 
 export interface Config {
   optionsForRepl: TranspileOptions;
-  providedSymbols: CompleteProvidedSymbolsConfig;
+  providedSymbols: ProvidedSymbolsConfig;
+  providedSymbolsPath: FilePath;
 }

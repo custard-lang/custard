@@ -31,7 +31,7 @@ import {
   isMacro,
   isContextualKeyword,
   isMarkedDirectWriter,
-  isMarkedFunctionWithEnv,
+  isMarkedFunctionWithContext,
   isNamespace,
   isProvidedConst,
   type Writer,
@@ -41,10 +41,10 @@ import {
   ktvalOther,
   ktvalRefer,
   type TranspileModule,
-} from "../internal/types.js";
-import { CU_ENV } from "./cu-env.js";
-import { type Env } from "./types.js";
-import * as EnvF from "./env.js";
+  ktvalContext,
+} from "./types.js";
+import { type Context } from "./types.js";
+import * as ContextF from "./context.js";
 import { readBlock } from "../reader.js";
 import { isParseError } from "../grammar.js";
 import { isStatement } from "./call.js";
@@ -53,9 +53,9 @@ import { clearTranspiledSrc } from "./transpile-state.js";
 
 export async function transpileExpression(
   ast: Form,
-  env: Env,
+  context: Context,
 ): Promise<Ktvals<JsSrc> | TranspileError> {
-  const r = await transpileExpressionWithNextCall(ast, env);
+  const r = await transpileExpressionWithNextCall(ast, context);
   if (TranspileError.is(r)) {
     return r;
   }
@@ -65,11 +65,11 @@ export async function transpileExpression(
 
 export async function transpileStatements(
   asts: Form[],
-  env: Env,
+  context: Context,
 ): Promise<Ktvals<JsSrc> | TranspileError> {
   const result: Ktvals<JsSrc> = [];
   for (const ast of asts) {
-    const r = await transpileExpression(ast, env);
+    const r = await transpileExpression(ast, context);
     if (TranspileError.is(r)) {
       return r;
     }
@@ -87,12 +87,12 @@ type KtvalsAndNextCall = [Ktvals<JsSrc>, NextCall | null];
 
 async function transpileExpressionWithNextCall(
   ast: Form,
-  env: Env,
+  context: Context,
 ): Promise<KtvalsAndNextCall | TranspileError> {
   async function expandDynamicVar(
     dynVar: DynamicVar,
   ): Promise<TranspileError | KtvalsAndNextCall> {
-    const arw = dynVar.call(env);
+    const arw = dynVar.call(context);
     const rw = arw instanceof Promise ? await arw : arw;
     if (TranspileError.is(rw)) {
       return rw;
@@ -114,7 +114,7 @@ async function transpileExpressionWithNextCall(
   }
 
   if (isCuSymbol(ast)) {
-    const r = EnvF.referTo(env, ast);
+    const r = ContextF.referTo(context, ast);
     if (TranspileError.is(r)) {
       return r;
     }
@@ -129,7 +129,7 @@ async function transpileExpressionWithNextCall(
 
   if (isPropertyAccess(ast)) {
     // TODO: Properly Access inside Namespace
-    const r = EnvF.referTo(env, ast);
+    const r = ContextF.referTo(context, ast);
     if (TranspileError.is(r)) {
       return r;
     }
@@ -148,14 +148,14 @@ async function transpileExpressionWithNextCall(
   }
 
   if (isCuArray(ast)) {
-    const elementsSrc = await transpileJoinWithComma(ast, env);
+    const elementsSrc = await transpileJoinWithComma(ast, context);
     if (TranspileError.is(elementsSrc)) {
       return elementsSrc;
     }
     return [[ktvalOther("["), ...elementsSrc, ktvalOther("]")], null];
   }
   if (isCuObject(ast)) {
-    const kvSrc = await transpileCuObject(ast, env);
+    const kvSrc = await transpileCuObject(ast, context);
     if (TranspileError.is(kvSrc)) {
       return kvSrc;
     }
@@ -169,7 +169,7 @@ async function transpileExpressionWithNextCall(
 
     const funcSrcAndNextCall = await transpileExpressionWithNextCall(
       funcForm,
-      env,
+      context,
     );
     if (TranspileError.is(funcSrcAndNextCall)) {
       return funcSrcAndNextCall;
@@ -178,7 +178,7 @@ async function transpileExpressionWithNextCall(
     const [funcSrc, nc] = funcSrcAndNextCall;
 
     if (nc == null) {
-      const argsSrc = await transpileJoinWithComma(args, env);
+      const argsSrc = await transpileJoinWithComma(args, context);
       if (TranspileError.is(argsSrc)) {
         return argsSrc;
       }
@@ -213,28 +213,30 @@ async function transpileExpressionWithNextCall(
       isProvidedConst(writer) ||
       isDynamicVar(writer)
     ) {
-      const argsSrc = await transpileJoinWithComma(args, env);
+      const argsSrc = await transpileJoinWithComma(args, context);
       if (TranspileError.is(argsSrc)) {
         return argsSrc;
       }
       return [[...funcSrc, ktvalOther("("), ...argsSrc, ktvalOther(")")], null];
     }
-    if (isMarkedFunctionWithEnv(writer)) {
-      if (env.transpileState.mode !== "repl") {
+    if (isMarkedFunctionWithContext(writer)) {
+      if (context.transpileState.mode !== "repl") {
         const symbolAccessSrc = showSymbolAccess(sym);
         return new TranspileError(
           `\`${symbolAccessSrc}\` is NOT currently available except in REPL or a macro definition.`,
         );
       }
 
-      const argsSrc = await transpileJoinWithComma(args, env);
+      const argsSrc = await transpileJoinWithComma(args, context);
       if (TranspileError.is(argsSrc)) {
         return argsSrc;
       }
       return [
         [
           ...funcSrc,
-          ktvalOther(`.call(${CU_ENV},`),
+          ktvalOther(`.call(`),
+          ktvalContext(),
+          ktvalOther(`,`),
           ...argsSrc,
           ktvalOther(")"),
         ],
@@ -243,18 +245,18 @@ async function transpileExpressionWithNextCall(
     }
 
     if (isMarkedDirectWriter(writer)) {
-      const src = await writer.call(env, ...args);
+      const src = await writer.call(context, ...args);
       return TranspileError.is(src) ? src : [src, null];
     }
 
     if (isMacro(writer)) {
-      const evalForMacroResult = await evalForMacro(env);
+      const evalForMacroResult = await evalForMacro(context);
       if (TranspileError.is(evalForMacroResult)) {
         return evalForMacroResult;
       }
       // Macro returns any by definition
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      const jsValue = await writer.expand(env, ...args);
+      const jsValue = await writer.expand(context, ...args);
       if (TranspileError.is(jsValue)) {
         return jsValue;
       }
@@ -262,7 +264,7 @@ async function transpileExpressionWithNextCall(
       if (TranspileError.is(form)) {
         return form;
       }
-      return await transpileExpressionWithNextCall(form, env);
+      return await transpileExpressionWithNextCall(form, context);
     }
 
     throw ExpectNever(writer);
@@ -279,7 +281,7 @@ async function transpileExpressionWithNextCall(
 
 async function transpileCuObject(
   ast: CuObject<Form, Form, Form, Form>,
-  env: Env,
+  context: Context,
 ): Promise<Ktvals<JsSrc> | TranspileError> {
   let objectContents: Ktvals<JsSrc> = [];
   for (const kv of ast) {
@@ -290,21 +292,21 @@ async function transpileCuObject(
       if (isCuSymbol(key)) {
         kSrc = [ktvalOther(key.value)];
       } else {
-        const r = await transpileComputedKeyOrExpression(key, env);
+        const r = await transpileComputedKeyOrExpression(key, context);
         if (TranspileError.is(r)) {
           return r;
         }
         kSrc = r;
       }
 
-      const vSrc = await transpileExpression(value, env);
+      const vSrc = await transpileExpression(value, context);
       if (TranspileError.is(vSrc)) {
         return vSrc;
       }
 
       kvSrc = [...kSrc, ktvalOther(":"), ...vSrc];
     } else if (isCuSymbol(kv)) {
-      const f = EnvF.referTo(env, kv);
+      const f = ContextF.referTo(context, kv);
       if (TranspileError.is(f)) {
         return f;
       }
@@ -325,31 +327,35 @@ async function transpileCuObject(
 
 export async function transpileComputedKeyOrExpression(
   key: ComputedKey<Form> | Form,
-  env: Env,
+  context: Context,
 ): Promise<Ktvals<JsSrc> | TranspileError> {
   if (isComputedKey(key)) {
-    const r = await transpileExpression(key.value, env);
+    const r = await transpileExpression(key.value, context);
     if (TranspileError.is(r)) {
       return r;
     }
     return [ktvalOther("["), ...r, ktvalOther("]")];
   }
 
-  return await transpileExpression(key, env);
+  return await transpileExpression(key, context);
 }
 
 export async function transpileBlock(
   forms: Block,
-  env: Env,
+  context: Context,
   extraOptions: { mayHaveResult: boolean } = { mayHaveResult: false },
 ): Promise<Ktvals<JsSrc> | TranspileError> {
-  const resultKtvalsOffset = await transpileBlockCore(forms, env, extraOptions);
+  const resultKtvalsOffset = await transpileBlockCore(
+    forms,
+    context,
+    extraOptions,
+  );
 
   if (TranspileError.is(resultKtvalsOffset)) {
     return resultKtvalsOffset;
   }
 
-  const src = env.transpileState.transpiledSrc;
+  const src = context.transpileState.transpiledSrc;
   if (src.length > resultKtvalsOffset) {
     const lastExpression = src.slice(resultKtvalsOffset);
     return [
@@ -364,18 +370,18 @@ export async function transpileBlock(
 
 export async function transpileBlockCore(
   forms: Block,
-  env: Env,
+  context: Context,
   extraOptions: { mayHaveResult: boolean } = { mayHaveResult: false },
 ): Promise<number | TranspileError> {
   const lastIndex = forms.length - 1;
 
   for (let i = 0; i < lastIndex; i++) {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const s = await transpileExpression(forms[i]!, env);
-    if (s instanceof Error) {
+    const s = await transpileExpression(forms[i]!, context);
+    if (TranspileError.is(s)) {
       return s;
     }
-    env.transpileState.transpiledSrc.push(...s, ktvalOther(";\n"));
+    context.transpileState.transpiledSrc.push(...s, ktvalOther(";\n"));
   }
 
   const lastForm = forms[lastIndex];
@@ -383,47 +389,47 @@ export async function transpileBlockCore(
     return 0;
   }
 
-  const last = await transpileExpression(lastForm, env);
-  if (last instanceof Error) {
+  const last = await transpileExpression(lastForm, context);
+  if (TranspileError.is(last)) {
     return last;
   }
 
-  const resultKtvalsOffset = env.transpileState.transpiledSrc.length;
-  const lastIsExpression = !isStatement(env, lastForm);
+  const resultKtvalsOffset = context.transpileState.transpiledSrc.length;
+  const lastIsExpression = !isStatement(context, lastForm);
   if (lastIsExpression && extraOptions.mayHaveResult) {
-    env.transpileState.transpiledSrc.push(...last, ktvalOther(";\n"));
+    context.transpileState.transpiledSrc.push(...last, ktvalOther(";\n"));
     return resultKtvalsOffset;
   }
-  env.transpileState.transpiledSrc.push(...last);
+  context.transpileState.transpiledSrc.push(...last);
 
-  return env.transpileState.transpiledSrc.length;
+  return context.transpileState.transpiledSrc.length;
 }
 
 export async function transpileString(
   input: ReaderInput,
-  env: Env<TranspileModule>,
-): Promise<Ktvals<JsSrc> | Error> {
+  context: Context<TranspileModule>,
+): Promise<Ktvals<JsSrc> | TranspileError> {
   const forms = readBlock(input);
   if (isParseError(forms)) {
-    return forms;
+    return TranspileError.wrap(forms);
   }
-  const mod = await transpileBlock(forms, env);
+  const mod = await transpileBlock(forms, context);
   if (mod instanceof Error) {
     return mod;
   }
-  clearTranspiledSrc(env.transpileState);
+  clearTranspiledSrc(context.transpileState);
   return mod;
 }
 
 // TODO: accept only expression form (not a statement)
 export async function transpileJoinWithComma(
   xs: Form[],
-  env: Env,
+  context: Context,
 ): Promise<Ktvals<JsSrc> | TranspileError> {
   const result: Ktvals<JsSrc> = [];
   const lastI = xs.length - 1;
   for (const [i, x] of xs.entries()) {
-    const r = await transpileExpression(x, env);
+    const r = await transpileExpression(x, context);
     if (TranspileError.is(r)) {
       return r;
     }

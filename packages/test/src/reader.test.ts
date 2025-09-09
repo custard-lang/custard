@@ -53,12 +53,14 @@ import {
   splice,
   unquote,
   Unquote,
+  assumeIsFile,
 } from "@custard-lang/processor/dist/types.js";
 import { ExpectNever } from "@custard-lang/processor/src/util/error.js";
 
 const path = "test";
 
-const inputOf = (contents: string): ReaderInput => readerInput(path, contents);
+const inputOf = (contents: string): ReaderInput =>
+  readerInput(assumeIsFile(path), contents);
 const location = (l: number, c: number) => ({ f: path, l, c }) as const;
 
 describe("readStr", () => {
