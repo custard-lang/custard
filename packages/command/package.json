@@ -4,7 +4,7 @@
   "version": "0.0.2",
   "description": "The command line interface for my programming language Custard",
   "bin": {
-    "custard": "dist/cli.js"
+    "custard": "dist/custard.js"
   },
   "scripts": {
     "build": "tsc"
