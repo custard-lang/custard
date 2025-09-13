@@ -5,8 +5,8 @@
   "version": "0.1.0",
   "description": "Save my posts on a SNS",
   "scripts": {
-    "custard-transpile": "node ../../packages/command/dist/cli.js transpile -vp .provided-symbols.cstd src/iso8601ForFs.cstd \"src/*.cstd\"",
-    "custard-run": "node ../../packages/command/dist/cli.js run -p .provided-symbols.cstd",
+    "custard-transpile": "node ../../packages/command/dist/custard.js transpile -vp .provided-symbols.cstd src/iso8601ForFs.cstd \"src/*.cstd\"",
+    "custard-run": "node ../../packages/command/dist/custard.js run -p .provided-symbols.cstd",
     "custard-transpile:not-working-on-windows": "custard tranpile -vp .provided-symbols-config.cstd src/*.cstd",
     "custard-run:not-working-on-windows": "custard run -p .provided-symbols-config.cstd",
     "test": "vitest",
