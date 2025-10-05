@@ -18,6 +18,7 @@ import {
   isParseErrorWantingMore,
   Location,
   TranspileError,
+  getLogger,
 } from "@custard-lang/processor";
 import {
   assertIsFile,
@@ -32,8 +33,15 @@ import { isFileNotFoundError } from "@custard-lang/processor/dist/util/error.js"
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+const log = getLogger("custard-repl");
+
 const result = commonProgram.parse();
+const opts = result.opts();
+
 const srcPaths = result.args;
+log.debug(
+  `Starting REPL with arguments options: ${JSON.stringify([opts, srcPaths])}`,
+);
 
 const rl = readline.createInterface({ input, output });
 
@@ -60,7 +68,9 @@ async function readEvaluatePrintLoop(
 ): Promise<void> {
   try {
     while (true) {
+      log.debug(`REPL loop at ${JSON.stringify(location)}`);
       const answer = await ask(location, ">>>");
+      log.debug(`User input: ${answer}`);
       if (answer === ":q" || answer === ":quit") {
         finalize();
         break;
@@ -186,7 +196,6 @@ async function toPathAndStats(paths: FilePath[]): Promise<FilePathAndStat[]> {
 }
 
 (async () => {
-  const opts = result.opts();
   const providedSymbolsPath = opts.providedSymbols;
   const providedSymbolsConfig = await loadProvidedSymbols(
     providedSymbolsPath,
@@ -204,6 +213,7 @@ async function toPathAndStats(paths: FilePath[]): Promise<FilePathAndStat[]> {
     console.error("Error initializing the REPL environment:", env);
     process.exit(1);
   }
+  log.debug("Initial environment loaded.");
   await readEvaluatePrintLoop(env, providedSymbolsConfig, providedSymbolsPath, {
     l: 1,
     c: 1,

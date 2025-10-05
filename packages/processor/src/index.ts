@@ -28,3 +28,4 @@ export { standardModuleRoot } from "./definitions.js";
 export { ValidationError } from "./lib/spec.js";
 export * as EnvironmentF from "./environment.js";
 export * as ContextF from "./context.js";
+export { getLogger, type Logger } from "./logger.js";
