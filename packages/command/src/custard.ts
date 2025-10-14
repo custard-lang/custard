@@ -1,5 +1,8 @@
 #!/bin/env node
 
+// Initialize readline as early as possible to get the initial input
+import "./cli/initialize-readline.js";
+
 import { program } from "@commander-js/extra-typings";
 import { getLogger } from "@custard-lang/processor";
 
