@@ -33,6 +33,8 @@ import { isFileNotFoundError } from "@custard-lang/processor/dist/util/error.js"
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+const rl = readline.createInterface({ input, output });
+
 const log = getLogger("custard-repl");
 
 const result = commonProgram.parse();
@@ -42,8 +44,6 @@ const srcPaths = result.args;
 log.debug(
   `Starting REPL with arguments options: ${JSON.stringify([opts, srcPaths])}`,
 );
-
-const rl = readline.createInterface({ input, output });
 
 const cwd = process.cwd();
 
