@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+import * as readline from "node:readline/promises";
+import { stdin as input, stdout as output } from "node:process";
 import * as fs from "node:fs/promises";
 
 import {
@@ -28,7 +30,6 @@ import {
   FilePathAndStat,
 } from "@custard-lang/processor/dist/internal/types.js";
 import { isFileNotFoundError } from "@custard-lang/processor/dist/util/error.js";
-import { finalize, question } from "./cli/initialize-readline.js";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -42,6 +43,8 @@ log.debug(
   `Starting REPL with arguments options: ${JSON.stringify([opts, srcPaths])}`,
 );
 
+const rl = readline.createInterface({ input, output });
+
 const cwd = process.cwd();
 
 // EVAL
@@ -50,6 +53,11 @@ async function evalCustard(
   context: Context<TranspileRepl>,
 ): Promise<any> {
   return await evalForm(ast, context);
+}
+
+function finalize(): void {
+  rl.close();
+  input.destroy();
 }
 
 async function readEvaluatePrintLoop(
@@ -160,7 +168,7 @@ function setDownToNextLine(location: Location): void {
 }
 
 async function ask({ l, f }: Location, promptPrefix: string): Promise<string> {
-  return await question(`${f}:${l}:${promptPrefix} `);
+  return await rl.question(`${f}:${l}:${promptPrefix} `);
 }
 
 export function assertNonError<T>(v: T | Error): T {
