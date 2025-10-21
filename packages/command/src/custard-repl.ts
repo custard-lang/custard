@@ -31,7 +31,7 @@ async function readEvaluatePrintLoop(): Promise<void> {
 
 async function simulateAsyncInit(): Promise<void> {
   // Simulate some async initialization work
-  await new Promise((resolve) => setTimeout(resolve, 10));
+  await new Promise((resolve) => setTimeout(resolve, 0));
 }
 
 (async () => {
