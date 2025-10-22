@@ -4,37 +4,22 @@ import * as readline from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
 
 const rl = readline.createInterface({ input, output });
-
-async function ask(lineNumber: number): Promise<string> {
-  return await rl.question(`prompt:${lineNumber}:>>> `);
-}
-
-async function readEvaluatePrintLoop(): Promise<void> {
-  try {
-    let lineNumber = 1;
-    while (true) {
-      const answer = await ask(lineNumber);
-      if (answer === ":q" || answer === ":quit") {
-        rl.close();
-        input.destroy();
-        break;
-      }
-      console.log(answer);
-      lineNumber++;
-    }
-  } catch (err) {
-    rl.close();
-    input.destroy();
-    throw err;
-  }
-}
-
-async function simulateAsyncInit(): Promise<void> {
-  // Simulate some async initialization work
-  await new Promise((resolve) => setTimeout(resolve, 0));
-}
+const n = process.argv[2] ? parseInt(process.argv[2], 10) : 1;
 
 (async () => {
-  await simulateAsyncInit();
-  await readEvaluatePrintLoop();
+  try {
+    let i = 0;
+    while (true) {
+      if (i === n) {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      }
+      console.log(`Receiving ${i}`);
+      const answer = await rl.question(`prompt:${i}:>>> `);
+      console.log(answer);
+      i++;
+    }
+  } finally {
+    rl.close();
+    input.destroy();
+  }
 })();
