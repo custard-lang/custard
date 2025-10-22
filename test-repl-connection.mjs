@@ -1,6 +1,6 @@
 import { spawn } from 'node:child_process';
 
-const n = process.argv[2] ? parseInt(process.argv[2], 10) : 1;
+const n = process.argv[2] ? parseInt(process.argv[2], 10) : 2;
 console.log(`Starting REPL test with ${n} messages.`);
 
 const repl = spawn(
