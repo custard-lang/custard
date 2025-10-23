@@ -21,6 +21,8 @@ repl.on('close', (code) => {
 });
 
 for (let i = 1; i <= n; i++) {
+  // Uncomment this `await new Promise(...);` to stop reproducing the issue
+  // await new Promise((resolve) => { setTimeout(resolve, 100); });
   console.log(`parent: Sending hello ${i}`);
   repl.stdin.write(`"hello ${i}"\n`);
 }
