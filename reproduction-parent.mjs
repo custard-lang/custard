@@ -1,11 +1,11 @@
 import { spawn } from 'node:child_process';
 
-const n = process.argv[2] ? parseInt(process.argv[2], 10) : 2;
+const n = 3;
 console.log(`Starting REPL test with ${n} messages.`);
 
 const repl = spawn(
   'node',
-  ['./packages/command/dist/custard-repl.js', String(n)],
+  ['./reproduction-child.mjs', String(n)],
 );
 
 repl.stdout.on('data', (data) => {
