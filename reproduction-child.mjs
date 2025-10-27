@@ -6,12 +6,20 @@ import { stdin as input, stdout as output } from "node:process";
 const rl = readline.createInterface({ input, output });
 const n = process.argv[2] ? parseInt(process.argv[2], 10) : 1;
 
+function someAsyncComputation(answer) {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve(`Processed: ${answer}`);
+    }, 0);
+  });
+}
+
 (async () => {
   try {
     for (let i = 0; i < n; i++) {
       console.log(`Receiving ${i}`);
       const answer = await rl.question(`prompt:${i}:>>> `);
-      console.log(answer);
+      console.log(await someAsyncComputation(answer));
     }
   } finally {
     rl.close();
