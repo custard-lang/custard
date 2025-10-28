@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import * as readline from "node:readline/promises";
+import * as readline from "node:readline";
 import { stdin as input, stdout as output } from "node:process";
 
 const rl = readline.createInterface({ input, output });
@@ -14,15 +14,23 @@ function someAsyncComputation(answer) {
   });
 }
 
-(async () => {
-  try {
-    for (let i = 0; i < n; i++) {
-      console.log(`Receiving ${i}`);
-      const answer = await rl.question(`prompt:${i}:>>> `);
-      console.log(await someAsyncComputation(answer));
-    }
-  } finally {
+let i = 0;
+
+rl.on("line", async (answer) => {
+  const result = await someAsyncComputation(answer);
+  console.log(result);
+
+  i++;
+  if (i < n + 1) {
+    console.log(`Receiving ${i}`);
+    rl.setPrompt(`prompt:${i}:>>> `);
+    rl.prompt();
+  } else {
     rl.close();
     input.destroy();
   }
-})();
+});
+
+console.log(`Receiving ${i}`);
+rl.setPrompt(`prompt:${i}:>>> `);
+rl.prompt();
