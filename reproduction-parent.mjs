@@ -3,9 +3,13 @@ import { spawn } from 'node:child_process';
 const n = 3;
 console.log(`Starting REPL test with ${n} messages.`);
 
+//const repl = spawn(
+  //'node',
+  //['./reproduction-child.mjs', String(n)],
+//);
 const repl = spawn(
-  'node',
-  ['./reproduction-child.mjs', String(n)],
+  'bash',
+  ['./reproduction-child.sh'],
 );
 
 repl.stdout.on('data', (data) => {
