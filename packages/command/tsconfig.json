@@ -4,6 +4,7 @@
     "rootDir": "src",
     "outDir": "dist"
   },
+  "exclude": ["test", "dist"],
   "references": [
     { "path": "../processor" }
   ]
