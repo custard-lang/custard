@@ -90,11 +90,12 @@ async function evalCustard(
     providedSymbolsPath: FilePath,
     location: Location,
   ): void {
-    log.debug(`REPL loop at ${JSON.stringify(location)}`);
-
     let wantsMore: ParseErrorWantingMore<Form<Location>> | null = null;
 
     function prompt(promptPrefix: string): void {
+      log.debug(
+        `Displaying the ${JSON.stringify(promptPrefix)} prompt at ${JSON.stringify(location)}`,
+      );
       rl.setPrompt(`${location.f}:${location.l}:${promptPrefix} `);
       rl.prompt();
     }
