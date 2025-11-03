@@ -188,6 +188,9 @@ async function evalCustard(
         if (evalResult instanceof Error) {
           // eslint-disable-next-line no-console
           console.error("Error evaluating form:", evalResult);
+        } else if (typeof evalResult === "string") {
+          // eslint-disable-next-line no-console
+          console.log(JSON.stringify(evalResult));
         } else {
           // eslint-disable-next-line no-console
           console.log(evalResult);
