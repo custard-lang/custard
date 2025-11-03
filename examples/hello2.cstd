@@ -1,2 +1,2 @@
-(const hello2 "Hello, world! 2")
+(const hello2 (text "Hello, world! " (plusF 9 8)))
 (console.log hello2)
