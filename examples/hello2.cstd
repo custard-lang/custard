@@ -1,2 +1,6 @@
-(const hello2 (text "Hello, world! " (plusF 9 8)))
+(const
+  hello2
+  (text "Hello, world! " (plusF 9 8) "b"))
+(const
+  aaa [[9 (timesF 6 7)] 1])
 (console.log hello2)
