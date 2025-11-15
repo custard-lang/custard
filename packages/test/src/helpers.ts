@@ -11,6 +11,7 @@ import {
   type ProvidedSymbolsConfig,
   type TranspileOptions,
   type FilePath,
+  fromDefaultTranspileOptions,
   isInteger32,
   type Integer32,
   type Float64,
@@ -144,11 +145,15 @@ export function testFormAsModule({
 }): void {
   const t = fails ? test.fails : only ? test.only : test;
   t(`\`${src}\` =(transpileModule)=> ${JSON.stringify(expected)}`, async () => {
-    const { providedSymbols, providedSymbolsPath } = await setUpConfig();
+    const {
+      providedSymbols,
+      providedSymbolsPath,
+      optionsForModule: options = {},
+    } = await setUpConfig();
     await withNewPath(async ({ src: srcPath, dest }) => {
       const jsSrc = await transpileModule(
         assertNonError(readBlock(readerInput(srcPath, src))) as Block,
-        { src: srcPath },
+        { ...options, ...fromDefaultTranspileOptions({ src: srcPath }) },
         providedSymbols,
         providedSymbolsPath,
         { mayHaveResult: true },
@@ -172,6 +177,7 @@ export function testFormAsModule({
 
 export interface Config {
   optionsForRepl: TranspileOptions;
+  optionsForModule?: Partial<TranspileOptions>;
   providedSymbols: ProvidedSymbolsConfig;
   providedSymbolsPath: FilePath;
 }

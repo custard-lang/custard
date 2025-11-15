@@ -421,10 +421,25 @@ export type ModulePaths = Map<Id, FilePath>;
 
 export interface TranspileOptions {
   src: FilePathAndStat;
+  runtimeModuleEmission: RuntimeModuleEmission;
+  // ^ How to emit the runtime module import.
+  //   TODO: Not availeble in REPL, but the current type structure doesn't express it.
 }
 
 export function defaultTranspileOptions(): TranspileOptions {
-  return { src: { path: process.cwd(), isDirectory: true } };
+  return {
+    src: { path: process.cwd(), isDirectory: true },
+    runtimeModuleEmission: "import",
+  };
+}
+
+export function fromDefaultTranspileOptions(
+  opts: Partial<TranspileOptions>,
+): TranspileOptions {
+  return {
+    ...defaultTranspileOptions(),
+    ...opts,
+  };
 }
 
 export function normalizeSrcPath(opts: TranspileOptions): TranspileOptions {
@@ -433,6 +448,11 @@ export function normalizeSrcPath(opts: TranspileOptions): TranspileOptions {
     src: normalizeFilePathAndStat(opts.src),
   };
 }
+
+export const RuntimeModuleEmissionValues = ["none", "import"] as const;
+
+export type RuntimeModuleEmission =
+  (typeof RuntimeModuleEmissionValues)[number];
 
 export type FilePath = string;
 

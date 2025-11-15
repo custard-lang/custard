@@ -6,7 +6,7 @@ import {
   KtvalAssignT,
   KtvalExportT,
   KtvalFunctionPostludeT,
-  KtvalImportStartAsT,
+  KtvalImportStarAsT,
   KtvalImportT,
   ktvalOther,
   KtvalOtherT,
@@ -118,7 +118,7 @@ export function transpileKtvalsForEval(
           return `${transpileKtvalsForEval(statement, context)}${importsSrc}`;
         }
 
-        case KtvalImportStartAsT: {
+        case KtvalImportStarAsT: {
           const idJson = JSON.stringify(ktval.id);
           const specifierJson = JSON.stringify(ktval.specifierForRepl);
           return `_cu$c.transpileState.topLevelValues.set(${idJson},await import(${specifierJson}));\n`;
@@ -157,11 +157,17 @@ export function transpileKtvalsForModule(
         }
 
         case KtvalImportT: {
+          if (context.transpileState.runtimeModuleEmission === "none") {
+            return "";
+          }
           const specifier = JSON.stringify(ktval.specifierForModule);
           return `import{${ktval.ids.join(", ")}}from${specifier};\n`;
         }
 
-        case KtvalImportStartAsT: {
+        case KtvalImportStarAsT: {
+          if (context.transpileState.runtimeModuleEmission === "none") {
+            return "";
+          }
           const specifier = JSON.stringify(ktval.specifierForModule);
           return `import * as ${ktval.id} from ${specifier};\n`;
         }

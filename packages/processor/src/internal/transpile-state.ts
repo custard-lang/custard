@@ -1,5 +1,6 @@
 import { type TranspileOptions } from "../types.js";
 import {
+  fromDefaultTranspileOptions,
   normalizeSrcPath,
   type TranspileModule,
   type TranspileRepl,
@@ -17,9 +18,11 @@ function transpileStateCore(options: TranspileOptions): TranspileStateCore {
 }
 
 // In REPL without loading any file, use current directory as `srcPath`.
-export function transpileRepl(options: TranspileOptions): TranspileRepl {
+export function transpileRepl(
+  options: Omit<TranspileOptions, "runtimeModuleEmission">,
+): TranspileRepl {
   return {
-    ...transpileStateCore(options),
+    ...transpileStateCore(fromDefaultTranspileOptions(options)),
     mode: "repl",
   };
 }

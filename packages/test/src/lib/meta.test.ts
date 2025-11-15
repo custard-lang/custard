@@ -18,7 +18,7 @@ import {
   TranspileError,
   type Form,
   type ModulePaths,
-  FilePathAndStat,
+  fromDefaultTranspileOptions,
 } from "@custard-lang/processor/dist/types.js";
 import { standardModuleRoot } from "@custard-lang/processor/dist/definitions.js";
 import { evalForm } from "@custard-lang/processor/dist/eval.js";
@@ -40,7 +40,7 @@ function setUpConfig(): Config {
   modulePaths.set("js", `${standardModuleRoot}/js.js`);
 
   return {
-    optionsForRepl: { src: srcPathAndStat },
+    optionsForRepl: fromDefaultTranspileOptions({ src: srcPathAndStat }),
     providedSymbols: {
       modulePaths,
       implicitStatements:

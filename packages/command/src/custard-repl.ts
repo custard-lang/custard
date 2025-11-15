@@ -22,7 +22,7 @@ import {
 } from "@custard-lang/processor";
 import {
   assertIsFile,
-  commonProgram,
+  commonProgramForRepl,
   loadProvidedSymbols,
 } from "./cli/common.js";
 import {
@@ -36,7 +36,7 @@ import { ParseErrorWantingMore } from "@custard-lang/processor/dist/grammar.js";
 
 const log = getLogger("custard-repl");
 
-const result = commonProgram.parse();
+const result = commonProgramForRepl.arguments("[files...]").parse();
 const opts = result.opts();
 
 const srcPaths = result.args;

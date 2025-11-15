@@ -40,7 +40,7 @@ export async function loadAll(
 
 export async function loadToSwitchContext(
   env: Environment<TranspileRepl>,
-  { src }: TranspileOptions,
+  { src }: Omit<TranspileOptions, "runtimeModuleEmission">,
   providedSymbols: ProvidedSymbolsConfig,
   providedSymbolsPath: FilePath,
 ): Promise<Environment<TranspileRepl> | Error> {
@@ -61,7 +61,7 @@ export async function loadToSwitchContext(
 
 async function loadToSwitchContextSub(
   contextMap: Map<FilePath, Context<TranspileRepl>>,
-  { src }: TranspileOptions,
+  { src }: Omit<TranspileOptions, "runtimeModuleEmission">,
   providedSymbols: ProvidedSymbolsConfig,
   providedSymbolsPath: FilePath,
 ): Promise<undefined | Error> {

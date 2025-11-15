@@ -51,7 +51,7 @@ export async function initializeForModule(
 }
 
 export async function initializeForRepl(
-  options: TranspileOptions,
+  options: Omit<TranspileOptions, "runtimeModuleEmission">,
   providedSymbols: ProvidedSymbolsConfig,
   providedSymbolsPath: FilePath,
 ): Promise<Context<TranspileRepl> | Error> {

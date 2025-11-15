@@ -1,5 +1,5 @@
 import { globIterate } from "glob";
-import { program } from "@commander-js/extra-typings";
+import { Option, Command } from "@commander-js/extra-typings";
 
 import * as path from "node:path";
 import * as fs from "node:fs/promises";
@@ -31,16 +31,34 @@ import { fileOfImportMetaUrl } from "@custard-lang/processor/dist/util/path.js";
 import {
   FilePath,
   FilePathAndStat,
-} from "@custard-lang/processor/dist/internal/types.js";
+  fromDefaultTranspileOptions,
+  RuntimeModuleEmission,
+  RuntimeModuleEmissionValues,
+} from "@custard-lang/processor/dist/types.js";
 
-export const commonProgram = program
-  .option(
-    '-p, --provided-symbols <path d="path_to_provided_symbols_config">',
-    "Path to provided symbols config file.",
-    "./.provided-symbols.cstd",
-  )
-  .option("-v, --verbose", "Enable verbose output.")
-  .arguments("[files...]");
+const optRuntimeModulesDescription = new Option(
+  "--runtime-modules <type>",
+  "How to include runtime modules in the resulted JavaScript file.",
+)
+  .choices(RuntimeModuleEmissionValues)
+  .default("import");
+
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+function buildCommonProgram() {
+  return new Command()
+    .option(
+      "-p, --provided-symbols <path>",
+      "Path to provided symbols config file.",
+      "./.provided-symbols.cstd",
+    )
+    .option("-v, --verbose", "Enable verbose output.");
+}
+
+export const commonProgramForRepl = buildCommonProgram();
+
+export const commonProgramForTranspiler = buildCommonProgram().addOption(
+  optRuntimeModulesDescription,
+);
 
 export async function loadProvidedSymbols(
   providedSymbolsPath: string,
@@ -65,7 +83,11 @@ export async function loadProvidedSymbols(
 }
 
 export async function transpileMain(
-  opts: { providedSymbols: string; verbose?: true | undefined },
+  opts: {
+    providedSymbols: string;
+    verbose?: true | undefined;
+    runtimeModules: RuntimeModuleEmission;
+  },
   args: string[],
 ): Promise<string[]> {
   const providedSymbolsPath = opts.providedSymbols;
@@ -96,7 +118,7 @@ export async function transpileMain(
     const destPath = path.join(sp.dir, `${sp.name}.mjs`);
     const transpiled = await transpileModule(
       block,
-      { src },
+      { src, runtimeModuleEmission: opts.runtimeModules },
       providedSymbolsConfig,
       providedSymbolsPath,
     );
@@ -139,7 +161,7 @@ async function loadProvidedSymbolsBlock(
         "@custard-lang/processor/src/default-provided-symbols.cstd",
       );
       const context = await ContextF.initializeForRepl(
-        { src },
+        fromDefaultTranspileOptions({ src }),
         implicitlyImporting(`${standardModuleRoot}/base/safe.js`),
         cwd,
       );
@@ -164,7 +186,7 @@ async function loadProvidedSymbolsBlock(
   }
 
   const context = await ContextF.initializeForRepl(
-    { src: assumeIsFile(providedSymbolsPath) },
+    fromDefaultTranspileOptions({ src: assumeIsFile(providedSymbolsPath) }),
     implicitlyImporting(`${standardModuleRoot}/base/safe.js`),
     cwd,
   );

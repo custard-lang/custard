@@ -7,7 +7,7 @@ export type Ktval<Target> =
   | KtvalAssign<Target>
   | KtvalFunctionPostlude<Target>
   | KtvalImport
-  | KtvalImportStartAs
+  | KtvalImportStarAs
   | KtvalExport
   | KtvalOther<Target>;
 
@@ -136,21 +136,21 @@ export function ktvalImport(
   return { t: KtvalImportT, specifierForRepl, specifierForModule, ids };
 }
 
-export const KtvalImportStartAsT = 5;
+export const KtvalImportStarAsT = 5;
 
-export interface KtvalImportStartAs {
-  t: typeof KtvalImportStartAsT;
+export interface KtvalImportStarAs {
+  t: typeof KtvalImportStarAsT;
   specifierForRepl: string;
   specifierForModule: string;
   id: Id;
 }
 
-export function ktvalImportStartAs(
+export function ktvalImportStarAs(
   specifierForRepl: string,
   specifierForModule: string,
   id: Id,
-): KtvalImportStartAs {
-  return { t: KtvalImportStartAsT, specifierForRepl, specifierForModule, id };
+): KtvalImportStarAs {
+  return { t: KtvalImportStarAsT, specifierForRepl, specifierForModule, id };
 }
 
 export const KtvalExportT = 6;

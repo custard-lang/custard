@@ -14,12 +14,15 @@ import {
   type TranspileModule,
   readerInput,
   assumeIsFile,
+  type Ktvals,
+  isConst,
 } from "@custard-lang/processor/dist/internal/types.js";
 import {
   TranspileError,
   type Block,
   type JsSrc,
   cuSymbol,
+  fromDefaultTranspileOptions,
 } from "@custard-lang/processor/dist/types.js";
 import { fileOfImportMetaUrl } from "@custard-lang/processor/dist/util/path.js";
 import { standardModuleRoot } from "@custard-lang/processor/dist/internal/definitions.js";
@@ -47,7 +50,7 @@ describe("transpileBlock", () => {
     const inputBlock = assertNonError(
       readBlock(readerInput(src, contents)),
     ) as Block;
-    const options = { src };
+    const options = fromDefaultTranspileOptions({ src });
     const context = assertNonError(
       ContextF.init(transpileModule(options), providedSymbolsConfig, src),
     ) as Context<TranspileModule>;
@@ -170,7 +173,9 @@ describe("evaluation of `import` and `export`", () => {
     modulePaths.set("base", `${standardModuleRoot}//base.js`);
     const srcPath = fileOfImportMetaUrl(import.meta.url);
     return {
-      optionsForRepl: { src: assumeIsFile(srcPath) },
+      optionsForRepl: fromDefaultTranspileOptions({
+        src: assumeIsFile(srcPath),
+      }),
       providedSymbols: {
         modulePaths,
         implicitStatements: "(importAnyOf base)",
@@ -190,5 +195,53 @@ describe("evaluation of `import` and `export`", () => {
     src: "(export (const b 1) (const c (plusF b 1))) c",
     expected: 2,
     setUpConfig,
+  });
+});
+
+describe("when runtimeModuleEmission is 'none'", () => {
+  const subject = async (contents: string): Promise<[JsSrc, Context]> => {
+    const src = assumeIsFile(fileOfImportMetaUrl(import.meta.url));
+    const options = {
+      src,
+      runtimeModuleEmission: "none" as const,
+    };
+
+    const modulePaths: ModulePaths = new Map();
+    modulePaths.set("fs", "node:fs/promises");
+    modulePaths.set("base", `${standardModuleRoot}//base.js`);
+    const providedSymbolsConfig = ProvidedSymbolsConfigF.build({
+      builtinModulePaths: [],
+      otherModulePaths: modulePaths,
+      implicitStatements: "",
+      jsTopLevels: [],
+    });
+
+    const inputBlock = assertNonError(
+      readBlock(readerInput(src, contents)),
+    ) as Block;
+    const context = assertNonError(
+      ContextF.init(transpileModule(options), providedSymbolsConfig, src),
+    ) as Context<TranspileModule>;
+    const jsSrc = await transpileBlock(inputBlock, context);
+    const jsMod = transpileKtvalsForModule(jsSrc as Ktvals<JsSrc>, context);
+    return [jsMod, context];
+  };
+
+  describe("(import id)", () => {
+    test('adds identifiers in the module, and returns no import when runtimeModuleEmission is "none"', async () => {
+      const [jsMod, context] = await subject("(import fs)");
+      expect(jsMod.trim()).toEqual("");
+      expect(ContextF.find(context, cuSymbol("fs"))).toSatisfy(isNamespace);
+    });
+  });
+
+  describe("(importAnyOf id)", () => {
+    test('adds identifiers in the module, and returns no import when runtimeModuleEmission is "none"', async () => {
+      const [jsMod, context] = await subject("(importAnyOf base)");
+      expect(jsMod.trim()).toEqual("");
+      expect(ContextF.find(context, cuSymbol("standardModuleRoot"))).toSatisfy(
+        isConst,
+      );
+    });
   });
 });

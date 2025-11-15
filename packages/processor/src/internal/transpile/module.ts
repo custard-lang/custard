@@ -18,7 +18,7 @@ import {
   type Ktvals,
   ktvalImport,
   ktvalOther,
-  ktvalImportStartAs,
+  ktvalImportStarAs,
   ktvalExport,
 } from "../types.js";
 import { transpileExpression } from "../transpile.js";
@@ -60,7 +60,7 @@ export const _cu$import = markAsDirectWriter(
     });
 
     if (isTopLevel) {
-      return [ktvalImportStartAs(foundModule.u, foundModule.r, moduleId.value)];
+      return [ktvalImportStarAs(foundModule.u, foundModule.r, moduleId.value)];
     }
 
     let specifier: string;

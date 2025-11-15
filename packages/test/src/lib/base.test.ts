@@ -13,6 +13,7 @@ import {
   type FilePath,
   TranspileError,
   assumeIsFile,
+  fromDefaultTranspileOptions,
 } from "@custard-lang/processor/dist/types.js";
 import { standardModuleRoot } from "@custard-lang/processor/dist/definitions.js";
 import { implicitlyImporting } from "@custard-lang/processor/dist/provided-symbols-config.js";
@@ -517,7 +518,7 @@ describe('{object: "literal"}', () => {
 
 function setUpConfigOfTranspileOptions(srcPath: FilePath): () => Config {
   return () => ({
-    optionsForRepl: { src: assumeIsFile(srcPath) },
+    optionsForRepl: fromDefaultTranspileOptions({ src: assumeIsFile(srcPath) }),
     providedSymbols,
     providedSymbolsPath: srcPath,
   });
