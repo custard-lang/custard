@@ -32,7 +32,7 @@ import {
   FilePath,
   FilePathAndStat,
   fromDefaultTranspileOptions,
-  RuntimeModuleEmission,
+  type RuntimeModuleEmission,
   RuntimeModuleEmissionValues,
 } from "@custard-lang/processor/dist/types.js";
 
