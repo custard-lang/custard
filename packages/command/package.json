@@ -1,7 +1,7 @@
 {
   "type": "module",
   "name": "@custard-lang/command",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "The command line interface for my programming language Custard",
   "bin": {
     "custard": "dist/custard.js"
@@ -34,7 +34,7 @@
   },
   "dependencies": {
     "@commander-js/extra-typings": "^14.0.0",
-    "@custard-lang/processor": "^0.0.3",
+    "@custard-lang/processor": "^0.0.5",
     "glob": "^11.0.3"
   }
 }
