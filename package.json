@@ -7,14 +7,14 @@
     "custard": "node ./packages/command/dist/custard.js",
     "build": "tsc -b tsconfig.build.json",
     "clean": "rimraf -g \"packages/**/dist\" \"packages/**/*.tsbuildinfo\" \"*.tsbuildinfo\"",
-    "test": "npm run --ws test --if-present",
-    "test:detailed": "npm run test -- --reporter verbose",
-    "test:once": "npm run test -- run",
-    "test:coverage": "npm run test -- run --coverage",
+    "test": "pnpm run -r test",
+    "test:detailed": "pnpm run test -- --reporter verbose",
+    "test:once": "pnpm run test -- run",
+    "test:coverage": "pnpm run test -- run --coverage",
     "lint": "eslint .",
     "fix:lint": "eslint --fix .",
     "format": "prettier --write */*/src/**/*.ts",
-    "prepare": "npm run build"
+    "prepare": "pnpm run build"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^3.2.4",
@@ -35,5 +35,5 @@
     "packages/*",
     "apps/*"
   ],
-  "packageManager": "npm@11.4.2"
+  "packageManager": "pnpm@10.22.0"
 }

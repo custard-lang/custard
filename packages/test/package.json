@@ -33,6 +33,6 @@
     "vitest": "^3.2.4"
   },
   "dependencies": {
-    "@custard-lang/processor": "file:../processor"
+    "@custard-lang/processor": "workspace:*"
   }
 }

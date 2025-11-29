@@ -2,32 +2,32 @@
 
 ## REPL
 
-After `git clone` and `npm install`:
+After `git clone` and `pnpm install`:
 
 ```bash
-$ npm run custard repl
+$ pnpm run custard repl
 ```
 
 ## Transpile
 
-After `git clone` and `npm install`:
+After `git clone` and `pnpm install`:
 
 ```bash
-$ npm run -- custard transpile -p ./path/to/provided-symbols.cstd ./path/to/src.cstd
+$ pnpm run -- custard transpile -p ./path/to/provided-symbols.cstd ./path/to/src.cstd
 ```
 
 ## Transpile and Run
 
-After `git clone` and `npm install`:
+After `git clone` and `pnpm install`:
 
 ```bash
-$ npm run -- custard run -p ./path/to/provided-symbols.cstd ./path/to/src.cstd [...args]
+$ pnpm run -- custard run -p ./path/to/provided-symbols.cstd ./path/to/src.cstd [...args]
 ```
 
 ## Test
 
-After `git clone` and `npm install`:
+After `git clone` and `pnpm install`:
 
 ```bash
-$ npm run -ws --if-present test -- run
+$ pnpm run -ws --if-present test -- run
 ```

@@ -12,9 +12,8 @@ describe("split.cstd", () => {
   beforeAll(() => {
     const isWindows = os.platform() === "win32";
     execFileSync(
-      isWindows ? "npm.cmd" : "npm",
+      isWindows ? "pnpm.cmd" : "pnpm",
       [
-        "--prefix=../../",
         "run",
         "--",
         "custard",
@@ -55,7 +54,7 @@ describe("split.cstd", () => {
 
     await writeFile(inputPath, JSON.stringify(input, null, 2));
 
-    execFileSync("node", ["src/split.mjs", inputPath]);
+    execFileSync("node", ["apps/save-posts/src/split.mjs", inputPath]);
   });
 
   it("should split the input.json by 20 posts and make a backup for the input file", async () => {

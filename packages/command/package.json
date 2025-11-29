@@ -34,7 +34,7 @@
   },
   "dependencies": {
     "@commander-js/extra-typings": "^14.0.0",
-    "@custard-lang/processor": "^0.0.5",
+    "@custard-lang/processor": "workspace:*",
     "glob": "^11.0.3"
   }
 }
