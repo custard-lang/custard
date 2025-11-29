@@ -136,10 +136,10 @@ function findCore(
     return byId(symLike.value);
   }
   if (isPropertyAccess(symLike)) {
-    const [id, ...restIds] = symLike.value;
+    const [id0, ...ids] = symLike.value;
 
     const r = byId(
-      assertNonNull(id, "Assertion failed: empty PropertyAccess!"),
+      assertNonNull(id0, "Assertion failed: empty PropertyAccess!"),
     );
     if (TranspileError.is(r) || !isNamespace(r.writer)) {
       return r;
@@ -148,7 +148,7 @@ function findCore(
     let module = r.writer;
     let lastW: Writer = r.writer;
     const { canBeAtPseudoTopLevel } = r;
-    for (const [i, part] of restIds.entries()) {
+    for (const [i, part] of ids.entries()) {
       const subW = module[part];
       if (subW == null) {
         return new TranspileError(

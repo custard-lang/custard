@@ -756,6 +756,12 @@ describe("(const|let|assign id expression)", () => {
     expected: [8, 7],
     setUpConfig,
   });
+
+  testForm({
+    src: "(let o { a: 1 b: 2 }) (assign o.a 3) o",
+    expected: { a: 3, b: 2 },
+    setUpConfig,
+  });
 });
 
 describe('{object: "literal"}', () => {
