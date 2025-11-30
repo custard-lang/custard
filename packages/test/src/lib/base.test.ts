@@ -758,7 +758,7 @@ describe("(const|let|assign id expression)", () => {
   });
 
   testForm({
-    src: "(let o { a: 1 b: 2 }) (assign o.a 3) o",
+    src: "(const o { a: 1 b: 2 }) (assign o.a 3) o",
     expected: { a: 3, b: 2 },
     setUpConfig,
   });

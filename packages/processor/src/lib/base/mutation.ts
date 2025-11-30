@@ -141,9 +141,9 @@ export const assign = transpilingForAssignment(
       const { value } = id;
       const r = ContextF.findWithIsAtTopLevel(context, id);
       const [id0, ...ids] = value;
-      if (r === undefined || !isVar(r.writer)) {
+      if (r === undefined) {
         return new TranspileError(
-          `\`${id0}\` is not a name of a variable declared by \`let\` or a mutable property!`,
+          `\`${id0}\` is not a name of a variable declared!`,
         );
       }
       if (r.canBeAtPseudoTopLevel) {
