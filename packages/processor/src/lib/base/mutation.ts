@@ -149,7 +149,7 @@ export const assign = transpilingForAssignment(
       if (r.canBeAtPseudoTopLevel) {
         return [ktvalRefer(id0), ktvalOther(`.${ids.join(".")}=`), ...exp];
       }
-      return [ktvalOther(`.${value.join(".")}=`), ...exp];
+      return [ktvalOther(`${value.join(".")}=`), ...exp];
     }
 
     const vFormatted = formatForError(id);
