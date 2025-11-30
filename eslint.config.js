@@ -118,6 +118,15 @@ export default tseslint.config(
       "eslint-plugin-no-ignore-returned-union/no-ignore-returned-union": "off",
     },
   },
+  {
+    languageOptions: {
+      parser,
+      parserOptions: {
+        project: ["./tsconfig.json"],
+        projectService: false,
+      },
+    },
+  },
 );
 
 function fileOfImportMetaUrl(importMetaUrl) {

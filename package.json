@@ -11,7 +11,7 @@
     "test:detailed": "pnpm run test -- --reporter verbose",
     "test:once": "pnpm run test -- run",
     "test:coverage": "pnpm run test -- run --coverage",
-    "lint": "eslint .",
+    "lint": "eslint packages",
     "fix:lint": "eslint --fix .",
     "format": "prettier --write */*/src/**/*.ts",
     "prepare": "pnpm run build"
