@@ -1,7 +1,7 @@
 {
   "type": "module",
   "name": "@custard-lang/processor",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "My programming language Custard (core processor modules and library)",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
