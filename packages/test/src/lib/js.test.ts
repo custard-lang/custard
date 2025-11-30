@@ -1,9 +1,6 @@
 import { type Config, testForm } from "../helpers.js";
 
-import {
-  assumeIsFile,
-  defaultTranspileOptions,
-} from "@custard-lang/processor/dist/types.js";
+import { defaultTranspileOptions } from "@custard-lang/processor/dist/types.js";
 import { standardModuleRoot } from "@custard-lang/processor/dist/definitions.js";
 import * as ProvidedSymbolsConfig from "@custard-lang/processor/dist/provided-symbols-config.js";
 import { fileOfImportMetaUrl } from "@custard-lang/processor/dist/util/path.js";

@@ -1,7 +1,6 @@
 import type {
   Block,
   FilePath,
-  FilePathAndStat,
   JsSrc,
   ProvidedSymbolsConfig,
   TranspileOptions,
