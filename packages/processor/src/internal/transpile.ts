@@ -42,6 +42,7 @@ import {
   ktvalRefer,
   type TranspileModule,
   ktvalContext,
+  formatForError,
 } from "./types.js";
 import { type Context } from "./types.js";
 import * as ContextF from "./context.js";
@@ -421,7 +422,6 @@ export async function transpileString(
   return mod;
 }
 
-// TODO: accept only expression form (not a statement)
 export async function transpileJoinWithComma(
   xs: Form[],
   context: Context,
@@ -429,6 +429,11 @@ export async function transpileJoinWithComma(
   const result: Ktvals<JsSrc> = [];
   const lastI = xs.length - 1;
   for (const [i, x] of xs.entries()) {
+    if (isStatement(context, x)) {
+      return new TranspileError(
+        `An expression was expected, but a statement ${formatForError(x)} was found!`,
+      );
+    }
     const r = await transpileExpression(x, context);
     if (TranspileError.is(r)) {
       return r;

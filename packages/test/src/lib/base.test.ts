@@ -506,6 +506,13 @@ describe("[a r r a y]", () => {
     expected: [4, 1, 6],
     setUpConfig,
   });
+  testForm({
+    src: "[(const x 3) (let y 4)]",
+    expected: new TranspileError(
+      "An expression was expected, but a statement `(List (Symbol const) ...)` was found!",
+    ),
+    setUpConfig,
+  });
 });
 
 describe('{object: "literal"}', () => {
