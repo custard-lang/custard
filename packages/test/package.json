@@ -6,7 +6,7 @@
   "description": "My programming language Custard (test suite)",
   "scripts": {
     "build": "tsc",
-    "test": "vitest",
+    "test": "vitest --reporter dot",
     "test:detailed": "vitest --reporter verbose",
     "lint": "eslint --ext ts src",
     "fix:lint": "eslint --ext ts --fix src",

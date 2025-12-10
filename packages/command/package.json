@@ -12,7 +12,7 @@
   ],
   "scripts": {
     "build": "tsc",
-    "test": "vitest"
+    "test": "vitest --reporter dot"
   },
   "repository": {
     "type": "git",
