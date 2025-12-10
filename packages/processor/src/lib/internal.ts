@@ -141,7 +141,7 @@ export function transpilingForAssignment(
     id: Form,
     exp?: Ktvals<JsSrc>,
   ) => Promise<Ktvals<JsSrc> | TranspileError>,
-  kind: DirectWriterKindFlags = exportableStatement,
+  kind: DirectWriterKindFlags,
 ): MarkedDirectWriter {
   return markAsDirectWriter(
     async (
@@ -287,6 +287,7 @@ export function transpilingForVariableDeclaration(
       }
       return buildStatement(assignee, exp);
     },
+    exportableStatement,
   );
 }
 
