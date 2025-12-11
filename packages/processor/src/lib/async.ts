@@ -109,6 +109,7 @@ export const generatorProcedure = markAsDirectWriter(
   },
 );
 
+// TODO: Create awaitScope
 export const scope = buildScope(
   "scope",
   "async function",
