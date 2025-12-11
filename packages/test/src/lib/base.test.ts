@@ -139,6 +139,13 @@ describe("(if bool x else y)", () => {
     expected: 2,
     setUpConfig,
   });
+  testForm({
+    src: "(if false (let x 1) x else (const x 2) x)",
+    expected: new TranspileError(
+      "An expression was expected, but a statement `(List (Symbol let) ...)` was found!",
+    ),
+    setUpConfig,
+  });
 });
 
 describe("(scope e x p r s)", () => {

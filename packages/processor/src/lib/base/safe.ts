@@ -224,7 +224,6 @@ export const _cu$if = markAsDirectWriter(
       return boolSrc;
     }
 
-    // TODO: forms must be non-statements
     const trueForms: Form[] = [];
     const falseForms: Form[] = [];
     let elseIsFound = false;
