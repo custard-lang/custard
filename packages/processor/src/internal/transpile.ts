@@ -125,7 +125,7 @@ async function transpileExpressionWithNextCall(
     const ktval = r.canBeAtPseudoTopLevel
       ? ktvalRefer(ast.value)
       : ktvalOther(ast.value);
-    return [[ktval], { writer: r.writer, sym: ast }];
+    return [[ktval], {writer: r.writer, sym: ast}];
   }
 
   if (isPropertyAccess(ast)) {
@@ -145,7 +145,7 @@ async function transpileExpressionWithNextCall(
     } else {
       ktvals = [ktvalOther(ast.value.join("."))];
     }
-    return [ktvals, { writer: r.writer, sym: ast }];
+    return [ktvals, {writer: r.writer, sym: ast}];
   }
 
   if (isCuArray(ast)) {
@@ -195,7 +195,7 @@ async function transpileExpressionWithNextCall(
       ];
     }
 
-    const { writer, sym } = nc;
+    const {writer, sym} = nc;
     if (isContextualKeyword(writer)) {
       const symbolAccessSrc = showSymbolAccess(sym);
       return new TranspileError(
@@ -288,7 +288,7 @@ async function transpileCuObject(
   for (const kv of ast) {
     let kvSrc: Ktvals<JsSrc>;
     if (isKeyValue(kv)) {
-      const { key, value } = kv;
+      const {key, value} = kv;
       let kSrc: Ktvals<JsSrc>;
       if (isCuSymbol(key)) {
         kSrc = [ktvalOther(key.value)];
@@ -344,7 +344,7 @@ export async function transpileComputedKeyOrExpression(
 export async function transpileBlock(
   forms: Block,
   context: Context,
-  extraOptions: { mayHaveResult: boolean } = { mayHaveResult: false },
+  extraOptions: { mayHaveResult: boolean } = {mayHaveResult: false},
 ): Promise<Ktvals<JsSrc> | TranspileError> {
   const resultKtvalsOffset = await transpileBlockCore(
     forms,
@@ -372,7 +372,7 @@ export async function transpileBlock(
 export async function transpileBlockCore(
   forms: Block,
   context: Context,
-  extraOptions: { mayHaveResult: boolean } = { mayHaveResult: false },
+  extraOptions: { mayHaveResult: boolean } = {mayHaveResult: false},
 ): Promise<number | TranspileError> {
   const lastIndex = forms.length - 1;
 
