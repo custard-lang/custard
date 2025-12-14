@@ -604,8 +604,14 @@ testForm({
 });
 
 testForm({
+  src: "(get [0])",
+  expected: new TranspileError("`get` must receive exactly two expressions!"),
+  setUpConfig,
+});
+
+testForm({
   src: "(get [0] 1 2)",
-  expected: new TranspileError("`get` must receive exactly one expression!"),
+  expected: new TranspileError("`get` must receive exactly two expressions!"),
   setUpConfig,
 });
 

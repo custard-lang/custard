@@ -58,18 +58,17 @@ export function transpiling1Unmarked(
 ) => Promise<Ktvals<JsSrc> | TranspileError> {
   return async (
     context: Context,
-    a: Form,
+    a?: Form,
     ...unused: Form[]
   ): Promise<Ktvals<JsSrc> | TranspileError> => {
-    const ra = await transpileExpression(a, context);
-    if (TranspileError.is(ra)) {
-      return ra;
-    }
-
-    if (unused.length > 0) {
+    if (a === undefined || unused.length > 0) {
       return new TranspileError(
         `\`${formId}\` must receive exactly one expression!`,
       );
+    }
+    const ra = await transpileExpression(a, context);
+    if (TranspileError.is(ra)) {
+      return ra;
     }
 
     return f(ra);
@@ -91,10 +90,16 @@ export function transpiling2(
   return markAsDirectWriter(
     async (
       context: Context,
-      a: Form,
-      b: Form,
+      a?: Form,
+      b?: Form,
       ...unused: Form[]
     ): Promise<Ktvals<JsSrc> | TranspileError> => {
+      if (a === undefined || b === undefined || unused.length !== 0) {
+        return new TranspileError(
+          `\`${formId}\` must receive exactly two expressions!`,
+        );
+      }
+
       const ra = await transpileExpression(a, context);
       if (TranspileError.is(ra)) {
         return ra;
@@ -103,12 +108,6 @@ export function transpiling2(
       const rb = await transpileExpression(b, context);
       if (TranspileError.is(rb)) {
         return rb;
-      }
-
-      if (unused.length > 0) {
-        return new TranspileError(
-          `\`${formId}\` must receive exactly one expression!`,
-        );
       }
 
       return [ktvalOther("("), ...f(ra, rb), ktvalOther(")")];
