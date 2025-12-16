@@ -21,9 +21,9 @@
   },
   "homepage": "https://github.com/igrep/custard#readme",
   "dependencies": {
-    "@custard-lang/processor": "^0.0.2"
+    "@custard-lang/processor": "file:../../packages/processor"
   },
   "devDependencies": {
-    "@custard-lang/command": "^0.0.2"
+    "@custard-lang/command": "file:../../packages/command"
   }
 }

@@ -13,16 +13,7 @@ describe("split.cstd", () => {
     const isWindows = os.platform() === "win32";
     execFileSync(
       isWindows ? "pnpm.cmd" : "pnpm",
-      [
-        "run",
-        "--",
-        "custard",
-        "transpile",
-        "-p",
-        "./apps/save-posts/.provided-symbols.cstd",
-        "./apps/save-posts/src/split.cstd",
-        "./apps/save-posts/src/iso8601ForFs.cstd",
-      ],
+      ["run", "--", "custard-transpile"],
       { shell: isWindows },
     );
   });
@@ -54,7 +45,7 @@ describe("split.cstd", () => {
 
     await writeFile(inputPath, JSON.stringify(input, null, 2));
 
-    execFileSync("node", ["apps/save-posts/src/split.mjs", inputPath]);
+    execFileSync("node", ["src/split.mjs", inputPath]);
   });
 
   it("should split the input.json by 20 posts and make a backup for the input file", async () => {

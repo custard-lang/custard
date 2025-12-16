@@ -24,12 +24,12 @@
   "homepage": "https://github.com/igrep/custard#readme",
   "dependencies": {
     "@atproto/api": "^0.7.4",
-    "@custard-lang/processor": "^0.0.2",
+    "@custard-lang/processor": "file:../../packages/processor",
     "date-fns": "^4.1.0",
     "read": "^4.1.0"
   },
   "devDependencies": {
-    "@custard-lang/command": "^0.0.2",
+    "@custard-lang/command": "file:../../packages/command",
     "vitest": "^3.0.5"
   }
 }
