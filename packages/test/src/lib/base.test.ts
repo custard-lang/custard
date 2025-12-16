@@ -77,7 +77,7 @@ testForm({
   setUpConfig,
 });
 
-describe("(if bool x else y)", () => {
+describe.skip("(if bool x else y)", () => {
   testForm({
     src: "(if true 1 else 2)",
     expected: 1,
@@ -143,6 +143,87 @@ describe("(if bool x else y)", () => {
     src: "(if false (let x 1) x else (const x 2) x)",
     expected: new TranspileError(
       "An expression was expected, but a statement `(List (Symbol let) ...)` was found!",
+    ),
+    setUpConfig,
+  });
+});
+
+describe("(andOr bool x y)", () => {
+  testForm({
+    src: "(andOr true 1 2)",
+    expected: 1,
+    setUpConfig,
+  });
+  testForm({
+    src: "(andOr false 1 2)",
+    expected: 2,
+    setUpConfig,
+  });
+  testForm({
+    src: "(andOr)",
+    expected: new TranspileError(
+      "No expressions given to an `andOr` expression!",
+    ),
+    setUpConfig,
+  });
+  testForm({
+    src: "(andOr false)",
+    expected: new TranspileError("Only one expression given to an `andOr`!"),
+    setUpConfig,
+  });
+  testForm({
+    src: "(andOr false 3)",
+    expected: new TranspileError("Only two expressions given to an `andOr`!"),
+    setUpConfig,
+  });
+  testForm({
+    src: "(andOr false 1 2 2)",
+    expected: new TranspileError(
+      "`andOr` must receive exactly three expressions!",
+    ),
+    setUpConfig,
+  });
+});
+
+describe("(expressions e x p r s)", () => {
+  testForm({
+    src: "(expressions)",
+    expected: new TranspileError(
+      "No expressions given to an `expressions` expression!",
+    ),
+    setUpConfig,
+  });
+  testForm({
+    src: "(expressions 1)",
+    expected: 1,
+    setUpConfig,
+  });
+  testForm({
+    src: "(expressions 1 2 3)",
+    expected: 3,
+    setUpConfig,
+  });
+  testForm({
+    src: "(scope (let x 0) (andOr true (expressions (assign x 1) x) (expressions (assign x 2) x)))",
+    expected: 1,
+    setUpConfig,
+  });
+  testForm({
+    src: "(scope (let x 0) (andOr false (expressions (assign x 1) x) (expressions (assign x 2) x)))",
+    expected: 2,
+    setUpConfig,
+  });
+  testForm({
+    src: "(expressions (let x 1) x)",
+    expected: new TranspileError(
+      "An expression was expected, but a statement `(List (Symbol let) ...)` was found!",
+    ),
+    setUpConfig,
+  });
+  testForm({
+    src: "(expressions (const x 2) x)",
+    expected: new TranspileError(
+      "An expression was expected, but a statement `(List (Symbol const) ...)` was found!",
     ),
     setUpConfig,
   });

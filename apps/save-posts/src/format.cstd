@@ -112,12 +112,11 @@
         (const
           style
           (fn ()
-            (if (isNone aspectRatio)
+            (andOr
+              (isNone aspectRatio)
               (text
                 "max-width: 100%;"
-                "height: auto;"
-                )
-              else
+                "height: auto;")
               (text
                 "aspect-ratio:"
                 aspectRatio.width
@@ -145,9 +144,9 @@
 (const
   replyParagraph
   (fn (p)
-    (if (isNone p.record.reply)
+    (andOr
+      (isNone p.record.reply)
       ""
-      else
       (text
         "\n\n"
         (linkToPost p.record.reply.parent) "への返信"))))

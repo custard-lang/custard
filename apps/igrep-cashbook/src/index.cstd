@@ -52,12 +52,11 @@
       (return {category isIncome amount}))))
 
 (const args (process.argv.slice 2))
-(forEach f (if (isGreaterThan args.length 0) args else ["-"])
+(forEach f (andOr (isGreaterThan args.length 0) args ["-"])
   (const
     reader
-    (if (equals f "-")
+    (andOr (equals f "-")
       process.stdin
-      else
       (fsC.createReadStream f)))
 
   (reader.setEncoding "utf8")

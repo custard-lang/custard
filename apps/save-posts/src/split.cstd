@@ -34,12 +34,11 @@
       (fn ([postAOrIndexedAt pathA] [postB pathB])
         (const
           postAIndexedAt (any postAOrIndexedAt.indexedAt postAOrIndexedAt))
-        (if
+        (andOr
           (isGreaterThan
             (new Date postAIndexedAt)
             (new Date postB.indexedAt))
           [postAIndexedAt pathA]
-          else
           [postB.indexedAt pathB]))))
 
   (const

@@ -64,7 +64,7 @@
     latestIndexedAt
     (indexedAts.reduce
       (fn (a b)
-        (if (isGreaterThan (new Date a) (new Date b)) a else b))))
+        (andOr (isGreaterThan (new Date a) (new Date b)) a b))))
   (const
     outName
     (iso8601ForFs.toFileName latestIndexedAt ".json"))

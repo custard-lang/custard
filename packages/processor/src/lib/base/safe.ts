@@ -207,6 +207,74 @@ export const any = transpiling2("any", (a: Ktvals<JsSrc>, b: Ktvals<JsSrc>) => [
   ...b,
 ]);
 
+export const andOr = markAsDirectWriter(
+  async (
+    context: Context,
+    bool?: Form,
+    x?: Form,
+    y?: Form,
+    ...unused: Form[]
+  ): Promise<Ktvals<JsSrc> | TranspileError> => {
+    if (bool === undefined) {
+      return new TranspileError(
+        "No expressions given to an `andOr` expression!",
+      );
+    }
+    if (x === undefined) {
+      return new TranspileError("Only one expression given to an `andOr`!");
+    }
+    if (y === undefined) {
+      return new TranspileError("Only two expressions given to an `andOr`!");
+    }
+    if (unused.length !== 0) {
+      return new TranspileError(
+        "`andOr` must receive exactly three expressions!",
+      );
+    }
+
+    const boolSrc = await transpileExpression(bool, context);
+    if (TranspileError.is(boolSrc)) {
+      return boolSrc;
+    }
+    const xSrc = await transpileExpression(x, context);
+    if (TranspileError.is(xSrc)) {
+      return xSrc;
+    }
+    const ySrc = await transpileExpression(y, context);
+    if (TranspileError.is(ySrc)) {
+      return ySrc;
+    }
+    return [
+      ktvalOther("("),
+      ...boolSrc,
+      ktvalOther(")?("),
+      ...xSrc,
+      ktvalOther("):("),
+      ...ySrc,
+      ktvalOther(")"),
+    ];
+  },
+);
+
+// Transpile given forms and join them with the comma operator
+export const expressions = markAsDirectWriter(
+  async (
+    context: Context,
+    ...forms: Form[]
+  ): Promise<Ktvals<JsSrc> | TranspileError> => {
+    if (forms.length === 0) {
+      return new TranspileError(
+        "No expressions given to an `expressions` expression!",
+      );
+    }
+    const src = await transpileJoinWithComma(forms, context);
+    if (TranspileError.is(src)) {
+      return src;
+    }
+    return [ktvalOther("("), ...src, ktvalOther(")")];
+  },
+);
+
 export const scope = buildScope("scope", "function", defaultScopeOptions);
 
 export const _cu$if = markAsDirectWriter(
