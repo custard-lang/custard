@@ -43,7 +43,7 @@
 
 (const
   bodyParagraph
-  (fn ({ record })
+  (fn ({ record})
 
     (const
       applyFacetFeature
@@ -70,7 +70,7 @@
       rt
       (new
         atproto.default.RichText
-        { text: record.text facets: record.facets }))
+        { text: record.text facets: record.facets}))
     (let result "")
     (forEach { text: t facet } (rt.segments)
       (assign
@@ -95,20 +95,19 @@
             (escapeMarkdown p.embed.record.value.text)
             "]("
             (urlOfUri p.embed.record.uri)
-            ")"
-            )))
+            ")")))
+
       (return
         (text
           "\n\n"
           "再投稿: "
           "[こちらの他の人の投稿]("
           (urlOfUri p.embed.record.uri)
-          ")"
-          )))
+          ")")))
 
     (const
       imageParagraph
-      (fn ({ thumb fullsize alt aspectRatio })
+      (fn ({ thumb fullsize alt aspectRatio})
         (const
           style
           (fn ()
@@ -161,7 +160,7 @@
       (date.format
         (new Date p.record.createdAt)
         "yyyy/MM/dd（E） H:m:s"
-        { locale: dateLocale.ja })
+        { locale: dateLocale.ja})
       "</small>")))
 
 (const
@@ -172,8 +171,7 @@
       (attachmentParagraph p)
       (replyParagraph p)
       (dateParagraph p)
-      endOfPost
-      )))
+      endOfPost)))
 
 (const
   formatPrivatePost
