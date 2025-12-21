@@ -77,42 +77,70 @@ testForm({
   setUpConfig,
 });
 
-describe.skip("(if bool x else y)", () => {
+describe("(if bool t r u e else f a l s e)", () => {
   testForm({
-    src: "(if true 1 else 2)",
+    src: "(scope (if true (return 1) else (return 2)))",
     expected: 1,
     setUpConfig,
   });
   testForm({
-    src: "(if false 1 else 2)",
+    src: "(scope (if false (return 1) else (return 2)))",
+    expected: 2,
+    setUpConfig,
+  });
+  testForm({
+    src: "(scope (if true (return 1) else (return 2)))",
+    expected: 1,
+    setUpConfig,
+  });
+  testForm({
+    src: "(scope (if false (return 1) else (return 2)))",
     expected: 2,
     setUpConfig,
   });
   testForm({
     src: "(if)",
-    expected: new TranspileError("No expressions given to an `if` expression!"),
+    expected: new TranspileError("No statements given to an `if` expression!"),
+    setUpConfig,
+  });
+  testForm({
+    src: "(if true)",
+    expected: undefined,
     setUpConfig,
   });
   testForm({
     src: "(if false)",
-    expected: new TranspileError("No expressions given to an `if` expression!"),
+    expected: undefined,
     setUpConfig,
   });
   testForm({
-    src: "(if false else 2)",
-    expected: new TranspileError("No expressions specified before `else`!"),
+    src: "(scope (if true else (return 2)))",
+    expected: undefined,
     setUpConfig,
   });
   testForm({
-    src: "(if false 1 2)",
-    expected: new TranspileError(
-      "`else` not specified for an `if` expression!",
-    ),
+    src: "(scope (if false else (return 2)))",
+    expected: 2,
     setUpConfig,
   });
   testForm({
-    src: "(if false 1 else)",
-    expected: new TranspileError("No expressions specified after `else`!"),
+    src: "(scope (if true 1 (return 2)))",
+    expected: 2,
+    setUpConfig,
+  });
+  testForm({
+    src: "(scope (if false 1 (return 2)))",
+    expected: undefined,
+    setUpConfig,
+  });
+  testForm({
+    src: "(scope (if true 1 (return 2) else))",
+    expected: 2,
+    setUpConfig,
+  });
+  testForm({
+    src: "(scope (if false 1 (return 2) else))",
+    expected: undefined,
     setUpConfig,
   });
   testForm({
@@ -130,20 +158,33 @@ describe.skip("(if bool x else y)", () => {
     setUpConfig,
   });
   testForm({
-    src: "(scope (let x 0) (if true (assign x 1) x else (assign x 2) x))",
+    src: "(let x -2) (if true (let y 905) (assign x (plusF x y))) x",
+    expected: 903,
+    setUpConfig,
+  });
+  testForm({
+    src: "(let x -2) (if false (let y 905) (assign x (plusF x y))) x",
+    expected: -2,
+    setUpConfig,
+  });
+  testForm({
+    src: "(scope (let x 0) (if true (assign x 1) (return x) else (assign x 2)) x)",
     expected: 1,
     setUpConfig,
   });
   testForm({
-    src: "(scope (let x 0) (if false (assign x 1) x else (assign x 2) x))",
+    src: "(scope (let x 0) (if false (assign x 1) (return x) else (assign x 2)) x)",
     expected: 2,
     setUpConfig,
   });
   testForm({
-    src: "(if false (let x 1) x else (const x 2) x)",
-    expected: new TranspileError(
-      "An expression was expected, but a statement `(List (Symbol let) ...)` was found!",
-    ),
+    src: "(scope (if true (let x 1) (return x) else (const x 2) (return x)))",
+    expected: 1,
+    setUpConfig,
+  });
+  testForm({
+    src: "(scope (if false (let x 1) (return x) else (const x 2) (return x)))",
+    expected: 2,
     setUpConfig,
   });
 });
@@ -580,17 +621,17 @@ describe("[a r r a y]", () => {
   });
   testForm({ src: "[]", expected: [], setUpConfig });
   testForm({
-    src: "[1 (if (isLessThan 2 3) 4 else 5) 6]",
+    src: "[1 (andOr (isLessThan 2 3) 4 5) 6]",
     expected: [1, 4, 6],
     setUpConfig,
   });
   testForm({
-    src: "[1 6 (if (isLessThan 2 3) 4 else 5)]",
+    src: "[1 6 (andOr (isLessThan 2 3) 4 5)]",
     expected: [1, 6, 4],
     setUpConfig,
   });
   testForm({
-    src: "[(if (isLessThan 2 3) 4 else 5) 1 6]",
+    src: "[(andOr (isLessThan 2 3) 4 5) 1 6]",
     expected: [4, 1, 6],
     setUpConfig,
   });
@@ -905,13 +946,13 @@ describe("(fn (a r g s) (f) (o) (r) (m) (s))", () => {
   });
 
   testForm({
-    src: "(const f (fn (x) (when x x))) (f 9)",
+    src: "(const f (fn (x) (if x x))) (f 9)",
     expected: undefined,
     setUpConfig,
   });
 
   testForm({
-    src: "(const f (fn (x) (when x (return x)))) (f 9)",
+    src: "(const f (fn (x) (if x (return x)))) (f 9)",
     expected: 9,
     setUpConfig,
   });
@@ -1045,17 +1086,17 @@ describe("(fn (a r g s) (f) (o) (r) (m) (s))", () => {
 
 describe("(procedure (a r g s) f o r m s)", () => {
   testForm({
-    src: "(const p (procedure () (let x 6) (when false (return 9))))(p)",
+    src: "(const p (procedure () (let x 6) (if false (return 9))))(p)",
     expected: undefined,
     setUpConfig,
   });
   testForm({
-    src: "(let n 0) (const p (procedure (x) (assign n (plusF 45 x)) (when true (return n)) -1)) (p 3)",
+    src: "(let n 0) (const p (procedure (x) (assign n (plusF 45 x)) (if true (return n)) -1)) (p 3)",
     expected: 48,
     setUpConfig,
   });
   testForm({
-    src: "(let n 0) (procedure p (x) (assign n (plusF 45 x)) (when true (return n)) -1) (p 2)",
+    src: "(let n 0) (procedure p (x) (assign n (plusF 45 x)) (if true (return n)) -1) (p 2)",
     expected: 47,
     setUpConfig,
   });
@@ -1075,29 +1116,6 @@ describe("(yield form)", () => {
     expected: new TranspileError(
       "`yield` must be used in a generator function!",
     ),
-    setUpConfig,
-  });
-});
-
-describe("(when bool f o r m s)", () => {
-  testForm({
-    src: "(let x -2) (when true (let y 905) (assign x (plusF x y))) x",
-    expected: 903,
-    setUpConfig,
-  });
-  testForm({
-    src: "(let x -2) (when false (let y 905) (assign x (plusF x y))) x",
-    expected: -2,
-    setUpConfig,
-  });
-  testForm({
-    src: "(when)",
-    expected: new TranspileError("No expressions given to a `when` statement!"),
-    setUpConfig,
-  });
-  testForm({
-    src: "(when true)",
-    expected: undefined,
     setUpConfig,
   });
 });

@@ -15,7 +15,7 @@
           (const dateRegExp (createRegExp "^\\d\\d/\\d\\d/\\d\\d$"))
           (dateRegExp.test trimmed)))
 
-      (when
+      (if
         (or
           (l.startsWith "#")
           (or
@@ -23,29 +23,29 @@
             (isDateLine)))
         (return none))
 
-      (when (not (l.startsWith " "))
+      (if (not (l.startsWith " "))
         (return (text "At line " n ": Invalid line. Missing a leading space.")))
 
       (const sep (createRegExp " {2,}"))
       (const fields (trimmed.split sep 3))
       (const [name amountS category] fields)
 
-      (when (isNone name)
+      (if (isNone name)
         (return (text "At line " n ": Missing name field.")))
-      (when (isNone category)
+      (if (isNone category)
         (return (text "At line " n ": Missing category field.")))
-      (when (isNone amountS)
+      (if (isNone amountS)
         (return (text "At line " n ": Missing amount field.")))
 
       (const reAmount (createRegExp "^(?<isIncome>\\+?)[\\d,_]+$"))
       (const amountMd (amountS.match reAmount))
-      (when (isNone amountMd)
+      (if (isNone amountMd)
         (return (text "At line " n ": Invalid amount field: " amountS)))
 
       (const reAmountSeparator (createRegExp "[,_]+" "g"))
       (const amount (Number (amountS.replace reAmountSeparator "")))
 
-      (when (isLessThan amount 1)
+      (if (isLessThan amount 1)
         (return (text "At line " n ": Invalid amount field: " amount)))
 
       (const isIncome (equals amountMd.groups.isIncome "+"))
@@ -68,9 +68,9 @@
   (forEach [i l] (lines.entries)
     (const n (plusF i 1))
     (const result (parseLine n l))
-    (when (isNone result)
+    (if (isNone result)
       (continue))
-    (when (isString result)
+    (if (isString result)
       (console.warn result)
       (continue))
 

@@ -48,16 +48,16 @@
             (agent.getAuthorFeed { actor: myDid limit: 100 cursor})))
         (assign cursor res.data.cursor)
         (console.log { cursor})
-        (when (isLessThan res.data.feed.length 1)
+        (if (isLessThan res.data.feed.length 1)
           (return result))
         (forEach p res.data.feed
-          (when (isAlreadySaved p.post)
+          (if (isAlreadySaved p.post)
             (return result))
           (result.push p.post))
-        (when (isNone cursor)
+        (if (isNone cursor)
           (return result))))))
 
-(when (isGreaterThanOrEquals posts.length 1)
+(if (isGreaterThanOrEquals posts.length 1)
   (const
     indexedAts (posts.map (fn (p) p.indexedAt)))
   (const

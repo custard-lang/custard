@@ -15,10 +15,10 @@
       (let current [])
       (async.forEach e iterator
         (current.push e)
-        (when (equals current.length n)
+        (if (equals current.length n)
           (yield current)
           (assign current [])))
-      (when (isGreaterThan current.length 0)
+      (if (isGreaterThan current.length 0)
         (yield current)))))
 
 (const targetPaths (process.argv.slice 2))
@@ -56,7 +56,7 @@
           (async.await
             (fs.rename outName (text outName ".bk")))
           catch e
-          (when (notEquals e.code "ENOENT")
+          (if (notEquals e.code "ENOENT")
             (throw e))))))
 
   (const

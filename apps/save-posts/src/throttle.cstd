@@ -3,7 +3,7 @@
   (path.join (get process.argv 2) "state.json"))
 (const waitForHours (Number (get process.argv 3)))
 
-(when (isNaN waitForHours)
+(if (isNaN waitForHours)
   (throw (new Error "Invalid number of hours")))
 
 (const stat (async.await (fs.stat statePath)))
@@ -12,7 +12,7 @@
   msec
   (timesF 1000 (timesF 60 (timesF 60 waitForHours))))
 
-(when (isGreaterThan (minusF (new Date) stat.mtime) msec)
+(if (isGreaterThan (minusF (new Date) stat.mtime) msec)
   (console.log (text "State file is older than " waitForHours " hours."))
   (process.exit 0))
 

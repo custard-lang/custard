@@ -159,14 +159,14 @@ describe("meta.evaluate", () => {
 
 describe("meta.macro", () => {
   testForm({
-    src: "(meta.macro (b f t) (meta.quasiQuote (if (not $b) then $f else $t)))",
+    src: "(meta.macro (b f t) (meta.quasiQuote (andOr (not $b) $f else $t)))",
     expected: new TranspileError(
       "meta.macro needs a name of the macro as a symbol, but got `(List (Symbol b) ...)`",
     ),
     setUpConfig,
   });
   testForm({
-    src: "(meta.macro unless (b f t) (meta.quasiQuote (if (not $b) $f else $t))) (text (unless false 1 2) (unless true 1 2))",
+    src: "(meta.macro unless (b f t) (meta.quasiQuote (andOr (not $b) $f $t))) (text (unless false 1 2) (unless true 1 2))",
     expected: "12",
     setUpConfig,
   });

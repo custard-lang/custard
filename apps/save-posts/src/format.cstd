@@ -30,12 +30,12 @@
         (new RegExp "[\\\\`*_{}\\[\\]()>#+-\\.!\n]|(?:  +)" "g"))
       (fn (m)
         (const charactersToEscape "\\`*_{}[]()>#+-.!")
-        (when (charactersToEscape.includes m)
+        (if (charactersToEscape.includes m)
           (return (text "\\" m)))
-        (when (equals "\n" m)
+        (if (equals "\n" m)
           (return "<br/>"))
 
-        (when (m.startsWith "  ")
+        (if (m.startsWith "  ")
           (const nbsp "&nbsp;")
           (return (nbsp.repeat m.length)))
         (return m)))))
@@ -48,9 +48,9 @@
     (const
       applyFacetFeature
       (fn (feat content)
-        (when (equals feat.$type "app.bsky.richtext.facet#link")
+        (if (equals feat.$type "app.bsky.richtext.facet#link")
           (return (text "[" content "](" feat.uri ")")))
-        (when (equals feat.$type "app.bsky.richtext.facet#mention")
+        (if (equals feat.$type "app.bsky.richtext.facet#mention")
           (note "Do nothing")
           (return content))
         (console.warn "Unknown facet feature:" feat.$type)
@@ -59,7 +59,7 @@
     (const
       applyFacet
       (fn (facet content)
-        (when (isNone facet)
+        (if (isNone facet)
           (return content))
         (let result content)
         (forEach feat facet.features
@@ -82,11 +82,11 @@
   attachmentParagraph
   (fn (p)
 
-    (when (isNone p.embed)
+    (if (isNone p.embed)
       (return ""))
 
-    (when (equals p.embed.$type "app.bsky.embed.record#view")
-      (when (equals p.embed.record.author.did myDid)
+    (if (equals p.embed.$type "app.bsky.embed.record#view")
+      (if (equals p.embed.record.author.did myDid)
         (return
           (text
             "\n\n"
@@ -127,13 +127,13 @@
           "<img src=\"" thumb "\" style=\"" (style) "\"/>"
           "</a>")))
 
-    (when (equals p.embed.$type "app.bsky.embed.images#view")
+    (if (equals p.embed.$type "app.bsky.embed.images#view")
       (let result "")
       (forEach i p.embed.images
         (assign result (imageParagraph i)))
       (return result))
 
-    (when (equals p.embed.$type "app.bsky.embed.external#view")
+    (if (equals p.embed.$type "app.bsky.embed.external#view")
       (note "Ignored")
       (return ""))
 
@@ -184,7 +184,7 @@
 (const
   formatPost
   (fn (p)
-    (when (equals p.author.did myDid)
+    (if (equals p.author.did myDid)
       (return (formatPublicPost p)))
     (formatPrivatePost p)))
 

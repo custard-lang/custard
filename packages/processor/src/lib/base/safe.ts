@@ -91,6 +91,7 @@ export const _cu$return = markAsDirectWriter(
   ordinaryStatement,
 );
 
+// TODO: delete this and use `if` instead
 export const when = markAsDirectWriter(
   async (
     context: Context,
@@ -284,7 +285,7 @@ export const _cu$if = markAsDirectWriter(
     ...rest: Form[]
   ): Promise<Ktvals<JsSrc> | TranspileError> => {
     if (bool === undefined) {
-      return new TranspileError("No expressions given to an `if` expression!");
+      return new TranspileError("No statements given to an `if` expression!");
     }
 
     const boolSrc = await transpileExpression(bool, context);
@@ -311,39 +312,32 @@ export const _cu$if = markAsDirectWriter(
         trueForms.push(form);
       }
     }
-    if (trueForms.length < 1) {
-      if (elseIsFound) {
-        return new TranspileError("No expressions specified before `else`!");
-      }
-      return new TranspileError("No expressions given to an `if` expression!");
-    }
-    if (falseForms.length < 1) {
-      if (elseIsFound) {
-        return new TranspileError("No expressions specified after `else`!");
-      }
-      return new TranspileError("`else` not specified for an `if` expression!");
-    }
 
-    const ifTrueSrc = await transpileJoinWithComma(trueForms, context);
+    ContextF.pushInherited(context);
+    const ifTrueSrc = await transpileStatements(trueForms, context);
+    ContextF.pop(context);
     if (TranspileError.is(ifTrueSrc)) {
       return ifTrueSrc;
     }
 
-    const ifFalseSrc = await transpileJoinWithComma(falseForms, context);
+    ContextF.pushInherited(context);
+    const ifFalseSrc = await transpileStatements(falseForms, context);
+    ContextF.pop(context);
     if (TranspileError.is(ifFalseSrc)) {
       return ifFalseSrc;
     }
 
     return [
-      ktvalOther("("),
+      ktvalOther("if("),
       ...boolSrc,
-      ktvalOther(")?("),
+      ktvalOther("){"),
       ...ifTrueSrc,
-      ktvalOther("):("),
+      ktvalOther("}else{"),
       ...ifFalseSrc,
-      ktvalOther(")"),
+      ktvalOther("}"),
     ];
   },
+  ordinaryStatement,
 );
 
 export const _cu$else = aContextualKeyword("if");
