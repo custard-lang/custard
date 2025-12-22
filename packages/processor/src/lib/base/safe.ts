@@ -15,7 +15,6 @@ import {
 import {
   aConst,
   aContextualKeyword,
-  type Block,
   type Context,
   type Form,
   type Id,
@@ -87,35 +86,6 @@ export const _cu$return = markAsDirectWriter(
       return argSrc;
     }
     return [ktvalOther("return "), ...argSrc];
-  },
-  ordinaryStatement,
-);
-
-// TODO: delete this and use `if` instead
-export const when = markAsDirectWriter(
-  async (
-    context: Context,
-    bool?: Form,
-    ...rest: Block
-  ): Promise<Ktvals<JsSrc> | TranspileError> => {
-    if (bool === undefined) {
-      return new TranspileError("No expressions given to a `when` statement!");
-    }
-    const boolSrc = await transpileExpression(bool, context);
-    if (TranspileError.is(boolSrc)) {
-      return boolSrc;
-    }
-    const statementsSrc = await transpileStatements(rest, context);
-    if (TranspileError.is(statementsSrc)) {
-      return statementsSrc;
-    }
-    return [
-      ktvalOther("if("),
-      ...boolSrc,
-      ktvalOther("){\n"),
-      ...statementsSrc,
-      ktvalOther("\n}"),
-    ];
   },
   ordinaryStatement,
 );
