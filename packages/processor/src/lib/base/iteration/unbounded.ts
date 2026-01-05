@@ -17,7 +17,7 @@ import {
   TranspileError,
 } from "../../../types.js";
 import { aRecursiveConst, ordinaryStatement } from "../../../internal/types.js";
-import { asCall, isStatement } from "../../../internal/call.js";
+import { asCall, asStatement } from "../../../internal/call.js";
 
 import { _cu$const } from "../safe.js";
 import { buildForEach } from "../../internal.js";
@@ -36,10 +36,14 @@ export const _cu$while = markAsDirectWriter(
       );
     }
 
-    if (isStatement(context, bool)) {
-      const id = showSymbolAccess(functionIdOfCall(bool));
+    const stmt = asStatement(context, bool);
+    if (TranspileError.is(stmt)) {
+      return stmt;
+    }
+    if (stmt !== undefined) {
+      const id = showSymbolAccess(functionIdOfCall(stmt));
       return new TranspileError(
-        `The conditional expression in a \`for\` must be an expression! But \`${id}\` is a statement!`,
+        `The conditional expression in a \`while\` must be an expression! But \`${id}\` is a statement!`,
       );
     }
 
@@ -95,8 +99,12 @@ export const _cu$for = markAsDirectWriter(
       );
     }
 
-    if (isStatement(context, bool)) {
-      const id = showSymbolAccess(functionIdOfCall(bool));
+    const stmt = asStatement(context, bool);
+    if (TranspileError.is(stmt)) {
+      return stmt;
+    }
+    if (stmt !== undefined) {
+      const id = showSymbolAccess(functionIdOfCall(stmt));
       return new TranspileError(
         `The conditional expression in a \`for\` must be an expression! But \`${id}\` is a statement!`,
       );

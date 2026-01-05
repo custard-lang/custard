@@ -48,7 +48,7 @@ import { type Context } from "./types.js";
 import * as ContextF from "./context.js";
 import { readBlock } from "../reader.js";
 import { isParseError } from "../grammar.js";
-import { isStatement } from "./call.js";
+import { asStatement } from "./call.js";
 import { evalForMacro } from "./eval/core.js";
 import { clearTranspiledSrc } from "./transpile-state.js";
 
@@ -396,7 +396,11 @@ export async function transpileBlockCore(
   }
 
   const resultKtvalsOffset = context.transpileState.transpiledSrc.length;
-  const lastIsExpression = !isStatement(context, lastForm);
+  const stmt = asStatement(context, lastForm);
+  if (TranspileError.is(stmt)) {
+    return stmt;
+  }
+  const lastIsExpression = stmt === undefined;
   if (lastIsExpression && extraOptions.mayHaveResult) {
     context.transpileState.transpiledSrc.push(...last, ktvalOther(";\n"));
     return resultKtvalsOffset;
@@ -429,7 +433,11 @@ export async function transpileJoinWithComma(
   const result: Ktvals<JsSrc> = [];
   const lastI = xs.length - 1;
   for (const [i, x] of xs.entries()) {
-    if (isStatement(context, x)) {
+    const stmt = asStatement(context, x);
+    if (TranspileError.is(stmt)) {
+      return stmt;
+    }
+    if (stmt !== undefined) {
       return new TranspileError(
         `An expression was expected, but a statement ${formatForError(x)} was found!`,
       );

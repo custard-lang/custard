@@ -106,7 +106,11 @@ describe("transpileBlock", () => {
             "No module `nonExistent` registered in the Module Paths",
           ),
         );
-        expect(ContextF.find(context, cuSymbol("a"))).toBeUndefined();
+        expect(ContextF.find(context, cuSymbol("a"))).toEqual(
+          new TranspileError(
+            "No variable `a` is defined! NOTE: If you want to define `a` recursively, wrap the declaration(s) with `recursive`.",
+          ),
+        );
       });
     });
   });
@@ -130,18 +134,18 @@ describe("transpileBlock", () => {
       );
       expect(r).toEqual(
         new TranspileError(
-          "The arguments of `export` must be a const/let declaration.",
+          "The arguments of `export` must be an exportable declaration (e.g., `const`/`let`). But got `(List (Symbol fn) ...)`.",
         ),
       );
     });
 
     test("returns an error if an export is not an exportable statement", async () => {
       const [r, _context] = await subject(
-        "(importAnyOf base)(export (when true none))",
+        "(importAnyOf base)(export (if true none))",
       );
       expect(r).toEqual(
         new TranspileError(
-          "The arguments of `export` must be a const/let declaration.",
+          "The arguments of `export` must be an exportable declaration (e.g., `const`/`let`). But got `(List (Symbol if) ...)`.",
         ),
       );
     });

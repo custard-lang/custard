@@ -53,7 +53,10 @@ export const assign = transpilingForAssignment(
       e: Ktvals<JsSrc>,
     ): Ktvals<JsSrc> | TranspileError {
       const r = ContextF.findWithIsAtTopLevel(context, sym);
-      if (r === undefined || !isVar(r.writer)) {
+      if (TranspileError.is(r)) {
+        return r;
+      }
+      if (!isVar(r.writer)) {
         return new TranspileError(
           `\`${sym.value}\` is not a name of a variable declared by \`let\` or a mutable property!`,
         );
@@ -141,10 +144,8 @@ export const assign = transpilingForAssignment(
       const { value } = id;
       const r = ContextF.findWithIsAtTopLevel(context, id);
       const [id0, ...ids] = value;
-      if (r === undefined) {
-        return new TranspileError(
-          `\`${id0}\` is not a name of a variable declared!`,
-        );
+      if (TranspileError.is(r)) {
+        return r;
       }
       if (r.canBeAtPseudoTopLevel) {
         return [ktvalRefer(id0), ktvalOther(`.${ids.join(".")}=`), ...exp];

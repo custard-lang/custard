@@ -1219,7 +1219,7 @@ describe("(incrementF id)", () => {
   testForm({
     src: "(incrementF unknown) 1",
     expected: new TranspileError(
-      "`unknown` is not a name of a variable declared by `let` or a mutable property!",
+      "No variable `unknown` is defined! NOTE: If you want to define `unknown` recursively, wrap the declaration(s) with `recursive`.",
     ),
     setUpConfig,
   });
@@ -1260,7 +1260,7 @@ describe("(decrementF id)", () => {
   testForm({
     src: "(decrementF unknown) 1",
     expected: new TranspileError(
-      "`unknown` is not a name of a variable declared by `let` or a mutable property!",
+      "No variable `unknown` is defined! NOTE: If you want to define `unknown` recursively, wrap the declaration(s) with `recursive`.",
     ),
     setUpConfig,
   });

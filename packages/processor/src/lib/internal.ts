@@ -46,7 +46,7 @@ import {
   transpileStatements,
 } from "../internal/transpile.js";
 import * as ContextF from "../internal/context.js";
-import { isStatement } from "../internal/call.js";
+import { asStatement } from "../internal/call.js";
 
 export function transpiling1Unmarked(
   formId: Id,
@@ -159,6 +159,7 @@ export function transpilingForAssignment(
         return await f(context, id);
       }
 
+      // FIXME: Prevent transpiling statements here
       const exp = await transpileExpression(value, context);
       if (TranspileError.is(exp)) {
         return exp;
@@ -408,7 +409,10 @@ export function transpilingForVariableMutation(
       }
 
       const r = ContextF.findWithIsAtTopLevel(context, sym);
-      if (r === undefined || !isVar(r.writer)) {
+      if (TranspileError.is(r)) {
+        return r;
+      }
+      if (!isVar(r.writer)) {
         return new TranspileError(
           `\`${sym.value}\` is not a name of a variable declared by \`let\` or a mutable property!`,
         );
@@ -558,14 +562,18 @@ export async function buildFn(
       return lastSrc;
     }
 
-    if (isStatement(context, lastStatement)) {
-      preludeResult.src.push(ktvalOther("  "), ...lastSrc, ktvalOther(";\n"));
-    } else {
+    const stmt = asStatement(context, lastStatement);
+    if (TranspileError.is(stmt)) {
+      return stmt;
+    }
+    if (stmt === undefined) {
       preludeResult.src.push(
         ktvalOther("  return "),
         ...lastSrc,
         ktvalOther(";\n"),
       );
+    } else {
+      preludeResult.src.push(ktvalOther("  "), ...lastSrc, ktvalOther(";\n"));
     }
   }
   return functionPostlude(context, preludeResult);

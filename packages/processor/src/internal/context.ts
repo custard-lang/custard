@@ -75,9 +75,9 @@ export function init<State extends TranspileState>(
 export function find(
   context: Context,
   symLike: CuSymbol | PropertyAccess,
-): Writer | undefined {
+): Writer | TranspileError {
   const r = findWithIsAtTopLevel(context, symLike);
-  if (r === undefined) {
+  if (TranspileError.is(r)) {
     return r;
   }
   return r.writer;
@@ -91,12 +91,8 @@ export interface WriterWithIsAtTopLevel {
 export function findWithIsAtTopLevel(
   context: Context,
   symLike: CuSymbol | PropertyAccess,
-): WriterWithIsAtTopLevel | undefined {
-  const r = findCore(context, symLike, false);
-  if (TranspileError.is(r)) {
-    return undefined;
-  }
-  return r;
+): WriterWithIsAtTopLevel | TranspileError {
+  return findCore(context, symLike, false);
 }
 
 export function referTo(
@@ -138,9 +134,7 @@ function findCore(
   if (isPropertyAccess(symLike)) {
     const [id0, ...ids] = symLike.value;
 
-    const r = byId(
-      assertNonNull(id0, "Assertion failed: empty PropertyAccess!"),
-    );
+    const r = byId(id0);
     if (TranspileError.is(r) || !isNamespace(r.writer)) {
       return r;
     }

@@ -20,10 +20,10 @@ import {
   ktvalOther,
   ktvalImportStarAs,
   ktvalExport,
+  formatForError,
 } from "../types.js";
 import { transpileExpression } from "../transpile.js";
-
-import { isExportableStatement } from "../call.js";
+import { asExportableStatement } from "../call.js";
 
 export const _cu$import = markAsDirectWriter(
   async (
@@ -175,9 +175,13 @@ export const _cu$export = markAsDirectWriter(
 
     const result: Ktvals<JsSrc> = [];
     for (const form of forms) {
-      if (!isExportableStatement(context, form)) {
+      const stmt = asExportableStatement(context, form);
+      if (TranspileError.is(stmt)) {
+        return stmt;
+      }
+      if (stmt === undefined) {
         return new TranspileError(
-          "The arguments of `export` must be a const/let declaration.",
+          `The arguments of \`export\` must be an exportable declaration (e.g., \`const\`/\`let\`). But got ${formatForError(form)}.`,
         );
       }
       const r = await transpileExpression(form, context);
