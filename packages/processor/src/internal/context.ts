@@ -58,11 +58,6 @@ export function init<State extends TranspileState>(
     providedSymbolsConfig,
     providedSymbolsConfigPath,
   );
-  if (modules instanceof Error) {
-    return new TranspileError("Error during resolving module paths", {
-      cause: modules,
-    });
-  }
   return {
     scopes: [topLevelScope],
     references: References.init(),
