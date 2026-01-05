@@ -36,6 +36,12 @@ import {
   RuntimeModuleEmissionValues,
 } from "@custard-lang/processor/dist/types.js";
 
+export interface TranspileMainOptions {
+  providedSymbols: string;
+  verbose?: true | undefined;
+  runtimeModules: RuntimeModuleEmission;
+}
+
 const optRuntimeModulesDescription = new Option(
   "--runtime-modules <type>",
   "How to include runtime modules in the resulted JavaScript file.",
@@ -83,11 +89,7 @@ export async function loadProvidedSymbols(
 }
 
 export async function transpileMain(
-  opts: {
-    providedSymbols: string;
-    verbose?: true | undefined;
-    runtimeModules: RuntimeModuleEmission;
-  },
+  opts: TranspileMainOptions,
   args: string[],
 ): Promise<string[]> {
   const providedSymbolsPath = opts.providedSymbols;
