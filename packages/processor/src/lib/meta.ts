@@ -52,8 +52,8 @@ import { transpileExpression } from "../internal/transpile.js";
 
 import { buildAsyncFn, tryToSet } from "./internal.js";
 import {
+  exportableStatement,
   ktvalOther,
-  ordinaryStatement,
   readerInput,
 } from "../internal/types.js";
 import type { Awaitable } from "../util/types.js";
@@ -173,7 +173,7 @@ export const macro = markAsDirectWriter(
     // Generated function is just stored in context. No need to return the source code.
     return [];
   },
-  ordinaryStatement,
+  exportableStatement,
 );
 
 export const quote = markAsDirectWriter(
