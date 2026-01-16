@@ -23,7 +23,7 @@
     "@typescript-eslint/parser": "8.48.0",
     "typescript-eslint": "8.48.0",
     "eslint-plugin-n": "^17.23.1",
-    "eslint-plugin-no-ignore-returned-union": "^0.6.2",
+    "eslint-plugin-no-ignore-returned-union": "^0.6.3",
     "eslint-plugin-promise": "^7.2.1",
     "globals": "^16.5.0",
     "prettier": "^3.7.2",
