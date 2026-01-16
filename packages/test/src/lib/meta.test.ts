@@ -1,5 +1,7 @@
 import { describe, expect, test } from "vitest";
 
+import * as fs from "node:fs/promises";
+
 import {
   type Config,
   testForm,
@@ -19,12 +21,16 @@ import {
   type Form,
   type ModulePaths,
   fromDefaultTranspileOptions,
+  type Block,
 } from "@custard-lang/processor/dist/types.js";
 import { standardModuleRoot } from "@custard-lang/processor/dist/definitions.js";
 import { evalForm } from "@custard-lang/processor/dist/eval.js";
 import { readBlock, readStr } from "@custard-lang/processor/dist/reader.js";
 import { initializeForRepl } from "@custard-lang/processor/dist/context.js";
-import { fileOfImportMetaUrl } from "@custard-lang/processor/dist/util/path.js";
+import {
+  dirOfImportMetaUrl,
+  fileOfImportMetaUrl,
+} from "@custard-lang/processor/dist/util/path.js";
 // import * as meta causes an error vitest perhaps because `meta` conflicts
 // with `(import meta)`.
 import * as meta_ from "@custard-lang/processor/dist/lib/meta.js";
@@ -182,6 +188,49 @@ describe("meta.macro", () => {
     setUpConfig,
   });
   // TODO: Splice `let` and `const` declarations in macro to test hygine
+
+  describe("A macro defined and exported in an external module works correctly.", () => {
+    async function setUpConfigWithMacroMod(): Promise<Config> {
+      const srcPath = `${dirOfImportMetaUrl(import.meta.url)}/../../assets/macroMod.cstd`;
+      const destPath = `${dirOfImportMetaUrl(import.meta.url)}/../../assets/macroMod.mjs`;
+
+      const modulePaths: ModulePaths = new Map();
+      modulePaths.set("base", `${standardModuleRoot}/base.js`);
+      modulePaths.set("meta", `${standardModuleRoot}/meta.js`);
+      modulePaths.set("macroMod", destPath);
+      const providedSymbols = {
+        modulePaths,
+        implicitStatements: "(importAnyOf base)(import meta)",
+        jsTopLevels: [],
+      };
+      const providedSymbolsPath = srcPathAndStat.path;
+
+      const src = assumeIsFile(srcPath);
+      const block = assertNonError(
+        readBlock(readerInput(src, await fs.readFile(srcPath, "utf-8"))),
+      ) as Block;
+      const transpiled = assertNonError(
+        await meta_.transpileModule(
+          block,
+          { src, runtimeModuleEmission: "import" },
+          providedSymbols,
+          providedSymbolsPath,
+        ),
+      );
+      await fs.writeFile(destPath, transpiled, "utf-8");
+
+      return {
+        optionsForRepl: fromDefaultTranspileOptions({ src: srcPathAndStat }),
+        providedSymbols,
+        providedSymbolsPath,
+      };
+    }
+    testForm({
+      src: "(import macroMod)(let a 5)(macroMod.doubleMacro (meta.quote a)) a",
+      expected: 10,
+      setUpConfig: setUpConfigWithMacroMod,
+    });
+  });
 
   describe("when a macro updates an external variable, the execution results may differ between the REPL and the output module.", () => {
     const src =

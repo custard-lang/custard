@@ -1,18 +1,13 @@
-import * as os from "node:os";
 import * as path from "node:path";
 
 import { assertNonNull } from "./error.js";
+import { fileURLToPath } from "node:url";
 
-export function fileOfImportMetaUrl(importMetaUrl: string): string {
-  return dropLeadingSlashOnWindows(new URL(importMetaUrl).pathname);
-}
+// TODO: deprecate?
+export const fileOfImportMetaUrl = fileURLToPath;
 
 export function dirOfImportMetaUrl(importMetaUrl: string): string {
   return path.dirname(fileOfImportMetaUrl(importMetaUrl));
-}
-
-function dropLeadingSlashOnWindows(pathname: string): string {
-  return os.platform() === "win32" ? pathname.slice(1) : pathname;
 }
 
 export function parseAbsoluteUrl(pathname: string): [string, string] | null {

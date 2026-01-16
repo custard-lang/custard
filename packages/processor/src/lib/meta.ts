@@ -53,6 +53,7 @@ import { transpileExpression } from "../internal/transpile.js";
 import { buildAsyncFn, tryToSet } from "./internal.js";
 import {
   exportableStatement,
+  ktvalAssignSimple,
   ktvalOther,
   readerInput,
 } from "../internal/types.js";
@@ -75,6 +76,7 @@ export {
   cuString as string,
   isKeyValue,
   keyValue,
+  markAsMacro as __markAsMacro,
 } from "../types.js";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -152,10 +154,7 @@ export const macro = markAsDirectWriter(
     ) => Awaitable<any | TranspileError>;
     const setResult = tryToSet(name, context, () => {
       return markAsMacro(
-        async (
-          _context: Context,
-          ...args: Form[]
-        ): Promise<Form | TranspileError> => {
+        async (...args: Form[]): Promise<Form | TranspileError> => {
           try {
             return await fn(...args);
           } catch (e) {
@@ -170,8 +169,15 @@ export const macro = markAsDirectWriter(
     if (TranspileError.is(setResult)) {
       return setResult;
     }
-    // Generated function is just stored in context. No need to return the source code.
-    return [];
+    const metaModuleJsId = await findThisModulesJsId(context, "__markAsMacro");
+    return [
+      ktvalAssignSimple("const ", name.value, [
+        ...metaModuleJsId,
+        ktvalOther("("),
+        ...fnSrc,
+        ktvalOther(")"),
+      ]),
+    ];
   },
   exportableStatement,
 );

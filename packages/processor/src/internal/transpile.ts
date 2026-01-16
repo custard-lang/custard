@@ -49,7 +49,7 @@ import * as ContextF from "./context.js";
 import { readBlock } from "../reader.js";
 import { isParseError } from "../grammar.js";
 import { asStatement } from "./call.js";
-import { evalForMacro } from "./eval/core.js";
+import { evalForMacro, evalForMacroArgument } from "./eval/core.js";
 import { clearTranspiledSrc } from "./transpile-state.js";
 
 export async function transpileExpression(
@@ -255,9 +255,24 @@ async function transpileExpressionWithNextCall(
       if (TranspileError.is(evalForMacroResult)) {
         return evalForMacroResult;
       }
+      const argValues: unknown[] = [];
+      for (const arg of args) {
+        const ktvalsForArg = await transpileExpression(arg, context);
+        if (TranspileError.is(ktvalsForArg)) {
+          return ktvalsForArg;
+        }
+        // `evalForMacroArgument` returns `any` by definition
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        const argJsValue = await evalForMacroArgument(ktvalsForArg, context);
+        if (TranspileError.is(argJsValue)) {
+          return argJsValue;
+        }
+        argValues.push(argJsValue);
+      }
+      // TODO: Pass `context` if the macro function needs it
       // Macro returns any by definition
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      const jsValue = await writer.expand(context, ...args);
+      const jsValue = await writer.expand(...argValues);
       if (TranspileError.is(jsValue)) {
         return jsValue;
       }

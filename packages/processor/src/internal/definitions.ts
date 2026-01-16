@@ -23,7 +23,7 @@ export async function loadModule(
   return asNamespace(mod, path);
 }
 
-export function asNamespace(
+function asNamespace(
   mod: { [key: string]: unknown },
   p: FilePath,
 ): Namespace | TranspileError {

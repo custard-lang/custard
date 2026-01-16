@@ -1,5 +1,1 @@
-export {
-  standardModuleRoot,
-  loadModule,
-  asNamespace,
-} from "./internal/definitions.js";
+export { standardModuleRoot, loadModule } from "./internal/definitions.js";
