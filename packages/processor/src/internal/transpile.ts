@@ -89,6 +89,7 @@ type KtvalsAndNextCall = [Ktvals<JsSrc>, NextCall | null];
 async function transpileExpressionWithNextCall(
   ast: Form,
   context: Context,
+  isTranspilingCaller = false,
 ): Promise<KtvalsAndNextCall | TranspileError> {
   async function expandDynamicVar(
     dynVar: DynamicVar,
@@ -115,7 +116,7 @@ async function transpileExpressionWithNextCall(
   }
 
   if (isCuSymbol(ast)) {
-    const r = ContextF.referTo(context, ast);
+    const r = referToWithAssertionIfNeeded(context, ast, isTranspilingCaller);
     if (TranspileError.is(r)) {
       return r;
     }
@@ -129,8 +130,7 @@ async function transpileExpressionWithNextCall(
   }
 
   if (isPropertyAccess(ast)) {
-    // TODO: Properly Access inside Namespace
-    const r = ContextF.referTo(context, ast);
+    const r = referToWithAssertionIfNeeded(context, ast, isTranspilingCaller);
     if (TranspileError.is(r)) {
       return r;
     }
@@ -171,6 +171,7 @@ async function transpileExpressionWithNextCall(
     const funcSrcAndNextCall = await transpileExpressionWithNextCall(
       funcForm,
       context,
+      true,
     );
     if (TranspileError.is(funcSrcAndNextCall)) {
       return funcSrcAndNextCall;
@@ -322,7 +323,7 @@ async function transpileCuObject(
 
       kvSrc = [...kSrc, ktvalOther(":"), ...vSrc];
     } else if (isCuSymbol(kv)) {
-      const f = ContextF.referTo(context, kv);
+      const f = referToWithAssertionIfNeeded(context, kv, false);
       if (TranspileError.is(f)) {
         return f;
       }
@@ -339,6 +340,41 @@ async function transpileCuObject(
     objectContents = [...objectContents, ...kvSrc, ktvalOther(",")];
   }
   return [ktvalOther("{"), ...objectContents, ktvalOther("}")];
+}
+
+function referToWithAssertionIfNeeded(
+  context: Context,
+  symLike: CuSymbol | PropertyAccess,
+  isTranspilingCaller: boolean,
+): ContextF.WriterWithIsAtTopLevel | TranspileError {
+  const r = ContextF.referTo(context, symLike);
+  if (isTranspilingCaller) {
+    return r;
+  }
+
+  if (TranspileError.is(r)) {
+    return r;
+  }
+  if (isMarkedDirectWriter(r.writer)) {
+    const symbolFullName = showSymbolAccess(symLike);
+    return new TranspileError(
+      `A direct writer \`${symbolFullName}\` cannot be assigned to a variable or passed as an argument.`,
+    );
+  }
+  if (isNamespace(r.writer)) {
+    const symbolFullName = showSymbolAccess(symLike);
+    return new TranspileError(
+      `A namespace \`${symbolFullName}\` cannot be assigned to a variable or passed as an argument.`,
+    );
+  }
+  if (isMacro(r.writer)) {
+    const symbolFullName = showSymbolAccess(symLike);
+    return new TranspileError(
+      `A macro \`${symbolFullName}\` cannot be assigned to a variable or passed as an argument.`,
+    );
+  }
+
+  return r;
 }
 
 export async function transpileComputedKeyOrExpression(

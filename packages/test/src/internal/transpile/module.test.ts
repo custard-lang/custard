@@ -96,6 +96,118 @@ describe("transpileBlock", () => {
         expect(src.trim()).toEqual('import * as fs from "node:fs/promises";');
         expect(ContextF.find(context, cuSymbol("fs"))).toSatisfy(isNamespace);
       });
+
+      describe("imported IDs (Namespace) are unavailable except for calling as a form.", () => {
+        function setUpConfig(): Config {
+          const modulePaths: ModulePaths = new Map();
+          modulePaths.set("base", `${standardModuleRoot}/base.js`);
+          modulePaths.set("a", "../../../assets/a.mjs");
+          const srcPath = fileOfImportMetaUrl(import.meta.url);
+          return {
+            optionsForRepl: fromDefaultTranspileOptions({
+              src: assumeIsFile(srcPath),
+            }),
+            providedSymbols: {
+              modulePaths,
+              implicitStatements: "(importAnyOf base)",
+              jsTopLevels: [],
+            },
+            providedSymbolsPath: srcPath,
+          };
+        }
+
+        testForm({
+          src: `(import a) a`,
+          expected: new TranspileError(
+            "A namespace `a` cannot be assigned to a variable or passed as an argument.",
+          ),
+          setUpConfig,
+        });
+        testForm({ src: `(import a) a.a`, expected: "Module A", setUpConfig });
+
+        testForm({
+          src: `(import a) (const u a)`,
+          expected: new TranspileError(
+            "A namespace `a` cannot be assigned to a variable or passed as an argument.",
+          ),
+          setUpConfig,
+        });
+        testForm({
+          src: `(import a) (const u a.a) u`,
+          expected: "Module A",
+          setUpConfig,
+        });
+
+        testForm({
+          src: `(import a) (const arr [a])`,
+          expected: new TranspileError(
+            "A namespace `a` cannot be assigned to a variable or passed as an argument.",
+          ),
+          setUpConfig,
+        });
+        testForm({
+          src: `(import a) (const arr [a.a]) (get arr 0)`,
+          expected: "Module A",
+          setUpConfig,
+        });
+
+        testForm({
+          src: `(import a) (const obj { m: a })`,
+          expected: new TranspileError(
+            "A namespace `a` cannot be assigned to a variable or passed as an argument.",
+          ),
+          setUpConfig,
+        });
+        testForm({
+          src: `(import a) (const obj { m: a.a }) obj.m`,
+          expected: "Module A",
+          setUpConfig,
+        });
+
+        testForm({
+          src: `(import a) (const obj { a })`,
+          expected: new TranspileError(
+            "A namespace `a` cannot be assigned to a variable or passed as an argument.",
+          ),
+          setUpConfig,
+        });
+
+        testForm({
+          src: `(import a) (fn call (n) n) (call a)`,
+          expected: new TranspileError(
+            "A namespace `a` cannot be assigned to a variable or passed as an argument.",
+          ),
+          setUpConfig,
+        });
+        testForm({
+          src: `(import a) (fn call (n) n) (call a.a)`,
+          expected: "Module A",
+          setUpConfig,
+        });
+
+        testForm({
+          src: `(import a) (const obj { m: a })`,
+          expected: new TranspileError(
+            "A namespace `a` cannot be assigned to a variable or passed as an argument.",
+          ),
+          setUpConfig,
+        });
+        testForm({
+          src: `(import a) (const obj { a })`,
+          expected: new TranspileError(
+            "A namespace `a` cannot be assigned to a variable or passed as an argument.",
+          ),
+          setUpConfig,
+        });
+        testForm({
+          // Other DirectWriter's argument
+          src: `(import a) (text "1" a)`,
+          expected: new TranspileError(
+            "A namespace `a` cannot be assigned to a variable or passed as an argument.",
+          ),
+          setUpConfig,
+        });
+      });
     });
 
     describe("given an id NOT registered in the ModulePaths", () => {

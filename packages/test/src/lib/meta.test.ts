@@ -189,6 +189,61 @@ describe("meta.macro", () => {
   });
   // TODO: Splice `let` and `const` declarations in macro to test hygine
 
+  describe("macros are unavailable except for calling as a form.", () => {
+    const macroDef =
+      "(meta.macro unless (b f t) (meta.quasiQuote (andOr (not $b) $f $t)))";
+    testForm({
+      src: `${macroDef} unless`,
+      expected: new TranspileError(
+        "A macro `unless` cannot be assigned to a variable or passed as an argument.",
+      ),
+      setUpConfig,
+    });
+    testForm({
+      src: `${macroDef} (const u unless)`,
+      expected: new TranspileError(
+        "A macro `unless` cannot be assigned to a variable or passed as an argument.",
+      ),
+      setUpConfig,
+    });
+    testForm({
+      src: `${macroDef} (const arr [unless])`,
+      expected: new TranspileError(
+        "A macro `unless` cannot be assigned to a variable or passed as an argument.",
+      ),
+      setUpConfig,
+    });
+    testForm({
+      src: `${macroDef} (fn callMacro (m b f t) (m b f t)) (callMacro unless false 1 2)`,
+      expected: new TranspileError(
+        "A macro `unless` cannot be assigned to a variable or passed as an argument.",
+      ),
+      setUpConfig,
+    });
+    testForm({
+      src: `${macroDef} (const obj { m: unless })`,
+      expected: new TranspileError(
+        "A macro `unless` cannot be assigned to a variable or passed as an argument.",
+      ),
+      setUpConfig,
+    });
+    testForm({
+      src: `${macroDef} (const obj { unless })`,
+      expected: new TranspileError(
+        "A macro `unless` cannot be assigned to a variable or passed as an argument.",
+      ),
+      setUpConfig,
+    });
+    testForm({
+      // Other DirectWriter's argument
+      src: `${macroDef} (plusF 1 unless)`,
+      expected: new TranspileError(
+        "A macro `unless` cannot be assigned to a variable or passed as an argument.",
+      ),
+      setUpConfig,
+    });
+  });
+
   describe("A macro defined and exported in an external module works correctly.", () => {
     async function setUpConfigWithMacroMod(): Promise<Config> {
       const srcPath = `${dirOfImportMetaUrl(import.meta.url)}/../../assets/macroMod.cstd`;
@@ -228,6 +283,14 @@ describe("meta.macro", () => {
     testForm({
       src: "(import macroMod)(let a 5)(macroMod.doubleMacro (meta.quote a)) a",
       expected: 10,
+      setUpConfig: setUpConfigWithMacroMod,
+    });
+
+    testForm({
+      src: `(import macroMod) (const u macroMod.doubleMacro)`,
+      expected: new TranspileError(
+        "A macro `macroMod.doubleMacro` cannot be assigned to a variable or passed as an argument.",
+      ),
       setUpConfig: setUpConfigWithMacroMod,
     });
   });
