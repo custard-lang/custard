@@ -123,7 +123,11 @@ describe("transpileBlock", () => {
           ),
           setUpConfig,
         });
-        testForm({ src: `(import a) a.a`, expected: "Module A", setUpConfig });
+        testForm({
+          src: `(import a) a.a`,
+          expected: "Module A / a",
+          setUpConfig,
+        });
 
         testForm({
           src: `(import a) (const u a)`,
@@ -134,7 +138,7 @@ describe("transpileBlock", () => {
         });
         testForm({
           src: `(import a) (const u a.a) u`,
-          expected: "Module A",
+          expected: "Module A / a",
           setUpConfig,
         });
 
@@ -147,7 +151,7 @@ describe("transpileBlock", () => {
         });
         testForm({
           src: `(import a) (const arr [a.a]) (get arr 0)`,
-          expected: "Module A",
+          expected: "Module A / a",
           setUpConfig,
         });
 
@@ -160,7 +164,7 @@ describe("transpileBlock", () => {
         });
         testForm({
           src: `(import a) (const obj { m: a.a }) obj.m`,
-          expected: "Module A",
+          expected: "Module A / a",
           setUpConfig,
         });
 
@@ -181,7 +185,7 @@ describe("transpileBlock", () => {
         });
         testForm({
           src: `(import a) (fn call (n) n) (call a.a)`,
-          expected: "Module A",
+          expected: "Module A / a",
           setUpConfig,
         });
 
@@ -216,6 +220,40 @@ describe("transpileBlock", () => {
         expect(err).toEqual(
           new TranspileError(
             "No module `nonExistent` registered in the Module Paths",
+          ),
+        );
+        expect(ContextF.find(context, cuSymbol("a"))).toEqual(
+          new TranspileError(
+            "No variable `a` is defined! NOTE: If you want to define `a` recursively, wrap the declaration(s) with `recursive`.",
+          ),
+        );
+      });
+    });
+  });
+
+  describe("(import id { id1 id2 ... })", () => {
+    describe("imports only specified identifiers from the module", () => {
+      test("1", async () => {
+        const [jsMod, context] = await subject("(import a { a b })");
+        const src = assertNonError(jsMod) as JsSrc;
+        expect(src.trim()).toEqual('import{a,b}from"../../../assets/a.mjs";');
+        expect(ContextF.find(context, cuSymbol("a"))).toSatisfy(isConst);
+        expect(ContextF.find(context, cuSymbol("b"))).toSatisfy(isConst);
+        expect(ContextF.find(context, cuSymbol("c"))).toEqual(
+          new TranspileError(
+            "No variable `c` is defined! NOTE: If you want to define `c` recursively, wrap the declaration(s) with `recursive`.",
+          ),
+        );
+      });
+
+      test("2", async () => {
+        const [jsMod, context] = await subject("(import a { c })");
+        const src = assertNonError(jsMod) as JsSrc;
+        expect(src.trim()).toEqual('import{c}from"../../../assets/a.mjs";');
+        expect(ContextF.find(context, cuSymbol("c"))).toSatisfy(isConst);
+        expect(ContextF.find(context, cuSymbol("b"))).toEqual(
+          new TranspileError(
+            "No variable `b` is defined! NOTE: If you want to define `b` recursively, wrap the declaration(s) with `recursive`.",
           ),
         );
         expect(ContextF.find(context, cuSymbol("a"))).toEqual(
@@ -303,7 +341,7 @@ describe("evaluation of `import` and `export`", () => {
 
   testForm({
     src: "(import a) a.a",
-    expected: "Module A",
+    expected: "Module A / a",
     setUpConfig,
   });
 

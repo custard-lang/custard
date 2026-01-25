@@ -300,6 +300,14 @@ export function setImportedModulesJsId(
   context.importedModuleJsIds.set(k, howToRefer);
 }
 
+export function setImportedModulesJsIds(
+  context: Context,
+  { k }: ModulePathAndUrl,
+  howToReferById: Map<Id, HowToRefer>,
+): void {
+  context.importedModuleJsIds.set(k, howToReferById);
+}
+
 export async function findIdAsJsSrc(
   context: Context,
   moduleName: string,

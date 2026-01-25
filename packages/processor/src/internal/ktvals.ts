@@ -161,7 +161,7 @@ export function transpileKtvalsForModule(
             return "";
           }
           const specifier = JSON.stringify(ktval.specifierForModule);
-          return `import{${ktval.ids.join(", ")}}from${specifier};\n`;
+          return `import{${ktval.ids.join(",")}}from${specifier};\n`;
         }
 
         case KtvalImportStarAsT: {

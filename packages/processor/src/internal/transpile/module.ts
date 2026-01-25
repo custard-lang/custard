@@ -1,10 +1,12 @@
 import * as ContextF from "../context.js";
 import { loadModule } from "../definitions.js";
 import {
-  type CuSymbol,
+  aConst,
   type Context,
   type Form,
   type Id,
+  isCuObject,
+  isKeyValue,
   isCuSymbol,
   type JsSrc,
   markAsDirectWriter,
@@ -21,18 +23,28 @@ import {
   ktvalImportStarAs,
   ktvalExport,
   formatForError,
+  HowToRefer,
 } from "../types.js";
 import { transpileExpression } from "../transpile.js";
 import { asExportableStatement } from "../call.js";
+import { ModulePathAndUrl } from "../context.js";
 
 export const _cu$import = markAsDirectWriter(
   async (
     context: Context,
+    moduleId?: Form,
+    idSpecs?: Form,
     ...forms: Form[]
   ): Promise<Ktvals<JsSrc> | TranspileError> => {
-    const moduleId = validateArgsOfImport(forms, "import");
-    if (TranspileError.is(moduleId)) {
-      return moduleId;
+    if (forms.length !== 0) {
+      return new TranspileError(
+        "The number of arguments of `import` must be 1 or 2.",
+      );
+    }
+    if (moduleId === undefined || !isCuSymbol(moduleId)) {
+      return new TranspileError(
+        "The first argument of `import` must be a Symbol.",
+      );
     }
 
     const foundModule = await ContextF.findModule(context, moduleId.value);
@@ -46,6 +58,50 @@ export const _cu$import = markAsDirectWriter(
     const ns = await loadModule(foundModule.u);
     if (TranspileError.is(ns)) {
       return ns;
+    }
+
+    if (idSpecs !== undefined) {
+      const ids = parseImportIdSpecs(idSpecs);
+      if (TranspileError.is(ids)) {
+        return ids;
+      }
+
+      for (const id of ids) {
+        if (!Object.prototype.hasOwnProperty.call(ns, id)) {
+          return new TranspileError(
+            `\`${id}\` is not exported from \`${moduleId.value}\`.`,
+          );
+        }
+        const setResult = ContextF.set(
+          context,
+          id,
+          isWriter(ns[id]) ? ns[id] : aConst(),
+        );
+        if (TranspileError.is(setResult)) {
+          return setResult;
+        }
+      }
+
+      const isTopLevel = ContextF.isAtTopLevel(context);
+      linkIdsToModuleContext(context, ids, isTopLevel, foundModule);
+
+      if (isTopLevel) {
+        return [ktvalImport(foundModule.u, foundModule.r, ids)];
+      }
+
+      let specifier: string;
+      switch (context.transpileState.mode) {
+        case "repl": {
+          specifier = foundModule.u;
+          break;
+        }
+        case "module": {
+          specifier = foundModule.r;
+          break;
+        }
+      }
+      const awaitImportUrl = `await import(${JSON.stringify(specifier)})`;
+      return [ktvalOther(`const{${ids.join(",")}}=${awaitImportUrl};\n`)];
     }
 
     const r = ContextF.set(context, moduleId.value, ns);
@@ -86,11 +142,18 @@ export const _cu$import = markAsDirectWriter(
 export const importAnyOf = markAsDirectWriter(
   async (
     context: Context,
+    moduleId?: Form,
     ...forms: Form[]
   ): Promise<Ktvals<JsSrc> | TranspileError> => {
-    const moduleId = validateArgsOfImport(forms, "importAnyOf");
-    if (TranspileError.is(moduleId)) {
-      return moduleId;
+    if (forms.length !== 0) {
+      return new TranspileError(
+        "The number of arguments of `importAnyOf` must be 1.",
+      );
+    }
+    if (moduleId === undefined || !isCuSymbol(moduleId)) {
+      return new TranspileError(
+        "The argument of `importAnyOf` must be a Symbol.",
+      );
     }
 
     const foundModule = await ContextF.findModule(context, moduleId.value);
@@ -114,12 +177,7 @@ export const importAnyOf = markAsDirectWriter(
     }
 
     const isTopLevel = ContextF.isAtTopLevel(context);
-    for (const id of ids) {
-      ContextF.setImportedModulesJsId(context, foundModule, {
-        id,
-        isTopLevel,
-      });
-    }
+    linkIdsToModuleContext(context, ids, isTopLevel, foundModule);
 
     if (isTopLevel) {
       return [ktvalImport(foundModule.u, foundModule.r, ids)];
@@ -137,26 +195,10 @@ export const importAnyOf = markAsDirectWriter(
       }
     }
     const awaitImportUrl = `await import(${JSON.stringify(specifierForNonTopLevel)})`;
-    return [ktvalOther(`const{${ids.join(", ")}}=${awaitImportUrl};\n`)];
+    return [ktvalOther(`const{${ids.join(",")}}=${awaitImportUrl};\n`)];
   },
   ordinaryStatement,
 );
-
-function validateArgsOfImport(
-  forms: Form[],
-  formId: Id,
-): TranspileError | CuSymbol {
-  if (forms.length !== 1) {
-    return new TranspileError(
-      `The number of arguments of \`${formId}\` must be 1.`,
-    );
-  }
-  const [id] = forms;
-  if (id === undefined || !isCuSymbol(id)) {
-    return new TranspileError("The argument of `import` must be a Symbol.");
-  }
-  return id;
-}
 
 export const _cu$export = markAsDirectWriter(
   async (
@@ -194,3 +236,46 @@ export const _cu$export = markAsDirectWriter(
   },
   exportableStatement,
 );
+
+function parseImportIdSpecs(idSpecs: Form): Id[] | TranspileError {
+  if (!isCuObject(idSpecs)) {
+    return new TranspileError(
+      `The second argument of \`import\` must be an Object of Symbols. But got ${formatForError(idSpecs)}.`,
+    );
+  }
+
+  const ids: Id[] = [];
+  for (const spec of idSpecs.keyValues) {
+    if (isCuSymbol(spec)) {
+      ids.push(spec.value);
+      continue;
+    }
+    if (isKeyValue(spec)) {
+      if (
+        isCuSymbol(spec.key) &&
+        isCuSymbol(spec.value) &&
+        spec.key.value === spec.value.value
+      ) {
+        ids.push(spec.value.value);
+        continue;
+      }
+    }
+    return new TranspileError(
+      `The second argument of \`import\` must be an Object of Symbols. But got ${formatForError(idSpecs)}.`,
+    );
+  }
+  return ids;
+}
+
+function linkIdsToModuleContext(
+  context: Context,
+  ids: Id[],
+  isTopLevel: boolean,
+  foundModule: ModulePathAndUrl,
+): void {
+  const howToReferById = new Map<Id, HowToRefer>();
+  for (const id of ids) {
+    howToReferById.set(id, { id, isTopLevel });
+  }
+  ContextF.setImportedModulesJsIds(context, foundModule, howToReferById);
+}
