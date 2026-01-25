@@ -60,13 +60,13 @@
 
 Elmを少し参考に
 
-- `(import base)`: `base`だけをqualified import
-- `(import { base })`: `base`だけをqualified import （1つ目と同じ）
-- `(import { base, anotherModule })`: `base`と`anotherModule`をqualified import
-- `(import { base: alias })`: `base`を`alias`としてqualified import
-- `(import { base: alias, anotherModule: anotherAlias })`: `base`と`alias`として、`anotherModule`を`anotherAlias`としてqualified import
-- `(import base {f1 f2})`: `base`にある`f1`と`f2`だけをimport
-- `(import base {f1: a1 f2: a2})`: `base`にある`f1`・`f2`だけをそれぞれ`a1`・`a2`としてimport
+- [x] `(import base)`: `base`だけをqualified import
+- [ ] `(import { base })`: `base`だけをqualified import （1つ目と同じ）
+- [ ] `(import { base, anotherModule })`: `base`と`anotherModule`をqualified import
+- [ ] `(import { base: alias })`: `base`を`alias`としてqualified import
+- [ ] `(import { base: alias, anotherModule: anotherAlias })`: `base`と`alias`として、`anotherModule`を`anotherAlias`としてqualified import
+- [x] `(import base {f1 f2})`: `base`にある`f1`と`f2`だけをimport
+- [ ] `(import base {f1: a1 f2: a2})`: `base`にある`f1`・`f2`だけをそれぞれ`a1`・`a2`としてimport
 
 ## `export`の構文
 
