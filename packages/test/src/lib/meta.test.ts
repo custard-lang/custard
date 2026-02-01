@@ -311,6 +311,26 @@ describe("meta.macro", () => {
   });
 });
 
+describe("meta.macroToFunction", () => {
+  testForm({
+    src: "(meta.macro unless (b f t) (meta.quasiQuote (andOr (not $b) $f $t))) ((meta.macroToFunction unless) false 1 2)",
+    expected: meta_.list<any>(
+      meta_.symbol("andOr"),
+      meta_.list<any>(meta_.symbol("not"), false),
+      1,
+      2,
+    ),
+    setUpConfig,
+  });
+  testForm({
+    src: "(let nonMacro (fn () none)) ((meta.macroToFunction nonMacro))",
+    expected: new TranspileError(
+      "The given id does not refer to a macro: `(Symbol nonMacro)`.",
+    ),
+    setUpConfig,
+  });
+});
+
 describe("meta.quote", () => {
   testForm({
     src: "(const xs []) (const y 10) (meta.quote (plusF 4.1 $y ...$xs a.b.c))",

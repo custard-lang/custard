@@ -42,17 +42,23 @@ import { evalBlock, evalForm } from "../internal/eval.js";
 import {
   findIdAsJsSrc,
   isAtTopLevel,
+  referTo,
   srcPathForErrorMessage,
 } from "../internal/context.js";
 
 import type { ParseError } from "../grammar.js";
 import { readBlock } from "../reader.js";
 import { standardModuleRoot } from "../definitions.js";
-import { transpileExpression } from "../internal/transpile.js";
+import {
+  transpileExpression,
+  transpilePropertyAccessReference,
+  transpileSymbolReference,
+} from "../internal/transpile.js";
 
 import { buildAsyncFn, tryToSet } from "./internal.js";
 import {
   exportableStatement,
+  isMacro,
   ktvalAssignSimple,
   ktvalOther,
   readerInput,
@@ -180,6 +186,42 @@ export const macro = markAsDirectWriter(
     ];
   },
   exportableStatement,
+);
+
+export const macroToFunction = markAsDirectWriter(
+  async (
+    context: Context,
+    macroId?: Form,
+    ...forms: Form[]
+  ): Promise<Ktvals<JsSrc> | TranspileError> => {
+    if (macroId === undefined || forms.length !== 0) {
+      return new TranspileError(
+        "The number of arguments of `meta.macroToFunction` must be 1",
+      );
+    }
+    const isSym = isCuSymbol(macroId);
+    const isPa = !isPropertyAccess(macroId);
+    if (!isSym && isPa) {
+      return new TranspileError(
+        `The first argument of \`meta.macroToFunction\` must be a Symbol or PropertyAccess, but got ${formatForError(macroId)}.`,
+      );
+    }
+
+    const foundMacro = referTo(context, macroId);
+    if (foundMacro instanceof TranspileError) {
+      return foundMacro;
+    }
+    if (!isMacro(foundMacro.writer)) {
+      return new TranspileError(
+        `The given id does not refer to a macro: ${formatForError(macroId)}.`,
+      );
+    }
+
+    const srcRefer = isSym
+      ? transpileSymbolReference(foundMacro, macroId)
+      : transpilePropertyAccessReference(foundMacro, macroId);
+    return [...srcRefer, ktvalOther(".expand")];
+  },
 );
 
 export const quote = markAsDirectWriter(

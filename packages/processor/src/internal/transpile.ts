@@ -37,9 +37,10 @@ import {
   type Writer,
   isDynamicVar,
   jsValueToForm,
-  type Ktvals,
+  ktvalContext,
   ktvalOther,
   ktvalRefer,
+  type Ktvals,
   type TranspileModule,
   ktvalContext,
   formatForError,
@@ -123,10 +124,8 @@ async function transpileExpressionWithNextCall(
     if (isDynamicVar(r.writer)) {
       return await expandDynamicVar(r.writer);
     }
-    const ktval = r.canBeAtPseudoTopLevel
-      ? ktvalRefer(ast.value)
-      : ktvalOther(ast.value);
-    return [[ktval], { writer: r.writer, sym: ast }];
+    const ktval = transpileSymbolReference(r, ast);
+    return [ktval, { writer: r.writer, sym: ast }];
   }
 
   if (isPropertyAccess(ast)) {
@@ -137,14 +136,7 @@ async function transpileExpressionWithNextCall(
     if (isDynamicVar(r.writer)) {
       return await expandDynamicVar(r.writer);
     }
-
-    let ktvals: Ktvals<JsSrc>;
-    if (r.canBeAtPseudoTopLevel) {
-      const [id0, ...ids] = ast.value;
-      ktvals = [ktvalRefer(id0), ktvalOther(`.${ids.join(".")}`)];
-    } else {
-      ktvals = [ktvalOther(ast.value.join("."))];
-    }
+    const ktvals = transpilePropertyAccessReference(r, ast);
     return [ktvals, { writer: r.writer, sym: ast }];
   }
 
@@ -504,4 +496,25 @@ export async function transpileJoinWithComma(
     }
   }
   return result;
+}
+
+export function transpilePropertyAccessReference(
+  r: ContextF.WriterWithIsAtTopLevel,
+  ast: PropertyAccess,
+): Ktvals<JsSrc> {
+  if (r.canBeAtPseudoTopLevel) {
+    const [id0, ...ids] = ast.value;
+    return [ktvalRefer(id0), ktvalOther(`.${ids.join(".")}`)];
+  } else {
+    return [ktvalOther(ast.value.join("."))];
+  }
+}
+
+export function transpileSymbolReference(
+  r: ContextF.WriterWithIsAtTopLevel,
+  ast: CuSymbol,
+): Ktvals<JsSrc> {
+  return r.canBeAtPseudoTopLevel
+    ? [ktvalRefer(ast.value)]
+    : [ktvalOther(ast.value)];
 }
