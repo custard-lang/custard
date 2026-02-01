@@ -2,50 +2,51 @@ import { ExpectNever } from "../util/error.js";
 
 import {
   type Block,
+  type ComputedKey,
+  type CuObject,
   type CuSymbol,
   type Form,
+  isComputedKey,
+  isConst,
+  isCuArray,
+  isCuObject,
+  isCuString,
   isCuSymbol,
+  isFloat64,
+  isInteger32,
   isKeyValue,
   isList,
   isPropertyAccess,
+  isReservedSymbol,
+  isSplice,
+  isUnquote,
   type JsSrc,
-  type CuObject,
   type PropertyAccess,
   type ReaderInput,
   showSymbolAccess,
   TranspileError,
-  isCuString,
-  isReservedSymbol,
-  isInteger32,
-  isFloat64,
-  isCuArray,
-  isCuObject,
-  isUnquote,
-  isSplice,
-  type ComputedKey,
-  isComputedKey,
 } from "../types.js";
 import {
-  canBePseudoTopLevelReferenced,
+  type Context,
   type DynamicVar,
-  isMacro,
+  formatForError,
   isContextualKeyword,
+  isDynamicVar,
+  isMacro,
   isMarkedDirectWriter,
   isMarkedFunctionWithContext,
   isNamespace,
   isProvidedConst,
-  type Writer,
-  isDynamicVar,
+  isRecursiveConst,
+  isVar,
   jsValueToForm,
   ktvalContext,
   ktvalOther,
   ktvalRefer,
   type Ktvals,
   type TranspileModule,
-  ktvalContext,
-  formatForError,
+  type Writer,
 } from "./types.js";
-import { type Context } from "./types.js";
 import * as ContextF from "./context.js";
 import { readBlock } from "../reader.js";
 import { isParseError } from "../grammar.js";
@@ -203,7 +204,9 @@ async function transpileExpressionWithNextCall(
     }
 
     if (
-      canBePseudoTopLevelReferenced(writer) ||
+      isVar(writer) ||
+      isConst(writer) ||
+      isRecursiveConst(writer) ||
       isProvidedConst(writer) ||
       isDynamicVar(writer)
     ) {

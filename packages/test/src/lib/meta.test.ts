@@ -293,6 +293,8 @@ describe("meta.macro", () => {
       ),
       setUpConfig: setUpConfigWithMacroMod,
     });
+
+    // TODO: test case when importing identifiers in `meta` via `importAnyOf` and `(import  meta { list, ...})` to confirm the `linkIdsAsJsIds` function works correctly.
   });
 
   describe("when a macro updates an external variable, the execution results may differ between the REPL and the output module.", () => {

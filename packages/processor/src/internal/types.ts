@@ -89,8 +89,7 @@ interface ValidCallBrand {
 }
 
 export interface Call<X extends Empty = Empty>
-  extends List<Form<X>, X>,
-    ValidCallBrand {}
+  extends List<Form<X>, X>, ValidCallBrand {}
 
 export function functionIdOfCall<X extends Empty = Empty>(
   v: Call<X>,
@@ -716,18 +715,6 @@ export type Writer =
   | ProvidedConst
   | DynamicVar
   | Macro;
-
-export type CanBePseudoTopLevelReferenced =
-  | Var
-  | Const
-  | RecursiveConst
-  | Namespace;
-
-export function canBePseudoTopLevelReferenced(
-  x: Writer,
-): x is CanBePseudoTopLevelReferenced {
-  return isVar(x) || isConst(x) || isRecursiveConst(x) || isNamespace(x);
-}
 
 export interface References {
   readonly referenceById: Map<Id, Ref[]>;

@@ -8,6 +8,8 @@ import {
   type Scope,
   type ScopeOptions,
   type Writer,
+  isWriter,
+  aConst,
 } from "./types.js";
 
 export function init(options: ScopeOptions): Scope {
@@ -23,14 +25,12 @@ export function set({ definitions }: Scope, id: Id, writer: Writer): void {
   definitions.set(id, writer);
 }
 
-export function get({ definitions }: Scope, id: Id): Writer | undefined {
-  return definitions.get(id);
+export function setAny(current: Scope, id: string, v: unknown): void {
+  set(current, id, isWriter(v) ? v : aConst());
 }
 
-export function destroy({ definitions }: Scope, id: Id): void {
-  // I just want to delete, so I don't have to use the result.
-  // eslint-disable-next-line eslint-plugin-no-ignore-returned-union/no-ignore-returned-union
-  definitions.delete(id);
+export function get({ definitions }: Scope, id: Id): Writer | undefined {
+  return definitions.get(id);
 }
 
 export function tmpVarOf(

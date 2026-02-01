@@ -1,4 +1,5 @@
 import * as ContextF from "../context.js";
+import { ModulePathAndUrl, specifierOfFoundModule } from "../context.js";
 import { loadModule } from "../definitions.js";
 import {
   aConst,
@@ -6,28 +7,26 @@ import {
   type Form,
   type Id,
   isCuObject,
-  isKeyValue,
   isCuSymbol,
+  isKeyValue,
   type JsSrc,
   markAsDirectWriter,
   TranspileError,
 } from "../../types.js";
 import {
-  canBePseudoTopLevelReferenced,
-  ordinaryStatement,
-  isWriter,
   exportableStatement,
-  type Ktvals,
-  ktvalImport,
-  ktvalOther,
-  ktvalImportStarAs,
-  ktvalExport,
   formatForError,
   HowToRefer,
+  isWriter,
+  ktvalExport,
+  ktvalImport,
+  ktvalImportStarAs,
+  ktvalOther,
+  type Ktvals,
+  ordinaryStatement,
 } from "../types.js";
 import { transpileExpression } from "../transpile.js";
 import { asExportableStatement } from "../call.js";
-import { ModulePathAndUrl } from "../context.js";
 
 export const _cu$import = markAsDirectWriter(
   async (
@@ -83,23 +82,13 @@ export const _cu$import = markAsDirectWriter(
       }
 
       const isTopLevel = ContextF.isAtTopLevel(context);
-      linkIdsToModuleContext(context, ids, isTopLevel, foundModule);
+      linkIdsAsJsIds(context, ids, isTopLevel, foundModule);
 
       if (isTopLevel) {
         return [ktvalImport(foundModule.u, foundModule.r, ids)];
       }
 
-      let specifier: string;
-      switch (context.transpileState.mode) {
-        case "repl": {
-          specifier = foundModule.u;
-          break;
-        }
-        case "module": {
-          specifier = foundModule.r;
-          break;
-        }
-      }
+      const specifier = specifierOfFoundModule(context, foundModule);
       const awaitImportUrl = `await import(${JSON.stringify(specifier)})`;
       return [ktvalOther(`const{${ids.join(",")}}=${awaitImportUrl};\n`)];
     }
@@ -118,18 +107,7 @@ export const _cu$import = markAsDirectWriter(
     if (isTopLevel) {
       return [ktvalImportStarAs(foundModule.u, foundModule.r, moduleId.value)];
     }
-
-    let specifier: string;
-    switch (context.transpileState.mode) {
-      case "repl": {
-        specifier = foundModule.u;
-        break;
-      }
-      case "module": {
-        specifier = foundModule.r;
-        break;
-      }
-    }
+    const specifier = specifierOfFoundModule(context, foundModule);
     return [
       ktvalOther(
         `const ${moduleId.value}=await import(${JSON.stringify(specifier)})`,
@@ -171,29 +149,22 @@ export const importAnyOf = markAsDirectWriter(
 
     const ids: Id[] = [];
     for (const [id, w] of Object.entries(ns)) {
-      if (!isWriter(w) || canBePseudoTopLevelReferenced(w)) {
+      if (!isWriter(w)) {
         ids.push(id);
       }
     }
 
     const isTopLevel = ContextF.isAtTopLevel(context);
-    linkIdsToModuleContext(context, ids, isTopLevel, foundModule);
+    linkIdsAsJsIds(context, ids, isTopLevel, foundModule);
 
     if (isTopLevel) {
       return [ktvalImport(foundModule.u, foundModule.r, ids)];
     }
 
-    let specifierForNonTopLevel: string;
-    switch (context.transpileState.mode) {
-      case "repl": {
-        specifierForNonTopLevel = foundModule.u;
-        break;
-      }
-      case "module": {
-        specifierForNonTopLevel = foundModule.r;
-        break;
-      }
-    }
+    const specifierForNonTopLevel = specifierOfFoundModule(
+      context,
+      foundModule,
+    );
     const awaitImportUrl = `await import(${JSON.stringify(specifierForNonTopLevel)})`;
     return [ktvalOther(`const{${ids.join(",")}}=${awaitImportUrl};\n`)];
   },
@@ -267,7 +238,7 @@ function parseImportIdSpecs(idSpecs: Form): Id[] | TranspileError {
   return ids;
 }
 
-function linkIdsToModuleContext(
+function linkIdsAsJsIds(
   context: Context,
   ids: Id[],
   isTopLevel: boolean,

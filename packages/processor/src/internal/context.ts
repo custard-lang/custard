@@ -4,8 +4,6 @@ import {
   type Writer,
   isRecursiveConst,
   isNamespace,
-  type Scope,
-  canBePseudoTopLevelReferenced,
   isWriter,
   type ScopeOptions,
   defaultScopeOptions,
@@ -16,6 +14,7 @@ import {
   readerInput,
   ProvidedSymbolsConfig,
   FilePathAndStat,
+  isProvidedConst,
 } from "./types.js";
 import {
   TranspileError,
@@ -36,7 +35,7 @@ import {
 import * as References from "./references.js";
 import * as ScopeF from "./scope.js";
 import { isDeeperThanOrEqual, isShallowerThan } from "./scope-path.js";
-import { assertNonNull, ExpectNever } from "../util/error.js";
+import { ExpectNever } from "../util/error.js";
 import { escapeRegExp } from "../util/regexp.js";
 import { resolveModulePaths } from "../provided-symbols-config.js";
 import { parseAbsoluteUrl } from "../util/path.js";
@@ -81,6 +80,7 @@ export function find(
 export interface WriterWithIsAtTopLevel {
   readonly writer: Writer;
   readonly canBeAtPseudoTopLevel: boolean;
+  //       ^ TODO: rename
 }
 
 export function findWithIsAtTopLevel(
@@ -103,6 +103,7 @@ function findCore(
   doRefer: boolean,
 ): WriterWithIsAtTopLevel | TranspileError {
   const topLevelI = scopes.length - TOP_LEVEL_OFFSET;
+
   function byId(id: Id): WriterWithIsAtTopLevel | TranspileError {
     for (const [i, frame] of scopes.entries()) {
       const writer = ScopeF.get(frame, id);
@@ -113,8 +114,7 @@ function findCore(
         }
         return {
           writer,
-          canBeAtPseudoTopLevel:
-            i === topLevelI && canBePseudoTopLevelReferenced(writer),
+          canBeAtPseudoTopLevel: i === topLevelI && !isProvidedConst(writer),
         };
       }
     }
@@ -232,20 +232,26 @@ export async function findModule(
   return await modulePathAndUrl(context, modFullPath);
 }
 
-export function getCurrentScope({ scopes: [current] }: Context): Scope {
-  return current;
+export function specifierOfFoundModule(
+  context: Context,
+  foundModule: ModulePathAndUrl,
+): string {
+  switch (context.transpileState.mode) {
+    case "repl": {
+      return foundModule.u;
+    }
+    case "module": {
+      return foundModule.r;
+    }
+  }
 }
 
 export function mergeNamespaceIntoCurrentScope(
-  { scopes }: Context,
+  { scopes: [current] }: Context,
   ns: Namespace,
 ): void {
-  const { definitions } = assertNonNull(
-    scopes[0],
-    "Empty scopes in an context!",
-  );
   for (const [id, v] of Object.entries(ns)) {
-    definitions.set(id, isWriter(v) ? v : aConst());
+    ScopeF.setAny(current, id, v);
   }
 }
 

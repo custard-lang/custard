@@ -79,6 +79,7 @@ export {
   cuSymbol as symbol,
   integer32,
   float64,
+  reservedSymbol,
   cuString as string,
   isKeyValue,
   keyValue,
@@ -189,11 +190,11 @@ export const macro = markAsDirectWriter(
 );
 
 export const macroToFunction = markAsDirectWriter(
-  async (
+  (
     context: Context,
     macroId?: Form,
     ...forms: Form[]
-  ): Promise<Ktvals<JsSrc> | TranspileError> => {
+  ): Ktvals<JsSrc> | TranspileError => {
     if (macroId === undefined || forms.length !== 0) {
       return new TranspileError(
         "The number of arguments of `meta.macroToFunction` must be 1",
