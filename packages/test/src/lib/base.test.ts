@@ -52,6 +52,19 @@ describe("`note`", () => {
   });
 });
 
+describe("`annotate`", () => {
+  testForm({
+    src: '{ a: (annotate "This is a comment" 10) }',
+    expected: { a: 10 },
+    setUpConfig,
+  });
+  testForm({
+    src: '(annotate "comment" { this: "is also" a: "comment" } (const f (fn () 9))) (f)',
+    expected: 9,
+    setUpConfig,
+  });
+});
+
 testForm({
   src: "( plusF 2.0 (timesF 3.0 4.0) )",
   expected: 14,
@@ -757,19 +770,6 @@ testForm({
   src: "(last [])",
   expected: undefined,
   setUpConfig,
-});
-
-describe("`annotate`", () => {
-  testForm({
-    src: '{ a: (annotate "This is a comment" 10) }',
-    expected: { a: 10 },
-    setUpConfig,
-  });
-  testForm({
-    src: '(annotate "comment" { this: "is also" a: "comment" } (const f (fn () 9))) (f)',
-    expected: 9,
-    setUpConfig,
-  });
 });
 
 describe("(const|let|assign id expression)", () => {
