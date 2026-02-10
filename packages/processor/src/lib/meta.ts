@@ -55,15 +55,16 @@ import {
   transpileSymbolReference,
 } from "../internal/transpile.js";
 
-import { buildAsyncFn, tryToSet } from "./internal.js";
+import { buildAsyncFn, buildFn, tryToSet } from "./internal.js";
 import {
+  defaultScopeOptions,
   exportableStatement,
   isMacro,
   ktvalAssignSimple,
   ktvalOther,
+  MarkedDirectWriter,
   readerInput,
 } from "../internal/types.js";
-import type { Awaitable } from "../util/types.js";
 import { ExpectNever } from "../util/error.js";
 import { evalForMacro } from "../internal/eval/core.js";
 import { evalKtvals } from "../internal/ktvals.js";
@@ -83,7 +84,7 @@ export {
   cuString as string,
   isKeyValue,
   keyValue,
-  markAsMacro as __markAsMacro,
+  markAsMacro as _$cu_markAsMacro,
 } from "../types.js";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -126,40 +127,129 @@ export const evaluate = markAsFunctionWithContext(
   },
 );
 
-export const macro = markAsDirectWriter(
-  async (
+function buildDefineMacro(
+  formId: string,
+  body: (
+    name: CuSymbol,
     context: Context,
-    name?: Form,
-    args?: Form,
-    ...block: Form[]
-  ): Promise<Ktvals<JsSrc> | TranspileError> => {
-    if (!isAtTopLevel(context)) {
-      return new TranspileError("`meta.macro` must be used at the top level.");
-    }
+    args: Form | undefined,
+    block: Form[],
+  ) => Promise<Ktvals<JsSrc> | TranspileError>,
+): MarkedDirectWriter {
+  return markAsDirectWriter(
+    async (
+      context: Context,
+      name?: Form,
+      args?: Form,
+      ...block: Form[]
+    ): Promise<Ktvals<JsSrc> | TranspileError> => {
+      if (!isAtTopLevel(context)) {
+        return new TranspileError(
+          `\`${formId}\` can only be used at the top level of a module.`,
+        );
+      }
 
-    if (name === undefined) {
-      return new TranspileError("meta.macro needs a name of the macro");
-    }
-    if (!isCuSymbol(name)) {
-      return new TranspileError(
-        `meta.macro needs a name of the macro as a symbol, but got ${formatForError(name)}`,
+      if (name === undefined) {
+        return new TranspileError(
+          "`meta.defineMacro`needs a name of the macro",
+        );
+      }
+      if (!isCuSymbol(name)) {
+        return new TranspileError(
+          `\`${formId}\` needs a name of the macro as a symbol, but got ${formatForError(name)}`,
+        );
+      }
+
+      const evalResult = await evalForMacro(context);
+      if (TranspileError.is(evalResult)) {
+        return evalResult;
+      }
+
+      const fnSrc = await body(name, context, args, block);
+      if (TranspileError.is(fnSrc)) {
+        return fnSrc;
+      }
+      const metaModuleJsId = await findThisModulesJsId(
+        context,
+        "_$cu_markAsMacro",
       );
-    }
+      return [
+        ktvalAssignSimple("const ", name.value, [
+          ...metaModuleJsId,
+          ktvalOther("("),
+          ...fnSrc,
+          ktvalOther(")"),
+        ]),
+      ];
+    },
+    exportableStatement,
+  );
+}
 
-    const evalResult = await evalForMacro(context);
-    if (TranspileError.is(evalResult)) {
-      return evalResult;
-    }
-
-    const fnSrc = await buildAsyncFn("macro", context, null, args, block);
+export const defineMacro = buildDefineMacro(
+  "meta.defineMacro",
+  async (
+    name: CuSymbol,
+    context: Context,
+    args: Form | undefined,
+    block: Form[],
+  ): Promise<Ktvals<JsSrc> | TranspileError> => {
+    const fnSrc = await buildFn(
+      "meta.defineMacro",
+      context,
+      null,
+      args,
+      block,
+      defaultScopeOptions,
+      "function",
+    );
     if (TranspileError.is(fnSrc)) {
       return fnSrc;
     }
-
     const fn = (await evalKtvals([], fnSrc, context)) as (
       ...xs: any[]
-    ) => Awaitable<any | TranspileError>;
-    const setResult = tryToSet(name, context, () => {
+    ) => any | TranspileError;
+    const r = tryToSet(name, context, () => {
+      return markAsMacro((...args: Form[]): Form | TranspileError => {
+        try {
+          return fn(...args);
+        } catch (e) {
+          return new TranspileError(
+            `Error when expanding the macro ${name.value}`,
+            { cause: e },
+          );
+        }
+      });
+    });
+    if (TranspileError.is(r)) {
+      return r;
+    }
+    return fnSrc;
+  },
+);
+
+export const defineAsyncMacro = buildDefineMacro(
+  "meta.defineAsyncMacro",
+  async (
+    name: CuSymbol,
+    context: Context,
+    args: Form | undefined,
+    block: Form[],
+  ): Promise<Ktvals<JsSrc> | TranspileError> => {
+    const fnSrc = await buildAsyncFn(
+      "meta.defineAsyncMacro",
+      context,
+      null,
+      args,
+      block,
+    );
+    if (TranspileError.is(fnSrc)) {
+      return fnSrc;
+    }
+    const fn = (await evalKtvals([], fnSrc, context)) as (
+      ...xs: any[]
+    ) => Promise<any | TranspileError>;
+    const r = tryToSet(name, context, () => {
       return markAsMacro(
         async (...args: Form[]): Promise<Form | TranspileError> => {
           try {
@@ -173,20 +263,11 @@ export const macro = markAsDirectWriter(
         },
       );
     });
-    if (TranspileError.is(setResult)) {
-      return setResult;
+    if (TranspileError.is(r)) {
+      return r;
     }
-    const metaModuleJsId = await findThisModulesJsId(context, "__markAsMacro");
-    return [
-      ktvalAssignSimple("const ", name.value, [
-        ...metaModuleJsId,
-        ktvalOther("("),
-        ...fnSrc,
-        ktvalOther(")"),
-      ]),
-    ];
+    return fnSrc;
   },
-  exportableStatement,
 );
 
 export const macroToFunction = markAsDirectWriter(

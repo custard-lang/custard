@@ -51,7 +51,7 @@ function setUpConfig(): Config {
       modulePaths,
       implicitStatements:
         "(importAnyOf base)(import meta)(import async)(import js)",
-      jsTopLevels: ["Map"],
+      jsTopLevels: ["Map", "Promise"],
     },
     providedSymbolsPath: srcPathAndStat.path,
   };
@@ -163,35 +163,44 @@ describe("meta.evaluate", () => {
   });
 });
 
-describe("meta.macro", () => {
+describe("meta.defineMacro", () => {
   testForm({
-    src: "(meta.macro (b f t) (meta.quasiQuote (andOr (not $b) $f else $t)))",
+    src: "(meta.defineMacro (b f t) (meta.quasiQuote (andOr (not $b) $f else $t)))",
     expected: new TranspileError(
-      "meta.macro needs a name of the macro as a symbol, but got `(List (Symbol b) ...)`",
+      "`meta.defineMacro` needs a name of the macro as a symbol, but got `(List (Symbol b) ...)`",
     ),
     setUpConfig,
   });
   testForm({
-    src: "(meta.macro unless (b f t) (meta.quasiQuote (andOr (not $b) $f $t))) (text (unless false 1 2) (unless true 1 2))",
+    src: "(meta.defineMacro unless (b f t) (meta.quasiQuote (andOr (not $b) $f $t))) (text (unless false 1 2) (unless true 1 2))",
     expected: "12",
     setUpConfig,
   });
 
   testForm({
-    src: "(const c 999) (meta.macro getC () (meta.quasiQuote (plusF $c c))) (getC)",
+    src: "(const c 999) (meta.defineMacro getC () (meta.quasiQuote (plusF $c c))) (getC)",
     expected: 999 + 999,
     setUpConfig,
   });
   testForm({
-    src: '((fn () (meta.macro doNothing () "do nothing") (doNothing)))',
-    expected: new TranspileError("`meta.macro` must be used at the top level."),
+    src: '((fn () (meta.defineMacro doNothing () "do nothing") (doNothing)))',
+    expected: new TranspileError(
+      "`meta.defineMacro` can only be used at the top level of a module.",
+    ),
+    setUpConfig,
+  });
+  testForm({
+    src: "(meta.defineMacro unlessAsync (b f t) (meta.quasiQuote (andOr (not $(async.await b)) $f $t)))",
+    expected: new TranspileError(
+      "`async.await` in a non-async function or scope is not allowed.",
+    ),
     setUpConfig,
   });
   // TODO: Splice `let` and `const` declarations in macro to test hygine
 
   describe("macros are unavailable except for calling as a form.", () => {
     const macroDef =
-      "(meta.macro unless (b f t) (meta.quasiQuote (andOr (not $b) $f $t)))";
+      "(meta.defineMacro unless (b f t) (meta.quasiQuote (andOr (not $b) $f $t)))";
     testForm({
       src: `${macroDef} unless`,
       expected: new TranspileError(
@@ -299,7 +308,7 @@ describe("meta.macro", () => {
 
   describe("when a macro updates an external variable, the execution results may differ between the REPL and the output module.", () => {
     const src =
-      "(let count 0) (meta.macro inc () (incrementF count) count) (text (inc) (inc) count)";
+      "(let count 0) (meta.defineMacro inc () (incrementF count) count) (text (inc) (inc) count)";
     testFormInRepl({
       src,
       expected: "122",
@@ -313,9 +322,17 @@ describe("meta.macro", () => {
   });
 });
 
+describe("meta.defineAsyncMacro", () => {
+  testForm({
+    src: "(meta.defineAsyncMacro unlessAsync (b f t) (meta.quasiQuote (andOr (not $(async.await b)) $f $t)))(unlessAsync (Promise.resolve false) 1 2)",
+    expected: 1,
+    setUpConfig,
+  });
+});
+
 describe("meta.macroToFunction", () => {
   testForm({
-    src: "(meta.macro unless (b f t) (meta.quasiQuote (andOr (not $b) $f $t))) ((meta.macroToFunction unless) false 1 2)",
+    src: "(meta.defineMacro unless (b f t) (meta.quasiQuote (andOr (not $b) $f $t))) ((meta.macroToFunction unless) false 1 2)",
     expected: meta_.list<any>(
       meta_.symbol("andOr"),
       meta_.list<any>(meta_.symbol("not"), false),
