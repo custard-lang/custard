@@ -417,7 +417,7 @@ async function traverseArray(
 }
 
 async function traverseCuObject(
-  form: CuObject<Form, Form, Form, Form>,
+  form: CuObject<Form, Form, Form, Form, Form>,
   context: Context,
   unquote: boolean,
 ): Promise<Ktvals<JsSrc> | TranspileError> {

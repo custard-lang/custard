@@ -60,6 +60,7 @@ export interface KtvalAssignDestructuringObject<Target>
   extends KtvalAssignCore<Target> {
   at: typeof KtvalAssignDestructuringObjectT;
   assignee: Array<[Ktvals<Target> | Id, Id] | Id>;
+  assigneeSplice: Id | null;
 }
 
 export function ktvalAssignSimple<Target>(
@@ -87,6 +88,7 @@ export function ktvalAssignDestructuringArray<Target>(
 export function ktvalAssignDestructuringObject<Target>(
   decl: KtvalAssignDecl,
   assignee: Array<[Ktvals<Target>, Id] | Id>,
+  assigneeSplice: Id | null,
   exp: Ktvals<Target>,
 ): KtvalAssignDestructuringObject<Target> {
   return {
@@ -94,6 +96,7 @@ export function ktvalAssignDestructuringObject<Target>(
     at: KtvalAssignDestructuringObjectT,
     decl,
     assignee,
+    assigneeSplice,
     exp,
   };
 }

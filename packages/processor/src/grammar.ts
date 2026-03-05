@@ -38,6 +38,7 @@ import {
   isCuArray,
   computedKey,
   type Splice,
+  isSplice,
 } from "./types.js";
 
 export const tokens: TokenAndRE[] = [
@@ -234,12 +235,13 @@ function cuObjectP<R>(
           Form<Location>,
           Form<Location>,
           Form<Location>,
+          Form<Location>,
           Location
         >
       | ParseError<R>,
   ) => R | ParseError<R>,
 ): R | ParseError<R> {
-  return untilClose<R, KeyValueOrSymbolOrStringOrUnquote>(
+  return untilClose<R, KeyValueOrSymbolOrStringOrUnquoteOrSplice>(
     s,
     "close brace",
     keyValueOrSymbolOrStringOrUnquote,
@@ -297,15 +299,16 @@ function untilClose<R, F>(
   return loop();
 }
 
-type KeyValueOrSymbolOrStringOrUnquote =
+type KeyValueOrSymbolOrStringOrUnquoteOrSplice =
   | KeyValue<Form<Location>, Form<Location>, Form<Location>, Location>
   | CuSymbol<Location>
-  | Unquote<Form<Location>, Location>;
+  | Unquote<Form<Location>, Location>
+  | Splice<Form<Location>, Location>;
 
 function keyValueOrSymbolOrStringOrUnquote<R>(
   s: SpaceSkippingScanner,
   k: (
-    result: KeyValueOrSymbolOrStringOrUnquote | ParseError<R>,
+    result: KeyValueOrSymbolOrStringOrUnquoteOrSplice | ParseError<R>,
   ) => R | ParseError<R>,
 ): R | ParseError<R> {
   return form(s, (key) => {
@@ -374,7 +377,7 @@ function keyValueOrSymbolOrStringOrUnquote<R>(
         })();
       }
 
-      if (isCuSymbol(key) || isUnquote(key)) {
+      if (isCuSymbol(key) || isUnquote(key) || isSplice(key)) {
         return k(key);
       }
       const { l, c } = key.extension;

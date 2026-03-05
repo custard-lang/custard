@@ -50,6 +50,11 @@ describe("`note`", () => {
     expected: [undefined],
     setUpConfig,
   });
+  testForm({
+    src: '[...(note "This is a spliced comment")]',
+    expected: [],
+    setUpConfig,
+  });
 });
 
 describe("`annotate`", () => {
@@ -655,12 +660,14 @@ describe("[a r r a y]", () => {
     ),
     setUpConfig,
   });
-});
-
-describe('{object: "literal"}', () => {
   testForm({
-    src: '{ a: 1 [(scope "b")]: 3 [(plusF 1 1)]: 2 }',
-    expected: { a: 1, b: 3, 2: 2 },
+    src: "(const a [1 2 3]) [0 ...a]",
+    expected: [0, 1, 2, 3],
+    setUpConfig,
+  });
+  testForm({
+    src: "(const f (fn () [2 4 6])) [0 ...(f)]",
+    expected: [0, 2, 4, 6],
     setUpConfig,
   });
 });
@@ -856,16 +863,68 @@ describe("(const|let|assign id expression)", () => {
     expected: [2, 3],
     setUpConfig,
   });
-
   testForm({
     src: "(let { x y } { y: 3 x: 2 }) (assign x 4) [x y]",
     expected: [4, 3],
     setUpConfig,
   });
-
   testForm({
     src: "(let { x y } { y: 3 x: 2 }) (assign { x y } { y: 4 x: 9 }) [x y]",
     expected: [9, 4],
+    setUpConfig,
+  });
+
+  testForm({
+    src: "(const { x: a y: b } { y: 3 x: 2 }) [a b]",
+    expected: [2, 3],
+    setUpConfig,
+  });
+  testForm({
+    src: "(let { x: a y: b } { y: 3 x: 2 }) (assign a 4) [a b]",
+    expected: [4, 3],
+    setUpConfig,
+  });
+  testForm({
+    src: "(let { x y } { y: 3 x: 2 }) (assign { x: y y: x } { y: 4 x: 9 }) [x y]",
+    expected: [4, 9],
+    setUpConfig,
+  });
+
+  testForm({
+    src: "(const { y ...rest } { y: 3 x: 2 }) [y rest]",
+    expected: [3, { x: 2 }],
+    setUpConfig,
+  });
+  testForm({
+    src: "(let { x ...rest } { y: 3 x: 2 }) [x rest]",
+    expected: [2, { y: 3 }],
+    setUpConfig,
+  });
+  testForm({
+    src: "(let { x y: rest } { y: 3 x: 2 }) (assign { a: x ...rest } { a: 9 b: 10 }) [x rest]",
+    expected: [9, { b: 10 }],
+    setUpConfig,
+  });
+
+  testForm({
+    src: "(let { x y: ...(rest) } { y: 3 x: 2 })",
+    expected: new TranspileError(
+      "The assignee of `let` must be a Symbol, but `..(List (Symbol rest))` is not!",
+    ),
+    setUpConfig,
+  });
+  testForm({
+    src: "(let { x y: (rest) } { y: 3 x: 2 })",
+    expected: new TranspileError(
+      "The assignee of `let` must be a Symbol, but `(List (Symbol rest))` is not!",
+    ),
+    setUpConfig,
+  });
+  testForm({
+    src: "(let { x ...rest y } { y: 3 x: 2 })",
+    expected: new TranspileError(
+      "Rest element must be last element in assignee of `let` !",
+    ),
     setUpConfig,
   });
 
@@ -915,6 +974,11 @@ describe('{object: "literal"}', () => {
   testForm({
     src: '(const a "A") { a b: 1 }',
     expected: { a: "A", b: 1 },
+    setUpConfig,
+  });
+  testForm({
+    src: '(const c 9) (const o { d : 10 }) { a: 1 [(scope "b")]: 3 [(plusF 1 1)]: 2 c ...o }',
+    expected: { a: 1, b: 3, 2: 2, c: 9, d: 10 },
     setUpConfig,
   });
   testForm({

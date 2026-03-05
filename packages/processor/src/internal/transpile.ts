@@ -285,17 +285,19 @@ async function transpileExpressionWithNextCall(
     return new TranspileError("Unquote must be used inside quasiQuote");
   }
   if (isSplice(ast)) {
-    return new TranspileError("Splice must be used inside quasiQuote");
+    return new TranspileError(
+      "Splice must be used inside quasiQuote or a collection literal (array, object or list)",
+    );
   }
 
   throw ExpectNever(ast);
 }
 
 async function transpileCuObject(
-  ast: CuObject<Form, Form, Form, Form>,
+  ast: CuObject<Form, Form, Form, Form, Form>,
   context: Context,
 ): Promise<Ktvals<JsSrc> | TranspileError> {
-  let objectContents: Ktvals<JsSrc> = [];
+  const objectContents: Ktvals<JsSrc> = [];
   for (const kv of ast) {
     let kvSrc: Ktvals<JsSrc>;
     if (isKeyValue(kv)) {
@@ -329,10 +331,16 @@ async function transpileCuObject(
       }
     } else if (isUnquote(kv)) {
       return new TranspileError("Unquote must be used inside quasiQuote");
+    } else if (isSplice(kv)) {
+      const r = await transpileExpression(kv.value, context);
+      if (TranspileError.is(r)) {
+        return r;
+      }
+      kvSrc = [ktvalOther("...("), ...r, ktvalOther(")")];
     } else {
       throw ExpectNever(kv);
     }
-    objectContents = [...objectContents, ...kvSrc, ktvalOther(",")];
+    objectContents.push(...kvSrc, ktvalOther(","));
   }
   return [ktvalOther("{"), ...objectContents, ktvalOther("}")];
 }

@@ -42,7 +42,7 @@ export type Block<X extends Empty = Empty> = Array<Form<X>>;
 export type Form<X extends Empty = Empty> =
   | List<Form<X>, X>
   | CuArray<Form<X>, X>
-  | CuObject<Form<X>, Form<X>, Form<X>, Form<X>, X>
+  | CuObject<Form<X>, Form<X>, Form<X>, Form<X>, Form<X>, X>
   | Atom<X>
   | Unquote<Form<X>, X>
   | Splice<Form<X>, X>;
@@ -70,9 +70,11 @@ export function locatedCuObject(
     | KeyValue<Form<Location>, Form<Location>, Form<Location>, Location>
     | CuSymbol<Location>
     | Unquote<Form<Location>, Location>
+    | Splice<Form<Location>, Location>
   >,
   l: Location,
 ): CuObject<
+  Form<Location>,
   Form<Location>,
   Form<Location>,
   Form<Location>,
@@ -89,7 +91,8 @@ interface ValidCallBrand {
 }
 
 export interface Call<X extends Empty = Empty>
-  extends List<Form<X>, X>, ValidCallBrand {}
+  extends List<Form<X>, X>,
+    ValidCallBrand {}
 
 export function functionIdOfCall<X extends Empty = Empty>(
   v: Call<X>,
@@ -225,7 +228,7 @@ function formatForErrorElement<T>(forms: T[], fx: (f: T) => string): string {
 }
 
 function formatForErrorKV(
-  kv: KeyValue<Form, Form, Form> | CuSymbol | Unquote<Form>,
+  kv: KeyValue<Form, Form, Form> | CuSymbol | Unquote<Form> | Splice<Form>,
 ): string {
   if (isKeyValue(kv)) {
     const value = kv.value;
@@ -328,7 +331,7 @@ export function jsValueToForm(v: unknown): Form | TranspileError {
   }
 
   if (isCuObject(v)) {
-    const r = cuObject<Form, Form, Form, Form>();
+    const r = cuObject<Form, Form, Form, Form, Form>();
     for (const keyValueOrSymbolOrUnquote of v) {
       if (isKeyValue(keyValueOrSymbolOrUnquote)) {
         let key: KeyValueKey<Form, Form>;
@@ -385,7 +388,7 @@ export function jsValueToForm(v: unknown): Form | TranspileError {
   }
 
   // Ordinary objects
-  const r = cuObject<Form, Form, Form, Form>();
+  const r = cuObject<Form, Form, Form, Form, Form>();
   for (const [key, value] of Object.entries(v)) {
     const keyForm = jsValueToForm(key);
     if (TranspileError.is(keyForm)) {

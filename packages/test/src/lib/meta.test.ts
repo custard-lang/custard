@@ -387,7 +387,7 @@ describe("meta.quasiQuote", () => {
         meta_.list(meta_.symbol("dividedByF")),
         meta_.list(),
         meta_.array(),
-        meta_.object<Form, Form, Form, Form>(
+        meta_.object<Form, Form, Form, Form, Form>(
           meta_.keyValue<Form, Form, Form>(
             meta_.symbol("x"),
             meta_.symbol("y"),
@@ -420,7 +420,7 @@ describe("meta.quasiQuote", () => {
         meta_.symbol("x"),
         meta_.list(meta_.symbol("dividedByF")),
         meta_.array(),
-        meta_.object<Form, Form, Form, Form>(
+        meta_.object<Form, Form, Form, Form, Form>(
           meta_.keyValue<Form, Form, Form>(
             meta_.symbol("x"),
             meta_.symbol("y"),

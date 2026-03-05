@@ -36,11 +36,11 @@ describe("jsValueToForm", () => {
       reservedSymbol(false),
       cuArray(),
       cuArray(cuArray(float64(9))),
-      cuObject<Form, Form, Form, Form>(
+      cuObject<Form, Form, Form, Form, Form>(
         keyValue<Form, Form, Form>(cuString("a"), cuString("b")),
         keyValue<Form, Form, Form>(
           cuString("c"),
-          cuObject<Form, Form, Form, Form>(
+          cuObject<Form, Form, Form, Form, Form>(
             keyValue<Form, Form, Form>(cuString("d"), float64(4)),
           ),
         ),
@@ -59,7 +59,7 @@ describe("jsValueToForm", () => {
       [cuArray<any>([9], integer32(-1))],
       {
         a: "b",
-        c: { d: cuObject<any, any, any, any>(keyValue(cuSymbol("k"), 9)) },
+        c: { d: cuObject<any, any, any, any, any>(keyValue(cuSymbol("k"), 9)) },
       },
     ]);
     const expected = cuArray<Form>(
@@ -69,14 +69,14 @@ describe("jsValueToForm", () => {
       reservedSymbol(null),
       cuArray(cuString("form")),
       cuArray(cuArray<Form>(cuArray(float64(9)), integer32(-1))),
-      cuObject<Form, Form, Form, Form>(
+      cuObject<Form, Form, Form, Form, Form>(
         keyValue<Form, Form, Form>(cuString("a"), cuString("b")),
         keyValue<Form, Form, Form>(
           cuString("c"),
-          cuObject<Form, Form, Form, Form>(
+          cuObject<Form, Form, Form, Form, Form>(
             keyValue<Form, Form, Form>(
               cuString("d"),
-              cuObject<Form, Form, Form, Form>(
+              cuObject<Form, Form, Form, Form, Form>(
                 keyValue<Form, Form, Form>(cuSymbol("k"), float64(9)),
               ),
             ),

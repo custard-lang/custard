@@ -38,6 +38,7 @@ import {
   type JsSrc,
   type Ktvals,
   list,
+  isSplice,
 } from "../types.js";
 import {
   transpileComputedKeyOrExpression,
@@ -47,6 +48,7 @@ import {
 } from "../internal/transpile.js";
 import * as ContextF from "../internal/context.js";
 import { asStatement } from "../internal/call.js";
+import { ExpectNever } from "../util/error.js";
 
 export function transpiling1Unmarked(
   formId: Id,
@@ -202,11 +204,17 @@ export function transpilingForVariableDeclaration(
           const assignDestructuringObject = ktvalAssignDestructuringObject(
             decl,
             [],
+            null,
             exp,
           );
-          for (const kvOrSym of sym) {
-            if (isKeyValue(kvOrSym)) {
-              const { key, value } = kvOrSym;
+          for (const kvOrSymOrSplice of sym) {
+            if (assignDestructuringObject.assigneeSplice !== null) {
+              return new TranspileError(
+                `Rest element must be last element in assignee of \`${formId}\` !`,
+              );
+            }
+            if (isKeyValue(kvOrSymOrSplice)) {
+              const { key, value } = kvOrSymOrSplice;
 
               let keyKtvals: Ktvals<JsSrc> | Id;
               if (isCuSymbol(key)) {
@@ -225,7 +233,7 @@ export function transpilingForVariableDeclaration(
               if (!isCuSymbol(value)) {
                 const vFormatted = formatForError(value);
                 return new TranspileError(
-                  `${formId}'s assignee must be a symbol, but ${vFormatted} is not!`,
+                  `The assignee of \`${formId}\` must be a Symbol, but ${vFormatted} is not!`,
                 );
               }
               r = tryToSet(value, context, newWriter);
@@ -236,17 +244,38 @@ export function transpilingForVariableDeclaration(
               continue;
             }
 
-            if (isUnquote(kvOrSym)) {
+            if (isCuSymbol(kvOrSymOrSplice)) {
+              r = tryToSet(kvOrSymOrSplice, context, newWriter);
+              if (TranspileError.is(r)) {
+                return r;
+              }
+              assignDestructuringObject.assignee.push(kvOrSymOrSplice.value);
+              continue;
+            }
+
+            if (isSplice(kvOrSymOrSplice)) {
+              const sym = kvOrSymOrSplice.value;
+              if (!isCuSymbol(sym)) {
+                const symFormatted = formatForError(sym);
+                return new TranspileError(
+                  `${formId}'s assignee must be a symbol, but ${symFormatted} is not!`,
+                );
+              }
+              r = tryToSet(sym, context, newWriter);
+              if (TranspileError.is(r)) {
+                return r;
+              }
+              assignDestructuringObject.assigneeSplice = sym.value;
+              continue;
+            }
+
+            if (isUnquote(kvOrSymOrSplice)) {
               return new TranspileError(
                 "Unquote must be used inside quasiQuote",
               );
             }
 
-            r = tryToSet(kvOrSym, context, newWriter);
-            if (TranspileError.is(r)) {
-              return r;
-            }
-            assignDestructuringObject.assignee.push(kvOrSym.value);
+            throw ExpectNever(kvOrSymOrSplice);
           }
           return [assignDestructuringObject];
         }
@@ -306,9 +335,16 @@ function transpileLocalAssignee(
   }
   if (isCuObject(sym)) {
     let assignee = "{";
-    for (const kvOrSym of sym) {
-      if (isKeyValue(kvOrSym)) {
-        const { key, value } = kvOrSym;
+    let hasAssignedSplice = false;
+    for (const kvOrSymOrSplice of sym) {
+      if (hasAssignedSplice) {
+        return new TranspileError(
+          `Rest element must be last element in assignee of \`${formId}\` !`,
+        );
+      }
+
+      if (isKeyValue(kvOrSymOrSplice)) {
+        const { key, value } = kvOrSymOrSplice;
         if (!isCuSymbol(key)) {
           const kFormatted = formatForError(key);
           return new TranspileError(
@@ -332,15 +368,37 @@ function transpileLocalAssignee(
         continue;
       }
 
-      if (isUnquote(kvOrSym)) {
+      if (isCuSymbol(kvOrSymOrSplice)) {
+        const r0 = tryToSet(kvOrSymOrSplice, context, newWriter);
+        if (TranspileError.is(r0)) {
+          return r0;
+        }
+        assignee = `${assignee}${kvOrSymOrSplice.value},`;
+        continue;
+      }
+
+      if (isUnquote(kvOrSymOrSplice)) {
         return new TranspileError("Unquote must be used inside quasiQuote");
       }
 
-      const r0 = tryToSet(kvOrSym, context, newWriter);
-      if (TranspileError.is(r0)) {
-        return r0;
+      if (isSplice(kvOrSymOrSplice)) {
+        const sym = kvOrSymOrSplice.value;
+        if (!isCuSymbol(sym)) {
+          const symFormatted = formatForError(sym);
+          return new TranspileError(
+            `${formId}'s assignee must be a symbol, but ${symFormatted} is not!`,
+          );
+        }
+        hasAssignedSplice = true;
+        const r = tryToSet(sym, context, newWriter);
+        if (TranspileError.is(r)) {
+          return r;
+        }
+        assignee = `${assignee}...${sym.value}`;
+        continue;
       }
-      assignee = `${assignee}${kvOrSym.value},`;
+
+      throw ExpectNever(kvOrSymOrSplice);
     }
     return `${assignee}}`;
   }

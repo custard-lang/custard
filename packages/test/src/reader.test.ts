@@ -54,6 +54,7 @@ import {
   unquote,
   Unquote,
   assumeIsFile,
+  Splice,
 } from "@custard-lang/processor/dist/types.js";
 import { ExpectNever } from "@custard-lang/processor/src/util/error.js";
 
@@ -267,7 +268,11 @@ describe("readStr", () => {
 
     test('`{ a: { aa: ( 1.1 2.1 3.3 ) ab: 3.0 } bc: "def" }`', () => {
       expect(
-        readStr(inputOf('{ a: {\naa: ( 1.1 2.1 3.3\n) ab: 3.0 }\nbc: "def" }')),
+        readStr(
+          inputOf(
+            '{ a: {\naa: ( 1.1 2.1 3.3\n) ab: 3.0 \n...(def ghi) }\nbc: "jkl" }',
+          ),
+        ),
       ).toEqual(
         locatedCuObject(
           [
@@ -300,13 +305,23 @@ describe("readStr", () => {
                     locatedCuSymbol("ab", location(3, 3)),
                     locatedFloat64(3.0, location(3, 7)),
                   ),
+                  locatedSplice(
+                    locatedList(
+                      [
+                        locatedCuSymbol("def", location(4, 5)),
+                        locatedCuSymbol("ghi", location(4, 9)),
+                      ],
+                      location(4, 4),
+                    ),
+                    location(4, 1),
+                  ),
                 ],
                 location(1, 6),
               ),
             ),
             keyValue<Form<Location>, Form<Location>, Form<Location>, Location>(
-              locatedCuSymbol("bc", location(4, 1)),
-              locatedCuString("def", location(4, 5)),
+              locatedCuSymbol("bc", location(5, 1)),
+              locatedCuString("jkl", location(5, 5)),
             ),
           ],
           location(1, 1),
@@ -420,6 +435,7 @@ describe("readResumably", () => {
       "[", "(", "plusF", " ", "1", " ", "2", ")", "]", ":", " ", "[", "123", " ", '"', "t", "e", "s", "t", '"', "]", " ",
       // symbol key with list value containing unquote and splice
       "data", ":", " ", "(", "list", " ", "$", "var", " ", "...", "$", "items", ")",
+      "...", " ", "moreData",
       " ", "}"
     ];
     for (let i = 0; i < tokens1.length - 1; ++i) {
@@ -450,12 +466,12 @@ describe("readResumably", () => {
       });
     }
 
-    // [{ name: "hello world" }, [obj.method, $variable], (concat ...$args)]
+    // [{ ...other name: "hello world" } [obj.method $variable] (concat ...$args)]
     // prettier-ignore
     const tokens2 = [
       "[",
       // Object with string value split at character level
-      "{", " ", "name", ":", " ", '"', "h", "e", "l", "l", "o", " ", "w", "o", "r", "l", "d", '"', " ", "}",
+      "{", "...", "other", " ", "name", ":", " ", '"', "h", "e", "l", "l", "o", " ", "w", "o", "r", "l", "d", '"', " ", "}",
       " ",
       // Array with property access and unquote
       "[", "obj.method", " ", "$", "variable", "]",
@@ -521,6 +537,9 @@ function forgetLocationOfForm(form: Form<Location>): Form {
         }
         if (isUnquote(kv)) {
           return forgetLocationOfForm(kv) as Unquote<Form>;
+        }
+        if (isSplice(kv)) {
+          return forgetLocationOfForm(kv) as Splice<Form>;
         }
         throw ExpectNever(kv);
       }),

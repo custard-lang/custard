@@ -74,22 +74,40 @@ export function transpileKtvalsForEval(
 
             case KtvalAssignDestructuringObjectT: {
               const { statement, id: tmpId } = tmpVarOf(context, ktval.exp);
-              const setsSrc = ktval.assignee
-                .map((keyValue) => {
-                  if (typeof keyValue === "string") {
-                    const valueJson = JSON.stringify(keyValue);
-                    return `void _cu$c.transpileState.topLevelValues.set(${valueJson},${tmpId}.${keyValue});\n`;
-                  }
-                  const [key, value] = keyValue;
-                  const valueJson = JSON.stringify(value);
-                  const keySrc =
-                    typeof key === "string"
-                      ? `.${key}`
-                      : transpileKtvalsForEval(key, context);
-                  return `void _cu$c.transpileState.topLevelValues.set(${valueJson},${tmpId}${keySrc});\n`;
-                })
-                .join("");
-              return `${transpileKtvalsForEval(statement, context)}${setsSrc}`;
+
+              const assignedKeys: string[] = [];
+              let setsSrc = "";
+              for (const keyValue of ktval.assignee) {
+                if (typeof keyValue === "string") {
+                  assignedKeys.push(keyValue);
+                  const idJson = JSON.stringify(keyValue);
+                  setsSrc += `void _cu$c.transpileState.topLevelValues.set(${idJson},${tmpId}.${keyValue});\n`;
+                  continue;
+                }
+                const [key, value] = keyValue;
+                const keySrc =
+                  typeof key === "string"
+                    ? key
+                    : transpileKtvalsForEval(key, context);
+                // FIXME: ^ Recursive calls to `transpileKtvalsForEval` can generate multiple statements, which is invalid as an object key.
+                assignedKeys.push(keySrc);
+                const valueJson = JSON.stringify(value);
+                setsSrc += `void _cu$c.transpileState.topLevelValues.set(${valueJson},${tmpId}.${keySrc});\n`;
+              }
+              if (ktval.assigneeSplice === null) {
+                return `${transpileKtvalsForEval(statement, context)}${setsSrc}`;
+              }
+
+              const spliceIdJson = JSON.stringify(ktval.assigneeSplice);
+              const setSpliceSrc = [
+                `_cu$c.transpileState.topLevelValues.set(${spliceIdJson},{});`,
+                `for(const [_cu$key,_cu$value] of Object.entries(${tmpId})){`,
+                `  if(!${JSON.stringify(assignedKeys)}.includes(_cu$key)){`,
+                `    _cu$c.transpileState.topLevelValues.get(${spliceIdJson})[_cu$key]=_cu$value;`,
+                `  }`,
+                `}\n`,
+              ].join("\n");
+              return `${transpileKtvalsForEval(statement, context)}${setsSrc}\n${setSpliceSrc}`;
             }
 
             default:
@@ -194,7 +212,7 @@ function toJsAssignee(
     case KtvalAssignDestructuringArrayT:
       return `[${ktval.assignee.join(",")}]`;
     case KtvalAssignDestructuringObjectT:
-      return `{${ktval.assignee
+      const noSplice = ktval.assignee
         .map((keyValue) => {
           if (Array.isArray(keyValue)) {
             const [key, value] = keyValue;
@@ -205,7 +223,11 @@ function toJsAssignee(
           }
           return keyValue;
         })
-        .join(",")}}`;
+        .join(",");
+      if (ktval.assigneeSplice !== null) {
+        return `{${noSplice},...${ktval.assigneeSplice}}`;
+      }
+      return `{${noSplice}}`;
     default:
       throw ExpectNever(ktval);
   }
