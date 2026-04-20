@@ -50,11 +50,6 @@ describe("`note`", () => {
     expected: [undefined],
     setUpConfig,
   });
-  testForm({
-    src: '[...(note "This is a spliced comment")]',
-    expected: [],
-    setUpConfig,
-  });
 });
 
 describe("`annotate`", () => {
@@ -64,9 +59,86 @@ describe("`annotate`", () => {
     setUpConfig,
   });
   testForm({
-    src: '(annotate "comment" { this: "is also" a: "comment" } (const f (fn () 9))) (f)',
+    src: '(annotate { this: "is" a: "comment" } (const f (fn () 9))) (f)',
     expected: 9,
     setUpConfig,
+  });
+  testForm({
+    src: '{ a: (annotate "This is a comment" 10 9) }',
+    expected: new TranspileError(
+      "`annotate` must receive exactly two expressions!",
+    ),
+    setUpConfig,
+  });
+});
+
+describe("`annotateArray`", () => {
+  testForm({
+    src: '{ a: (annotateArray "This is a comment" 10) }',
+    expected: { a: [10] },
+    setUpConfig,
+  });
+  testForm({
+    src: '[...(annotateArray "This is a spliced comment" 1 2)]',
+    expected: [1, 2],
+    setUpConfig,
+  });
+  testForm({
+    src: '[...(annotateArray "This is a spliced comment with no elements")]',
+    expected: [],
+    setUpConfig,
+  });
+  testForm({
+    src: '...(annotateArray { this: "is" a: "comment" } (const f (fn () 9))) (f)',
+    expected: 9,
+    setUpConfig,
+  });
+  testForm({
+    src: '[...(annotateArray "This is a spliced comment" 1 2)]',
+    expected: [1, 2],
+    setUpConfig,
+  });
+  testForm({
+    src: '(plusF ...(annotateArray "These are spliced arguments" 1 3))',
+    expected: 4,
+    setUpConfig,
+  });
+  testForm({
+    src: '...(annotateArray "These are spliced statements" (const a 2) (plusF a 3))',
+    expected: 5,
+    setUpConfig,
+  });
+  testForm({
+    src: '[...(annotateArray "These are spliced statements inside an array (invalid)" (const a 2) (plusF a 3))]',
+    expected: new TranspileError(
+      "`const` cannot be used in an expression position because it's a statement!",
+    ),
+    setUpConfig,
+  });
+  testForm({
+    src: '(scope ...(annotateArray "These are spliced statements inside a call" (const a 20) (plusF a 3)))',
+    expected: 23,
+    setUpConfig,
+  });
+  testForm({
+    src: '(timesF ...(annotateArray "These are spliced statements inside a call (invalid)" (const a 20) (plusF a 3)))',
+    expected: new TranspileError(
+      "`const` cannot be used in an expression position because it's a statement!",
+    ),
+    setUpConfig,
+  });
+  testForm({
+    src: '(timesF 1 ...(annotateArray "These are spliced too many arguments (invalid)" 2 3))',
+    expected: new TranspileError(
+      "`timesF` must receive exactly two expressions!",
+    ),
+    setUpConfig,
+  });
+  testForm({
+    src: '(const a 1) { ...(annotateArray "This is a splice inside an object (not currently supported)" a) }',
+    expected: new TranspileError("TODO: NOT SUPPORTED YET"),
+    setUpConfig,
+    fails: true,
   });
 });
 
@@ -275,14 +347,14 @@ describe("(expressions e x p r s)", () => {
   testForm({
     src: "(expressions (let x 1) x)",
     expected: new TranspileError(
-      "An expression was expected, but a statement `(List (Symbol let) ...)` was found!",
+      "`let` cannot be used in an expression position because it's a statement!",
     ),
     setUpConfig,
   });
   testForm({
     src: "(expressions (const x 2) x)",
     expected: new TranspileError(
-      "An expression was expected, but a statement `(List (Symbol const) ...)` was found!",
+      "`const` cannot be used in an expression position because it's a statement!",
     ),
     setUpConfig,
   });
@@ -656,7 +728,7 @@ describe("[a r r a y]", () => {
   testForm({
     src: "[(const x 3) (let y 4)]",
     expected: new TranspileError(
-      "An expression was expected, but a statement `(List (Symbol const) ...)` was found!",
+      "`const` cannot be used in an expression position because it's a statement!",
     ),
     setUpConfig,
   });
@@ -909,7 +981,7 @@ describe("(const|let|assign id expression)", () => {
   testForm({
     src: "(let { x y: ...(rest) } { y: 3 x: 2 })",
     expected: new TranspileError(
-      "The assignee of `let` must be a Symbol, but `..(List (Symbol rest))` is not!",
+      "The assignee of `let` must be a Symbol, but `...(List (Symbol rest))` is not!",
     ),
     setUpConfig,
   });

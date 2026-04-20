@@ -10,7 +10,7 @@ import { assumeIsFile, TranspileError } from "./types.js";
 
 import { init, readerInputOf } from "./internal/context.js";
 
-import { transpileString } from "./internal/transpile.js";
+import { transpileToString } from "./internal/transpile.js";
 import { transpileModule, transpileRepl } from "./internal/transpile-state.js";
 import { evalString } from "./eval.js";
 
@@ -41,7 +41,7 @@ export async function initializeForModule(
   if (TranspileError.is(implicitInput)) {
     return implicitInput;
   }
-  const imports = await transpileString(implicitInput, context);
+  const imports = await transpileToString(implicitInput, context);
   if (TranspileError.is(imports)) {
     return imports;
   }

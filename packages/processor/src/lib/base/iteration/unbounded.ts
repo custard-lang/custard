@@ -1,12 +1,11 @@
 import * as ContextF from "../../../internal/context.js";
 import {
-  transpileStatements,
-  transpileExpression,
+  transpileStatementsJoinWithSemicolonU,
+  transpileStatementU,
+  transpileExpressionU,
 } from "../../../internal/transpile.js";
 import {
-  type Block,
   type Context,
-  type Form,
   isCuSymbol,
   ktvalOther,
   type JsSrc,
@@ -27,8 +26,8 @@ export * from "../iteration.js";
 export const _cu$while = markAsDirectWriter(
   async (
     context: Context,
-    bool?: Form,
-    ...rest: Block
+    bool?: unknown,
+    ...rest: unknown[]
   ): Promise<Ktvals<JsSrc> | TranspileError> => {
     if (bool === undefined) {
       return new TranspileError(
@@ -47,14 +46,17 @@ export const _cu$while = markAsDirectWriter(
       );
     }
 
-    const boolSrc = await transpileExpression(bool, context);
+    const boolSrc = await transpileStatementU(bool, context);
     if (TranspileError.is(boolSrc)) {
       return boolSrc;
     }
 
     ContextF.pushInherited(context);
 
-    const statementsSrc = await transpileStatements(rest, context);
+    const statementsSrc = await transpileStatementsJoinWithSemicolonU(
+      rest,
+      context,
+    );
     if (TranspileError.is(statementsSrc)) {
       return statementsSrc;
     }
@@ -74,10 +76,10 @@ export const _cu$while = markAsDirectWriter(
 export const _cu$for = markAsDirectWriter(
   async (
     context: Context,
-    initialStatement?: Form,
-    bool?: Form,
-    final?: Form,
-    ...rest: Block
+    initialStatement?: unknown,
+    bool?: unknown,
+    final?: unknown,
+    ...rest: unknown[]
   ): Promise<Ktvals<JsSrc> | TranspileError> => {
     ContextF.pushInherited(context);
 
@@ -110,22 +112,25 @@ export const _cu$for = markAsDirectWriter(
       );
     }
 
-    const initialStatementSrc = await transpileExpression(
+    const initialStatementSrc = await transpileStatementU(
       initialStatement,
       context,
     );
     if (TranspileError.is(initialStatementSrc)) {
       return initialStatementSrc;
     }
-    const boolSrc = await transpileExpression(bool, context);
+    const boolSrc = await transpileExpressionU(bool, context);
     if (TranspileError.is(boolSrc)) {
       return boolSrc;
     }
-    const finalSrc = await transpileExpression(final, context);
+    const finalSrc = await transpileStatementU(final, context);
     if (TranspileError.is(finalSrc)) {
       return finalSrc;
     }
-    const statementsSrc = await transpileStatements(rest, context);
+    const statementsSrc = await transpileStatementsJoinWithSemicolonU(
+      rest,
+      context,
+    );
     if (TranspileError.is(statementsSrc)) {
       return statementsSrc;
     }
@@ -166,7 +171,7 @@ export const forEach = markAsDirectWriter(
 export const recursive = markAsDirectWriter(
   async (
     context: Context,
-    ...consts: Block
+    ...consts: unknown[]
   ): Promise<Ktvals<JsSrc> | TranspileError> => {
     if (consts.length < 1) {
       return new TranspileError("No `const` statements given to `recursive`!");
@@ -199,7 +204,7 @@ export const recursive = markAsDirectWriter(
       }
     }
 
-    return await transpileStatements(consts, context);
+    return await transpileStatementsJoinWithSemicolonU(consts, context);
   },
   ordinaryStatement,
 );

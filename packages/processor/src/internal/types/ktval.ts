@@ -48,16 +48,18 @@ export interface KtvalAssignSimple<Target> extends KtvalAssignCore<Target> {
 
 export const KtvalAssignDestructuringArrayT = 1;
 
-export interface KtvalAssignDestructuringArray<Target>
-  extends KtvalAssignCore<Target> {
+export interface KtvalAssignDestructuringArray<
+  Target,
+> extends KtvalAssignCore<Target> {
   at: typeof KtvalAssignDestructuringArrayT;
   assignee: Id[];
 }
 
 export const KtvalAssignDestructuringObjectT = 2;
 
-export interface KtvalAssignDestructuringObject<Target>
-  extends KtvalAssignCore<Target> {
+export interface KtvalAssignDestructuringObject<
+  Target,
+> extends KtvalAssignCore<Target> {
   at: typeof KtvalAssignDestructuringObjectT;
   assignee: Array<[Ktvals<Target> | Id, Id] | Id>;
   assigneeSplice: Id | null;

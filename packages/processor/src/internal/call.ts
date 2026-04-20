@@ -2,7 +2,6 @@ import * as ContextF from "./context.js";
 import {
   type Call,
   type Context,
-  type Form,
   TranspileError,
   type Writer,
   functionIdOfCall,
@@ -15,21 +14,21 @@ import { isPropertyAccess } from "./types/property-access.js";
 
 export function asStatement(
   context: Context,
-  form: Form,
+  form: unknown,
 ): Call | undefined | TranspileError {
   return asCallOf(context, form, isMarkedDirectStatementWriter);
 }
 
 export function asExportableStatement(
   context: Context,
-  form: Form,
+  form: unknown,
 ): Call | undefined | TranspileError {
   return asCallOf(context, form, isMarkedDirectExportableStatementWriter);
 }
 
 function asCallOf(
   context: Context,
-  form: Form,
+  form: unknown,
   p: (w: Writer) => boolean,
 ): Call | undefined | TranspileError {
   const call = asCall(form);
@@ -46,7 +45,7 @@ function asCallOf(
   return call;
 }
 
-export function asCall(form: Form): Call | undefined {
+export function asCall(form: unknown): Call | undefined {
   if (!isList(form)) {
     return;
   }

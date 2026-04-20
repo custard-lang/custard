@@ -50,7 +50,7 @@ import type { ParseError } from "../grammar.js";
 import { readBlock } from "../reader.js";
 import { standardModuleRoot } from "../definitions.js";
 import {
-  transpileExpression,
+  transpileExpressionU,
   transpilePropertyAccessReference,
   transpileSymbolReference,
 } from "../internal/transpile.js";
@@ -65,7 +65,6 @@ import {
   MarkedDirectWriter,
   readerInput,
 } from "../internal/types.js";
-import { ExpectNever } from "../util/error.js";
 import { evalForMacro } from "../internal/eval/core.js";
 import { evalKtvals } from "../internal/ktvals.js";
 
@@ -132,16 +131,16 @@ function buildDefineMacro(
   body: (
     name: CuSymbol,
     context: Context,
-    args: Form | undefined,
-    block: Form[],
+    args: unknown | undefined,
+    block: unknown[],
   ) => Promise<Ktvals<JsSrc> | TranspileError>,
 ): MarkedDirectWriter {
   return markAsDirectWriter(
     async (
       context: Context,
-      name?: Form,
-      args?: Form,
-      ...block: Form[]
+      name?: unknown,
+      args?: unknown,
+      ...block: unknown[]
     ): Promise<Ktvals<JsSrc> | TranspileError> => {
       if (!isAtTopLevel(context)) {
         return new TranspileError(
@@ -191,8 +190,8 @@ export const defineMacro = buildDefineMacro(
   async (
     name: CuSymbol,
     context: Context,
-    args: Form | undefined,
-    block: Form[],
+    args: unknown,
+    block: unknown[],
   ): Promise<Ktvals<JsSrc> | TranspileError> => {
     const fnSrc = await buildFn(
       "meta.defineMacro",
@@ -210,7 +209,7 @@ export const defineMacro = buildDefineMacro(
       ...xs: any[]
     ) => any | TranspileError;
     const r = tryToSet(name, context, () => {
-      return markAsMacro((...args: Form[]): Form | TranspileError => {
+      return markAsMacro((...args: unknown[]): unknown | TranspileError => {
         try {
           return fn(...args);
         } catch (e) {
@@ -233,8 +232,8 @@ export const defineAsyncMacro = buildDefineMacro(
   async (
     name: CuSymbol,
     context: Context,
-    args: Form | undefined,
-    block: Form[],
+    args: unknown | undefined,
+    block: unknown[],
   ): Promise<Ktvals<JsSrc> | TranspileError> => {
     const fnSrc = await buildAsyncFn(
       "meta.defineAsyncMacro",
@@ -251,7 +250,7 @@ export const defineAsyncMacro = buildDefineMacro(
     ) => Promise<any | TranspileError>;
     const r = tryToSet(name, context, () => {
       return markAsMacro(
-        async (...args: Form[]): Promise<Form | TranspileError> => {
+        async (...args: unknown[]): Promise<unknown | TranspileError> => {
           try {
             return await fn(...args);
           } catch (e) {
@@ -273,8 +272,8 @@ export const defineAsyncMacro = buildDefineMacro(
 export const macroToFunction = markAsDirectWriter(
   (
     context: Context,
-    macroId?: Form,
-    ...forms: Form[]
+    macroId?: unknown,
+    ...forms: unknown[]
   ): Ktvals<JsSrc> | TranspileError => {
     if (macroId === undefined || forms.length !== 0) {
       return new TranspileError(
@@ -309,7 +308,7 @@ export const macroToFunction = markAsDirectWriter(
 export const quote = markAsDirectWriter(
   async (
     context: Context,
-    ...forms: Block
+    ...forms: unknown[]
   ): Promise<Ktvals<JsSrc> | TranspileError> => {
     const [form] = forms;
     if (forms.length !== 1 || form === undefined) {
@@ -325,7 +324,7 @@ export const quote = markAsDirectWriter(
 export const quasiQuote = markAsDirectWriter(
   async (
     context: Context,
-    ...forms: Block
+    ...forms: unknown[]
   ): Promise<Ktvals<JsSrc> | TranspileError> => {
     const [form] = forms;
     if (forms.length !== 1 || form === undefined) {
@@ -336,7 +335,7 @@ export const quasiQuote = markAsDirectWriter(
 );
 
 async function traverse(
-  form: Form,
+  form: unknown,
   context: Context,
   unquote: boolean,
 ): Promise<Ktvals<JsSrc> | TranspileError> {
@@ -353,7 +352,7 @@ async function traverse(
   if (isUnquote(form)) {
     if (unquote) {
       // TODO: Error if not in an unquote
-      return await transpileExpression(form.value, context);
+      return await transpileExpressionU(form.value, context);
     }
     return await quoteUnquote(form, context);
   }
@@ -381,11 +380,11 @@ async function traverse(
   if (isReservedSymbol(form)) {
     return await quoteValueOf(form, context, "reservedSymbol");
   }
-  throw ExpectNever(form);
+  return TranspileError.macroReturnedInvalidValue(form);
 }
 
 async function traverseList(
-  form: List<Form>,
+  form: List<unknown>,
   context: Context,
   unquote: boolean,
 ): Promise<Ktvals<JsSrc> | TranspileError> {
@@ -401,7 +400,7 @@ async function traverseList(
 }
 
 async function traverseArray(
-  form: Form[],
+  form: unknown[],
   context: Context,
   unquote: boolean,
 ): Promise<Ktvals<JsSrc> | TranspileError> {
@@ -417,7 +416,7 @@ async function traverseArray(
 }
 
 async function traverseCuObject(
-  form: CuObject<Form, Form, Form, Form, Form>,
+  form: CuObject<unknown>,
   context: Context,
   unquote: boolean,
 ): Promise<Ktvals<JsSrc> | TranspileError> {
@@ -438,7 +437,7 @@ async function traverseCuObject(
 }
 
 async function traverseKeyValue(
-  f: KeyValue<Form, Form, Form>,
+  f: KeyValue<unknown>,
   context: Context,
   unquote: boolean,
 ): Promise<Ktvals<JsSrc> | TranspileError> {
@@ -466,7 +465,7 @@ async function traverseKeyValue(
 }
 
 async function traverseComputedKey(
-  form: ComputedKey<Form>,
+  form: ComputedKey<unknown>,
   context: Context,
   unquote: boolean,
 ): Promise<Ktvals<JsSrc> | TranspileError> {
@@ -478,7 +477,7 @@ async function traverseComputedKey(
 }
 
 async function quoteUnquote(
-  form: Unquote<Form>,
+  form: Unquote<unknown>,
   context: Context,
 ): Promise<Ktvals<JsSrc> | TranspileError> {
   const elementSrc = await traverse(form.value, context, false);
@@ -491,7 +490,7 @@ async function quoteUnquote(
 
 // TODO: Error if not in a list, array or object
 async function traverseSplice(
-  form: Splice<Form>,
+  form: Splice<unknown>,
   context: Context,
   unquote: boolean,
 ): Promise<Ktvals<JsSrc> | TranspileError> {
@@ -531,7 +530,7 @@ async function quoteValueOf(
 }
 
 async function quoteSplice(
-  form: Splice<Form>,
+  form: Splice<unknown>,
   context: Context,
 ): Promise<Ktvals<JsSrc> | TranspileError> {
   const elementSrc = await traverse(form.value, context, false);

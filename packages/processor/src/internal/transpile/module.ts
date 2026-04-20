@@ -4,7 +4,6 @@ import { loadModule } from "../definitions.js";
 import {
   aConst,
   type Context,
-  type Form,
   type Id,
   isCuObject,
   isCuSymbol,
@@ -25,15 +24,15 @@ import {
   type Ktvals,
   ordinaryStatement,
 } from "../types.js";
-import { transpileExpression } from "../transpile.js";
+import { transpileStatementU } from "../transpile.js";
 import { asExportableStatement } from "../call.js";
 
 export const _cu$import = markAsDirectWriter(
   async (
     context: Context,
-    moduleId?: Form,
-    idSpecs?: Form,
-    ...forms: Form[]
+    moduleId?: unknown,
+    idSpecs?: unknown,
+    ...forms: unknown[]
   ): Promise<Ktvals<JsSrc> | TranspileError> => {
     if (forms.length !== 0) {
       return new TranspileError(
@@ -120,8 +119,8 @@ export const _cu$import = markAsDirectWriter(
 export const importAnyOf = markAsDirectWriter(
   async (
     context: Context,
-    moduleId?: Form,
-    ...forms: Form[]
+    moduleId?: unknown,
+    ...forms: unknown[]
   ): Promise<Ktvals<JsSrc> | TranspileError> => {
     if (forms.length !== 0) {
       return new TranspileError(
@@ -174,7 +173,7 @@ export const importAnyOf = markAsDirectWriter(
 export const _cu$export = markAsDirectWriter(
   async (
     context: Context,
-    ...forms: Form[]
+    ...forms: unknown[]
   ): Promise<Ktvals<JsSrc> | TranspileError> => {
     if (forms.length === 0) {
       return new TranspileError(
@@ -197,7 +196,7 @@ export const _cu$export = markAsDirectWriter(
           `The arguments of \`export\` must be an exportable declaration (e.g., \`const\`/\`let\`). But got ${formatForError(form)}.`,
         );
       }
-      const r = await transpileExpression(form, context);
+      const r = await transpileStatementU(form, context);
       if (TranspileError.is(r)) {
         return r;
       }
@@ -208,7 +207,7 @@ export const _cu$export = markAsDirectWriter(
   exportableStatement,
 );
 
-function parseImportIdSpecs(idSpecs: Form): Id[] | TranspileError {
+function parseImportIdSpecs(idSpecs: unknown): Id[] | TranspileError {
   if (!isCuObject(idSpecs)) {
     return new TranspileError(
       `The second argument of \`import\` must be an Object of Symbols. But got ${formatForError(idSpecs)}.`,

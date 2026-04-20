@@ -12,6 +12,10 @@ export class ReservedSymbol<X extends Empty = Empty> {
   valueOf(): boolean | null {
     return this.#value;
   }
+
+  toString(): string {
+    return String(this.#value);
+  }
 }
 
 export function reservedSymbol(v: boolean | null): ReservedSymbol {

@@ -15,6 +15,11 @@ import {
   ProvidedSymbolsConfig,
   FilePathAndStat,
   isProvidedConst,
+  writerIsOneOf,
+  writerKindToHumanReadableName,
+  writerToHumanReadableName,
+  showSymbolAccess,
+  WriterKind,
 } from "./types.js";
 import {
   TranspileError,
@@ -95,6 +100,28 @@ export function referTo(
   symLike: CuSymbol | PropertyAccess,
 ): WriterWithIsAtTopLevel | TranspileError {
   return findCore(context, symLike, true);
+}
+
+export function referToWithAssertion(
+  context: Context,
+  symLike: CuSymbol | PropertyAccess,
+  validWriterKinds: WriterKind[],
+): WriterWithIsAtTopLevel | TranspileError {
+  const r = referTo(context, symLike);
+  if (TranspileError.is(r)) {
+    return r;
+  }
+
+  if (!writerIsOneOf(r.writer, validWriterKinds)) {
+    const expected = validWriterKinds
+      .map((wk) => `\`${writerKindToHumanReadableName(wk)}\``)
+      .join(", ");
+    const actual = writerToHumanReadableName(r.writer);
+    return new TranspileError(
+      `Expected \`${showSymbolAccess(symLike)}\` refers to be one of ${expected}, but it refers to ${actual}!`,
+    );
+  }
+  return r;
 }
 
 function findCore(

@@ -266,11 +266,11 @@ describe("readStr", () => {
       );
     });
 
-    test('`{ a: { aa: ( 1.1 2.1 3.3 ) ab: 3.0 } bc: "def" }`', () => {
+    test('`{ a: { c aa: ( 1.1 2.1 3.3 ) cc ab: 3.0 ...(def ghi) } bc: "jkl" cd }`', () => {
       expect(
         readStr(
           inputOf(
-            '{ a: {\naa: ( 1.1 2.1 3.3\n) ab: 3.0 \n...(def ghi) }\nbc: "jkl" }',
+            '{ a: {\nc\naa: ( 1.1 2.1 3.3\n) cc ab: 3.0 \n...(def ghi) }\nbc: "jkl" cd}',
           ),
         ),
       ).toEqual(
@@ -280,49 +280,52 @@ describe("readStr", () => {
               locatedCuSymbol("a", location(1, 3)),
               locatedCuObject(
                 [
+                  locatedCuSymbol("c", location(2, 1)),
                   keyValue<
                     Form<Location>,
                     Form<Location>,
                     Form<Location>,
                     Location
                   >(
-                    locatedCuSymbol("aa", location(2, 1)),
+                    locatedCuSymbol("aa", location(3, 1)),
                     locatedList(
                       [
-                        locatedFloat64(1.1, location(2, 7)),
-                        locatedFloat64(2.1, location(2, 11)),
-                        locatedFloat64(3.3, location(2, 15)),
+                        locatedFloat64(1.1, location(3, 7)),
+                        locatedFloat64(2.1, location(3, 11)),
+                        locatedFloat64(3.3, location(3, 15)),
                       ],
-                      location(2, 5),
+                      location(3, 5),
                     ),
                   ),
+                  locatedCuSymbol("cc", location(4, 3)),
                   keyValue<
                     Form<Location>,
                     Form<Location>,
                     Form<Location>,
                     Location
                   >(
-                    locatedCuSymbol("ab", location(3, 3)),
-                    locatedFloat64(3.0, location(3, 7)),
+                    locatedCuSymbol("ab", location(4, 6)),
+                    locatedFloat64(3.0, location(4, 10)),
                   ),
                   locatedSplice(
                     locatedList(
                       [
-                        locatedCuSymbol("def", location(4, 5)),
-                        locatedCuSymbol("ghi", location(4, 9)),
+                        locatedCuSymbol("def", location(5, 5)),
+                        locatedCuSymbol("ghi", location(5, 9)),
                       ],
-                      location(4, 4),
+                      location(5, 4),
                     ),
-                    location(4, 1),
+                    location(5, 1),
                   ),
                 ],
                 location(1, 6),
               ),
             ),
             keyValue<Form<Location>, Form<Location>, Form<Location>, Location>(
-              locatedCuSymbol("bc", location(5, 1)),
-              locatedCuString("jkl", location(5, 5)),
+              locatedCuSymbol("bc", location(6, 1)),
+              locatedCuString("jkl", location(6, 5)),
             ),
+            locatedCuSymbol("cd", location(6, 11)),
           ],
           location(1, 1),
         ),

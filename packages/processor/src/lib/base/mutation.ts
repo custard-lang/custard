@@ -5,7 +5,6 @@ import {
 import {
   aVar,
   type Context,
-  type Form,
   formatForError,
   isVar,
   JsSrc,
@@ -26,6 +25,7 @@ import { isUnquote } from "../../internal/types/unquote.js";
 import { isCuArray } from "../../internal/types/cu-array.js";
 import { isPropertyAccess, isSplice } from "../../types.js";
 import { ExpectNever } from "../../util/error.js";
+import { Awaitable } from "../../util/types.js";
 
 export const _cu$let = transpilingForVariableDeclaration(
   "let ",
@@ -37,13 +37,11 @@ export const _cu$let = transpilingForVariableDeclaration(
 );
 export const assign = transpilingForAssignment(
   "assign",
-  async (
+  (
     context: Context,
-    id: Form,
+    id: unknown,
     exp?: Ktvals<JsSrc>,
-    // This function must return a Promise. It'll need to call transpile*** functions which are async.
-    // eslint-disable-next-line @typescript-eslint/require-await
-  ): Promise<Ktvals<JsSrc> | TranspileError> => {
+  ): Awaitable<Ktvals<JsSrc> | TranspileError> => {
     if (exp === undefined) {
       return new TranspileError(
         "No expression given to an `assign` statement!",

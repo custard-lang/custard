@@ -5,7 +5,6 @@ import {
 } from "../internal/types.js";
 import {
   type Context,
-  type Form,
   type JsSrc,
   type Ktvals,
   ktvalOther,
@@ -22,7 +21,7 @@ import {
 } from "./internal.js";
 
 export const _cu$await = markAsDirectWriter(
-  async (context: Context, a: Form, ...unused: Form[]) => {
+  async (context: Context, a: unknown, ...unused: unknown[]) => {
     if (!ContextF.isInAsyncContext(context)) {
       return new TranspileError(
         "`async.await` in a non-async function or scope is not allowed.",
@@ -38,9 +37,9 @@ export const _cu$await = markAsDirectWriter(
 export const fn = markAsDirectWriter(
   async (
     context: Context,
-    nameOrArgs?: Form,
-    argsOrFirstForm?: Form,
-    ...block: Form[]
+    nameOrArgs?: unknown,
+    argsOrFirstForm?: unknown,
+    ...block: unknown[]
   ): Promise<Ktvals<JsSrc> | TranspileError> => {
     return await buildAsyncFn(
       "async.fn",
@@ -55,9 +54,9 @@ export const fn = markAsDirectWriter(
 export const procedure = markAsDirectWriter(
   async (
     context: Context,
-    nameOrArgs?: Form,
-    argsOrFirstForm?: Form,
-    ...block: Form[]
+    nameOrArgs?: unknown,
+    argsOrFirstForm?: unknown,
+    ...block: unknown[]
   ): Promise<Ktvals<JsSrc> | TranspileError> => {
     return await buildProcedure(
       "async.procedure",
@@ -74,9 +73,9 @@ export const procedure = markAsDirectWriter(
 export const generatorFn = markAsDirectWriter(
   async (
     context: Context,
-    nameOrArgs?: Form,
-    argsOrFirstForm?: Form,
-    ...block: Form[]
+    nameOrArgs?: unknown,
+    argsOrFirstForm?: unknown,
+    ...block: unknown[]
   ): Promise<Ktvals<JsSrc> | TranspileError> => {
     return await buildFn(
       "async.generatorFn",
@@ -93,9 +92,9 @@ export const generatorFn = markAsDirectWriter(
 export const generatorProcedure = markAsDirectWriter(
   async (
     context: Context,
-    nameOrArgs?: Form,
-    argsOrFirstForm?: Form,
-    ...block: Form[]
+    nameOrArgs?: unknown,
+    argsOrFirstForm?: unknown,
+    ...block: unknown[]
   ): Promise<Ktvals<JsSrc> | TranspileError> => {
     return await buildProcedure(
       "async.generatorProcedure",
@@ -119,7 +118,7 @@ export const scope = buildScope(
 export const forEach = markAsDirectWriter(
   async (
     context: Context,
-    ...forms: Form[]
+    ...forms: unknown[]
   ): Promise<Ktvals<JsSrc> | TranspileError> => {
     if (!ContextF.isInAsyncContext(context)) {
       return new TranspileError(

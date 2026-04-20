@@ -204,42 +204,42 @@ describe("meta.defineMacro", () => {
     testForm({
       src: `${macroDef} unless`,
       expected: new TranspileError(
-        "A macro `unless` cannot be assigned to a variable or passed as an argument.",
+        "Expected `unless` refers to be one of `Var`, `Const`, `RecursiveConst`, `ProvidedConst`, `DynamicVar`, but it refers to Macro!",
       ),
       setUpConfig,
     });
     testForm({
       src: `${macroDef} (const u unless)`,
       expected: new TranspileError(
-        "A macro `unless` cannot be assigned to a variable or passed as an argument.",
+        "Expected `unless` refers to be one of `Var`, `Const`, `RecursiveConst`, `ProvidedConst`, `DynamicVar`, but it refers to Macro!",
       ),
       setUpConfig,
     });
     testForm({
       src: `${macroDef} (const arr [unless])`,
       expected: new TranspileError(
-        "A macro `unless` cannot be assigned to a variable or passed as an argument.",
+        "Expected `unless` refers to be one of `Var`, `Const`, `RecursiveConst`, `ProvidedConst`, `DynamicVar`, but it refers to Macro!",
       ),
       setUpConfig,
     });
     testForm({
       src: `${macroDef} (fn callMacro (m b f t) (m b f t)) (callMacro unless false 1 2)`,
       expected: new TranspileError(
-        "A macro `unless` cannot be assigned to a variable or passed as an argument.",
+        "Expected `unless` refers to be one of `Var`, `Const`, `RecursiveConst`, `ProvidedConst`, `DynamicVar`, but it refers to Macro!",
       ),
       setUpConfig,
     });
     testForm({
       src: `${macroDef} (const obj { m: unless })`,
       expected: new TranspileError(
-        "A macro `unless` cannot be assigned to a variable or passed as an argument.",
+        "Expected `unless` refers to be one of `Var`, `Const`, `RecursiveConst`, `ProvidedConst`, `DynamicVar`, but it refers to Macro!",
       ),
       setUpConfig,
     });
     testForm({
       src: `${macroDef} (const obj { unless })`,
       expected: new TranspileError(
-        "A macro `unless` cannot be assigned to a variable or passed as an argument.",
+        "Expected `unless` refers to be one of `Var`, `Const`, `RecursiveConst`, `ProvidedConst`, `DynamicVar`, but it refers to Macro!",
       ),
       setUpConfig,
     });
@@ -247,7 +247,7 @@ describe("meta.defineMacro", () => {
       // Other DirectWriter's argument
       src: `${macroDef} (plusF 1 unless)`,
       expected: new TranspileError(
-        "A macro `unless` cannot be assigned to a variable or passed as an argument.",
+        "Expected `unless` refers to be one of `Var`, `Const`, `RecursiveConst`, `ProvidedConst`, `DynamicVar`, but it refers to Macro!",
       ),
       setUpConfig,
     });
@@ -290,7 +290,7 @@ describe("meta.defineMacro", () => {
       };
     }
     testForm({
-      src: "(import macroMod)(let a 5)(macroMod.doubleMacro (meta.quote a)) a",
+      src: "(import macroMod)(let a 5)(macroMod.doubleMacro a) a",
       expected: 10,
       setUpConfig: setUpConfigWithMacroMod,
     });
@@ -298,9 +298,29 @@ describe("meta.defineMacro", () => {
     testForm({
       src: `(import macroMod) (const u macroMod.doubleMacro)`,
       expected: new TranspileError(
-        "A macro `macroMod.doubleMacro` cannot be assigned to a variable or passed as an argument.",
+        "Expected `macroMod.doubleMacro` refers to be one of `Var`, `Const`, `RecursiveConst`, `ProvidedConst`, `DynamicVar`, but it refers to Macro!",
       ),
       setUpConfig: setUpConfigWithMacroMod,
+    });
+
+    describe("when a macro returns a value that cannot be converted to a Form, transpilation fails", () => {
+      testForm({
+        src: '(meta.defineMacro returnFunction () (fn () "never used")) (returnFunction)',
+        expected: TranspileError.newWithCode(
+          "CSTD_MACRO_RETURNED_INVALID_VALUE",
+          'A macro returned a value containing one that cannot be converted to a Form: `function(){\n;\nreturn "never used";\n}`.',
+        ),
+        setUpConfig,
+      });
+
+      testForm({
+        src: '(meta.defineMacro returnFunction () (meta.list (fn () "in a list"))) (returnFunction)',
+        expected: TranspileError.newWithCode(
+          "CSTD_MACRO_RETURNED_INVALID_VALUE",
+          'A macro returned a value containing one that cannot be converted to a Form: `function(){\n;\nreturn "in a list";\n}`.',
+        ),
+        setUpConfig,
+      });
     });
 
     // TODO: test case when importing identifiers in `meta` via `importAnyOf` and `(import  meta { list, ...})` to confirm the `linkIdsAsJsIds` function works correctly.
@@ -324,7 +344,7 @@ describe("meta.defineMacro", () => {
 
 describe("meta.defineAsyncMacro", () => {
   testForm({
-    src: "(meta.defineAsyncMacro unlessAsync (b f t) (meta.quasiQuote (andOr (not $(async.await b)) $f $t)))(unlessAsync (Promise.resolve false) 1 2)",
+    src: "(meta.defineAsyncMacro unlessAsync (b f t) (meta.quasiQuote (andOr (not (async.await $b)) $f $t)))(unlessAsync (Promise.resolve false) 1 2)",
     expected: 1,
     setUpConfig,
   });

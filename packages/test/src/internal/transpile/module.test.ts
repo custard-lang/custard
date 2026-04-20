@@ -119,7 +119,7 @@ describe("transpileBlock", () => {
         testForm({
           src: `(import a) a`,
           expected: new TranspileError(
-            "A namespace `a` cannot be assigned to a variable or passed as an argument.",
+            "Expected `a` refers to be one of `Var`, `Const`, `RecursiveConst`, `ProvidedConst`, `DynamicVar`, but it refers to Namespace!",
           ),
           setUpConfig,
         });
@@ -132,7 +132,7 @@ describe("transpileBlock", () => {
         testForm({
           src: `(import a) (const u a)`,
           expected: new TranspileError(
-            "A namespace `a` cannot be assigned to a variable or passed as an argument.",
+            "Expected `a` refers to be one of `Var`, `Const`, `RecursiveConst`, `ProvidedConst`, `DynamicVar`, but it refers to Namespace!",
           ),
           setUpConfig,
         });
@@ -145,7 +145,7 @@ describe("transpileBlock", () => {
         testForm({
           src: `(import a) (const arr [a])`,
           expected: new TranspileError(
-            "A namespace `a` cannot be assigned to a variable or passed as an argument.",
+            "Expected `a` refers to be one of `Var`, `Const`, `RecursiveConst`, `ProvidedConst`, `DynamicVar`, but it refers to Namespace!",
           ),
           setUpConfig,
         });
@@ -158,7 +158,7 @@ describe("transpileBlock", () => {
         testForm({
           src: `(import a) (const obj { m: a })`,
           expected: new TranspileError(
-            "A namespace `a` cannot be assigned to a variable or passed as an argument.",
+            "Expected `a` refers to be one of `Var`, `Const`, `RecursiveConst`, `ProvidedConst`, `DynamicVar`, but it refers to Namespace!",
           ),
           setUpConfig,
         });
@@ -171,7 +171,7 @@ describe("transpileBlock", () => {
         testForm({
           src: `(import a) (const obj { a })`,
           expected: new TranspileError(
-            "A namespace `a` cannot be assigned to a variable or passed as an argument.",
+            "Expected `a` refers to be one of `Var`, `Const`, `RecursiveConst`, `ProvidedConst`, `DynamicVar`, but it refers to Namespace!",
           ),
           setUpConfig,
         });
@@ -179,7 +179,7 @@ describe("transpileBlock", () => {
         testForm({
           src: `(import a) (fn call (n) n) (call a)`,
           expected: new TranspileError(
-            "A namespace `a` cannot be assigned to a variable or passed as an argument.",
+            "Expected `a` refers to be one of `Var`, `Const`, `RecursiveConst`, `ProvidedConst`, `DynamicVar`, but it refers to Namespace!",
           ),
           setUpConfig,
         });
@@ -192,14 +192,14 @@ describe("transpileBlock", () => {
         testForm({
           src: `(import a) (const obj { m: a })`,
           expected: new TranspileError(
-            "A namespace `a` cannot be assigned to a variable or passed as an argument.",
+            "Expected `a` refers to be one of `Var`, `Const`, `RecursiveConst`, `ProvidedConst`, `DynamicVar`, but it refers to Namespace!",
           ),
           setUpConfig,
         });
         testForm({
           src: `(import a) (const obj { a })`,
           expected: new TranspileError(
-            "A namespace `a` cannot be assigned to a variable or passed as an argument.",
+            "Expected `a` refers to be one of `Var`, `Const`, `RecursiveConst`, `ProvidedConst`, `DynamicVar`, but it refers to Namespace!",
           ),
           setUpConfig,
         });
@@ -207,7 +207,7 @@ describe("transpileBlock", () => {
           // Other DirectWriter's argument
           src: `(import a) (text "1" a)`,
           expected: new TranspileError(
-            "A namespace `a` cannot be assigned to a variable or passed as an argument.",
+            "Expected `a` refers to be one of `Var`, `Const`, `RecursiveConst`, `ProvidedConst`, `DynamicVar`, but it refers to Namespace!",
           ),
           setUpConfig,
         });

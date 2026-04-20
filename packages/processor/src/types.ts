@@ -7,7 +7,7 @@ export {
   type Form,
   type Block,
   type Call,
-  type Atom,
+  type AtomLike,
   type Location,
   type ReaderInput,
   readerInput,

@@ -1,6 +1,5 @@
 import {
   type Context,
-  type Form,
   type Id,
   type JsSrc,
   ktvalOther,
@@ -18,7 +17,7 @@ export const _cu$continue = transpilingControlStatement("continue");
 
 function transpilingControlStatement(id: Id): MarkedDirectWriter {
   return markAsDirectWriter(
-    (_context: Context, ...rest: Form[]): Ktvals<JsSrc> | TranspileError => {
+    (_context: Context, ...rest: unknown[]): Ktvals<JsSrc> | TranspileError => {
       if (rest.length > 0) {
         // TODO: Support label
         return new TranspileError(`\`${id}\` doesn't accept any arguments!`);

@@ -1,7 +1,6 @@
 import {
   aConst,
   aVar,
-  type Block,
   defaultAsyncScopeOptions,
   type DirectWriter,
   type DirectWriterKindFlags,
@@ -26,6 +25,7 @@ import {
   type ScopeOptions,
   TranspileError,
   type Writer,
+  isMarkedDirectStatementWriter,
 } from "../internal/types.js";
 import {
   type CuSymbol,
@@ -42,33 +42,34 @@ import {
 } from "../types.js";
 import {
   transpileComputedKeyOrExpression,
-  transpileExpression,
-  transpileJoinWithComma,
-  transpileStatements,
+  transpileExpressionU,
+  transpileExpressionsJoinWithCommaU,
+  transpileStatementsJoinWithSemicolonU,
+  transpileStatementWithWriterU,
 } from "../internal/transpile.js";
 import * as ContextF from "../internal/context.js";
-import { asStatement } from "../internal/call.js";
 import { ExpectNever } from "../util/error.js";
+import { Awaitable } from "../util/types.js";
 
 export function transpiling1Unmarked(
   formId: Id,
   f: (a: Ktvals<JsSrc>) => Ktvals<JsSrc>,
 ): (
   context: Context,
-  a: Form,
-  ...unused: Form[]
+  a: unknown,
+  ...unused: unknown[]
 ) => Promise<Ktvals<JsSrc> | TranspileError> {
   return async (
     context: Context,
-    a?: Form,
-    ...unused: Form[]
+    a?: unknown,
+    ...unused: unknown[]
   ): Promise<Ktvals<JsSrc> | TranspileError> => {
     if (a === undefined || unused.length > 0) {
       return new TranspileError(
         `\`${formId}\` must receive exactly one expression!`,
       );
     }
-    const ra = await transpileExpression(a, context);
+    const ra = await transpileExpressionU(a, context);
     if (TranspileError.is(ra)) {
       return ra;
     }
@@ -87,14 +88,18 @@ export function transpiling1(
 
 export function transpiling2(
   formId: Id,
-  f: (a: Ktvals<JsSrc>, b: Ktvals<JsSrc>, ...unused: Form[]) => Ktvals<JsSrc>,
+  f: (
+    a: Ktvals<JsSrc>,
+    b: Ktvals<JsSrc>,
+    ...unused: unknown[]
+  ) => Ktvals<JsSrc>,
 ): MarkedDirectWriter {
   return markAsDirectWriter(
     async (
       context: Context,
-      a?: Form,
-      b?: Form,
-      ...unused: Form[]
+      a?: unknown,
+      b?: unknown,
+      ...unused: unknown[]
     ): Promise<Ktvals<JsSrc> | TranspileError> => {
       if (a === undefined || b === undefined || unused.length !== 0) {
         return new TranspileError(
@@ -102,12 +107,12 @@ export function transpiling2(
         );
       }
 
-      const ra = await transpileExpression(a, context);
+      const ra = await transpileExpressionU(a, context);
       if (TranspileError.is(ra)) {
         return ra;
       }
 
-      const rb = await transpileExpression(b, context);
+      const rb = await transpileExpressionU(b, context);
       if (TranspileError.is(rb)) {
         return rb;
       }
@@ -123,9 +128,9 @@ export function transpilingFunctionArguments(
   return markAsDirectWriter(
     async (
       context: Context,
-      ...args: Form[]
+      ...args: unknown[]
     ): Promise<Ktvals<JsSrc> | TranspileError> => {
-      const argSrcs = await transpileJoinWithComma(args, context);
+      const argSrcs = await transpileExpressionsJoinWithCommaU(args, context);
       if (TranspileError.is(argSrcs)) {
         return argSrcs;
       }
@@ -139,17 +144,17 @@ export function transpilingForAssignment(
   formId: Id,
   f: (
     context: Context,
-    id: Form,
+    id: unknown,
     exp?: Ktvals<JsSrc>,
-  ) => Promise<Ktvals<JsSrc> | TranspileError>,
+  ) => Awaitable<Ktvals<JsSrc> | TranspileError>,
   kind: DirectWriterKindFlags,
 ): MarkedDirectWriter {
   return markAsDirectWriter(
     async (
       context: Context,
-      id: Form,
-      value?: Form,
-      another?: Form,
+      id: unknown,
+      value?: unknown,
+      another?: unknown,
     ): Promise<Ktvals<JsSrc> | TranspileError> => {
       if (another != null) {
         return new TranspileError(
@@ -161,8 +166,7 @@ export function transpilingForAssignment(
         return await f(context, id);
       }
 
-      // FIXME: Prevent transpiling statements here
-      const exp = await transpileExpression(value, context);
+      const exp = await transpileExpressionU(value, context);
       if (TranspileError.is(exp)) {
         return exp;
       }
@@ -185,7 +189,7 @@ export function transpilingForVariableDeclaration(
     formId,
     async (
       context: Context,
-      sym: Form,
+      sym: unknown,
       exp?: Ktvals<JsSrc>,
     ): Promise<Ktvals<JsSrc> | TranspileError> => {
       let r: undefined | TranspileError;
@@ -323,7 +327,7 @@ export function transpilingForVariableDeclaration(
 function transpileLocalAssignee(
   formId: Id,
   context: Context,
-  sym: Form,
+  sym: unknown,
   newWriter: () => Writer,
 ): JsSrc | TranspileError {
   if (isCuSymbol(sym)) {
@@ -451,8 +455,8 @@ export function transpilingForVariableMutation(
   return markAsDirectWriter(
     (
       context: Context,
-      sym: Form,
-      another?: Form,
+      sym: unknown,
+      another?: unknown,
     ): Ktvals<JsSrc> | TranspileError => {
       if (another !== undefined) {
         return new TranspileError(
@@ -490,14 +494,14 @@ export function transpilingForVariableMutation(
 interface PreludeResult {
   src: Ktvals<JsSrc>;
   readonly funName: CuSymbol | null;
-  readonly firstBlock: Block;
+  readonly firstBlock: unknown[];
 }
 
 function functionPrelude(
   formId: Id,
   context: Context,
-  nameOrArgs: Form | undefined | null,
-  argsOrFirstForm: Form | undefined,
+  nameOrArgs: unknown,
+  argsOrFirstForm: unknown,
   scopeOptions: ScopeOptions,
   beforeArguments: JsSrc,
 ): PreludeResult | TranspileError {
@@ -509,7 +513,7 @@ function functionPrelude(
 
   let funName: CuSymbol | null;
   let funNameInSrc: JsSrc;
-  let firstBlock: Block;
+  let firstBlock: unknown[];
   if (nameOrArgs === null) {
     funName = null;
     funNameInSrc = "";
@@ -583,9 +587,9 @@ function functionPostlude(
 export async function buildFn(
   formId: Id,
   context: Context,
-  nameOrArgs: Form | undefined | null,
-  argsOrFirstForm: Form | undefined,
-  block: Block,
+  nameOrArgs: unknown | undefined | null,
+  argsOrFirstForm: unknown | undefined,
+  block: unknown[],
   scopeOptions: ScopeOptions,
   beforeArguments: JsSrc,
 ): Promise<Ktvals<JsSrc> | TranspileError> {
@@ -603,35 +607,36 @@ export async function buildFn(
 
   block = [...preludeResult.firstBlock, ...block];
   const lastI = block.length - 1;
-  for (let i = 0; i < lastI; ++i) {
-    // `i` is always less than `block.length` so it's safe to use `block[i]!`
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const src = await transpileExpression(block[i]!, context);
-    if (TranspileError.is(src)) {
-      return src;
+  const blockWithoutLast = block.slice(0, lastI);
+  if (blockWithoutLast.length > 0) {
+    const srcs = await transpileStatementsJoinWithSemicolonU(
+      blockWithoutLast,
+      context,
+    );
+    if (TranspileError.is(srcs)) {
+      return srcs;
     }
-    preludeResult.src.push(ktvalOther("  "), ...src, ktvalOther(";\n"));
+    preludeResult.src.push(...srcs);
   }
 
   const lastStatement = block[lastI];
   if (lastStatement !== undefined) {
-    const lastSrc = await transpileExpression(lastStatement, context);
-    if (TranspileError.is(lastSrc)) {
-      return lastSrc;
+    const lastSrcWithWriter = await transpileStatementWithWriterU(
+      lastStatement,
+      context,
+    );
+    if (TranspileError.is(lastSrcWithWriter)) {
+      return lastSrcWithWriter;
     }
-
-    const stmt = asStatement(context, lastStatement);
-    if (TranspileError.is(stmt)) {
-      return stmt;
-    }
-    if (stmt === undefined) {
+    const [lastSrc, cw] = lastSrcWithWriter;
+    if (cw !== null && isMarkedDirectStatementWriter(cw.writer)) {
+      preludeResult.src.push(ktvalOther(";\n"), ...lastSrc, ktvalOther(";\n"));
+    } else {
       preludeResult.src.push(
-        ktvalOther("  return "),
+        ktvalOther(";\nreturn "),
         ...lastSrc,
         ktvalOther(";\n"),
       );
-    } else {
-      preludeResult.src.push(ktvalOther("  "), ...lastSrc, ktvalOther(";\n"));
     }
   }
   return functionPostlude(context, preludeResult);
@@ -640,9 +645,9 @@ export async function buildFn(
 export async function buildProcedure(
   formId: Id,
   context: Context,
-  nameOrArgs: Form | undefined,
-  argsOrFirstForm: Form | undefined,
-  block: Block,
+  nameOrArgs: unknown | undefined,
+  argsOrFirstForm: unknown | undefined,
+  block: unknown[],
   scopeOptions: ScopeOptions,
   beforeArguments: JsSrc,
 ): Promise<Ktvals<JsSrc> | TranspileError> {
@@ -659,13 +664,11 @@ export async function buildProcedure(
   }
 
   block = [...preludeResult.firstBlock, ...block];
-  for (const form of block) {
-    const src = await transpileExpression(form, context);
-    if (TranspileError.is(src)) {
-      return src;
-    }
-    preludeResult.src.push(ktvalOther("  "), ...src, ktvalOther(";\n"));
+  const srcs = await transpileStatementsJoinWithSemicolonU(block, context);
+  if (TranspileError.is(srcs)) {
+    return srcs;
   }
+  preludeResult.src.push(...srcs);
 
   return functionPostlude(context, preludeResult);
 }
@@ -678,7 +681,7 @@ export function buildScope(
   return markAsDirectWriter(
     async (
       context: Context,
-      ...block: Block
+      ...block: unknown[]
     ): Promise<Ktvals<JsSrc> | TranspileError> => {
       const argsList = list();
       const funcSrc = await buildFn(
@@ -707,9 +710,9 @@ export function buildForEach(
 ): DirectWriter {
   return async (
     context: Context,
-    id?: Form,
-    iterable?: Form,
-    ...statements: Block
+    id?: unknown,
+    iterable?: unknown,
+    ...statements: unknown[]
   ): Promise<Ktvals<JsSrc> | TranspileError> => {
     ContextF.pushInherited(context);
 
@@ -730,12 +733,15 @@ export function buildForEach(
       );
     }
 
-    const iterableSrc = await transpileExpression(iterable, context);
+    const iterableSrc = await transpileExpressionU(iterable, context);
     if (TranspileError.is(iterableSrc)) {
       return iterableSrc;
     }
 
-    const statementsSrc = await transpileStatements(statements, context);
+    const statementsSrc = await transpileStatementsJoinWithSemicolonU(
+      statements,
+      context,
+    );
     if (TranspileError.is(statementsSrc)) {
       return statementsSrc;
     }
@@ -749,9 +755,9 @@ export function buildForEach(
 export async function buildAsyncFn(
   formId: Id,
   context: Context,
-  name: Form | undefined | null,
-  argsOrFirstForm: Form | undefined,
-  block: Form[],
+  name: unknown,
+  argsOrFirstForm: unknown,
+  block: unknown[],
 ): Promise<Ktvals<JsSrc> | TranspileError> {
   return await buildFn(
     formId,

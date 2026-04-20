@@ -1,11 +1,10 @@
-import { ExpectNever } from "../util/error.js";
 import { type Awaitable, type Empty } from "../util/types.js";
 import path from "node:path";
 
 import * as s from "../lib/spec.js";
 import { type List, isList, list } from "./types/list.js";
 import { type CuArray, cuArray, isCuArray } from "./types/cu-array.js";
-import { CuObject, cuObject, isCuObject } from "./types/cu-object.js";
+import { CuObject, isCuObject } from "./types/cu-object.js";
 import { type Integer32, integer32, isInteger32 } from "./types/integer32.js";
 import { type Float64, float64, isFloat64 } from "./types/float64.js";
 import { type CuString, cuString, isCuString } from "./types/cu-string.js";
@@ -27,15 +26,14 @@ import {
   isComputedKey,
   isKeyValue,
   type KeyValue,
-  keyValue,
-  type KeyValueKey,
-  computedKey,
 } from "./types/key-value.js";
 import { type Id } from "./types/id.js";
 import { type Ktvals } from "./types/ktval.js";
+import { type TranspileError } from "./types/errors.js";
 
 export * from "./types/ktval.js";
 export * from "./types/id.js";
+export * from "./types/errors.js";
 
 export type Block<X extends Empty = Empty> = Array<Form<X>>;
 
@@ -43,7 +41,7 @@ export type Form<X extends Empty = Empty> =
   | List<Form<X>, X>
   | CuArray<Form<X>, X>
   | CuObject<Form<X>, Form<X>, Form<X>, Form<X>, Form<X>, X>
-  | Atom<X>
+  | AtomLike<X>
   | Unquote<Form<X>, X>
   | Splice<Form<X>, X>;
 
@@ -91,8 +89,7 @@ interface ValidCallBrand {
 }
 
 export interface Call<X extends Empty = Empty>
-  extends List<Form<X>, X>,
-    ValidCallBrand {}
+  extends List<Form<X>, X>, ValidCallBrand {}
 
 export function functionIdOfCall<X extends Empty = Empty>(
   v: Call<X>,
@@ -101,7 +98,7 @@ export function functionIdOfCall<X extends Empty = Empty>(
 }
 
 // The `Cu` prefix is only to avoid conflicts with TypeScript's builtin types.
-export type Atom<X extends Empty = Empty> =
+export type AtomLike<X extends Empty = Empty> =
   | Integer32<X>
   | Float64<X>
   | CuString<X>
@@ -196,11 +193,11 @@ export interface Location {
   // Add lexical binding information like Racket's syntax object?
 }
 
-export function formatForError(f: Form | ComputedKey<Form>): string {
+export function formatForError(f: unknown | ComputedKey<unknown>): string {
   return `\`${formatForErrorUnticked(f)}\``;
 }
 
-function formatForErrorUnticked(f: Form | ComputedKey<Form>): string {
+function formatForErrorUnticked(f: unknown | ComputedKey<unknown>): string {
   if (isList(f)) {
     return `(List${formatForErrorElement(f.values, formatForErrorShallow)})`;
   }
@@ -228,7 +225,7 @@ function formatForErrorElement<T>(forms: T[], fx: (f: T) => string): string {
 }
 
 function formatForErrorKV(
-  kv: KeyValue<Form, Form, Form> | CuSymbol | Unquote<Form> | Splice<Form>,
+  kv: KeyValue<unknown> | CuSymbol | Unquote<unknown> | Splice<unknown>,
 ): string {
   if (isKeyValue(kv)) {
     const value = kv.value;
@@ -240,7 +237,7 @@ function formatForErrorKV(
   return formatForErrorShallow(kv);
 }
 
-function formatForErrorShallow(f: Form): string {
+function formatForErrorShallow(f: unknown): string {
   if (isList(f)) {
     return `(List ..)`;
   }
@@ -253,7 +250,7 @@ function formatForErrorShallow(f: Form): string {
   return formatForErrorEtc(f);
 }
 
-function formatForErrorEtc(f: Atom | Unquote<Form> | Splice<Form>): string {
+function formatForErrorEtc(f: unknown): string {
   if (isInteger32(f)) {
     return `(Integer32 ${String(f)})`;
   }
@@ -276,131 +273,10 @@ function formatForErrorEtc(f: Atom | Unquote<Form> | Splice<Form>): string {
     return `$${formatForErrorUnticked(f.value)}`;
   }
   if (isSplice(f)) {
-    return `..${formatForErrorUnticked(f.value)}`;
+    return `...${formatForErrorUnticked(f.value)}`;
   }
-  throw ExpectNever(f);
-}
-
-export function jsValueToForm(v: unknown): Form | TranspileError {
-  if (
-    isInteger32(v) ||
-    isFloat64(v) ||
-    isCuString(v) ||
-    isReservedSymbol(v) ||
-    isCuSymbol(v) ||
-    isPropertyAccess(v)
-  ) {
-    return v;
-  }
-
-  if (v === null || typeof v === "boolean") {
-    return reservedSymbol(v);
-  }
-  if (v === undefined) {
-    return reservedSymbol(null);
-  }
-  if (typeof v === "number") {
-    return float64(v);
-  }
-  if (typeof v === "string") {
-    return cuString(v);
-  }
-
-  if (isList(v)) {
-    const r = list<Form>();
-    for (const item of v) {
-      const f = jsValueToForm(item);
-      if (TranspileError.is(f)) {
-        return f;
-      }
-      r.values.push(f);
-    }
-    return r;
-  }
-
-  if (Array.isArray(v)) {
-    const r = cuArray<Form>();
-    for (const item of v) {
-      const f = jsValueToForm(item);
-      if (TranspileError.is(f)) {
-        return f;
-      }
-      r.push(f);
-    }
-    return r;
-  }
-
-  if (isCuObject(v)) {
-    const r = cuObject<Form, Form, Form, Form, Form>();
-    for (const keyValueOrSymbolOrUnquote of v) {
-      if (isKeyValue(keyValueOrSymbolOrUnquote)) {
-        let key: KeyValueKey<Form, Form>;
-        if (isComputedKey(keyValueOrSymbolOrUnquote.key)) {
-          const computed = jsValueToForm(keyValueOrSymbolOrUnquote.key.value);
-          if (TranspileError.is(computed)) {
-            return computed;
-          }
-          key = computedKey(computed);
-        } else {
-          const keyTmp = jsValueToForm(keyValueOrSymbolOrUnquote.key);
-          if (TranspileError.is(keyTmp)) {
-            return keyTmp;
-          }
-          key = keyTmp as KeyValueKey<Form, Form>;
-        }
-
-        const value = jsValueToForm(keyValueOrSymbolOrUnquote.value);
-        if (TranspileError.is(value)) {
-          return value;
-        }
-        r.keyValues.push(keyValue(key, value));
-        continue;
-      }
-      const f = jsValueToForm(keyValueOrSymbolOrUnquote.value);
-      if (TranspileError.is(f)) {
-        return f;
-      }
-      r.keyValues.push(unquote(f));
-    }
-    return r;
-  }
-
-  if (isUnquote(v)) {
-    const unquoted = jsValueToForm(v.value);
-    if (TranspileError.is(unquoted)) {
-      return unquoted;
-    }
-    return unquote(unquoted);
-  }
-
-  if (isSplice(v)) {
-    const spliced = jsValueToForm(v.value);
-    if (TranspileError.is(spliced)) {
-      return spliced;
-    }
-    return splice(spliced);
-  }
-
-  if (v instanceof Function || v instanceof Promise || typeof v === "symbol") {
-    return new TranspileError(
-      `Cannot convert a ${v.constructor.name} to a Form.`,
-    );
-  }
-
-  // Ordinary objects
-  const r = cuObject<Form, Form, Form, Form, Form>();
-  for (const [key, value] of Object.entries(v)) {
-    const keyForm = jsValueToForm(key);
-    if (TranspileError.is(keyForm)) {
-      return keyForm;
-    }
-    const valueForm = jsValueToForm(value);
-    if (TranspileError.is(valueForm)) {
-      return valueForm;
-    }
-    r.keyValues.push(keyValue(keyForm as CuString, valueForm));
-  }
-  return r;
+  // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+  return `(Other ${f})`;
 }
 
 export interface ProvidedSymbolsConfig {
@@ -483,21 +359,6 @@ export interface JsModule {
 
 export type JsSrc = string;
 
-export class TranspileError extends Error {
-  override name = "TranspileError";
-
-  // NOTE: Use this instead of instanceof to avoid https://github.com/vitejs/vite/issues/9528
-  _cu$isTranspileError = true;
-  static is(e: unknown): e is TranspileError {
-    return (e as { [key: string]: unknown } | null)
-      ?._cu$isTranspileError as boolean;
-  }
-
-  static wrap(cause: unknown): TranspileError {
-    return new TranspileError(String(cause), { cause });
-  }
-}
-
 export interface Environment<State extends TranspileState = TranspileState> {
   readonly f: FilePath;
   readonly c: Map<FilePath, Context<State>>;
@@ -534,6 +395,22 @@ export interface AnyWriter<K extends number> {
   readonly [WriterKindKey]: K;
 }
 
+export type Writer =
+  | ContextualKeyword
+  | Var
+  | Const
+  | RecursiveConst
+  | Namespace
+  | MarkedDirectWriter
+  | MarkedFunctionWithContext
+  | ProvidedConst
+  | DynamicVar
+  | Macro;
+
+export type WriterKind = Writer[typeof WriterKindKey];
+
+const writerKindHumanReadableName = new Map<WriterKind, string>();
+
 export function isWriter(x: unknown): x is Writer {
   return (
     x != null &&
@@ -542,38 +419,53 @@ export function isWriter(x: unknown): x is Writer {
   );
 }
 
-export interface ContextualKeyword extends AnyWriter<0> {
+export const WriterKindContextualKeyword = 0;
+writerKindHumanReadableName.set(
+  WriterKindContextualKeyword,
+  "ContextualKeyword",
+);
+export type WriterKindContextualKeyword = typeof WriterKindContextualKeyword;
+export interface ContextualKeyword extends AnyWriter<WriterKindContextualKeyword> {
   readonly companion: Id;
 }
 export function aContextualKeyword(companion: Id): ContextualKeyword {
-  return { [WriterKindKey]: 0, companion };
+  return { [WriterKindKey]: WriterKindContextualKeyword, companion };
 }
 export function isContextualKeyword(x: Writer): x is ContextualKeyword {
-  return x[WriterKindKey] === 0;
+  return x[WriterKindKey] === WriterKindContextualKeyword;
 }
 
-export type Var = AnyWriter<1>;
+export const WriterKindVar = 1;
+writerKindHumanReadableName.set(WriterKindVar, "Var");
+export type WriterKindVar = typeof WriterKindVar;
+export type Var = AnyWriter<WriterKindVar>;
 export function aVar(): Var {
-  return { [WriterKindKey]: 1 };
+  return { [WriterKindKey]: WriterKindVar };
 }
 export function isVar(x: Writer): x is Var {
-  return x[WriterKindKey] === 1;
+  return x[WriterKindKey] === WriterKindVar;
 }
 
-export type Const = AnyWriter<2>;
+export const WriterKindConst = 2;
+writerKindHumanReadableName.set(WriterKindConst, "Const");
+export type WriterKindConst = typeof WriterKindConst;
+export type Const = AnyWriter<WriterKindConst>;
 export function aConst(): Const {
-  return { [WriterKindKey]: 2 };
+  return { [WriterKindKey]: WriterKindConst };
 }
 export function isConst(x: Writer): x is Const {
-  return x[WriterKindKey] === 2;
+  return x[WriterKindKey] === WriterKindConst;
 }
 
-export type RecursiveConst = AnyWriter<3>;
+export const WriterKindRecursiveConst = 3;
+writerKindHumanReadableName.set(WriterKindRecursiveConst, "RecursiveConst");
+export type WriterKindRecursiveConst = typeof WriterKindRecursiveConst;
+export type RecursiveConst = AnyWriter<WriterKindRecursiveConst>;
 export function aRecursiveConst(): RecursiveConst {
-  return { [WriterKindKey]: 3 };
+  return { [WriterKindKey]: WriterKindRecursiveConst };
 }
 export function isRecursiveConst(x: Writer): x is RecursiveConst {
-  return x[WriterKindKey] === 3;
+  return x[WriterKindKey] === WriterKindRecursiveConst;
 }
 
 export interface Module {
@@ -582,25 +474,34 @@ export interface Module {
 
 export type ModuleMap = Map<Id, Writer>;
 
-export type Namespace = AnyWriter<4> & Module;
+export const WriterKindNamespace = 4;
+writerKindHumanReadableName.set(WriterKindNamespace, "Namespace");
+export type WriterKindNamespace = typeof WriterKindNamespace;
+export type Namespace = AnyWriter<WriterKindNamespace> & Module;
 export function aNamespace(): Namespace {
   return Object.create(null, {
     [WriterKindKey]: {
-      value: 4,
+      value: WriterKindNamespace,
       enumerable: false,
       writable: false,
     },
   }) as Namespace;
 }
 export function isNamespace(x: Writer): x is Namespace {
-  return x[WriterKindKey] === 4;
+  return x[WriterKindKey] === WriterKindNamespace;
 }
 
 export type DirectWriter = (
   context: Context,
-  ...forms: Form[]
+  // To handle cases where it receives non-`Form` values returned by a `Macro`,
+  // `DirectWriter` must also receive literally any values.
+  ...forms: unknown[]
 ) => Awaitable<Ktvals<JsSrc> | TranspileError>;
-export interface MarkedDirectWriter extends AnyWriter<5> {
+
+export const WriterKindDirectWriter = 5;
+writerKindHumanReadableName.set(WriterKindDirectWriter, "DirectWriter");
+export type WriterKindDirectWriter = typeof WriterKindDirectWriter;
+export interface MarkedDirectWriter extends AnyWriter<WriterKindDirectWriter> {
   readonly call: DirectWriter;
   readonly kind: DirectWriterKindFlags;
 }
@@ -650,6 +551,13 @@ export function isMarkedDirectExportableStatementWriter(
   return isMarkedDirectWriter(x) && x.kind.exportable;
 }
 
+export const WriterKindMarkedFunctionWithContext = 6;
+writerKindHumanReadableName.set(
+  WriterKindMarkedFunctionWithContext,
+  "MarkedFunctionWithContext",
+);
+export type WriterKindMarkedFunctionWithContext =
+  typeof WriterKindMarkedFunctionWithContext;
 // `FunctionWithContext` must receive literally any values.
 export type FunctionWithContext = (
   context: Context,
@@ -657,67 +565,83 @@ export type FunctionWithContext = (
   ...rest: any[]
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ) => any | Error;
-export interface MarkedFunctionWithContext extends AnyWriter<6> {
+export interface MarkedFunctionWithContext extends AnyWriter<WriterKindMarkedFunctionWithContext> {
   readonly call: FunctionWithContext;
 }
 export function markAsFunctionWithContext(
   call: FunctionWithContext,
 ): MarkedFunctionWithContext {
-  return { [WriterKindKey]: 6, call };
+  return { [WriterKindKey]: WriterKindMarkedFunctionWithContext, call };
 }
 export function isMarkedFunctionWithContext(
   x: Writer,
 ): x is MarkedFunctionWithContext {
-  return x[WriterKindKey] === 6;
+  return x[WriterKindKey] === WriterKindMarkedFunctionWithContext;
 }
 
-export type ProvidedConst = AnyWriter<7>;
+export const WriterKindProvidedConst = 7;
+writerKindHumanReadableName.set(WriterKindProvidedConst, "ProvidedConst");
+export type WriterKindProvidedConst = typeof WriterKindProvidedConst;
+export type ProvidedConst = AnyWriter<WriterKindProvidedConst>;
 export function aProvidedConst(): ProvidedConst {
-  return { [WriterKindKey]: 7 };
+  return { [WriterKindKey]: WriterKindProvidedConst };
 }
 export function isProvidedConst(x: Writer): x is ProvidedConst {
-  return x[WriterKindKey] === 7;
+  return x[WriterKindKey] === WriterKindProvidedConst;
 }
 
+export const WriterKindDynamicVar = 8;
+writerKindHumanReadableName.set(WriterKindDynamicVar, "DynamicVar");
+export type WriterKindDynamicVar = typeof WriterKindDynamicVar;
 export type DynamicVarFunction = (
   context: Context,
 ) => Awaitable<Ktvals<JsSrc> | TranspileError>;
 
-export interface DynamicVar extends AnyWriter<8> {
+export interface DynamicVar extends AnyWriter<WriterKindDynamicVar> {
   call: DynamicVarFunction;
 }
 export function isDynamicVar(x: Writer): x is DynamicVar {
-  return x[WriterKindKey] === 8;
+  return x[WriterKindKey] === WriterKindDynamicVar;
 }
 export function markAsDynamicVar(call: DynamicVarFunction): DynamicVar {
-  return { [WriterKindKey]: 8, call };
+  return { [WriterKindKey]: WriterKindDynamicVar, call };
 }
 
-// This must receive literally any values by definition.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type MacroBody = (...xs: any[]) => Awaitable<any | TranspileError>;
+export const WriterKindMacro = 9;
+writerKindHumanReadableName.set(WriterKindMacro, "Macro");
+export type WriterKindMacro = typeof WriterKindMacro;
+export type MacroBody = (
+  ...xs: unknown[]
+) => Awaitable<unknown | TranspileError>;
 
-export interface Macro extends AnyWriter<9> {
+export interface Macro extends AnyWriter<WriterKindMacro> {
   readonly expand: MacroBody;
 }
 export function markAsMacro(expand: MacroBody): Macro {
-  return { [WriterKindKey]: 9, expand };
+  return { [WriterKindKey]: WriterKindMacro, expand };
 }
 export function isMacro(x: Writer): x is Macro {
-  return x[WriterKindKey] === 9;
+  return x[WriterKindKey] === WriterKindMacro;
 }
 
-export type Writer =
-  | ContextualKeyword
-  | Var
-  | Const
-  | RecursiveConst
-  | Namespace
-  | MarkedDirectWriter
-  | MarkedFunctionWithContext
-  | ProvidedConst
-  | DynamicVar
-  | Macro;
+export function writerKindToHumanReadableName(k: WriterKind): string {
+  const name = writerKindHumanReadableName.get(k);
+  if (name === undefined) {
+    throw new Error(`Assertion failure: Unknown WriterKind: ${k}`);
+  }
+  return name;
+}
+
+export function writerToHumanReadableName(writer: Writer): string {
+  return writerKindToHumanReadableName(writer[WriterKindKey]);
+}
+
+export function writerIsOneOf(
+  writer: Writer,
+  expectedKinds: WriterKind[],
+): boolean {
+  return expectedKinds.includes(writer[WriterKindKey]);
+}
 
 export interface References {
   readonly referenceById: Map<Id, Ref[]>;
