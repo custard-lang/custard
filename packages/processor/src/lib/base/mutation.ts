@@ -25,7 +25,7 @@ import { isUnquote } from "../../internal/types/unquote.js";
 import { isCuArray } from "../../internal/types/cu-array.js";
 import { isPropertyAccess, isSplice } from "../../types.js";
 import { ExpectNever } from "../../util/error.js";
-import { Awaitable } from "../../util/types.js";
+import { transpileExpressionU } from "../../internal/transpile.js";
 
 export const _cu$let = transpilingForVariableDeclaration(
   "let ",
@@ -37,11 +37,11 @@ export const _cu$let = transpilingForVariableDeclaration(
 );
 export const assign = transpilingForAssignment(
   "assign",
-  (
+  async (
     context: Context,
     id: unknown,
     exp?: Ktvals<JsSrc>,
-  ): Awaitable<Ktvals<JsSrc> | TranspileError> => {
+  ): Promise<Ktvals<JsSrc> | TranspileError> => {
     if (exp === undefined) {
       return new TranspileError(
         "No expression given to an `assign` statement!",
@@ -73,7 +73,7 @@ export const assign = transpilingForAssignment(
     function isPseudoTopLevelAsAssignableSymbol(
       sym: CuSymbol,
     ): boolean | TranspileError {
-      const r = ContextF.findWithIsAtTopLevel(context, sym);
+      const r = ContextF.resolveCuSymbol(context, sym);
       if (TranspileError.is(r)) {
         return r;
       }
@@ -214,16 +214,12 @@ export const assign = transpilingForAssignment(
     }
 
     if (isPropertyAccess(id)) {
-      const { value } = id;
-      const r = ContextF.findWithIsAtTopLevel(context, id);
-      const [id0, ...ids] = value;
-      if (TranspileError.is(r)) {
-        return r;
+      const { left, right } = id;
+      const leftSrc = await transpileExpressionU(left, context);
+      if (TranspileError.is(leftSrc)) {
+        return leftSrc;
       }
-      if (r.canBeAtPseudoTopLevel) {
-        return [ktvalRefer(id0), ktvalOther(`.${ids.join(".")}=`), ...exp];
-      }
-      return [ktvalOther(`${value.join(".")}=`), ...exp];
+      return [...leftSrc, ktvalOther(`.${right}=`), ...exp];
     }
 
     const vFormatted = formatForError(id);

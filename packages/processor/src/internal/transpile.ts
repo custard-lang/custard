@@ -27,7 +27,6 @@ import {
   type PropertyAccess,
   type ReaderInput,
   ReservedSymbol,
-  showSymbolAccess,
   TranspileError,
   List,
 } from "../types.js";
@@ -57,6 +56,13 @@ import {
   functionIdOfCall,
   Macro,
   isMarkedDirectStatementWriter,
+  type SymbolResolutionResult,
+  formatForError,
+  type PropertyAccessResolutionResult,
+  type PropertyAccessResolutionResultOnlyId,
+  writerIsOneOf,
+  writerKindToHumanReadableName,
+  writerToHumanReadableName,
 } from "./types.js";
 import * as ContextF from "./context.js";
 import { readBlock } from "../reader.js";
@@ -78,11 +84,11 @@ export async function transpileExpressionU(
   if (TranspileError.is(r)) {
     return r;
   }
-  const [ktvals, cw] = r;
-  if (cw !== null && isMarkedDirectStatementWriter(cw.writer)) {
-    const symbolAccessSrc = showSymbolAccess(cw.sym);
+  const [ktvals, writer] = r;
+  if (writer !== null && isMarkedDirectStatementWriter(writer)) {
+    const callee = formatForError(form);
     return new TranspileError(
-      `\`${symbolAccessSrc}\` cannot be used in an expression position because it's a statement!`,
+      `${callee} cannot be used as an expression because it's a statement!`,
     );
   }
   return ktvals;
@@ -145,11 +151,11 @@ export async function transpileBlockCore(
     if (i !== lastIndex) {
       return;
     }
-    const [, cw] = r;
+    const [, writer] = r;
     lastIsExpression =
-      cw === null ||
-      !isMarkedDirectWriter(cw.writer) ||
-      !cw.writer.kind.statement;
+      writer === null ||
+      !isMarkedDirectWriter(writer) ||
+      !writer.kind.statement;
   }
 
   for (const [i, form] of forms.entries()) {
@@ -321,12 +327,7 @@ function joinWith(
   return result;
 }
 
-interface CallingOrCalledWriter {
-  writer: Writer;
-  sym: CuSymbol | PropertyAccess;
-}
-
-type KtvalsAndWriter = [Ktvals<JsSrc>, CallingOrCalledWriter | null];
+type KtvalsAndWriter = [Ktvals<JsSrc>, Writer | null];
 
 async function transpileStatementSpliceWithWriterU(
   form: unknown,
@@ -342,7 +343,7 @@ async function transpileStatementSpliceWithWriterU(
   if (TranspileError.is(writer)) {
     return writer;
   }
-  if (!isMacro(writer)) {
+  if (writer == null || !isMacro(writer)) {
     return new TranspileError(
       "Splice in statement position must be a macro call!",
     );
@@ -380,7 +381,7 @@ async function transpileExpressionSplice(
     if (TranspileError.is(writer)) {
       return writer;
     }
-    if (isMacro(writer)) {
+    if (writer != null && isMacro(writer)) {
       const macroResult = await expandMacro(
         writer,
         call.values.slice(1),
@@ -547,17 +548,17 @@ async function transpileCallExpressionWithWriter(
   if (TranspileError.is(r)) {
     return r;
   }
-  const [ktvals, cw] = r;
-  if (cw === null) {
-    return [ktvals, cw];
+  const [ktvals, writer] = r;
+  if (writer === null) {
+    return [ktvals, writer];
   }
-  const { writer } = cw;
   if (isMarkedDirectStatementWriter(writer)) {
+    const callee = formatForError(form.values[0]);
     return new TranspileError(
-      `\`${showSymbolAccess(cw.sym)}\` cannot be used in an expression calling position because it's a direct writer for statements!`,
+      `\`${callee}\` cannot be used in an expression calling position because it's a direct writer for statements!`,
     );
   }
-  return [ktvals, cw];
+  return [ktvals, writer];
 }
 
 async function transpileCallStatementWithWriter(
@@ -578,8 +579,8 @@ async function transpileCallStatementWithWriter(
     return funcSrcAndCallingWriter;
   }
 
-  const [funcSrc, cw] = funcSrcAndCallingWriter;
-  if (cw === null) {
+  const [funcSrc, writer] = funcSrcAndCallingWriter;
+  if (writer === null) {
     const argsSrc = await transpileExpressionsJoinWithCommaU(args, context);
     if (TranspileError.is(argsSrc)) {
       return argsSrc;
@@ -596,15 +597,15 @@ async function transpileCallStatementWithWriter(
     ];
   }
 
-  const { writer, sym } = cw;
+  const sym = form.values[0];
   if (isContextualKeyword(writer)) {
-    const symbolAccessSrc = showSymbolAccess(sym);
+    const symbolAccessSrc = formatForError(sym);
     return new TranspileError(
       `\`${symbolAccessSrc}\` must be used with \`${writer.companion}\`!`,
     );
   }
   if (isNamespace(writer)) {
-    const symbolAccessSrc = showSymbolAccess(sym);
+    const symbolAccessSrc = formatForError(sym);
     return new TranspileError(
       `\`${symbolAccessSrc}\` is just a namespace. Doesn't represent a function!`,
     );
@@ -621,16 +622,13 @@ async function transpileCallStatementWithWriter(
     if (TranspileError.is(argsSrc)) {
       return argsSrc;
     }
-    return [
-      [...funcSrc, ktvalOther("("), ...argsSrc, ktvalOther(")")],
-      { sym, writer },
-    ];
+    return [[...funcSrc, ktvalOther("("), ...argsSrc, ktvalOther(")")], writer];
   }
   if (isMarkedFunctionWithContext(writer)) {
     if (context.transpileState.mode !== "repl") {
-      const symbolAccessSrc = showSymbolAccess(sym);
+      const symbolAccessSrc = formatForError(sym);
       return new TranspileError(
-        `\`${symbolAccessSrc}\` is NOT currently available except in REPL or a macro definition.`,
+        `${symbolAccessSrc} is NOT currently available except in REPL or a macro definition.`,
       );
     }
 
@@ -647,7 +645,7 @@ async function transpileCallStatementWithWriter(
         ...argsSrc,
         ktvalOther(")"),
       ],
-      { sym, writer },
+      writer,
     ];
   }
 
@@ -657,7 +655,7 @@ async function transpileCallStatementWithWriter(
   }
   if (isMarkedDirectWriter(writer)) {
     const src = await writer.call(context, ...splicedArgs);
-    return TranspileError.is(src) ? src : [src, { sym, writer }];
+    return TranspileError.is(src) ? src : [src, writer];
   }
 
   if (isMacro(writer)) {
@@ -698,7 +696,7 @@ async function processMacroSplice(
     if (TranspileError.is(writer)) {
       return writer;
     }
-    if (isMacro(writer)) {
+    if (writer != null && isMacro(writer)) {
       const macroResult = await expandMacro(
         writer,
         call.values.slice(1),
@@ -751,36 +749,56 @@ async function transpileSymbolInNonCall(
   ast: CuSymbol,
   context: Context,
 ): Promise<Ktvals<JsSrc> | TranspileError> {
-  const r = ContextF.referToWithAssertion(
-    context,
-    ast,
-    expectedWriterKindsInNonCall,
-  );
+  const r = referToCuSymbolInNonCall(context, ast);
   if (TranspileError.is(r)) {
     return r;
   }
-  if (isDynamicVar(r.writer)) {
-    return await r.writer.call(context);
+  return await transpileSymbolResolutionResult(r, ast, context);
+}
+
+function referToCuSymbolInNonCall(
+  context: Context,
+  sym: CuSymbol,
+): SymbolResolutionResult | TranspileError {
+  const r = ContextF.referToCuSymbol(context, sym);
+  if (TranspileError.is(r)) {
+    return r;
   }
-  return transpileSymbolReference(r, ast);
+
+  if (!writerIsOneOf(r.writer, expectedWriterKindsInNonCall)) {
+    const expected = expectedWriterKindsInNonCall
+      .map((wk) => `\`${writerKindToHumanReadableName(wk)}\``)
+      .join(", ");
+    const actual = writerToHumanReadableName(r.writer);
+    return new TranspileError(
+      `Expected ${formatForError(sym)} refers to be one of ${expected}, but it refers to ${actual}!`,
+    );
+  }
+  return r;
 }
 
 async function transpilePropertyAccessInNonCall(
-  ast: PropertyAccess,
+  ast: PropertyAccess<unknown>,
   context: Context,
 ): Promise<Ktvals<JsSrc> | TranspileError> {
-  const r = ContextF.referToWithAssertion(
-    context,
-    ast,
-    expectedWriterKindsInNonCall,
-  );
+  const r = ContextF.referToPropertyAccess(context, ast);
   if (TranspileError.is(r)) {
     return r;
   }
-  if (isDynamicVar(r.writer)) {
-    return await r.writer.call(context);
+
+  if (
+    r.writer != null &&
+    !writerIsOneOf(r.writer, expectedWriterKindsInNonCall)
+  ) {
+    const expected = expectedWriterKindsInNonCall
+      .map((wk) => `\`${writerKindToHumanReadableName(wk)}\``)
+      .join(", ");
+    const actual = writerToHumanReadableName(r.writer);
+    return new TranspileError(
+      `Expected ${formatForError(ast)} refers to be one of ${expected}, but it refers to ${actual}!`,
+    );
   }
-  return transpilePropertyAccessReference(r, ast);
+  return await transpilePropertyAccessResolutionResult(r, context);
 }
 
 const expectedWriterKindsInNonCall: WriterKind[] = [
@@ -792,33 +810,82 @@ const expectedWriterKindsInNonCall: WriterKind[] = [
 ];
 
 async function transpileSymbolWithCallingWriter(
-  form: CuSymbol,
+  ast: CuSymbol,
   context: Context,
 ): Promise<KtvalsAndWriter | TranspileError> {
-  const r = ContextF.referTo(context, form);
-  if (TranspileError.is(r)) {
-    return r;
+  const srr = ContextF.referToCuSymbol(context, ast);
+  if (TranspileError.is(srr)) {
+    return srr;
   }
-  if (isDynamicVar(r.writer)) {
-    return withNoCallingWriter(await r.writer.call(context));
+
+  const ktvals = await transpileSymbolResolutionResult(srr, ast, context);
+  if (TranspileError.is(ktvals)) {
+    return ktvals;
   }
-  const ktval = transpileSymbolReference(r, form);
-  return [ktval, { writer: r.writer, sym: form }];
+  return [ktvals, srr.writer];
 }
 
 async function transpilePropertyAccessWithCallingWriter(
-  form: PropertyAccess,
+  ast: PropertyAccess<unknown>,
   context: Context,
 ): Promise<KtvalsAndWriter | TranspileError> {
-  const r = ContextF.referTo(context, form);
-  if (TranspileError.is(r)) {
-    return r;
+  const parr = ContextF.referToPropertyAccess(context, ast);
+  if (TranspileError.is(parr)) {
+    return parr;
   }
-  if (isDynamicVar(r.writer)) {
-    return withNoCallingWriter(await r.writer.call(context));
+  const ktvals = await transpilePropertyAccessResolutionResult(parr, context);
+  if (TranspileError.is(ktvals)) {
+    return ktvals;
   }
-  const ktvals = transpilePropertyAccessReference(r, form);
-  return [ktvals, { writer: r.writer, sym: form }];
+  return [ktvals, parr.writer ?? null];
+}
+
+async function transpileSymbolResolutionResult(
+  srr: SymbolResolutionResult,
+  ast: CuSymbol,
+  context: Context,
+): Promise<Ktvals<JsSrc> | TranspileError> {
+  if (isDynamicVar(srr.writer)) {
+    return await srr.writer.call(context);
+  }
+  return transpileSymbolResolutionResultOnlyId(srr, ast);
+}
+
+async function transpilePropertyAccessResolutionResult(
+  parr: PropertyAccessResolutionResult,
+  context: Context,
+): Promise<Ktvals<JsSrc> | TranspileError> {
+  if (parr.hasNonId) {
+    const nonIdSrc = await transpileExpressionU(parr.nonId, context);
+    if (TranspileError.is(nonIdSrc)) {
+      return nonIdSrc;
+    }
+    return [...nonIdSrc, ktvalOther("."), ktvalOther(parr.ids.join("."))];
+  }
+  if (isDynamicVar(parr.writer)) {
+    return await parr.writer.call(context);
+  }
+  return transpilePropertyAccessResolutionResultOnlyId(parr);
+}
+
+export function transpileSymbolResolutionResultOnlyId(
+  srr: SymbolResolutionResult,
+  ast: CuSymbol,
+): Ktvals<JsSrc> {
+  return srr.canBeAtPseudoTopLevel
+    ? [ktvalRefer(ast.value)]
+    : [ktvalOther(ast.value)];
+}
+
+export function transpilePropertyAccessResolutionResultOnlyId(
+  parr: PropertyAccessResolutionResultOnlyId,
+): Ktvals<JsSrc> {
+  if (parr.canBeAtPseudoTopLevel) {
+    const [id0, ...ids] = parr.ids;
+    return [ktvalRefer(id0), ktvalOther(`.${ids.join(".")}`)];
+  } else {
+    return [ktvalOther(parr.ids.join("."))];
+  }
 }
 
 function withNoCallingWriter(
@@ -828,27 +895,6 @@ function withNoCallingWriter(
     return s;
   }
   return [s, null];
-}
-
-export function transpilePropertyAccessReference(
-  r: ContextF.WriterWithIsAtTopLevel,
-  ast: PropertyAccess,
-): Ktvals<JsSrc> {
-  if (r.canBeAtPseudoTopLevel) {
-    const [id0, ...ids] = ast.value;
-    return [ktvalRefer(id0), ktvalOther(`.${ids.join(".")}`)];
-  } else {
-    return [ktvalOther(ast.value.join("."))];
-  }
-}
-
-export function transpileSymbolReference(
-  r: ContextF.WriterWithIsAtTopLevel,
-  ast: CuSymbol,
-): Ktvals<JsSrc> {
-  return r.canBeAtPseudoTopLevel
-    ? [ktvalRefer(ast.value)]
-    : [ktvalOther(ast.value)];
 }
 
 async function transpileCuObject(
@@ -878,11 +924,7 @@ async function transpileCuObject(
 
       kvSrc = [...kSrc, ktvalOther(":"), ...vSrc];
     } else if (isCuSymbol(kv)) {
-      const f = ContextF.referToWithAssertion(
-        context,
-        kv,
-        expectedWriterKindsInNonCall,
-      );
+      const f = referToCuSymbolInNonCall(context, kv);
       if (TranspileError.is(f)) {
         return f;
       }

@@ -1,6 +1,9 @@
 import { describe, expect, test } from "vitest";
 
-import type { Context } from "@custard-lang/processor/dist/internal/types.js";
+import type {
+  Context,
+  SymbolResolutionResult,
+} from "@custard-lang/processor/dist/internal/types.js";
 import {
   assumeIsFile,
   aVar,
@@ -41,16 +44,16 @@ function subjectContext(): Context {
 }
 
 describe("Interactions of the functions in ContextF", () => {
-  test("referTo returns the set variable, and logs the reference to the variable", () => {
+  test("referToCuSymbol returns the set variable, and logs the reference to the variable", () => {
     const context = subjectContext();
 
     // Scope 0
     const v0_0v = aVar();
     ContextF.set(context, "v0_0", v0_0v);
-    const w0_0 = ContextF.referTo(
+    const w0_0 = ContextF.referToCuSymbol(
       context,
       cuSymbol("v0_0"),
-    ) as ContextF.WriterWithIsAtTopLevel;
+    ) as SymbolResolutionResult;
     expect(w0_0.writer).toBe(v0_0v);
     expect(context.references.referenceById.get("v0_0")).toEqual([
       {
@@ -67,10 +70,10 @@ describe("Interactions of the functions in ContextF", () => {
 
     // Scope 0-0
     inScope(context, () => {
-      const w0_0 = ContextF.referTo(
+      const w0_0 = ContextF.referToCuSymbol(
         context,
         cuSymbol("v0_0"),
-      ) as ContextF.WriterWithIsAtTopLevel;
+      ) as SymbolResolutionResult;
       expect(w0_0.writer).toBe(v0_0v);
       expect(context.references.referenceById.get("v0_0")?.at(-1)).toEqual({
         referer: [0, 0],
@@ -80,10 +83,10 @@ describe("Interactions of the functions in ContextF", () => {
         },
       });
 
-      const w0_1 = ContextF.referTo(
+      const w0_1 = ContextF.referToCuSymbol(
         context,
         cuSymbol("v0_1"),
-      ) as ContextF.WriterWithIsAtTopLevel;
+      ) as SymbolResolutionResult;
       expect(w0_1.writer).toBe(v0_1v);
       expect(context.references.referenceById.get("v0_1")).toEqual([
         {
@@ -100,10 +103,10 @@ describe("Interactions of the functions in ContextF", () => {
 
       // Scope 0-0-0
       inScope(context, () => {
-        const w0_0 = ContextF.referTo(
+        const w0_0 = ContextF.referToCuSymbol(
           context,
           cuSymbol("v0_0"),
-        ) as ContextF.WriterWithIsAtTopLevel;
+        ) as SymbolResolutionResult;
         expect(w0_0.writer).toBe(v0_0v);
         expect(context.references.referenceById.get("v0_0")?.at(-1)).toEqual({
           referer: [0, 0, 0],
@@ -113,10 +116,10 @@ describe("Interactions of the functions in ContextF", () => {
           },
         });
 
-        const w0_1 = ContextF.referTo(
+        const w0_1 = ContextF.referToCuSymbol(
           context,
           cuSymbol("v0_1"),
-        ) as ContextF.WriterWithIsAtTopLevel;
+        ) as SymbolResolutionResult;
         expect(w0_1.writer).toBe(v0_1v);
         expect(context.references.referenceById.get("v0_1")?.at(-1)).toEqual({
           referer: [0, 0, 0],
@@ -126,10 +129,10 @@ describe("Interactions of the functions in ContextF", () => {
           },
         });
 
-        const w00_0 = ContextF.referTo(
+        const w00_0 = ContextF.referToCuSymbol(
           context,
           cuSymbol("v00_0"),
-        ) as ContextF.WriterWithIsAtTopLevel;
+        ) as SymbolResolutionResult;
         expect(w00_0.writer).toBe(v00_0v);
         expect(context.references.referenceById.get("v00_0")).toEqual([
           {
@@ -144,10 +147,10 @@ describe("Interactions of the functions in ContextF", () => {
 
       // Scope 0-0-1
       inScope(context, () => {
-        const w0_0 = ContextF.referTo(
+        const w0_0 = ContextF.referToCuSymbol(
           context,
           cuSymbol("v0_0"),
-        ) as ContextF.WriterWithIsAtTopLevel;
+        ) as SymbolResolutionResult;
         expect(w0_0.writer).toBe(v0_0v);
         expect(context.references.referenceById.get("v0_0")?.at(-1)).toEqual({
           referer: [1, 0, 0],
@@ -157,10 +160,10 @@ describe("Interactions of the functions in ContextF", () => {
           },
         });
 
-        const w0_1 = ContextF.referTo(
+        const w0_1 = ContextF.referToCuSymbol(
           context,
           cuSymbol("v0_1"),
-        ) as ContextF.WriterWithIsAtTopLevel;
+        ) as SymbolResolutionResult;
         expect(w0_1.writer).toBe(v0_1v);
         expect(context.references.referenceById.get("v0_1")?.at(-1)).toEqual({
           referer: [1, 0, 0],
@@ -170,10 +173,10 @@ describe("Interactions of the functions in ContextF", () => {
           },
         });
 
-        const w00_0 = ContextF.referTo(
+        const w00_0 = ContextF.referToCuSymbol(
           context,
           cuSymbol("v00_0"),
-        ) as ContextF.WriterWithIsAtTopLevel;
+        ) as SymbolResolutionResult;
         expect(w00_0.writer).toBe(v00_0v);
         expect(context.references.referenceById.get("v00_0")?.at(-1)).toEqual({
           referer: [1, 0, 0],
@@ -187,10 +190,10 @@ describe("Interactions of the functions in ContextF", () => {
 
     // Scope 0-1
     inScope(context, () => {
-      const w0_0 = ContextF.referTo(
+      const w0_0 = ContextF.referToCuSymbol(
         context,
         cuSymbol("v0_0"),
-      ) as ContextF.WriterWithIsAtTopLevel;
+      ) as SymbolResolutionResult;
       expect(w0_0.writer).toBe(v0_0v);
       expect(context.references.referenceById.get("v0_0")?.at(-1)).toEqual({
         referer: [1, 0],
@@ -200,10 +203,10 @@ describe("Interactions of the functions in ContextF", () => {
         },
       });
 
-      const w0_1 = ContextF.referTo(
+      const w0_1 = ContextF.referToCuSymbol(
         context,
         cuSymbol("v0_1"),
-      ) as ContextF.WriterWithIsAtTopLevel;
+      ) as SymbolResolutionResult;
       expect(w0_1.writer).toBe(v0_1v);
       expect(context.references.referenceById.get("v0_1")?.at(-1)).toEqual({
         referer: [1, 0],
@@ -218,10 +221,10 @@ describe("Interactions of the functions in ContextF", () => {
 
       // Scope 0-1-0
       inScope(context, () => {
-        const w0_0 = ContextF.referTo(
+        const w0_0 = ContextF.referToCuSymbol(
           context,
           cuSymbol("v0_0"),
-        ) as ContextF.WriterWithIsAtTopLevel;
+        ) as SymbolResolutionResult;
         expect(w0_0.writer).toBe(v0_0v);
         expect(context.references.referenceById.get("v0_0")?.at(-1)).toEqual({
           referer: [0, 1, 0],
@@ -231,10 +234,10 @@ describe("Interactions of the functions in ContextF", () => {
           },
         });
 
-        const w0_1 = ContextF.referTo(
+        const w0_1 = ContextF.referToCuSymbol(
           context,
           cuSymbol("v0_1"),
-        ) as ContextF.WriterWithIsAtTopLevel;
+        ) as SymbolResolutionResult;
         expect(w0_1.writer).toBe(v0_1v);
         expect(context.references.referenceById.get("v0_1")?.at(-1)).toEqual({
           referer: [0, 1, 0],
@@ -244,10 +247,10 @@ describe("Interactions of the functions in ContextF", () => {
           },
         });
 
-        const w01_0 = ContextF.referTo(
+        const w01_0 = ContextF.referToCuSymbol(
           context,
           cuSymbol("v01_0"),
-        ) as ContextF.WriterWithIsAtTopLevel;
+        ) as SymbolResolutionResult;
         expect(w01_0.writer).toBe(v01_0v);
         expect(context.references.referenceById.get("v01_0")).toEqual([
           {
@@ -262,10 +265,10 @@ describe("Interactions of the functions in ContextF", () => {
 
       // Scope 0-1-1
       inScope(context, () => {
-        const w0_0 = ContextF.referTo(
+        const w0_0 = ContextF.referToCuSymbol(
           context,
           cuSymbol("v0_0"),
-        ) as ContextF.WriterWithIsAtTopLevel;
+        ) as SymbolResolutionResult;
         expect(w0_0.writer).toBe(v0_0v);
         expect(context.references.referenceById.get("v0_0")?.at(-1)).toEqual({
           referer: [1, 1, 0],
@@ -275,10 +278,10 @@ describe("Interactions of the functions in ContextF", () => {
           },
         });
 
-        const w0_1 = ContextF.referTo(
+        const w0_1 = ContextF.referToCuSymbol(
           context,
           cuSymbol("v0_1"),
-        ) as ContextF.WriterWithIsAtTopLevel;
+        ) as SymbolResolutionResult;
         expect(w0_1.writer).toBe(v0_1v);
         expect(context.references.referenceById.get("v0_1")?.at(-1)).toEqual({
           referer: [1, 1, 0],
@@ -288,10 +291,10 @@ describe("Interactions of the functions in ContextF", () => {
           },
         });
 
-        const w01_0 = ContextF.referTo(
+        const w01_0 = ContextF.referToCuSymbol(
           context,
           cuSymbol("v01_0"),
-        ) as ContextF.WriterWithIsAtTopLevel;
+        ) as SymbolResolutionResult;
         expect(w01_0.writer).toBe(v01_0v);
         expect(context.references.referenceById.get("v01_0")?.at(-1)).toEqual({
           referer: [1, 1, 0],
@@ -305,10 +308,10 @@ describe("Interactions of the functions in ContextF", () => {
 
     // Scope 0-2
     inScope(context, () => {
-      const w0_0 = ContextF.referTo(
+      const w0_0 = ContextF.referToCuSymbol(
         context,
         cuSymbol("v0_0"),
-      ) as ContextF.WriterWithIsAtTopLevel;
+      ) as SymbolResolutionResult;
       expect(w0_0.writer).toBe(v0_0v);
       expect(context.references.referenceById.get("v0_0")?.at(-1)).toEqual({
         referer: [2, 0],
@@ -318,10 +321,10 @@ describe("Interactions of the functions in ContextF", () => {
         },
       });
 
-      const w0_1 = ContextF.referTo(
+      const w0_1 = ContextF.referToCuSymbol(
         context,
         cuSymbol("v0_1"),
-      ) as ContextF.WriterWithIsAtTopLevel;
+      ) as SymbolResolutionResult;
       expect(w0_1.writer).toBe(v0_1v);
       expect(context.references.referenceById.get("v0_1")?.at(-1)).toEqual({
         referer: [2, 0],
@@ -336,10 +339,10 @@ describe("Interactions of the functions in ContextF", () => {
 
       // Scope 0-2-0
       inScope(context, () => {
-        const w0_0 = ContextF.referTo(
+        const w0_0 = ContextF.referToCuSymbol(
           context,
           cuSymbol("v0_0"),
-        ) as ContextF.WriterWithIsAtTopLevel;
+        ) as SymbolResolutionResult;
         expect(w0_0.writer).toBe(v0_0v);
         expect(context.references.referenceById.get("v0_0")?.at(-1)).toEqual({
           referer: [0, 2, 0],
@@ -349,10 +352,10 @@ describe("Interactions of the functions in ContextF", () => {
           },
         });
 
-        const w0_1 = ContextF.referTo(
+        const w0_1 = ContextF.referToCuSymbol(
           context,
           cuSymbol("v0_1"),
-        ) as ContextF.WriterWithIsAtTopLevel;
+        ) as SymbolResolutionResult;
         expect(w0_1.writer).toBe(v0_1v);
         expect(context.references.referenceById.get("v0_1")?.at(-1)).toEqual({
           referer: [0, 2, 0],
@@ -362,10 +365,10 @@ describe("Interactions of the functions in ContextF", () => {
           },
         });
 
-        const w01_0 = ContextF.referTo(
+        const w01_0 = ContextF.referToCuSymbol(
           context,
           cuSymbol("v02_0"),
-        ) as ContextF.WriterWithIsAtTopLevel;
+        ) as SymbolResolutionResult;
         expect(w01_0.writer).toBe(v02_0v);
         expect(context.references.referenceById.get("v02_0")).toEqual([
           {
@@ -380,10 +383,10 @@ describe("Interactions of the functions in ContextF", () => {
 
       // Scope 0-2-1
       inScope(context, () => {
-        const w0_0 = ContextF.referTo(
+        const w0_0 = ContextF.referToCuSymbol(
           context,
           cuSymbol("v0_0"),
-        ) as ContextF.WriterWithIsAtTopLevel;
+        ) as SymbolResolutionResult;
         expect(w0_0.writer).toBe(v0_0v);
         expect(context.references.referenceById.get("v0_0")?.at(-1)).toEqual({
           referer: [1, 2, 0],
@@ -393,10 +396,10 @@ describe("Interactions of the functions in ContextF", () => {
           },
         });
 
-        const w0_1 = ContextF.referTo(
+        const w0_1 = ContextF.referToCuSymbol(
           context,
           cuSymbol("v0_1"),
-        ) as ContextF.WriterWithIsAtTopLevel;
+        ) as SymbolResolutionResult;
         expect(w0_1.writer).toBe(v0_1v);
         expect(context.references.referenceById.get("v0_1")?.at(-1)).toEqual({
           referer: [1, 2, 0],
@@ -406,10 +409,10 @@ describe("Interactions of the functions in ContextF", () => {
           },
         });
 
-        const w01_0 = ContextF.referTo(
+        const w01_0 = ContextF.referToCuSymbol(
           context,
           cuSymbol("v02_0"),
-        ) as ContextF.WriterWithIsAtTopLevel;
+        ) as SymbolResolutionResult;
         expect(w01_0.writer).toBe(v02_0v);
         expect(context.references.referenceById.get("v02_0")?.at(-1)).toEqual({
           referer: [1, 2, 0],
@@ -422,10 +425,10 @@ describe("Interactions of the functions in ContextF", () => {
 
       // Scope 0-2-2
       inScope(context, () => {
-        const w0_0 = ContextF.referTo(
+        const w0_0 = ContextF.referToCuSymbol(
           context,
           cuSymbol("v0_0"),
-        ) as ContextF.WriterWithIsAtTopLevel;
+        ) as SymbolResolutionResult;
         expect(w0_0.writer).toBe(v0_0v);
         expect(context.references.referenceById.get("v0_0")?.at(-1)).toEqual({
           referer: [2, 2, 0],
@@ -435,10 +438,10 @@ describe("Interactions of the functions in ContextF", () => {
           },
         });
 
-        const w0_1 = ContextF.referTo(
+        const w0_1 = ContextF.referToCuSymbol(
           context,
           cuSymbol("v0_1"),
-        ) as ContextF.WriterWithIsAtTopLevel;
+        ) as SymbolResolutionResult;
         expect(w0_1.writer).toBe(v0_1v);
         expect(context.references.referenceById.get("v0_1")?.at(-1)).toEqual({
           referer: [2, 2, 0],
@@ -448,10 +451,10 @@ describe("Interactions of the functions in ContextF", () => {
           },
         });
 
-        const w01_0 = ContextF.referTo(
+        const w01_0 = ContextF.referToCuSymbol(
           context,
           cuSymbol("v02_0"),
-        ) as ContextF.WriterWithIsAtTopLevel;
+        ) as SymbolResolutionResult;
         expect(w01_0.writer).toBe(v02_0v);
         expect(context.references.referenceById.get("v02_0")?.at(-1)).toEqual({
           referer: [2, 2, 0],
@@ -464,10 +467,10 @@ describe("Interactions of the functions in ContextF", () => {
         const v022_0v = aVar();
         ContextF.set(context, "v022_0", v022_0v);
 
-        const w022_0 = ContextF.referTo(
+        const w022_0 = ContextF.referToCuSymbol(
           context,
           cuSymbol("v022_0"),
-        ) as ContextF.WriterWithIsAtTopLevel;
+        ) as SymbolResolutionResult;
         expect(w022_0.writer).toBe(v022_0v);
         expect(context.references.referenceById.get("v022_0")?.at(-1)).toEqual({
           referer: [2, 2, 0],
@@ -486,11 +489,11 @@ describe("Interactions of the functions in ContextF", () => {
 
       expect(ContextF.set(context, "v0", aVar())).toBeUndefined();
 
-      ContextF.referTo(context, cuSymbol("v0"));
+      ContextF.referToCuSymbol(context, cuSymbol("v0"));
       expect(ContextF.set(context, "v1", aVar())).toBeUndefined();
 
       inScope(context, () => {
-        ContextF.referTo(context, cuSymbol("v0"));
+        ContextF.referToCuSymbol(context, cuSymbol("v0"));
         expect(ContextF.set(context, "v0", aVar())).toEqual(
           new TranspileError(
             "No variable `v0` is defined! NOTE: If you want to define `v0` recursively, wrap the declaration(s) with `recursive`.",
@@ -504,12 +507,12 @@ describe("Interactions of the functions in ContextF", () => {
 
       expect(ContextF.set(context, "v0", aVar())).toBeUndefined();
 
-      ContextF.referTo(context, cuSymbol("v0"));
+      ContextF.referToCuSymbol(context, cuSymbol("v0"));
       expect(ContextF.set(context, "v1", aVar())).toBeUndefined();
 
       inScope(context, () => {
         inScope(context, () => {
-          ContextF.referTo(context, cuSymbol("v0"));
+          ContextF.referToCuSymbol(context, cuSymbol("v0"));
         });
         expect(ContextF.set(context, "v0", aVar())).toEqual(
           new TranspileError(
@@ -524,11 +527,11 @@ describe("Interactions of the functions in ContextF", () => {
 
       expect(ContextF.set(context, "v0", aVar())).toBeUndefined();
 
-      ContextF.referTo(context, cuSymbol("v0"));
+      ContextF.referToCuSymbol(context, cuSymbol("v0"));
       expect(ContextF.set(context, "v1", aVar())).toBeUndefined();
 
       inScope(context, () => {
-        ContextF.referTo(context, cuSymbol("v1"));
+        ContextF.referToCuSymbol(context, cuSymbol("v1"));
         expect(ContextF.set(context, "v0", aVar())).toBeUndefined();
 
         expect(ContextF.set(context, "v1", aVar())).toEqual(
@@ -538,7 +541,7 @@ describe("Interactions of the functions in ContextF", () => {
         );
 
         inScope(context, () => {
-          ContextF.referTo(context, cuSymbol("v1"));
+          ContextF.referToCuSymbol(context, cuSymbol("v1"));
           expect(ContextF.set(context, "v0", aVar())).toBeUndefined();
 
           expect(ContextF.set(context, "v1", aVar())).toEqual(
@@ -555,12 +558,12 @@ describe("Interactions of the functions in ContextF", () => {
 
       expect(ContextF.set(context, "v0", aVar())).toBeUndefined();
 
-      ContextF.referTo(context, cuSymbol("v0"));
+      ContextF.referToCuSymbol(context, cuSymbol("v0"));
       expect(ContextF.set(context, "v1", aVar())).toBeUndefined();
 
       inScope(context, () => {
         inScope(context, () => {
-          ContextF.referTo(context, cuSymbol("v1"));
+          ContextF.referToCuSymbol(context, cuSymbol("v1"));
         });
         expect(ContextF.set(context, "v0", aVar())).toBeUndefined();
 
@@ -572,7 +575,7 @@ describe("Interactions of the functions in ContextF", () => {
 
         inScope(context, () => {
           inScope(context, () => {
-            ContextF.referTo(context, cuSymbol("v1"));
+            ContextF.referToCuSymbol(context, cuSymbol("v1"));
           });
           expect(ContextF.set(context, "v0", aVar())).toBeUndefined();
 
@@ -591,17 +594,17 @@ describe("Interactions of the functions in ContextF", () => {
 
     expect(ContextF.set(context, "v0", aVar())).toBeUndefined();
 
-    ContextF.referTo(context, cuSymbol("v0"));
+    ContextF.referToCuSymbol(context, cuSymbol("v0"));
     expect(ContextF.set(context, "v1", aVar())).toBeUndefined();
 
     inScope(context, () => {
       expect(ContextF.set(context, "v0", aVar())).toBeUndefined();
 
-      ContextF.referTo(context, cuSymbol("v0"));
+      ContextF.referToCuSymbol(context, cuSymbol("v0"));
       expect(ContextF.set(context, "v1", aVar())).toBeUndefined();
 
       inScope(context, () => {
-        ContextF.referTo(context, cuSymbol("v1"));
+        ContextF.referToCuSymbol(context, cuSymbol("v1"));
       });
       expect(ContextF.set(context, "v2", aVar())).toBeUndefined();
     });

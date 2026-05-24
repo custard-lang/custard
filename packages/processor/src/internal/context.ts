@@ -3,8 +3,6 @@ import * as path from "node:path";
 import {
   type Writer,
   isRecursiveConst,
-  isNamespace,
-  isWriter,
   type ScopeOptions,
   defaultScopeOptions,
   defaultAsyncScopeOptions,
@@ -14,41 +12,28 @@ import {
   readerInput,
   ProvidedSymbolsConfig,
   FilePathAndStat,
-  isProvidedConst,
-  writerIsOneOf,
-  writerKindToHumanReadableName,
-  writerToHumanReadableName,
-  showSymbolAccess,
-  WriterKind,
 } from "./types.js";
 import {
   TranspileError,
   type FilePath,
   type Id,
-  type PropertyAccess,
-  type CuSymbol,
-  isCuSymbol,
-  isPropertyAccess,
   type JsSrc,
   type Ktvals,
   type Namespace,
   ktvalRefer,
-  aConst,
   type Context,
   type ReaderInput,
 } from "../types.js";
 import * as References from "./references.js";
 import * as ScopeF from "./scope.js";
 import { isDeeperThanOrEqual, isShallowerThan } from "./scope-path.js";
-import { ExpectNever } from "../util/error.js";
 import { escapeRegExp } from "../util/regexp.js";
 import { resolveModulePaths } from "../provided-symbols-config.js";
 import { parseAbsoluteUrl } from "../util/path.js";
 import { stat } from "node:fs/promises";
+import { TOP_LEVEL_OFFSET } from "./context/core.js";
 
-// To distinguish jsTopLevels and the top level scope of the code,
-// assign the second scope as the top level.
-const TOP_LEVEL_OFFSET = 1;
+export * from "./context/resolve.js";
 
 export function init<State extends TranspileState>(
   state: State,
@@ -69,123 +54,6 @@ export function init<State extends TranspileState>(
     transpileState: state,
     importedModuleJsIds: new Map(),
   };
-}
-
-export function find(
-  context: Context,
-  symLike: CuSymbol | PropertyAccess,
-): Writer | TranspileError {
-  const r = findWithIsAtTopLevel(context, symLike);
-  if (TranspileError.is(r)) {
-    return r;
-  }
-  return r.writer;
-}
-
-export interface WriterWithIsAtTopLevel {
-  readonly writer: Writer;
-  readonly canBeAtPseudoTopLevel: boolean;
-  //       ^ TODO: rename
-}
-
-export function findWithIsAtTopLevel(
-  context: Context,
-  symLike: CuSymbol | PropertyAccess,
-): WriterWithIsAtTopLevel | TranspileError {
-  return findCore(context, symLike, false);
-}
-
-export function referTo(
-  context: Context,
-  symLike: CuSymbol | PropertyAccess,
-): WriterWithIsAtTopLevel | TranspileError {
-  return findCore(context, symLike, true);
-}
-
-export function referToWithAssertion(
-  context: Context,
-  symLike: CuSymbol | PropertyAccess,
-  validWriterKinds: WriterKind[],
-): WriterWithIsAtTopLevel | TranspileError {
-  const r = referTo(context, symLike);
-  if (TranspileError.is(r)) {
-    return r;
-  }
-
-  if (!writerIsOneOf(r.writer, validWriterKinds)) {
-    const expected = validWriterKinds
-      .map((wk) => `\`${writerKindToHumanReadableName(wk)}\``)
-      .join(", ");
-    const actual = writerToHumanReadableName(r.writer);
-    return new TranspileError(
-      `Expected \`${showSymbolAccess(symLike)}\` refers to be one of ${expected}, but it refers to ${actual}!`,
-    );
-  }
-  return r;
-}
-
-function findCore(
-  { scopes, references }: Context,
-  symLike: CuSymbol | PropertyAccess,
-  doRefer: boolean,
-): WriterWithIsAtTopLevel | TranspileError {
-  const topLevelI = scopes.length - TOP_LEVEL_OFFSET;
-
-  function byId(id: Id): WriterWithIsAtTopLevel | TranspileError {
-    for (const [i, frame] of scopes.entries()) {
-      const writer = ScopeF.get(frame, id);
-      if (writer !== undefined) {
-        if (doRefer) {
-          const scopePath = references.currentScope.slice(i);
-          References.add(references, { id, scopePath });
-        }
-        return {
-          writer,
-          canBeAtPseudoTopLevel: i === topLevelI && !isProvidedConst(writer),
-        };
-      }
-    }
-    return new TranspileError(
-      `No variable \`${id}\` is defined! NOTE: If you want to define \`${id}\` recursively, wrap the declaration(s) with \`recursive\`.`,
-    );
-  }
-
-  if (isCuSymbol(symLike)) {
-    return byId(symLike.value);
-  }
-  if (isPropertyAccess(symLike)) {
-    const [id0, ...ids] = symLike.value;
-
-    const r = byId(id0);
-    if (TranspileError.is(r) || !isNamespace(r.writer)) {
-      return r;
-    }
-
-    let module = r.writer;
-    let lastW: Writer = r.writer;
-    const { canBeAtPseudoTopLevel } = r;
-    for (const [i, part] of ids.entries()) {
-      const subW = module[part];
-      if (subW == null) {
-        return new TranspileError(
-          `\`${part}\` is not defined in \`${symLike.value
-            .slice(0, i - 1)
-            .join(".")}\`!`,
-        );
-      }
-      if (isWriter(subW)) {
-        if (isNamespace(subW)) {
-          module = subW;
-          lastW = subW;
-          continue;
-        }
-        return { writer: subW, canBeAtPseudoTopLevel };
-      }
-      return { writer: aConst(), canBeAtPseudoTopLevel };
-    }
-    return { writer: lastW, canBeAtPseudoTopLevel };
-  }
-  throw ExpectNever(symLike);
 }
 
 export function isDefinedInThisScope({ scopes }: Context, id: Id): boolean {

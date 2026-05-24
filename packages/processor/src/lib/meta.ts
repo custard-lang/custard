@@ -42,7 +42,8 @@ import { evalBlock, evalForm } from "../internal/eval.js";
 import {
   findIdAsJsSrc,
   isAtTopLevel,
-  referTo,
+  resolveCuSymbol,
+  resolvePropertyAccess,
   srcPathForErrorMessage,
 } from "../internal/context.js";
 
@@ -51,8 +52,8 @@ import { readBlock } from "../reader.js";
 import { standardModuleRoot } from "../definitions.js";
 import {
   transpileExpressionU,
-  transpilePropertyAccessReference,
-  transpileSymbolReference,
+  transpilePropertyAccessResolutionResultOnlyId,
+  transpileSymbolResolutionResultOnlyId,
 } from "../internal/transpile.js";
 
 import { buildAsyncFn, buildFn, tryToSet } from "./internal.js";
@@ -121,7 +122,7 @@ export const evaluate = markAsFunctionWithContext(
       return evalForm(formOrBlock, context_);
     }
     throw new Error(
-      "Sorry, user `evaluate` function is currently only available in `repl` mode",
+      "Sorry, user `evaluate` function is currently only available in REPL",
     );
   },
 );
@@ -280,28 +281,43 @@ export const macroToFunction = markAsDirectWriter(
         "The number of arguments of `meta.macroToFunction` must be 1",
       );
     }
-    const isSym = isCuSymbol(macroId);
-    const isPa = !isPropertyAccess(macroId);
-    if (!isSym && isPa) {
-      return new TranspileError(
-        `The first argument of \`meta.macroToFunction\` must be a Symbol or PropertyAccess, but got ${formatForError(macroId)}.`,
-      );
+
+    if (isCuSymbol(macroId)) {
+      const foundMacro = resolveCuSymbol(context, macroId);
+      if (foundMacro instanceof TranspileError) {
+        return foundMacro;
+      }
+      if (!isMacro(foundMacro.writer)) {
+        return new TranspileError(
+          `The given id does not refer to a macro: ${formatForError(macroId)}.`,
+        );
+      }
+
+      return [
+        ...transpileSymbolResolutionResultOnlyId(foundMacro, macroId),
+        ktvalOther(".expand"),
+      ];
     }
 
-    const foundMacro = referTo(context, macroId);
-    if (foundMacro instanceof TranspileError) {
-      return foundMacro;
-    }
-    if (!isMacro(foundMacro.writer)) {
-      return new TranspileError(
-        `The given id does not refer to a macro: ${formatForError(macroId)}.`,
-      );
-    }
+    if (isPropertyAccess(macroId)) {
+      const foundMacro = resolvePropertyAccess(context, macroId);
+      if (foundMacro instanceof TranspileError) {
+        return foundMacro;
+      }
+      if (foundMacro.writer == null || !isMacro(foundMacro.writer)) {
+        return new TranspileError(
+          `The given id does not refer to a macro: ${formatForError(macroId)}.`,
+        );
+      }
 
-    const srcRefer = isSym
-      ? transpileSymbolReference(foundMacro, macroId)
-      : transpilePropertyAccessReference(foundMacro, macroId);
-    return [...srcRefer, ktvalOther(".expand")];
+      return [
+        ...transpilePropertyAccessResolutionResultOnlyId(foundMacro),
+        ktvalOther(".expand"),
+      ];
+    }
+    return new TranspileError(
+      `The first argument of \`meta.macroToFunction\` must be a Symbol or PropertyAccess, but got ${formatForError(macroId)}.`,
+    );
   },
 );
 
@@ -363,7 +379,7 @@ async function traverse(
     return await quoteSplice(form, context);
   }
   if (isPropertyAccess(form)) {
-    return await quotePropertyAccess(form, context);
+    return await quotePropertyAccess(form, context, unquote);
   }
   if (isCuSymbol(form)) {
     return await quoteCuSymbol(form, context);
@@ -502,12 +518,22 @@ async function traverseSplice(
 }
 
 async function quotePropertyAccess(
-  form: PropertyAccess,
+  form: PropertyAccess<unknown>,
   context: Context,
-): Promise<Ktvals<JsSrc>> {
-  const elementsSrc = form.value.map((id) => JSON.stringify(id)).join(",");
+  unquote: boolean,
+): Promise<Ktvals<JsSrc> | TranspileError> {
+  const leftSrc = await traverse(form.left, context, unquote);
+  if (TranspileError.is(leftSrc)) {
+    return leftSrc;
+  }
+  const rightSrc = JSON.stringify(form.right);
   const funcSrc = await findThisModulesJsId(context, "propertyAccess");
-  return [...funcSrc, ktvalOther(`(${elementsSrc})`)];
+  return [
+    ...funcSrc,
+    ktvalOther(`(`),
+    ...leftSrc,
+    ktvalOther(`, ${rightSrc})`),
+  ];
 }
 
 async function quoteCuSymbol(

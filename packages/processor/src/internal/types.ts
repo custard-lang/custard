@@ -21,12 +21,7 @@ import {
 } from "./types/property-access.js";
 import { type Unquote, unquote, isUnquote } from "./types/unquote.js";
 import { type Splice, splice, isSplice } from "./types/splice.js";
-import {
-  type ComputedKey,
-  isComputedKey,
-  isKeyValue,
-  type KeyValue,
-} from "./types/key-value.js";
+import { isComputedKey, isKeyValue, type KeyValue } from "./types/key-value.js";
 import { type Id } from "./types/id.js";
 import { type Ktvals } from "./types/ktval.js";
 import { type TranspileError } from "./types/errors.js";
@@ -42,6 +37,7 @@ export type Form<X extends Empty = Empty> =
   | CuArray<Form<X>, X>
   | CuObject<Form<X>, Form<X>, Form<X>, Form<X>, Form<X>, X>
   | AtomLike<X>
+  | PropertyAccess<Form<X>, X>
   | Unquote<Form<X>, X>
   | Splice<Form<X>, X>;
 
@@ -93,8 +89,8 @@ export interface Call<X extends Empty = Empty>
 
 export function functionIdOfCall<X extends Empty = Empty>(
   v: Call<X>,
-): CuSymbol<X> {
-  return v.values[0] as CuSymbol<X>;
+): CuSymbol<X> | PropertyAccess<Form<X>, X> {
+  return v.values[0] as CuSymbol<X> | PropertyAccess<Form<X>, X>;
 }
 
 // The `Cu` prefix is only to avoid conflicts with TypeScript's builtin types.
@@ -103,8 +99,7 @@ export type AtomLike<X extends Empty = Empty> =
   | Float64<X>
   | CuString<X>
   | ReservedSymbol<X>
-  | CuSymbol<X>
-  | PropertyAccess<X>;
+  | CuSymbol<X>;
 
 export function locatedInteger32(v: number, l: Location): Integer32<Location> {
   const i = integer32(v);
@@ -140,19 +135,13 @@ export function locatedCuSymbol(v: string, l: Location): CuSymbol<Location> {
 }
 
 export function locatedPropertyAccess(
-  v: [string, ...string[]],
+  left: Form<Location>,
+  right: Id,
   l: Location,
-): PropertyAccess<Location> {
-  const p = propertyAccess(...v);
+): PropertyAccess<Form<Location>, Location> {
+  const p = propertyAccess(left, right);
   p.extension = l;
-  return p as PropertyAccess<Location>;
-}
-
-export function showSymbolAccess(sym: CuSymbol | PropertyAccess): string {
-  if (isCuSymbol(sym)) {
-    return sym.value;
-  }
-  return sym.value.join(".");
+  return p as PropertyAccess<Form<Location>, Location>;
 }
 
 export function locatedUnquote(
@@ -193,22 +182,22 @@ export interface Location {
   // Add lexical binding information like Racket's syntax object?
 }
 
-export function formatForError(f: unknown | ComputedKey<unknown>): string {
+export function formatForError(f: unknown): string {
   return `\`${formatForErrorUnticked(f)}\``;
 }
 
-function formatForErrorUnticked(f: unknown | ComputedKey<unknown>): string {
+function formatForErrorUnticked(f: unknown): string {
   if (isList(f)) {
-    return `(List${formatForErrorElement(f.values, formatForErrorShallow)})`;
+    return `( ${formatForErrorElement(f.values, formatForErrorShallow)} )`;
   }
   if (isCuArray(f)) {
-    return `(Array${formatForErrorElement(f, formatForErrorShallow)})`;
+    return `[ ${formatForErrorElement(f, formatForErrorShallow)} ]`;
   }
   if (isCuObject(f)) {
-    return `(Object${formatForErrorElement(f.keyValues, formatForErrorKV)})`;
+    return `{ ${formatForErrorElement(f.keyValues, formatForErrorKV)} }`;
   }
   if (isComputedKey(f)) {
-    return `(ComputedKey ${formatForErrorShallow(f.value)})`;
+    return `[${formatForErrorShallow(f.value)}]`;
   }
   return formatForErrorEtc(f);
 }
@@ -219,9 +208,9 @@ function formatForErrorElement<T>(forms: T[], fx: (f: T) => string): string {
     return "";
   }
   if (rest.length === 0) {
-    return ` ${fx(first)}`;
+    return fx(first);
   }
-  return ` ${fx(first)} ...`;
+  return `${fx(first)} <...rest>`;
 }
 
 function formatForErrorKV(
@@ -239,35 +228,35 @@ function formatForErrorKV(
 
 function formatForErrorShallow(f: unknown): string {
   if (isList(f)) {
-    return `(List ..)`;
+    return `( <...list> )`;
   }
   if (isCuArray(f)) {
-    return `(Array ..)`;
+    return `[ <...array> ]`;
   }
   if (isCuObject(f)) {
-    return `(Object ..)`;
+    return `{ <...object> }`;
   }
   return formatForErrorEtc(f);
 }
 
 function formatForErrorEtc(f: unknown): string {
   if (isInteger32(f)) {
-    return `(Integer32 ${String(f)})`;
+    return `<i32 ${String(f)}>`;
   }
   if (isFloat64(f)) {
-    return `(Float64 ${String(f)})`;
+    return `<f64 ${String(f)}>`;
   }
   if (isCuString(f)) {
-    return `(String ${JSON.stringify(f)})`;
+    return JSON.stringify(f);
   }
   if (isReservedSymbol(f)) {
-    return `(ReservedSymbol ${f.valueOf() ?? "none"})`;
+    return `${f.valueOf() ?? "none"}`;
   }
   if (isCuSymbol(f)) {
-    return `(Symbol ${f.value})`;
+    return f.value;
   }
   if (isPropertyAccess(f)) {
-    return `(PropertyAccess ${f.value.join(".")})`;
+    return `${formatForErrorUnticked(f.left)}.${f.right}`;
   }
   if (isUnquote(f)) {
     return `$${formatForErrorUnticked(f.value)}`;
@@ -377,14 +366,15 @@ export interface HowToRefer {
   isTopLevel: boolean;
 }
 
-export interface Scope {
+export interface ScopeOptions {
   isAsync: boolean;
   isGenerator: boolean;
+}
+
+export interface Scope extends ScopeOptions {
   definitions: ModuleMap;
   temporaryVariablesCount: number;
 }
-
-export type ScopeOptions = Pick<Scope, "isAsync" | "isGenerator">;
 
 export const defaultScopeOptions = { isAsync: false, isGenerator: false };
 
@@ -642,6 +632,31 @@ export function writerIsOneOf(
 ): boolean {
   return expectedKinds.includes(writer[WriterKindKey]);
 }
+
+export interface SymbolResolutionResult {
+  readonly writer: Writer;
+  readonly canBeAtPseudoTopLevel: boolean;
+}
+
+export interface PropertyAccessResolutionResultCommon {
+  readonly ids: [Id, ...Id[]];
+}
+
+export interface PropertyAccessResolutionResultOnlyId extends PropertyAccessResolutionResultCommon {
+  readonly hasNonId: false;
+  readonly writer: Writer;
+  readonly canBeAtPseudoTopLevel: boolean;
+}
+
+export interface PropertyAccessResolutionResultDynamic extends PropertyAccessResolutionResultCommon {
+  readonly hasNonId: true;
+  readonly writer?: undefined;
+  readonly nonId: unknown;
+}
+
+export type PropertyAccessResolutionResult =
+  | PropertyAccessResolutionResultOnlyId
+  | PropertyAccessResolutionResultDynamic;
 
 export interface References {
   readonly referenceById: Map<Id, Ref[]>;

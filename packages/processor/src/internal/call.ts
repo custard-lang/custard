@@ -7,6 +7,7 @@ import {
   functionIdOfCall,
   isMarkedDirectExportableStatementWriter,
   isMarkedDirectStatementWriter,
+  isWriter,
 } from "./types.js";
 import { isCuSymbol } from "./types/cu-symbol.js";
 import { isList } from "./types/list.js";
@@ -39,10 +40,9 @@ function asCallOf(
   if (TranspileError.is(w)) {
     return w;
   }
-  if (!p(w)) {
-    return;
+  if (isWriter(w) && p(w)) {
+    return call;
   }
-  return call;
 }
 
 export function asCall(form: unknown): Call | undefined {

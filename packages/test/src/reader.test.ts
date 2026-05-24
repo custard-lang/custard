@@ -122,19 +122,6 @@ describe("readStr", () => {
     });
   });
 
-  describe("PropertyAccess", () => {
-    test("`a.b.c` -> `a.b.c`", () => {
-      expect(readStr(inputOf("a.b.c"))).toEqual(
-        locatedPropertyAccess(["a", "b", "c"], location(1, 1)),
-      );
-    });
-    test("` aa.bc ` -> `aa.bc`", () => {
-      expect(readStr(inputOf(" aa.bc "))).toEqual(
-        locatedPropertyAccess(["aa", "bc"], location(1, 2)),
-      );
-    });
-  });
-
   describe("reserved symbols", () => {
     test("`true` -> `true`", () => {
       expect(readStr(inputOf("true"))).toEqual(
@@ -181,7 +168,11 @@ describe("readStr", () => {
       expect(readStr(inputOf('( pl.us 2 (m 3 4) none  "foo" )'))).toEqual(
         locatedList(
           [
-            locatedPropertyAccess(["pl", "us"], location(1, 3)),
+            locatedPropertyAccess(
+              locatedCuSymbol("pl", location(1, 3)),
+              "us",
+              location(1, 5),
+            ),
             locatedInteger32(2, location(1, 9)),
             locatedList(
               [
@@ -228,7 +219,11 @@ describe("readStr", () => {
       expect(readStr(inputOf('[ pl.us 2 (m\n 3 4) none  "foo" ]'))).toEqual(
         locatedCuArray(
           [
-            locatedPropertyAccess(["pl", "us"], location(1, 3)),
+            locatedPropertyAccess(
+              locatedCuSymbol("pl", location(1, 3)),
+              "us",
+              location(1, 5),
+            ),
             locatedInteger32(2, location(1, 9)),
             locatedList(
               [
@@ -386,6 +381,137 @@ describe("readStr", () => {
     });
   });
 
+  describe("PropertyAccess", () => {
+    test("`a.b.c` -> `a.b.c`", () => {
+      expect(readStr(inputOf("a.b.c"))).toEqual(
+        locatedPropertyAccess(
+          locatedPropertyAccess(
+            locatedCuSymbol("a", location(1, 1)),
+            "b",
+            location(1, 2),
+          ),
+          "c",
+          location(1, 4),
+        ),
+      );
+    });
+    test("` aa.bc ` -> `aa.bc`", () => {
+      expect(readStr(inputOf(" aa.bc "))).toEqual(
+        locatedPropertyAccess(
+          locatedCuSymbol("aa", location(1, 2)),
+          "bc",
+          location(1, 4),
+        ),
+      );
+    });
+
+    test("`1.abc` -> `1.abc`", () => {
+      expect(readStr(inputOf("1.abc"))).toEqual(
+        locatedPropertyAccess(
+          locatedInteger32(1, location(1, 1)),
+          "abc",
+          location(1, 2),
+        ),
+      );
+    });
+    test("`1.0.abc` -> `1.0.abc`", () => {
+      expect(readStr(inputOf("1.0.abc"))).toEqual(
+        locatedPropertyAccess(
+          locatedFloat64(1, location(1, 1)),
+          "abc",
+          location(1, 4),
+        ),
+      );
+    });
+    test('`"foo".bar` -> `"foo".bar`', () => {
+      expect(readStr(inputOf('"foo".bar'))).toEqual(
+        locatedPropertyAccess(
+          locatedCuString("foo", location(1, 1)),
+          "bar",
+          location(1, 6),
+        ),
+      );
+    });
+
+    test("`(a).d` -> `(a).d`", () => {
+      expect(readStr(inputOf("(a).d"))).toEqual(
+        locatedPropertyAccess(
+          locatedList([locatedCuSymbol("a", location(1, 2))], location(1, 1)),
+          "d",
+          location(1, 4),
+        ),
+      );
+    });
+    test("`[a b c].d` -> `[a b c].d`", () => {
+      expect(readStr(inputOf("[a b c].d"))).toEqual(
+        locatedPropertyAccess(
+          locatedCuArray(
+            [
+              locatedCuSymbol("a", location(1, 2)),
+              locatedCuSymbol("b", location(1, 4)),
+              locatedCuSymbol("c", location(1, 6)),
+            ],
+            location(1, 1),
+          ),
+          "d",
+          location(1, 8),
+        ),
+      );
+    });
+    test("`{a: 1}.b` -> `{a: 1}.b`", () => {
+      expect(readStr(inputOf("{a: 1}.b"))).toEqual(
+        locatedPropertyAccess(
+          locatedCuObject(
+            [
+              keyValue<
+                Form<Location>,
+                Form<Location>,
+                Form<Location>,
+                Location
+              >(
+                locatedCuSymbol("a", location(1, 2)),
+                locatedInteger32(1, location(1, 5)),
+              ),
+            ],
+            location(1, 1),
+          ),
+          "b",
+          location(1, 7),
+        ),
+      );
+    });
+
+    test("`$a.b.c` -> `$a.b.c`", () => {
+      expect(readStr(inputOf("$a.b.c"))).toEqual(
+        locatedPropertyAccess(
+          locatedPropertyAccess(
+            locatedUnquote(
+              locatedCuSymbol("a", location(1, 2)),
+              location(1, 1),
+            ),
+            "b",
+            location(1, 3),
+          ),
+          "c",
+          location(1, 5),
+        ),
+      );
+    });
+
+    test("`...a.b` -> `...a.b`", () => {
+      expect(readStr(inputOf("...a.b"))).toEqual(
+        locatedSplice(
+          locatedPropertyAccess(
+            locatedCuSymbol("a", location(1, 4)),
+            "b",
+            location(1, 5),
+          ),
+          location(1, 1),
+        ),
+      );
+    });
+  });
+
   describe("ParseError", () => {
     test("when the input string contains an extra closing parenthesis", () => {
       const expected = readStr(inputOf("(p 0 9))"));
@@ -422,6 +548,14 @@ describe("readStr", () => {
         'Unterminated string literal: " at line 2, column 2',
       );
     });
+
+    test("when a non-symbol token is used as the rhs of a property access", () => {
+      const expected = readStr(inputOf("a.1"));
+      expect(expected).toBeInstanceOf(ParseErrorSkipping);
+      expect((expected as ParseErrorSkipping<unknown>).message).toEqual(
+        'Expected period followed by symbol for property access, but got number: "1", at line 1, column 3 of test',
+      );
+    });
   });
 });
 
@@ -433,7 +567,11 @@ describe("readResumably", () => {
     const tokens1 = [
       "{",
       // string key with property access value
-      '"', "k", "e", "y", "1", '"', ":", " ", "obj.prop.value", " ",
+      // NOTE: A period "." should be treated as a separate token. However, due
+      //       to the way the reader is implemented, this test feeds the period
+      //       as part of the "obj." token. This is intentional to test that
+      //       the reader can see the input is incomplete and resume correctly.
+      '"', "k", "e", "y", "1", '"', ":", " ", "obj.", "prop.", "", "value", " ",
       // computed key with array value containing numbers and strings
       "[", "(", "plusF", " ", "1", " ", "2", ")", "]", ":", " ", "[", "123", " ", '"', "t", "e", "s", "t", '"', "]", " ",
       // symbol key with list value containing unquote and splice
@@ -477,7 +615,11 @@ describe("readResumably", () => {
       "{", "...", "other", " ", "name", ":", " ", '"', "h", "e", "l", "l", "o", " ", "w", "o", "r", "l", "d", '"', " ", "}",
       " ",
       // Array with property access and unquote
-      "[", "obj.method", " ", "$", "variable", "]",
+      // NOTE: A period "." should be treated as a separate token. However, due
+      //       to the way the reader is implemented, this test feeds the period
+      //       as part of the "obj." token. This is intentional to test that
+      //       the reader can see the input is incomplete and resume correctly.
+      "[", "obj.", "method", " ", "$", "variable", "]",
       " ",
       // Function call with splice
       "(", "concat", " ", "...", "$", "args", ")",
@@ -570,7 +712,7 @@ function forgetLocationOfForm(form: Form<Location>): Form {
   }
 
   if (isPropertyAccess(form)) {
-    return propertyAccess(...form.value);
+    return propertyAccess(forgetLocationOfForm(form.left), form.right);
   }
 
   if (isUnquote(form)) {

@@ -470,7 +470,7 @@ export function transpilingForVariableMutation(
         );
       }
 
-      const r = ContextF.findWithIsAtTopLevel(context, sym);
+      const r = ContextF.resolveCuSymbol(context, sym);
       if (TranspileError.is(r)) {
         return r;
       }
@@ -540,7 +540,7 @@ function functionPrelude(
   if (!isList(argsOrFirstForm)) {
     const argsFormatted = formatForError(argsOrFirstForm);
     return new TranspileError(
-      `Arguments for a function must be a list of symbols! But ${argsFormatted} is not!`,
+      `Arguments for a function must be a list of assignable expressions! But ${argsFormatted} is not!`,
     );
   }
 
@@ -628,8 +628,8 @@ export async function buildFn(
     if (TranspileError.is(lastSrcWithWriter)) {
       return lastSrcWithWriter;
     }
-    const [lastSrc, cw] = lastSrcWithWriter;
-    if (cw !== null && isMarkedDirectStatementWriter(cw.writer)) {
+    const [lastSrc, writer] = lastSrcWithWriter;
+    if (writer !== null && isMarkedDirectStatementWriter(writer)) {
       preludeResult.src.push(ktvalOther(";\n"), ...lastSrc, ktvalOther(";\n"));
     } else {
       preludeResult.src.push(

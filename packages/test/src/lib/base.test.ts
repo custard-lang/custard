@@ -111,7 +111,7 @@ describe("`annotateArray`", () => {
   testForm({
     src: '[...(annotateArray "These are spliced statements inside an array (invalid)" (const a 2) (plusF a 3))]',
     expected: new TranspileError(
-      "`const` cannot be used in an expression position because it's a statement!",
+      "`( const <...rest> )` cannot be used as an expression because it's a statement!",
     ),
     setUpConfig,
   });
@@ -123,7 +123,7 @@ describe("`annotateArray`", () => {
   testForm({
     src: '(timesF ...(annotateArray "These are spliced statements inside a call (invalid)" (const a 20) (plusF a 3)))',
     expected: new TranspileError(
-      "`const` cannot be used in an expression position because it's a statement!",
+      "`( const <...rest> )` cannot be used as an expression because it's a statement!",
     ),
     setUpConfig,
   });
@@ -347,14 +347,14 @@ describe("(expressions e x p r s)", () => {
   testForm({
     src: "(expressions (let x 1) x)",
     expected: new TranspileError(
-      "`let` cannot be used in an expression position because it's a statement!",
+      "`( let <...rest> )` cannot be used as an expression because it's a statement!",
     ),
     setUpConfig,
   });
   testForm({
     src: "(expressions (const x 2) x)",
     expected: new TranspileError(
-      "`const` cannot be used in an expression position because it's a statement!",
+      "`( const <...rest> )` cannot be used as an expression because it's a statement!",
     ),
     setUpConfig,
   });
@@ -728,7 +728,7 @@ describe("[a r r a y]", () => {
   testForm({
     src: "[(const x 3) (let y 4)]",
     expected: new TranspileError(
-      "`const` cannot be used in an expression position because it's a statement!",
+      "`( const <...rest> )` cannot be used as an expression because it's a statement!",
     ),
     setUpConfig,
   });
@@ -981,14 +981,14 @@ describe("(const|let|assign id expression)", () => {
   testForm({
     src: "(let { x y: ...(rest) } { y: 3 x: 2 })",
     expected: new TranspileError(
-      "The assignee of `let` must be a Symbol, but `...(List (Symbol rest))` is not!",
+      "The assignee of `let` must be a Symbol, but `...( rest )` is not!",
     ),
     setUpConfig,
   });
   testForm({
-    src: "(let { x y: (rest) } { y: 3 x: 2 })",
+    src: "(let { x y: (other) } { y: 3 x: 2 })",
     expected: new TranspileError(
-      "The assignee of `let` must be a Symbol, but `(List (Symbol rest))` is not!",
+      "The assignee of `let` must be a Symbol, but `( other )` is not!",
     ),
     setUpConfig,
   });
@@ -1155,6 +1155,11 @@ describe("(fn (a r g s) (f) (o) (r) (m) (s))", () => {
   });
   testForm({ src: "( (fn () 3) 2 )", expected: 3, setUpConfig });
   testForm({
+    src: '((fn (b) { a: { b } }) "c").a.b',
+    expected: "c",
+    setUpConfig,
+  });
+  testForm({
     src: "(fn name ()) (name)",
     expected: undefined,
     setUpConfig,
@@ -1182,14 +1187,14 @@ describe("(fn (a r g s) (f) (o) (r) (m) (s))", () => {
   testForm({
     src: "( (fn x x) 1 )",
     expected: new TranspileError(
-      "Arguments for a function must be a list of symbols! But `(Symbol x)` is not!",
+      "Arguments for a function must be a list of assignable expressions! But `x` is not!",
     ),
     setUpConfig,
   });
   testForm({
     src: "( (fn (x 1) x) 1 )",
     expected: new TranspileError(
-      "fn's assignee must be a symbol or an object literal, but `(Integer32 1)` is not!",
+      "fn's assignee must be a symbol or an object literal, but `<i32 1>` is not!",
     ),
     setUpConfig,
   });

@@ -17,7 +17,6 @@ export {
   aContextualKeyword,
   aVar,
   isConst,
-  showSymbolAccess,
   markAsDirectWriter,
   markAsDynamicVar,
   markAsFunctionWithContext,

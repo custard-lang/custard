@@ -167,7 +167,7 @@ describe("meta.defineMacro", () => {
   testForm({
     src: "(meta.defineMacro (b f t) (meta.quasiQuote (andOr (not $b) $f else $t)))",
     expected: new TranspileError(
-      "`meta.defineMacro` needs a name of the macro as a symbol, but got `(List (Symbol b) ...)`",
+      "`meta.defineMacro` needs a name of the macro as a symbol, but got `( b <...rest> )`",
     ),
     setUpConfig,
   });
@@ -296,7 +296,7 @@ describe("meta.defineMacro", () => {
     });
 
     testForm({
-      src: `(import macroMod) (const u macroMod.doubleMacro)`,
+      src: "(import macroMod) (const u macroMod.doubleMacro)",
       expected: new TranspileError(
         "Expected `macroMod.doubleMacro` refers to be one of `Var`, `Const`, `RecursiveConst`, `ProvidedConst`, `DynamicVar`, but it refers to Macro!",
       ),
@@ -364,7 +364,7 @@ describe("meta.macroToFunction", () => {
   testForm({
     src: "(let nonMacro (fn () none)) ((meta.macroToFunction nonMacro))",
     expected: new TranspileError(
-      "The given id does not refer to a macro: `(Symbol nonMacro)`.",
+      "The given id does not refer to a macro: `nonMacro`.",
     ),
     setUpConfig,
   });
@@ -378,7 +378,7 @@ describe("meta.quote", () => {
       meta_.float64(4.1),
       meta_.unquote(meta_.symbol("y")),
       meta_.splice(meta_.unquote(meta_.symbol("xs"))),
-      meta_.propertyAccess("a", "b", "c"),
+      meta_.propertyAccess(meta_.propertyAccess(meta_.symbol("a"), "b"), "c"),
     ),
     setUpConfig,
   });

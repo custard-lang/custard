@@ -21,16 +21,10 @@ import {
 } from "./internal/types.js";
 import {
   type Form,
-  type List,
-  type CuObject,
-  type CuString,
-  type Integer32,
-  type Float64,
   type Location,
   type KeyValue,
   type CuSymbol,
   isCuSymbol,
-  type CuArray,
   isUnquote,
   type Unquote,
   keyValue,
@@ -54,10 +48,13 @@ export const tokens: TokenAndRE[] = [
   { t: "colon", r: /:/y },
   { t: "string", r: /"(?:\\.|[^\\"])*"?/y },
   { t: "number", r: /-?\d+(?<fractional>\.\d+)?/y },
-  { t: "symbol or property access", r: /[a-z_][\w$.]*/iy },
+  { t: "symbol", r: /[a-z_][\w$]*/iy },
 
   { t: "unquote sign", r: /\$/y },
   { t: "splice sign", r: /\.\.\./y },
+
+  { t: "period", r: /\./y },
+
   { t: "UNKNOWN", r: /[^()\[\]{}:"\-\da-z_$.\s]*/y },
 ];
 const tokenInsideString = /(?:\\.|[^\\"])*"?/y;
@@ -159,38 +156,70 @@ export function form<R>(
   s: SpaceSkippingScanner,
   k: (result: Form<Location> | ParseError<R>) => R | ParseError<R>,
 ): R | ParseError<R> {
-  const token = handleEof(s, "form", () => form(s, k));
+  return formP(s, true, (_, result) => k(result));
+}
+
+function formP<R>(
+  s: SpaceSkippingScanner,
+  withPropertyAccess: boolean,
+  k: (
+    s: SpaceSkippingScanner,
+    result: Form<Location> | ParseError<R>,
+  ) => R | ParseError<R>,
+): R | ParseError<R> {
+  const kWithPropertyAccess = (
+    s: SpaceSkippingScanner,
+    result: Form<Location> | ParseError<R>,
+  ): R | ParseError<R> => {
+    if (isParseError(result)) {
+      return k(s, result);
+    }
+    if (withPropertyAccess) {
+      return propertyAccessP(
+        s,
+        result,
+        (s, propertyAccessResult: Form<Location> | ParseError<R>) => {
+          return k(s, propertyAccessResult);
+        },
+      );
+    }
+    return k(s, result);
+  };
+
+  const token = handleEof(s, "form", () => formP(s, withPropertyAccess, k));
   if (token instanceof ParseErrorWantingMore) {
     return token;
   }
-
   const { l, c, f } = token;
   switch (token.t) {
     case "open paren":
-      return listP(s, { l, c, f }, k);
+      return listP(s, { l, c, f }, kWithPropertyAccess);
     case "open bracket":
-      return cuArrayP(s, { l, c, f }, k);
+      return cuArrayP(s, { l, c, f }, kWithPropertyAccess);
     case "open brace":
-      return cuObjectP(s, { l, c, f }, k);
+      return cuObjectP(s, { l, c, f }, kWithPropertyAccess);
     case "string":
       // eslint-disable-next-line eslint-plugin-no-ignore-returned-union/no-ignore-returned-union
       s.next(); // Drop the peeked token
-      return stringP(s, token, k);
+      return stringP(s, token, kWithPropertyAccess);
     case "number":
       // eslint-disable-next-line eslint-plugin-no-ignore-returned-union/no-ignore-returned-union
       s.next(); // Drop the peeked token
-      return numberP(token, k);
-    case "symbol or property access":
+      return numberP(s, token, kWithPropertyAccess);
+    case "symbol":
       // eslint-disable-next-line eslint-plugin-no-ignore-returned-union/no-ignore-returned-union
       s.next(); // Drop the peeked token
-      return symbolOrPropertyAccess(s, token, k);
+      return symbolP(s, token, kWithPropertyAccess);
     case "unquote sign":
-      return unquoteP(s, { l, c, f }, k);
+      return unquoteP(s, { l, c, f }, kWithPropertyAccess);
     case "splice sign":
-      return spliceP(s, { l, c, f }, k);
+      return spliceP(s, { l, c, f }, kWithPropertyAccess);
     default:
-      return k(
-        ParseErrorSkipping.ofCommonMessage("form", token, () => form(s, k)),
+      return kWithPropertyAccess(
+        s,
+        ParseErrorSkipping.ofCommonMessage("form", token, () =>
+          formP(s, withPropertyAccess, kWithPropertyAccess),
+        ),
       );
   }
 }
@@ -199,57 +228,61 @@ function listP<R>(
   s: SpaceSkippingScanner,
   l: Location,
   k: (
-    result: List<Form<Location>, Location> | ParseError<R>,
+    s: SpaceSkippingScanner,
+    result: Form<Location> | ParseError<R>,
   ) => R | ParseError<R>,
 ): R | ParseError<R> {
-  return untilClose<R, Form<Location>>(s, "close paren", form, (v) => {
-    if (isParseError(v)) {
-      return k(v);
-    }
-    return k(locatedList(v, l));
-  });
+  return untilClose<R, Form<Location>>(
+    s,
+    "close paren",
+    (s, k) => formP(s, true, k),
+    (s, v) => {
+      if (isParseError(v)) {
+        return k(s, v);
+      }
+      return k(s, locatedList(v, l));
+    },
+  );
 }
 
 function cuArrayP<R>(
   s: SpaceSkippingScanner,
   l: Location,
   k: (
-    result: CuArray<Form<Location>, Location> | ParseError<R>,
+    s: SpaceSkippingScanner,
+    result: Form<Location> | ParseError<R>,
   ) => R | ParseError<R>,
 ): R | ParseError<R> {
-  return untilClose<R, Form<Location>>(s, "close bracket", form, (v) => {
-    if (isParseError(v)) {
-      return k(v);
-    }
-    return k(locatedCuArray(v, l));
-  });
+  return untilClose<R, Form<Location>>(
+    s,
+    "close bracket",
+    (s, k) => formP(s, true, k),
+    (s, v) => {
+      if (isParseError(v)) {
+        return k(s, v);
+      }
+      return k(s, locatedCuArray(v, l));
+    },
+  );
 }
 
 function cuObjectP<R>(
   s: SpaceSkippingScanner,
   l: Location,
   k: (
-    result:
-      | CuObject<
-          Form<Location>,
-          Form<Location>,
-          Form<Location>,
-          Form<Location>,
-          Form<Location>,
-          Location
-        >
-      | ParseError<R>,
+    s: SpaceSkippingScanner,
+    result: Form<Location> | ParseError<R>,
   ) => R | ParseError<R>,
 ): R | ParseError<R> {
   return untilClose<R, KeyValueOrSymbolOrStringOrUnquoteOrSplice>(
     s,
     "close brace",
     keyValueOrSymbolOrStringOrUnquote,
-    (v) => {
+    (s, v) => {
       if (isParseError(v)) {
-        return k(v);
+        return k(s, v);
       }
-      return k(locatedCuObject(v, l));
+      return k(s, locatedCuObject(v, l));
     },
   );
 }
@@ -259,9 +292,15 @@ function untilClose<R, F>(
   close: TokenKind,
   fn: (
     s: SpaceSkippingScanner,
-    k: (result: F | ParseError<R>) => R | ParseError<R>,
+    k: (
+      s: SpaceSkippingScanner,
+      result: F | ParseError<R>,
+    ) => R | ParseError<R>,
   ) => R | ParseError<R>,
-  k: (result: F[] | ParseError<R>) => R | ParseError<R>,
+  k: (
+    s: SpaceSkippingScanner,
+    result: F[] | ParseError<R>,
+  ) => R | ParseError<R>,
 ): R | ParseError<R> {
   // eslint-disable-next-line eslint-plugin-no-ignore-returned-union/no-ignore-returned-union
   s.next(); // drop open paren
@@ -271,12 +310,12 @@ function untilClose<R, F>(
   function loop(): R | ParseError<R> {
     const next = handleEof(s, `form or ${close}`, loop);
     if (next instanceof ParseErrorWantingMore) {
-      return k(next);
+      return k(s, next);
     }
     if (next.t === close) {
       // eslint-disable-next-line eslint-plugin-no-ignore-returned-union/no-ignore-returned-union
       s.next(); // drop close paren
-      return k(result);
+      return k(s, result);
     }
     if (next.t === "UNKNOWN") {
       return ParseErrorSkipping.ofCommonMessage("form", next, () => {
@@ -287,9 +326,9 @@ function untilClose<R, F>(
     }
 
     // call form then, append
-    return fn(s, (fnResult) => {
+    return fn(s, (s, fnResult) => {
       if (isParseError(fnResult)) {
-        return k(fnResult);
+        return k(s, fnResult);
       }
       result.push(fnResult);
       return loop();
@@ -308,12 +347,13 @@ type KeyValueOrSymbolOrStringOrUnquoteOrSplice =
 function keyValueOrSymbolOrStringOrUnquote<R>(
   s: SpaceSkippingScanner,
   k: (
+    s: SpaceSkippingScanner,
     result: KeyValueOrSymbolOrStringOrUnquoteOrSplice | ParseError<R>,
   ) => R | ParseError<R>,
 ): R | ParseError<R> {
-  return form(s, (key) => {
+  return formP(s, true, (s, key) => {
     if (isParseError(key)) {
-      return k(key);
+      return k(s, key);
     }
     return (function colonAndValue(): R | ParseError<R> {
       const colonOrOther = handleEof(
@@ -332,15 +372,16 @@ function keyValueOrSymbolOrStringOrUnquote<R>(
           // eslint-disable-next-line eslint-plugin-no-ignore-returned-union/no-ignore-returned-union
           s.next(); // drop colon
 
-          return form(s, (value) => {
+          return formP(s, true, (s, value) => {
             if (isParseError(value)) {
-              return k(value);
+              return k(s, value);
             }
             if (isCuArray(key)) {
               const [computedKeyForm, ...rest] = key;
               if (computedKeyForm === undefined) {
                 const { l, c } = key.extension;
                 return k(
+                  s,
                   ParseErrorSkipping.ofCommonMessage(
                     `No form given to a computed key at line ${l}, column ${c}`,
                     colonOrOther,
@@ -351,6 +392,7 @@ function keyValueOrSymbolOrStringOrUnquote<R>(
               if (rest.length > 0) {
                 const { l, c } = key.extension;
                 return k(
+                  s,
                   ParseErrorSkipping.ofCommonMessage(
                     `Expected a computed key, but array at line ${l}, column ${c}`,
                     colonOrOther,
@@ -358,15 +400,16 @@ function keyValueOrSymbolOrStringOrUnquote<R>(
                   ),
                 );
               }
-              return k(keyValue(computedKey(computedKeyForm), value));
+              return k(s, keyValue(computedKey(computedKeyForm), value));
             }
 
             if (isCuSymbol(key) || isCuString(key) || isUnquote(key)) {
-              return k(keyValue(key, value));
+              return k(s, keyValue(key, value));
             }
 
             const { l, c } = key.extension;
             return k(
+              s,
               ParseErrorSkipping.ofCommonMessage(
                 `key of an object must be a symbol, string, or computed key, but ${key.constructor.name} at line ${l}, column ${c}`,
                 colonOrOther,
@@ -378,10 +421,11 @@ function keyValueOrSymbolOrStringOrUnquote<R>(
       }
 
       if (isCuSymbol(key) || isUnquote(key) || isSplice(key)) {
-        return k(key);
+        return k(s, key);
       }
       const { l, c } = key.extension;
       return k(
+        s,
         new ParseErrorSkipping(
           `Key of an object without a value must be a symbol, but ${key.constructor.name} at line ${l}, column ${c}`,
           colonOrOther,
@@ -395,7 +439,10 @@ function keyValueOrSymbolOrStringOrUnquote<R>(
 function stringP<R>(
   s: SpaceSkippingScanner,
   token: MatchedToken,
-  k: (result: CuString<Location> | ParseError<R>) => R | ParseError<R>,
+  k: (
+    s: SpaceSkippingScanner,
+    result: Form<Location> | ParseError<R>,
+  ) => R | ParseError<R>,
 ): R | ParseError<R> {
   const {
     l,
@@ -406,6 +453,7 @@ function stringP<R>(
   if (stringLiteral === '"' || !/[^\\]?"$/.test(stringLiteral)) {
     let result = stringLiteral;
     return k(
+      s,
       new ParseErrorWantingMore(
         `Unterminated string literal: ${stringLiteral} at line ${l}, column ${c}`,
         eof({ l, c, f }),
@@ -431,6 +479,7 @@ function stringP<R>(
             // eslint-disable-next-line eslint-plugin-no-ignore-returned-union/no-ignore-returned-union
             s.next(); // drop the last token inside the string literal
             return k(
+              s,
               locatedCuString(JSON.parse(result) as string, { l, c, f }),
             );
           }
@@ -443,85 +492,120 @@ function stringP<R>(
       ),
     );
   }
-  return k(locatedCuString(JSON.parse(stringLiteral) as string, { l, c, f }));
+  return k(
+    s,
+    locatedCuString(JSON.parse(stringLiteral) as string, { l, c, f }),
+  );
 }
 
 function numberP<R>(
+  s: SpaceSkippingScanner,
   token: MatchedToken,
   k: (
-    result: Integer32<Location> | Float64<Location> | ParseError<R>,
+    s: SpaceSkippingScanner,
+    result: Form<Location> | ParseError<R>,
   ) => R | ParseError<R>,
 ): R | ParseError<R> {
   const { l, c, f, m } = token;
 
   if (m.groups?.fractional === undefined) {
-    return k(locatedInteger32(parseInt(m[0]), { l, c, f }));
+    return k(s, locatedInteger32(parseInt(m[0]), { l, c, f }));
   }
 
-  return k(locatedFloat64(parseFloat(m[0]), { l, c, f }));
+  return k(s, locatedFloat64(parseFloat(m[0]), { l, c, f }));
 }
 
-function symbolOrPropertyAccess<R>(
+function symbolP<R>(
   s: SpaceSkippingScanner,
   token: MatchedToken,
-  k: (result: Form<Location> | ParseError<R>) => R | ParseError<R>,
+  k: (
+    s: SpaceSkippingScanner,
+    result: Form<Location> | ParseError<R>,
+  ) => R | ParseError<R>,
 ): R | ParseError<R> {
   const { l, c, f } = token;
   const v = token.m[0];
   switch (v) {
     case "true":
-      return k(locatedReservedSymbol(true, { l, c, f }));
+      return k(s, locatedReservedSymbol(true, { l, c, f }));
 
     case "false":
-      return k(locatedReservedSymbol(false, { l, c, f }));
+      return k(s, locatedReservedSymbol(false, { l, c, f }));
 
     case "none":
-      return k(locatedReservedSymbol(null, { l, c, f }));
+      return k(s, locatedReservedSymbol(null, { l, c, f }));
 
-    default: {
-      // TODO: Insufficient validation
-      const parts = v.split(".");
-      if (parts.length === 0) {
-        return k(
-          new ParseErrorSkipping(
-            `Invalid symbol or property access: ${v} at line ${l}, column ${c}`,
-            token,
-            function symbolOrPropertyAccessAgain() {
-              // eslint-disable-next-line eslint-plugin-no-ignore-returned-union/no-ignore-returned-union
-              s.next();
-              return form(s, k);
-            },
-          ),
-        );
-      }
-      if (parts.length > 1) {
-        return k(
-          locatedPropertyAccess(parts as [string, ...string[]], {
-            l,
-            c,
-            f,
-          }),
-        );
-      }
-      return k(locatedCuSymbol(v, { l, c, f }));
-    }
+    default:
+      return k(s, locatedCuSymbol(v, { l, c, f }));
   }
+}
+
+function propertyAccessP<R>(
+  s: SpaceSkippingScanner,
+  form: Form<Location>,
+  k: (
+    s: SpaceSkippingScanner,
+    result: Form<Location> | ParseError<R>,
+  ) => R | ParseError<R>,
+): R | ParseError<R> {
+  const tokenPeriod = s.peek();
+  if (isEof(tokenPeriod)) {
+    return k(s, form);
+  }
+  if (tokenPeriod.t === "period") {
+    // eslint-disable-next-line eslint-plugin-no-ignore-returned-union/no-ignore-returned-union
+    s.next(); // drop period
+    function propertyAccessAfterPeriod(
+      s: SpaceSkippingScanner,
+    ): R | ParseError<R> {
+      const token = handleEof(s, "symbol", () => propertyAccessAfterPeriod(s));
+      if (token instanceof ParseErrorWantingMore) {
+        return token;
+      }
+      if (token.t === "symbol") {
+        // eslint-disable-next-line eslint-plugin-no-ignore-returned-union/no-ignore-returned-union
+        s.next(); // drop the symbol token
+        const { l, c, f } = tokenPeriod;
+        const property = token.m[0];
+        return propertyAccessP(
+          s,
+          locatedPropertyAccess(form, property, { l, c, f }),
+          k,
+        );
+      }
+      return k(
+        s,
+        ParseErrorSkipping.ofCommonMessage(
+          "period followed by symbol for property access",
+          token,
+          () => {
+            // eslint-disable-next-line eslint-plugin-no-ignore-returned-union/no-ignore-returned-union
+            s.next(); // drop period
+            return propertyAccessAfterPeriod(s);
+          },
+        ),
+      );
+    }
+    return propertyAccessAfterPeriod(s);
+  }
+  return k(s, form);
 }
 
 function unquoteP<R>(
   s: SpaceSkippingScanner,
   l: Location,
   k: (
-    result: Unquote<Form<Location>, Location> | ParseError<R>,
+    s: SpaceSkippingScanner,
+    result: Form<Location> | ParseError<R>,
   ) => R | ParseError<R>,
 ): R | ParseError<R> {
   // eslint-disable-next-line eslint-plugin-no-ignore-returned-union/no-ignore-returned-union
   s.next(); // drop "$"
-  return form(s, (v) => {
+  return formP(s, false, (s, v) => {
     if (isParseError(v)) {
-      return k(v);
+      return k(s, v);
     }
-    return k(locatedUnquote(v, l));
+    return k(s, locatedUnquote(v, l));
   });
 }
 
@@ -529,16 +613,17 @@ function spliceP<R>(
   s: SpaceSkippingScanner,
   l: Location,
   k: (
-    result: Splice<Form<Location>, Location> | ParseError<R>,
+    s: SpaceSkippingScanner,
+    result: Form<Location> | ParseError<R>,
   ) => R | ParseError<R>,
 ): R | ParseError<R> {
   // eslint-disable-next-line eslint-plugin-no-ignore-returned-union/no-ignore-returned-union
   s.next(); // drop "..."
-  return form(s, (v) => {
+  return formP(s, true, (s, v) => {
     if (isParseError(v)) {
-      return k(v);
+      return k(s, v);
     }
-    return k(locatedSplice(v, l));
+    return k(s, locatedSplice(v, l));
   });
 }
 

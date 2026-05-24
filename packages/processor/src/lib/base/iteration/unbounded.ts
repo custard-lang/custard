@@ -11,11 +11,14 @@ import {
   type JsSrc,
   type Ktvals,
   markAsDirectWriter,
-  showSymbolAccess,
   functionIdOfCall,
   TranspileError,
 } from "../../../types.js";
-import { aRecursiveConst, ordinaryStatement } from "../../../internal/types.js";
+import {
+  aRecursiveConst,
+  formatForError,
+  ordinaryStatement,
+} from "../../../internal/types.js";
 import { asCall, asStatement } from "../../../internal/call.js";
 
 import { _cu$const } from "../safe.js";
@@ -40,7 +43,7 @@ export const _cu$while = markAsDirectWriter(
       return stmt;
     }
     if (stmt !== undefined) {
-      const id = showSymbolAccess(functionIdOfCall(stmt));
+      const id = formatForError(functionIdOfCall(stmt));
       return new TranspileError(
         `The conditional expression in a \`while\` must be an expression! But \`${id}\` is a statement!`,
       );
@@ -106,7 +109,7 @@ export const _cu$for = markAsDirectWriter(
       return stmt;
     }
     if (stmt !== undefined) {
-      const id = showSymbolAccess(functionIdOfCall(stmt));
+      const id = formatForError(functionIdOfCall(stmt));
       return new TranspileError(
         `The conditional expression in a \`for\` must be an expression! But \`${id}\` is a statement!`,
       );

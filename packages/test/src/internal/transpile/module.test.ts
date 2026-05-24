@@ -284,7 +284,7 @@ describe("transpileBlock", () => {
       );
       expect(r).toEqual(
         new TranspileError(
-          "The arguments of `export` must be an exportable declaration (e.g., `const`/`let`). But got `(List (Symbol fn) ...)`.",
+          "The arguments of `export` must be an exportable declaration (e.g., `const`/`let`). But got `( fn <...rest> )`.",
         ),
       );
     });
@@ -295,7 +295,7 @@ describe("transpileBlock", () => {
       );
       expect(r).toEqual(
         new TranspileError(
-          "The arguments of `export` must be an exportable declaration (e.g., `const`/`let`). But got `(List (Symbol if) ...)`.",
+          "The arguments of `export` must be an exportable declaration (e.g., `const`/`let`). But got `( if <...rest> )`.",
         ),
       );
     });
