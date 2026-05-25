@@ -215,6 +215,8 @@ function formP<R>(
     case "splice sign":
       return spliceP(s, { l, c, f }, kWithPropertyAccess);
     default:
+      // eslint-disable-next-line eslint-plugin-no-ignore-returned-union/no-ignore-returned-union
+      s.next(); // Drop the peeked token to avoid infinite loop
       return kWithPropertyAccess(
         s,
         ParseErrorSkipping.ofCommonMessage("form", token, () =>
