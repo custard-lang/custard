@@ -1,0 +1,34 @@
+(import
+  lib
+  {
+    parseLine
+    readStreamsFromArgv
+    readUtf8Lines
+    continueIfNone
+    continueAndWarnIfError
+    isDateLine})
+
+(const INDEX_TARGET_DATE 2)
+
+(annotate
+  "DO NOT call process.argv.splice here. Modifying the global process.argv affects `custard transpile`" 
+  (const targetDate (get process.argv INDEX_TARGET_DATE)))
+(if (or (isNone targetDate) (not (isDateLine targetDate)))
+  (console.warn "Invalid target date. Please provide a date in the format YY/MM/DD.")
+  (note
+    "Calling process.exit here affects `custard transpile`"
+    (process.exit 1)))
+
+(let isScanningTargetDate false)
+(forEach reader (readStreamsFromArgv (process.argv.toSpliced INDEX_TARGET_DATE 1))
+  (const lines (async.await (readUtf8Lines reader)))
+  (forEach [i l] (lines.entries)
+    (const n (plusF i 1))
+    (const result (parseLine n l))
+    (continueIfNone result)
+    (continueAndWarnIfError result)
+    (if (equals result.type "date")
+      (assign isScanningTargetDate (equals result.value targetDate))
+      (continue))
+    (if (and isScanningTargetDate (equals result.type "item"))
+      (console.log l))))

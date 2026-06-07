@@ -1,0 +1,9 @@
+(import lib { parseLine readStreamsFromArgv readUtf8Lines continueIfNonItem})
+
+(forEach reader (readStreamsFromArgv process.argv)
+  (const lines (async.await (readUtf8Lines reader)))
+  (forEach [i l] (lines.entries)
+    (const n (plusF i 1))
+    (const result (parseLine n l))
+    ...(continueIfNonItem result)
+    (console.log (text result.name "\t" result.amount))))

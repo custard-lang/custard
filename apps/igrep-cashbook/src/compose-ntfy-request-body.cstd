@@ -1,0 +1,16 @@
+(const [sum details] (process.argv.slice 2))
+(console.log
+  (JSON.stringify
+    {
+      topic: "expense"
+      message: (text "Expense: " sum " yen")
+      actions:
+      [
+       {
+        action: "copy"
+        label: "Amount"
+        value: sum}
+       {
+        action: "copy"
+        label: "Details"
+        value: details}]}))

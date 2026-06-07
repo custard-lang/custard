@@ -1,0 +1,114 @@
+(export
+  (const
+    isDateLine
+    (fn (l)
+      (const dateRegExp (createRegExp "^\\d\\d/\\d\\d/\\d\\d\\s*$"))
+      (dateRegExp.test l))))
+
+(annotate
+  "Parse each line into fields. The format parsed here is rather relaxed than the exact syntax of igrep-cashbook."
+  (export
+    (const
+      parseLine
+      (fn (n l)
+        (const trimmed (l.trim))
+
+        (if (isDateLine trimmed)
+          (return {value: l type: "date"}))
+
+        (if
+          (or
+            (l.startsWith "#")
+            (isLessThan l.length 1))
+          (return none))
+
+        (if (not (l.startsWith " "))
+          (return (text "At line " n ": Invalid line. Missing a leading space.")))
+
+        (const sep (createRegExp " {2,}"))
+        (const fields (trimmed.split sep 3))
+        (const [name amountS category] fields)
+
+        (const commentRegExp (createRegExp " #([^#]*)$"))
+        (const commentMd (trimmed.match commentRegExp))
+        (const comment (andOr (isNone commentMd) none (get commentMd 1)))
+
+        (if (isNone name)
+          (return (text "At line " n ": Missing name field.")))
+        (if (isNone category)
+          (return (text "At line " n ": Missing category field.")))
+        (if (isNone amountS)
+          (return (text "At line " n ": Missing amount field.")))
+
+        (const reAmount (createRegExp "^(?<isIncome>\\+?)[\\d,_]+$"))
+        (const amountMd (amountS.match reAmount))
+        (if (isNone amountMd)
+          (return (text "At line " n ": Invalid amount field: " amountS)))
+
+        (const reAmountSeparator (createRegExp "[,_]+" "g"))
+        (const amount (Number (amountS.replace reAmountSeparator "")))
+
+        (if (isLessThan amount 1)
+          (return (text "At line " n ": Invalid amount field: " amount)))
+
+        (const isIncome (equals amountMd.groups.isIncome "+"))
+        (return {name category isIncome amount comment type: "item"})))))
+
+(const
+  streamFromArgvElement
+  (fn (f)
+   (andOr (equals f "-")
+     process.stdin
+     (fsC.createReadStream f))))
+
+(export
+  (const
+    readStreamsFromArgv
+    (fn (argv)
+      (const args (argv.slice 2))
+      (andOr
+        (isGreaterThan args.length 0)
+        (args.map streamFromArgvElement)
+        [process.stdin]))))
+
+(export
+  (const
+    readUtf8Lines
+    (async.fn (reader)
+      (reader.setEncoding "utf8")
+      (let data "")
+      (async.forEach chunk reader
+        (assign data (text data chunk)))
+      (data.split "\n"))))
+
+(export
+  (meta.defineMacro
+    continueIfNone
+    (varName)
+    (meta.quasiQuote
+      (if (isNone $varName)
+        (continue)))))
+
+(export
+  (meta.defineMacro
+    continueAndWarnIfError
+    (parseResult)
+    (meta.quasiQuote
+      (if (isString $parseResult)
+        (console.warn $parseResult)
+        (continue)))))
+
+(export
+  (meta.defineMacro
+    continueIfNonItem
+    (parseResult)
+    (console.log
+      "Debug: continueIfNonItem called with parseResult:"
+      (meta.quasiQuote $parseResult)
+      (meta.quote $parseResult.type))
+    [
+     ((meta.macroToFunction continueIfNone) parseResult)
+     ((meta.macroToFunction continueAndWarnIfError) parseResult)
+     (meta.quasiQuote
+       (if (notEquals $parseResult.type "item")
+         (continue)))]))

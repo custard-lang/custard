@@ -1,79 +1,16 @@
+(import lib { parseLine readStreamsFromArgv readUtf8Lines continueIfNonItem})
+
 (const expenditureByCategory (createMap))
 (let expenditure 0)
 (const incomeByCategory (createMap))
 (let income 0)
 
-(annotate
-  "Parse each line into fields. The format parsed here is rather relaxed than the exact syntax of igrep-cashbook."
-  (const
-    parseLine
-    (fn (n l)
-      (const trimmed (l.trim))
-      (const
-        isDateLine
-        (fn ()
-          (const dateRegExp (createRegExp "^\\d\\d/\\d\\d/\\d\\d$"))
-          (dateRegExp.test trimmed)))
-
-      (if
-        (or
-          (l.startsWith "#")
-          (or
-            (isLessThan l.length 1)
-            (isDateLine)))
-        (return none))
-
-      (if (not (l.startsWith " "))
-        (return (text "At line " n ": Invalid line. Missing a leading space.")))
-
-      (const sep (createRegExp " {2,}"))
-      (const fields (trimmed.split sep 3))
-      (const [name amountS category] fields)
-
-      (if (isNone name)
-        (return (text "At line " n ": Missing name field.")))
-      (if (isNone category)
-        (return (text "At line " n ": Missing category field.")))
-      (if (isNone amountS)
-        (return (text "At line " n ": Missing amount field.")))
-
-      (const reAmount (createRegExp "^(?<isIncome>\\+?)[\\d,_]+$"))
-      (const amountMd (amountS.match reAmount))
-      (if (isNone amountMd)
-        (return (text "At line " n ": Invalid amount field: " amountS)))
-
-      (const reAmountSeparator (createRegExp "[,_]+" "g"))
-      (const amount (Number (amountS.replace reAmountSeparator "")))
-
-      (if (isLessThan amount 1)
-        (return (text "At line " n ": Invalid amount field: " amount)))
-
-      (const isIncome (equals amountMd.groups.isIncome "+"))
-      (return {category isIncome amount}))))
-
-(const args (process.argv.slice 2))
-(forEach f (andOr (isGreaterThan args.length 0) args ["-"])
-  (const
-    reader
-    (andOr (equals f "-")
-      process.stdin
-      (fsC.createReadStream f)))
-
-  (reader.setEncoding "utf8")
-  (let data "")
-  (async.forEach chunk reader
-    (assign data (text data chunk)))
-  (let lines (data.split "\n"))
-
+(forEach reader (readStreamsFromArgv process.argv)
+  (const lines (async.await (readUtf8Lines reader)))
   (forEach [i l] (lines.entries)
     (const n (plusF i 1))
     (const result (parseLine n l))
-    (if (isNone result)
-      (continue))
-    (if (isString result)
-      (console.warn result)
-      (continue))
-
+    ...(continueIfNonItem result)
     (const {category isIncome amount} result)
 
     (if isIncome
