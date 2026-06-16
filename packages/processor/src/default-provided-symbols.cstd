@@ -4,5 +4,4 @@
 {
   modulePaths
   implicitStatements: "(importAnyOf base)"
-  jsTopLevels: ["console"]
-}
+  jsTopLevels: ["console"]}
