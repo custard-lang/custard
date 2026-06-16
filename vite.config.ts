@@ -1,6 +1,6 @@
 // Configure Vitest (https://vitest.dev/config/)
 
-import { defineConfig } from "vitest/config";
+import { configDefaults, defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
@@ -11,12 +11,12 @@ export default defineConfig({
     server: {
       deps: {
         external: [
-          /\/node_modules\//,
           // To prevent vitest converting `import.meta.resolve` to `__vite_ssr_import_meta_`
           /\/packages\/processor\//,
         ],
       },
     },
+    exclude: [...configDefaults.exclude, "dist"],
     // testTimeout: 100,
   },
 });
