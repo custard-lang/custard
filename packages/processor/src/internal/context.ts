@@ -237,17 +237,24 @@ async function modulePathAndUrl(
 ): Promise<ModulePathAndUrl> {
   const {
     transpileState: {
-      src: { path: srcPath },
+      src: { path: srcPath, isDirectory },
     },
   } = context;
   const schemeAndPath = parseAbsoluteUrl(moduleName);
   if (schemeAndPath !== null) {
     if (schemeAndPath[0] === "npm") {
       const packageName = schemeAndPath[1];
+      const srcFullPath = isDirectory
+        ? `${path.resolve(srcPath)}/`
+        : path.resolve(srcPath);
       return {
+        // TODO: The second argument for `import.meta.resolve` is supported
+        //       only in Node.js with the `--experimental-import-meta-resolve`
+        //       flag. We should implement a better way to resolve the package
+        //       path that works in all environments.
         u: import.meta.resolve(
           packageName,
-          new URL(`file:///${path.resolve(srcPath)}`).href,
+          new URL(`file:///${srcFullPath}`).href,
         ),
         r: packageName,
         k: moduleName,

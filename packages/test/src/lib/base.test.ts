@@ -10,10 +10,9 @@ import {
 
 import {
   defaultTranspileOptions,
-  type FilePath,
   TranspileError,
-  assumeIsFile,
   fromDefaultTranspileOptions,
+  FilePathAndStat,
 } from "@custard-lang/processor/dist/types.js";
 import { standardModuleRoot } from "@custard-lang/processor/dist/definitions.js";
 import { implicitlyImporting } from "@custard-lang/processor/dist/provided-symbols-config.js";
@@ -744,11 +743,11 @@ describe("[a r r a y]", () => {
   });
 });
 
-function setUpConfigOfTranspileOptions(srcPath: FilePath): () => Config {
+function setUpConfigOfTranspileOptions(src: FilePathAndStat): () => Config {
   return () => ({
-    optionsForRepl: fromDefaultTranspileOptions({ src: assumeIsFile(srcPath) }),
+    optionsForRepl: fromDefaultTranspileOptions({ src }),
     providedSymbols,
-    providedSymbolsPath: srcPath,
+    providedSymbolsPath: src.path,
   });
 }
 
@@ -758,7 +757,10 @@ describe("cu$thisFile", () => {
   testFormInRepl({
     src: "cu$thisFile",
     expected: path.normalize(thisFilePath),
-    setUpConfig: setUpConfigOfTranspileOptions(thisFilePathRelative),
+    setUpConfig: setUpConfigOfTranspileOptions({
+      path: thisFilePathRelative,
+      isDirectory: false,
+    }),
   });
 
   testFormInRepl({
@@ -766,7 +768,10 @@ describe("cu$thisFile", () => {
     expected: new TranspileError(
       `${process.cwd()} is a directory! \`cu$thisFile\` is only allowed in a file`,
     ),
-    setUpConfig: setUpConfigOfTranspileOptions("."),
+    setUpConfig: setUpConfigOfTranspileOptions({
+      path: ".",
+      isDirectory: true,
+    }),
   });
 
   // TODO: testFormAsModule
@@ -778,13 +783,19 @@ describe("cu$directoryOfThisFile", () => {
   testFormInRepl({
     src: "cu$directoryOfThisFile",
     expected: path.normalize(path.dirname(thisFilePath)),
-    setUpConfig: setUpConfigOfTranspileOptions(thisFilePathRelative),
+    setUpConfig: setUpConfigOfTranspileOptions({
+      path: thisFilePathRelative,
+      isDirectory: false,
+    }),
   });
 
   testFormInRepl({
     src: "cu$directoryOfThisFile",
     expected: process.cwd(),
-    setUpConfig: setUpConfigOfTranspileOptions("."),
+    setUpConfig: setUpConfigOfTranspileOptions({
+      path: ".",
+      isDirectory: true,
+    }),
   });
 
   // `testFormAsModule` creates a file  in the project tmp directory
@@ -792,7 +803,10 @@ describe("cu$directoryOfThisFile", () => {
   testFormAsModule({
     src: "cu$directoryOfThisFile",
     expected: path.normalize(tmpDir),
-    setUpConfig: setUpConfigOfTranspileOptions(thisFilePathRelative),
+    setUpConfig: setUpConfigOfTranspileOptions({
+      path: thisFilePathRelative,
+      isDirectory: false,
+    }),
   });
 });
 

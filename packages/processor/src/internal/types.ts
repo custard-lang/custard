@@ -295,7 +295,7 @@ export interface TranspileOptions {
 
 export function defaultTranspileOptions(): TranspileOptions {
   return {
-    src: { path: process.cwd(), isDirectory: true },
+    src: { path: `${process.cwd()}/`, isDirectory: true },
     runtimeModuleEmission: "import",
   };
 }

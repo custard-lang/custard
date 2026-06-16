@@ -3,12 +3,11 @@ import { spawn } from "node:child_process";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const __dirname = fileURLToPath(new URL(".", import.meta.url));
-const rootDir = join(__dirname, "..", "..", "..");
+const rootDir = fileURLToPath(new URL(".", import.meta.url));
 
 describe("custard repl", () => {
   it("should handle multiline input command", async () => {
-    const custardPath = join(rootDir, "packages/command/dist/custard.js");
+    const custardPath = join(rootDir, "..", "dist/custard.js");
 
     const input = `[
   "test"

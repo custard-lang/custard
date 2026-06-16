@@ -6,6 +6,10 @@ import { getLogger } from "@custard-lang/processor";
 const log = getLogger("custard");
 
 try {
+  // The experimental version of `import.meta.resolve` is used in
+  // processor/src/internal/context.ts
+  process.execArgv.push("--experimental-import-meta-resolve");
+
   program
     .name("custard")
     .version("0.1.0")
