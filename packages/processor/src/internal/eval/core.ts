@@ -1,4 +1,4 @@
-import { type Context, Ktvals, TranspileError } from "../types.js";
+import { type Context, TranspileError } from "../types.js";
 import { evalKtvals } from "../ktvals.js";
 
 export async function evalForMacro(
