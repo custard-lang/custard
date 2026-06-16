@@ -3,6 +3,5 @@
 (modulePaths.set "async" "./lib/async.js")
 {
   modulePaths
-  implicitStatements: ""
-  jsTopLevels: ["console"]
-}
+  implicitStatements: "(importAnyOf base)"
+  jsTopLevels: ["console"]}
