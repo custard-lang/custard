@@ -11,8 +11,7 @@ class UnquoteBase<T, X extends Empty = Empty> {
 }
 
 export interface Unquote<T, X extends Empty = Empty>
-  extends UnquoteBase<T, X>,
-    UnquoteBrand {}
+  extends UnquoteBase<T, X>, UnquoteBrand {}
 
 export function unquote<T, X extends Empty = Empty>(value: T): Unquote<T, X> {
   return new UnquoteBase(value) as Unquote<T, X>;

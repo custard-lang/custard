@@ -11,8 +11,7 @@ class Integer32Base<X extends Empty = Empty> extends Number {
 }
 
 export interface Integer32<X extends Empty = Empty>
-  extends Integer32Base<X>,
-    Integer32Brand {}
+  extends Integer32Base<X>, Integer32Brand {}
 
 export function integer32(v: number): Integer32 {
   return new Integer32Base(v | 0) as Integer32;

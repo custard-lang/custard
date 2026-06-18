@@ -13,8 +13,7 @@ class CuArrayBase<T, X extends Empty = Empty> extends Array<T> {
 }
 
 export interface CuArray<T, X extends Empty = Empty>
-  extends CuArrayBase<T, X>,
-    CuArrayBrand {}
+  extends CuArrayBase<T, X>, CuArrayBrand {}
 
 export function cuArray<T>(...v: T[]): CuArray<T> {
   const result = new CuArrayBase<T>();

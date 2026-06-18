@@ -11,8 +11,7 @@ class SpliceBase<T, X extends Empty = Empty> {
 }
 
 export interface Splice<T, X extends Empty = Empty>
-  extends SpliceBase<T, X>,
-    SpliceBrand {}
+  extends SpliceBase<T, X>, SpliceBrand {}
 
 export function splice<T, X extends Empty = Empty>(value: T): Splice<T, X> {
   return new SpliceBase(value) as Splice<T, X>;
