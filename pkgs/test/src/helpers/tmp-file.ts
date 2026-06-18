@@ -17,7 +17,7 @@ let count = 0;
 
 export const tmpDir = [
   projectRootFromImportMetaUrl(import.meta.url),
-  "packages",
+  "pkgs",
   "test",
   "tmp",
 ].join("/");

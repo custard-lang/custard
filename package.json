@@ -4,14 +4,14 @@
   "license": "Apache-2.0",
   "private": true,
   "scripts": {
-    "custard": "node ./packages/command/dist/custard.js",
+    "custard": "node ./pkgs/command/dist/custard.js",
     "build": "tsc -b tsconfig.build.json",
-    "clean": "rimraf -g \"packages/**/dist\" \"packages/**/*.tsbuildinfo\" \"*.tsbuildinfo\"",
+    "clean": "rimraf -g \"pkgs/**/dist\" \"pkgs/**/*.tsbuildinfo\" \"*.tsbuildinfo\"",
     "test": "pnpm run -r test",
     "test:detailed": "pnpm run test -- --reporter verbose",
     "test:once": "pnpm run test -- run",
     "test:coverage": "pnpm run test -- run --coverage",
-    "lint": "eslint packages",
+    "lint": "eslint pkgs",
     "fix:lint": "eslint --fix .",
     "format": "prettier --write */*/src/**/*.ts",
     "prepare": "pnpm run build"
@@ -33,7 +33,7 @@
     "vitest": "^4.1.8"
   },
   "workspaces": [
-    "packages/*",
+    "pkgs/*",
     "apps/*"
   ],
   "packageManager": "pnpm@11.5.1"

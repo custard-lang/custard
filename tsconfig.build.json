@@ -5,8 +5,8 @@
   // Building this project will build all of the following:
   "references": [
     { "path": "apps/save-posts" },
-    { "path": "packages/command" },
-    { "path": "packages/processor" },
-    { "path": "packages/test" }
+    { "path": "pkgs/command" },
+    { "path": "pkgs/processor" },
+    { "path": "pkgs/test" }
   ]
 }

@@ -5,8 +5,8 @@
   "version": "0.1.0",
   "description": "Calculates the balance of a cashbook formatted by my original format.",
   "scripts": {
-    "custard-transpile": "node ../../packages/command/dist/custard.js transpile -vp .provided-symbols.cstd src/lib.cstd src/index.cstd src/select-by-date.cstd src/sum-expenditure.cstd src/name-and-amount.cstd src/compose-ntfy-request-body.cstd",
-    "custard-run": "node ../../packages/command/dist/custard.js run -p .provided-symbols.cstd"
+    "custard-transpile": "node ../../pkgs/command/dist/custard.js transpile -vp .provided-symbols.cstd src/lib.cstd src/index.cstd src/select-by-date.cstd src/sum-expenditure.cstd src/name-and-amount.cstd src/compose-ntfy-request-body.cstd",
+    "custard-run": "node ../../pkgs/command/dist/custard.js run -p .provided-symbols.cstd"
   },
   "repository": {
     "type": "git",
@@ -19,9 +19,9 @@
   },
   "homepage": "https://github.com/igrep/custard#readme",
   "dependencies": {
-    "@custard-lang/processor": "file:../../packages/processor"
+    "@custard-lang/processor": "file:../../pkgs/processor"
   },
   "devDependencies": {
-    "@custard-lang/command": "file:../../packages/command"
+    "@custard-lang/command": "file:../../pkgs/command"
   }
 }

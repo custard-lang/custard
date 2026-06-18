@@ -4,6 +4,6 @@
     "outDir": "dist"
   },
   "references": [
-    { "path": "../../packages/command" }
+    { "path": "../../pkgs/command" }
   ]
 }

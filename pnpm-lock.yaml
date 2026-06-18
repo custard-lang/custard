@@ -54,12 +54,12 @@ importers:
   apps/igrep-cashbook:
     dependencies:
       '@custard-lang/processor':
-        specifier: file:../../packages/processor
-        version: link:../../packages/processor
+        specifier: file:../../pkgs/processor
+        version: link:../../pkgs/processor
     devDependencies:
       '@custard-lang/command':
-        specifier: file:../../packages/command
-        version: file:packages/command
+        specifier: file:../../pkgs/command
+        version: file:pkgs/command
 
   apps/save-posts:
     dependencies:
@@ -67,8 +67,8 @@ importers:
         specifier: ^0.7.4
         version: 0.7.4
       '@custard-lang/processor':
-        specifier: file:../../packages/processor
-        version: link:../../packages/processor
+        specifier: file:../../pkgs/processor
+        version: link:../../pkgs/processor
       date-fns:
         specifier: ^4.1.0
         version: 4.1.0
@@ -77,13 +77,13 @@ importers:
         version: 4.1.0
     devDependencies:
       '@custard-lang/command':
-        specifier: file:../../packages/command
-        version: file:packages/command
+        specifier: file:../../pkgs/command
+        version: file:pkgs/command
       vitest:
         specifier: ^3.0.5
         version: 3.2.4(@types/node@25.9.2)
 
-  packages/command:
+  pkgs/command:
     dependencies:
       '@commander-js/extra-typings':
         specifier: ^15.0.0
@@ -108,7 +108,7 @@ importers:
         specifier: ^4.1.8
         version: 4.1.8(@types/node@25.9.2)(@vitest/coverage-v8@4.1.8)(vite@7.2.4(@types/node@25.9.2))
 
-  packages/processor:
+  pkgs/processor:
     devDependencies:
       '@types/node':
         specifier: ^25.9.1
@@ -117,7 +117,7 @@ importers:
         specifier: ^6.0.3
         version: 6.0.3
 
-  packages/test:
+  pkgs/test:
     dependencies:
       '@custard-lang/processor':
         specifier: workspace:*
@@ -182,8 +182,8 @@ packages:
     peerDependencies:
       commander: ~15.0.0
 
-  '@custard-lang/command@file:packages/command':
-    resolution: {directory: packages/command, type: directory}
+  '@custard-lang/command@file:pkgs/command':
+    resolution: {directory: pkgs/command, type: directory}
     hasBin: true
 
   '@esbuild/aix-ppc64@0.25.12':
@@ -1926,10 +1926,10 @@ snapshots:
     dependencies:
       commander: 15.0.0
 
-  '@custard-lang/command@file:packages/command':
+  '@custard-lang/command@file:pkgs/command':
     dependencies:
       '@commander-js/extra-typings': 15.0.0(commander@15.0.0)
-      '@custard-lang/processor': link:packages/processor
+      '@custard-lang/processor': link:pkgs/processor
       commander: 15.0.0
       glob: 13.0.6
 

@@ -12,7 +12,7 @@ export default defineConfig({
       deps: {
         external: [
           // To prevent vitest converting `import.meta.resolve` to `__vite_ssr_import_meta_`
-          /\/packages\/processor\//,
+          /\/pkgs\/processor\//,
         ],
       },
     },
