@@ -1,4 +1,4 @@
-#!/bin/env node
+#!/usr/bin/env node
 
 import { program } from "@commander-js/extra-typings";
 import { getLogger } from "@custard-lang/processor";
