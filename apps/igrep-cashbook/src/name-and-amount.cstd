@@ -6,4 +6,4 @@
     (const n (plusF i 1))
     (const result (parseLine n l))
     ...(continueIfNonItem result)
-    (console.log (text result.name "\t" result.amount))))
+    (console.log (text result.name "　" result.amount))))
