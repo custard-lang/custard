@@ -1009,7 +1009,7 @@ describe("(const|let|assign id expression)", () => {
   testForm({
     src: "(let { x ...rest y } { y: 3 x: 2 })",
     expected: new TranspileError(
-      "Rest element must be last element in assignee of `let` !",
+      "Rest element must be last element in assignee of `let`!",
     ),
     setUpConfig,
   });
@@ -1134,6 +1134,28 @@ describe("(fn (a r g s) (f) (o) (r) (m) (s))", () => {
   testForm({
     src: "(const f (fn ([v1 v2]) (timesF v1 v2))) (f [2 9])",
     expected: 18,
+    setUpConfig,
+  });
+  testForm({
+    src: "(const f (fn (v1 ...xs) (timesF v1 xs.length))) (f 2 1 2 3)",
+    expected: 6,
+    setUpConfig,
+  });
+  testForm({
+    src: "(const f (fn (v1 [v2 ...xs]) (plusF v1 xs.length))) (f 1 [1 2 3])",
+    expected: 3,
+    setUpConfig,
+  });
+  testForm({
+    src: "(const f (fn ([{ v1 } ...xs]) (timesF v1 xs.length))) (f [{ v1: 3 } 1 2 3 4])",
+    expected: 12,
+    setUpConfig,
+  });
+  testForm({
+    src: "(const f (fn (v1 ...xs invalid) none))",
+    expected: new TranspileError(
+      "Rest element must be last element in assignee of `fn`!",
+    ),
     setUpConfig,
   });
 

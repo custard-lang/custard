@@ -38,6 +38,7 @@ import {
   type Ktvals,
   list,
   isSplice,
+  CuArray,
 } from "../types.js";
 import {
   transpileComputedKeyOrExpression,
@@ -213,7 +214,7 @@ export function transpilingForVariableDeclaration(
           for (const kvOrSymOrSplice of sym) {
             if (assignDestructuringObject.assigneeSplice !== null) {
               return new TranspileError(
-                `Rest element must be last element in assignee of \`${formId}\` !`,
+                `Rest element must be last element in assignee of \`${formId}\`!`,
               );
             }
             if (isKeyValue(kvOrSymOrSplice)) {
@@ -342,7 +343,7 @@ function transpileLocalAssignee(
     for (const kvOrSymOrSplice of sym) {
       if (hasAssignedSplice) {
         return new TranspileError(
-          `Rest element must be last element in assignee of \`${formId}\` !`,
+          `Rest element must be last element in assignee of \`${formId}\`!`,
         );
       }
 
@@ -355,19 +356,12 @@ function transpileLocalAssignee(
           );
         }
 
-        if (!isCuSymbol(value)) {
-          const vFormatted = formatForError(value);
-          return new TranspileError(
-            `${formId}'s assignee must be a symbol, but ${vFormatted} is not!`,
-          );
+        const r = transpileLocalAssignee(formId, context, value, newWriter);
+        if (TranspileError.is(r)) {
+          return r;
         }
 
-        const r1 = tryToSet(value, context, newWriter);
-        if (TranspileError.is(r1)) {
-          return r1;
-        }
-
-        assignee = `${assignee}${key.value}:${value.value},`;
+        assignee = `${assignee}${key.value}:${r},`;
         continue;
       }
 
@@ -406,28 +400,75 @@ function transpileLocalAssignee(
     return `${assignee}}`;
   }
   if (isCuArray(sym)) {
-    let assignee = "[";
-    for (const form of sym) {
-      if (isCuSymbol(form)) {
-        const r0 = tryToSet(form, context, newWriter);
-        if (TranspileError.is(r0)) {
-          return r0;
-        }
-        assignee = `${assignee}${form.value},`;
-        continue;
-      }
-
-      const formFormatted = formatForError(form);
-      return new TranspileError(
-        `${formId}'s assignee must be a symbol, but ${formFormatted} is not!`,
-      );
-    }
-    return `${assignee}]`;
+    return transpileArrayAssignee(formId, context, sym, newWriter);
   }
   const symFormatted = formatForError(sym);
   return new TranspileError(
     `${formId}'s assignee must be a symbol or an object literal, but ${symFormatted} is not!`,
   );
+}
+
+class TranspileLocalAssigneeSpliceAware {
+  #hasEncounteredSplice: boolean;
+  constructor() {
+    this.#hasEncounteredSplice = false;
+  }
+
+  execute(
+    formId: Id,
+    context: Context,
+    sym: unknown,
+    newWriter: () => Writer,
+  ): JsSrc | TranspileError {
+    if (this.#hasEncounteredSplice) {
+      return new TranspileError(
+        `Rest element must be last element in assignee of \`${formId}\`!`,
+      );
+    }
+
+    if (isSplice(sym)) {
+      this.#hasEncounteredSplice = true;
+      const symValue = sym.value;
+      if (isCuArray(symValue)) {
+        return transpileArrayAssignee(formId, context, symValue, newWriter);
+      }
+      if (isCuSymbol(symValue)) {
+        const r = tryToSet(symValue, context, newWriter);
+        if (TranspileError.is(r)) {
+          return r;
+        }
+        return `...${symValue.value}`;
+      }
+      const symFormatted = formatForError(symValue);
+      return new TranspileError(
+        `${formId}'s assignee must be a symbol or array, but ${symFormatted} is not!`,
+      );
+    }
+
+    const r = transpileLocalAssignee(formId, context, sym, newWriter);
+    if (TranspileError.is(r)) {
+      return r;
+    }
+    return `${r},`;
+  }
+}
+
+function transpileArrayAssignee(
+  formId: Id,
+  context: Context,
+  array: CuArray<unknown>,
+  newWriter: () => Writer,
+): JsSrc | TranspileError {
+  let assignee = "[";
+  const transpileElement = new TranspileLocalAssigneeSpliceAware();
+  for (const form of array) {
+    const r = transpileElement.execute(formId, context, form, newWriter);
+    if (TranspileError.is(r)) {
+      return r;
+    }
+    assignee = `${assignee}${r}`;
+  }
+  return `${assignee}]`;
 }
 
 export function tryToSet(
@@ -545,21 +586,24 @@ function functionPrelude(
 
   ContextF.push(context, scopeOptions);
 
-  const argPatterns: JsSrc[] = [];
+  let argPatterns: JsSrc = "";
+  const transpileLocalAssigneeSpliceAware =
+    new TranspileLocalAssigneeSpliceAware();
   for (const arg of argsOrFirstForm) {
-    const argSrc = transpileLocalAssignee(formId, context, arg, aVar);
+    const argSrc = transpileLocalAssigneeSpliceAware.execute(
+      formId,
+      context,
+      arg,
+      aVar,
+    );
     if (TranspileError.is(argSrc)) {
       return argSrc;
     }
-    argPatterns.push(argSrc);
+    argPatterns = `${argPatterns}${argSrc}`;
   }
 
   return {
-    src: [
-      ktvalOther(
-        `${beforeArguments}${funNameInSrc}(${argPatterns.join(", ")}){\n`,
-      ),
-    ],
+    src: [ktvalOther(`${beforeArguments}${funNameInSrc}(${argPatterns}){\n`)],
     funName,
     firstBlock,
   };

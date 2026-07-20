@@ -21,6 +21,6 @@ export function cuArray<T>(...v: T[]): CuArray<T> {
   return result as CuArray<T>;
 }
 
-export function isCuArray(v: unknown): v is CuArrayBase<unknown> {
+export function isCuArray(v: unknown): v is CuArray<unknown> {
   return v instanceof CuArrayBase;
 }
