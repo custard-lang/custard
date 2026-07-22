@@ -16,11 +16,11 @@ describe("custard repl", () => {
 `;
 
     const expectedOutput = [
-      `${rootDir}//<NO FILE>:1:>>> `,
-      `${rootDir}//<NO FILE>:2:... `,
-      `${rootDir}//<NO FILE>:3:... `,
-      `${rootDir}//<NO FILE>:4:... [ 'test', 'input' ]\n`,
-      `${rootDir}//<NO FILE>:5:>>> `,
+      `${rootDir}/<NO FILE>:1:>>> `,
+      `${rootDir}/<NO FILE>:2:... `,
+      `${rootDir}/<NO FILE>:3:... `,
+      `${rootDir}/<NO FILE>:4:... [ 'test', 'input' ]\n`,
+      `${rootDir}/<NO FILE>:5:>>> `,
     ].join(""); // The newline is inserted by the user pressing Enter
 
     const result = await new Promise<{
