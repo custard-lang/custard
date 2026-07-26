@@ -211,6 +211,12 @@ describe("transpileBlock", () => {
           ),
           setUpConfig,
         });
+
+        testForm({
+          src: `(import a) a.nonExistent`,
+          expected: new TranspileError("`nonExistent` is not defined in `a`!"),
+          setUpConfig,
+        });
       });
     });
 

@@ -107,7 +107,7 @@ function resolvePropertyAccessCore(
     const subW = module[part];
     if (subW == null) {
       return new TranspileError(
-        `\`${part}\` is not defined in \`${ids.slice(0, i - 1).join(".")}\`!`,
+        `\`${part}\` is not defined in \`${spar.ids.slice(0, i - 1).join(".")}\`!`,
       );
     }
     if (isWriter(subW)) {
