@@ -995,14 +995,14 @@ describe("(const|let|assign id expression)", () => {
   testForm({
     src: "(let { x y: ...(rest) } { y: 3 x: 2 })",
     expected: new TranspileError(
-      "The assignee of `let` must be a Symbol, but `...( rest )` is not!",
+      "The assignee in `let` must be a Symbol, but `...( rest )` is not!",
     ),
     setUpConfig,
   });
   testForm({
     src: "(let { x y: (other) } { y: 3 x: 2 })",
     expected: new TranspileError(
-      "The assignee of `let` must be a Symbol, but `( other )` is not!",
+      "The assignee in `let` must be a Symbol, but `( other )` is not!",
     ),
     setUpConfig,
   });
@@ -1047,6 +1047,20 @@ describe("(const|let|assign id expression)", () => {
   testForm({
     src: "(const o { a: 1 b: 2 }) (assign o.a 3) o",
     expected: { a: 3, b: 2 },
+    setUpConfig,
+  });
+
+  testForm({
+    src: "(const [x ...xs] [3 2 1]) [xs x]",
+    expected: [[2, 1], 3],
+    setUpConfig,
+  });
+
+  testForm({
+    src: "(const [x ...xs ...ys] [3 2 1 0])",
+    expected: new TranspileError(
+      "Rest element must be last element in assignee of `const`!",
+    ),
     setUpConfig,
   });
 });

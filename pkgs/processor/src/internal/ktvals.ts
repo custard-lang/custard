@@ -62,14 +62,24 @@ export function transpileKtvalsForEval(
             }
 
             case KtvalAssignDestructuringArrayT: {
-              const { statement, id: tmpId } = tmpVarOf(context, ktval.exp);
+              const iteratorExp = [
+                ktvalOther("("),
+                ...ktval.exp,
+                ktvalOther(")[Symbol.iterator]()"),
+              ];
+              const { statement, id: tmpId } = tmpVarOf(context, iteratorExp);
               const setsSrc = ktval.assignee
-                .map((id, i) => {
+                .map((id) => {
                   const idJson = JSON.stringify(id);
-                  return `void _cu$c.transpileState.topLevelValues.set(${idJson},${tmpId}[${i}]);\n`;
+                  return `void _cu$c.transpileState.topLevelValues.set(${idJson},${tmpId}.next().value);\n`;
                 })
                 .join("");
-              return `${transpileKtvalsForEval(statement, context)}${setsSrc}`;
+              const beforeSpliced = `${transpileKtvalsForEval(statement, context)}${setsSrc}\n`;
+              if (ktval.assigneeSplice !== null) {
+                const spliceIdJson = JSON.stringify(ktval.assigneeSplice);
+                return `${beforeSpliced}void _cu$c.transpileState.topLevelValues.set(${spliceIdJson},Array.from(${tmpId}));\n`;
+              }
+              return beforeSpliced;
             }
 
             case KtvalAssignDestructuringObjectT: {
@@ -210,7 +220,10 @@ function toJsAssignee(
     case KtvalAssignSimpleT:
       return ktval.assignee;
     case KtvalAssignDestructuringArrayT:
-      return `[${ktval.assignee.join(",")}]`;
+      if (ktval.assigneeSplice === null) {
+        return `[${ktval.assignee.join(",")}]`;
+      }
+      return `[${ktval.assignee.join(",")},...${ktval.assigneeSplice}]`;
     case KtvalAssignDestructuringObjectT:
       const noSplice = ktval.assignee
         .map((keyValue) => {

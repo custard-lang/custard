@@ -16,8 +16,8 @@ export type Ktvals<Target> = Array<Ktval<Target>>;
 export const KtvalReferT = 1;
 
 export interface KtvalRefer {
-  t: typeof KtvalReferT;
-  id: Id;
+  readonly t: typeof KtvalReferT;
+  readonly id: Id;
 }
 
 export function ktvalRefer(id: Id): KtvalRefer {
@@ -42,8 +42,8 @@ export type KtvalAssignDecl =
 export const KtvalAssignSimpleT = 0;
 
 export interface KtvalAssignSimple<Target> extends KtvalAssignCore<Target> {
-  at: typeof KtvalAssignSimpleT;
-  assignee: Id;
+  readonly at: typeof KtvalAssignSimpleT;
+  readonly assignee: Id;
 }
 
 export const KtvalAssignDestructuringArrayT = 1;
@@ -51,8 +51,9 @@ export const KtvalAssignDestructuringArrayT = 1;
 export interface KtvalAssignDestructuringArray<
   Target,
 > extends KtvalAssignCore<Target> {
-  at: typeof KtvalAssignDestructuringArrayT;
-  assignee: Id[];
+  readonly at: typeof KtvalAssignDestructuringArrayT;
+  readonly assignee: Id[];
+  assigneeSplice: Id | null;
 }
 
 export const KtvalAssignDestructuringObjectT = 2;
@@ -60,8 +61,8 @@ export const KtvalAssignDestructuringObjectT = 2;
 export interface KtvalAssignDestructuringObject<
   Target,
 > extends KtvalAssignCore<Target> {
-  at: typeof KtvalAssignDestructuringObjectT;
-  assignee: Array<[Ktvals<Target> | Id, Id] | Id>;
+  readonly at: typeof KtvalAssignDestructuringObjectT;
+  readonly assignee: Array<[Ktvals<Target> | Id, Id] | Id>;
   assigneeSplice: Id | null;
 }
 
@@ -75,30 +76,28 @@ export function ktvalAssignSimple<Target>(
 
 export function ktvalAssignDestructuringArray<Target>(
   decl: KtvalAssignDecl,
-  assignee: Id[],
   exp: Ktvals<Target>,
 ): KtvalAssignDestructuringArray<Target> {
   return {
     t: KtvalAssignT,
     at: KtvalAssignDestructuringArrayT,
     decl,
-    assignee,
+    assignee: [],
+    assigneeSplice: null,
     exp,
   };
 }
 
 export function ktvalAssignDestructuringObject<Target>(
   decl: KtvalAssignDecl,
-  assignee: Array<[Ktvals<Target>, Id] | Id>,
-  assigneeSplice: Id | null,
   exp: Ktvals<Target>,
 ): KtvalAssignDestructuringObject<Target> {
   return {
     t: KtvalAssignT,
     at: KtvalAssignDestructuringObjectT,
     decl,
-    assignee,
-    assigneeSplice,
+    assignee: [],
+    assigneeSplice: null,
     exp,
   };
 }
