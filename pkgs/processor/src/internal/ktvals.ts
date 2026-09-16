@@ -223,6 +223,9 @@ function toJsAssignee(
       if (ktval.assigneeSplice === null) {
         return `[${ktval.assignee.join(",")}]`;
       }
+      if (ktval.assignee.length === 0) {
+        return `[...${ktval.assigneeSplice}]`;
+      }
       return `[${ktval.assignee.join(",")},...${ktval.assigneeSplice}]`;
     case KtvalAssignDestructuringObjectT:
       const noSplice = ktval.assignee
