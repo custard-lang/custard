@@ -1063,6 +1063,12 @@ describe("(const|let|assign id expression)", () => {
     ),
     setUpConfig,
   });
+
+  testForm({
+    src: "(const [...xs] [3 2 1]) xs",
+    expected: [3, 2, 1],
+    setUpConfig,
+  });
 });
 
 describe('{object: "literal"}', () => {
