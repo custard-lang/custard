@@ -617,7 +617,7 @@ function functionPrelude(
     argsOrFirstForm = nameOrArgs;
   } else {
     return new TranspileError(
-      `The first argument to a function must be a symbol or a list of symbols!`,
+      `The first argument to a function must be a symbol or a list of symbols, but ${formatForError(nameOrArgs)} is not!`,
     );
   }
 
