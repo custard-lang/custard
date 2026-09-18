@@ -1,0 +1,242 @@
+(import test { test})
+(import assert)
+(importAnyOf lib)
+
+(test
+ "parseCardStatementFie"
+  (fn ()
+    (const
+       lines
+       [ "\"利用日/キャンセル日\",\"利用店名・商品名\",\"利用者\",\"決済方法\",\"支払区分\",\"利用金額\",\"手数料\",\"支払総額\",\"当月支払金額\",\"翌月以降繰越金額\",\"調整額\",\"当月お支払日\""
+         "\"2026/5/31\",\"サ－ビス料金\",\"本人*\",\"カード\",\"1回\",\"23\",\"0\",\"34\",\"45\",\"0\",\"0\",\"2026/7/27\""])
+
+    (const
+      actual
+     (parseCardStatementFile "test.csv" lines))
+    (assert.deepEqual
+      actual
+      [
+        { date: (Temporal.PlainDate.from "2026-05-31")
+          name: "サ－ビス料金"
+          price: 23}])))
+
+(test
+  "parseDatedCashbookExpenditures"
+  (fn ()
+    (const
+      lines
+      [
+       "26/05/31"
+       " サ－ビス料金  23  A"
+       " サービス手数料  11  B  # comment"
+       " income  +23  A"
+       "# This is a comment line"
+       "26/06/01"
+       " サービス利用料  45  B"])
+    (const
+      actual
+      (parseDatedCashbookExpenditures lines))
+    (assert.deepEqual
+      actual
+      [
+        { date: (Temporal.PlainDate.from "2026-05-31")
+          name: "サ－ビス料金"
+          amount: 23}
+        { date: (Temporal.PlainDate.from "2026-05-31")
+          name: "サービス手数料"
+          amount: 11}
+        { date: (Temporal.PlainDate.from "2026-06-01")
+          name: "サービス利用料"
+          amount: 45}])))
+
+(test
+  "MatchResults"
+  (fn ()
+    (const
+     cardStatementItems
+     [
+       { date: (Temporal.PlainDate.from "2026-05-28")
+         name: "S11 2026-05-28"
+         price: 11}
+
+       { date: (Temporal.PlainDate.from "2026-05-29")
+         name: "S11 2026-05-29"
+         price: 11}
+
+       { date: (Temporal.PlainDate.from "2026-05-30")
+         name: "S23 2026-05-30"
+         price: 23}
+       { date: (Temporal.PlainDate.from "2026-05-30")
+         name: "S11 2026-05-29"
+         price: 11}
+
+       { date: (Temporal.PlainDate.from "2026-05-31")
+         name: "S11 2026-05-31"
+         price: 11}
+       { date: (Temporal.PlainDate.from "2026-05-31")
+         name: "S23 2026-05-31"
+         price: 23}
+
+       { date: (Temporal.PlainDate.from "2026-06-01")
+         name: "S9 2026-06-01"
+         price: 9}])
+    (const
+      cashbookLines
+      [
+       { date: (Temporal.PlainDate.from "2026-05-29")
+         name: "B11 2026-05-29"
+         amount: 11}
+       { date: (Temporal.PlainDate.from "2026-05-29")
+         name: "B11 2026-05-29 2"
+         amount: 11}
+
+       { date: (Temporal.PlainDate.from "2026-05-30")
+         name: "B23 2026-05-30"
+         amount: 23}
+       { date: (Temporal.PlainDate.from "2026-05-30")
+         name: "B11 2026-05-29"
+         amount: 11}
+
+       { date: (Temporal.PlainDate.from "2026-05-31")
+         name: "B11 2026-05-31"
+         amount: 11}
+       { date: (Temporal.PlainDate.from "2026-05-31")
+         name: "B23 2026-05-31"
+         amount: 23}])
+
+    (const
+      matchResult
+      (matchCardStatementWithCashbookLines
+        cardStatementItems
+        cashbookLines))
+
+    (const
+      serializedResults
+      ((matchResult.map serializeMatchResult).join ""))
+
+    (test
+      "matchCardStatementWithCashbookLines"
+      (fn ()
+        (assert.deepEqual
+          matchResult
+          [ { cardStatementItem: (get cardStatementItems 0)
+              matchedLines: []}
+            { cardStatementItem: (get cardStatementItems 1)
+              matchedLines: [(get cashbookLines 0) (get cashbookLines 1)]}
+            { cardStatementItem: (get cardStatementItems 2)
+              matchedLines: [(get cashbookLines 2)]}
+            { cardStatementItem: (get cardStatementItems 3)
+              matchedLines: [(get cashbookLines 0) (get cashbookLines 1) (get cashbookLines 3)]}
+            { cardStatementItem: (get cardStatementItems 4)
+              matchedLines: [(get cashbookLines 0) (get cashbookLines 1) (get cashbookLines 3) (get cashbookLines 4)]}
+            { cardStatementItem: (get cardStatementItems 5)
+              matchedLines: [(get cashbookLines 2) (get cashbookLines 5)]}
+            { cardStatementItem: (get cardStatementItems 6)
+              matchedLines: []}])))
+
+    (test
+      "serializeMatchResult"
+      (fn ()
+        (const
+          expectedSerializedResults
+          [
+           "2026/5/28  S11 2026-05-28  11\n"
+           "\n"
+           "2026/5/29  S11 2026-05-29  11\n"
+           "  2026-05-29  B11 2026-05-29  11\n"
+           "  2026-05-29  B11 2026-05-29 2  11\n"
+           "\n"
+           "2026/5/30  S23 2026-05-30  23\n"
+           "  2026-05-30  B23 2026-05-30  23\n"
+           "\n"
+           "2026/5/30  S11 2026-05-29  11\n"
+           "  2026-05-29  B11 2026-05-29  11\n"
+           "  2026-05-29  B11 2026-05-29 2  11\n"
+           "  2026-05-30  B11 2026-05-29  11\n"
+           "\n"
+           "2026/5/31  S11 2026-05-31  11\n"
+           "  2026-05-29  B11 2026-05-29  11\n"
+           "  2026-05-29  B11 2026-05-29 2  11\n"
+           "  2026-05-30  B11 2026-05-29  11\n"
+           "  2026-05-31  B11 2026-05-31  11\n"
+           "\n"
+           "2026/5/31  S23 2026-05-31  23\n"
+           "  2026-05-30  B23 2026-05-30  23\n"
+           "  2026-05-31  B23 2026-05-31  23\n"
+           "\n"
+           "2026/6/1  S9 2026-06-01  9\n"
+           "\n"])
+          
+        (assert.deepEqual
+          serializedResults
+          (expectedSerializedResults.join ""))))
+
+    (test
+      "parseMatchResults"
+      (fn ()
+        (const
+         parsedResults
+         (parseMatchResults serializedResults))
+        (const
+          withoutLineNumbers
+          (parsedResults.map
+           (fn ({cardStatementWithLineNumber matchedLines})
+             (const
+               cardStatementItem
+               { date: cardStatementWithLineNumber.date
+                 name: cardStatementWithLineNumber.name
+                 price: cardStatementWithLineNumber.price})
+             { cardStatementItem matchedLines})))
+        (assert.deepEqual withoutLineNumbers matchResult)))
+
+    (test
+      "validateMatchResults"
+      (fn ()
+        (const
+          input
+          [
+           "2026/6/30  Overdue  2922\n"
+           "  2026-07-01  only one line  2922\n"
+           "\n"
+
+           "2026/6/30  No problem 1  2900\n"
+           "  2026-06-29  only one line  2900\n"
+           "\n"
+
+           "2026/6/30  No lines  1000\n"
+           "\n"
+
+           "2026/6/30  No problem 2  100\n"
+           "  2026-06-30  only one line  100\n"
+           "\n"
+
+           "2026/6/30  Inconsistent price 1  2901\n"
+           "  2026-06-29  only one line  2900\n"
+           "\n"
+
+           "2026/6/30  Multiple entries  2922\n"
+           "  2026-06-19  one line  2922\n"
+           "  2026-06-20  another line  2922\n"
+           "\n"
+
+           "2026/6/30  Inconsistent price 2  2900\n"
+           "  2026-06-29  only one line  2899\n"
+           "\n"])
+        (const
+          expectedOutput
+          [
+           { line: 1
+             problem: "Overdue: the matched date is after the card statement date."}
+           { line: 7
+             problem: "No matched lines."}
+           { line: 12
+             problem: "Inconsistent price."}
+           { line: 15
+             problem: "Multiple matched lines."}
+           { line: 19
+             problem: "Inconsistent price."}])
+        (const actualOutput [])
+        (validateMatchResults
+          (parseMatchResults (input.join ""))
+          (fn (msg) (actualOutput.push msg)))
+        (assert.deepEqual actualOutput expectedOutput)))))

@@ -1,21 +1,17 @@
 {
-  "name": "igrep-cashbook",
+  "name": "match-card-statement",
   "type": "module",
   "private": true,
   "version": "0.1.0",
-  "description": "Manipulates cashbook files formatted by my original format.",
+  "description": "Match details of credit card statement with igrep-cashbook entries.",
   "scripts": {
-    "custard-transpile": "node ../../pkgs/command/dist/custard.js transpile -vp .provided-symbols.cstd src/lib.cstd src/index.cstd src/select-by-date.cstd src/sum-expenditure.cstd src/name-and-amount.cstd src/compose-ntfy-request-body.cstd",
-    "custard-run": "node ../../pkgs/command/dist/custard.js run -p .provided-symbols.cstd"
+    "custard-transpile": "node ../../pkgs/command/dist/custard.js transpile -vp .provided-symbols.cstd src/lib.cstd src/list.cstd src/validate.cstd",
+    "custard-run": "node ../../pkgs/command/dist/custard.js run -p .provided-symbols.cstd",
+    "test": "pnpm custard-transpile && node ../../pkgs/command/dist/custard.js run -vp .provided-symbols.cstd src/lib.test.cstd"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/igrep/custard.git"
-  },
-  "exports": {
-    ".": {
-      "import": "./src/lib.mjs"
-    }
   },
   "author": "YAMAMOTO Yuji",
   "license": "Apache-2.0",
@@ -25,6 +21,7 @@
   "homepage": "https://github.com/igrep/custard#readme",
   "dependencies": {
     "@custard-lang/processor": "file:../../pkgs/processor",
+    "igrep-cashbook": "file:../igrep-cashbook",
     "custard-my-apps-common": "file:../apps-common"
   },
   "devDependencies": {

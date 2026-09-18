@@ -3,12 +3,17 @@
 (modulePaths.set "async" (text standardModuleRoot "async.js"))
 (modulePaths.set "meta" (text standardModuleRoot "meta.js"))
 (modulePaths.set "js" (text standardModuleRoot "js.js"))
+(modulePaths.set "path" "node:path")
 (modulePaths.set "fsC" "node:fs")
+(modulePaths.set "igrepCashbook" "npm:igrep-cashbook")
 (modulePaths.set "common" "npm:custard-my-apps-common")
 
 (modulePaths.set "lib" "./src/lib.mjs")
 
+(modulePaths.set "test" "node:test")
+(modulePaths.set "assert" "node:assert/strict")
+
 {
   modulePaths
-  implicitStatements: "(importAnyOf base)(import async)(import fsC)(import meta)"
-  jsTopLevels: ["console" "Number" "process" "Array" "JSON" "Math" "Temporal"]}
+  implicitStatements: "(importAnyOf base)(import async)(import path)(import fsC)(import meta)(import igrepCashbook)"
+  jsTopLevels: ["console" "Number" "Promise" "process" "Array" "JSON" "Math" "Temporal"]}

@@ -1,0 +1,31 @@
+{
+  "name": "custard-my-apps-common",
+  "type": "module",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Common library for my apps written in Custard.",
+  "scripts": {
+    "custard-transpile": "node ../../pkgs/command/dist/custard.js transpile -vp .provided-symbols.cstd src/index.cstd"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/igrep/custard.git"
+  },
+  "exports": {
+    ".": {
+      "import": "./src/index.mjs"
+    }
+  },
+  "author": "YAMAMOTO Yuji",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/igrep/custard/issues"
+  },
+  "homepage": "https://github.com/igrep/custard#readme",
+  "dependencies": {
+    "@custard-lang/processor": "file:../../pkgs/processor"
+  },
+  "devDependencies": {
+    "@custard-lang/command": "file:../../pkgs/command"
+  }
+}

@@ -1,0 +1,214 @@
+(import js)
+(import common)
+
+(meta.defineMacro
+  getColumnIndex
+  (columns columnName)
+  (meta.quasiQuote
+    (scope
+      (const index ($columns.indexOf $columnName))
+      (if (equals index -1)
+        (throw (text "Column not found: " $columnName)))
+      index)))
+
+(const
+  getColumnValue
+  (fn (columns columnIndex)
+    (const value (get columns columnIndex))
+    (if (isNone value)
+      (throw (text "Column not found at " columnIndex)))
+    value))
+
+(const
+  parseNumber
+  (fn (s)
+    (const v (Number s))
+    (if (Number.isNaN v)
+      (throw (text "Invalid number:" s)))
+    v))
+
+(const
+  getColumnNumberValue
+  (fn (columns columnIndex)
+   (const valueS (getColumnValue columns columnIndex))
+   (parseNumber valueS)))
+
+(const
+  cardDateRegExp
+  (createRegExp "^(?<year>\\d{4})/(?<month>\\d{1,2})/(?<day>\\d{1,2})$"))
+
+(const
+  parseCardDate
+  (fn (dateS)
+    (const md (dateS.match cardDateRegExp))
+    (if (isNone md)
+      (throw (text "Invalid date: " dateS)))
+    (const {year month day} md.groups)
+    (js.new Temporal.PlainDate year month day)))
+
+(const
+  getColumnDateValue
+  (fn (columns columnIndex)
+    (const valueS (getColumnValue columns columnIndex))
+    (parseCardDate valueS)))
+
+(const
+  parseCardStatementRawLine
+  (fn (fileName lineNumber line)
+    ((line.split ",").map
+     (fn (c)
+       (annotate
+         "drop the leading and trailing double quotes"
+         (c.slice 1 -1))))))
+
+(const
+  parseCardStatementHeader
+  (fn (fileName line)
+    (const columns (parseCardStatementRawLine fileName 1 line))
+    (const dateIndex (getColumnIndex columns "利用日/キャンセル日"))
+    (const nameIndex (getColumnIndex columns "利用店名・商品名"))
+    (const priceIndex (getColumnIndex columns "利用金額"))
+    { dateIndex nameIndex priceIndex}))
+
+(const
+  parseCardStatementItem
+  (fn (fileName lineNumber line header)
+    (const columns (parseCardStatementRawLine fileName lineNumber line))
+    (const date (getColumnDateValue columns header.dateIndex))
+    (const name (getColumnValue columns header.nameIndex))
+    (const price (getColumnNumberValue columns header.priceIndex))
+    { date name price}))
+
+(export
+  (const
+    parseCardStatementFile
+    (fn (fileName lines)
+      (const [head ...restLines] lines)
+      (const
+        headerIndices
+        (parseCardStatementHeader fileName (common.dropBom head)))
+      (restLines.map
+        (fn (l i)
+          (const n (plusF i 2))
+          (parseCardStatementItem fileName n l headerIndices))))))
+
+(export
+  (const
+    parseDatedCashbookExpenditures
+    (fn (lines)
+      (let date none)
+      (const datedCashbookLines [])
+      (forEach [i line] (lines.entries)
+       (const n (plusF i 1))
+       (const parseResult (igrepCashbook.parseLine n line[1]))
+       (igrepCashbook.continueIfNone parseResult)
+       (igrepCashbook.continueAndWarnIfError parseResult)
+       (if (equals parseResult.type "date")
+         (assign date (igrepCashbook.dateSToPlainDate parseResult.value))
+         (continue))
+       (if (and (equals parseResult.type "item") (not parseResult.isIncome))
+         (if (isNone date)
+           (throw (text "At line " n ": No date specified for item: " parseResult.name)))
+         (datedCashbookLines.push
+           { date
+             name: parseResult.name
+             amount: parseResult.amount})))
+     datedCashbookLines)))
+
+(export
+  (const
+    serializeMatchResult
+    (fn ({cardStatementItem matchedLines})
+      (const {date name price} cardStatementItem)
+      (const dateS (text date.year "/" date.month "/" date.day))
+      (const header (text dateS "  " name "  " price "\n"))
+      (const
+        lines
+        (matchedLines.map
+          (fn ({ date name amount})
+            (text "  " date "  " name "  " amount "\n"))))
+      (const body (lines.join ""))
+      (text header body "\n"))))
+
+(export
+  (const
+    parseMatchResults
+    (fn (contents)
+      (let nextLineNumber 1)
+      (((contents.trim).split "\n\n").map
+        (fn (block i)
+          (const lines (block.split "\n"))
+          (const [head ...body] lines)
+          (const cardEntry (head.split "  "))
+          (if (notEquals cardEntry.length 3)
+            (throw (text "Invalid match result header: " (JSON.stringify head))))
+          (const cardStatementWithLineNumber
+           { date: (parseCardDate (get cardEntry 0))
+             name: (get cardEntry 1)
+             price: (Number (get cardEntry 2))
+             line: nextLineNumber})
+          (assign
+            nextLineNumber
+            (plusF
+              nextLineNumber
+              (annotate
+                "Since the `contents` is split by two consecutive newlines, add one."
+                (plusF 1 lines.length))))
+          (if (Number.isNaN cardStatementWithLineNumber.price)
+            (throw (text "Invalid price in match result header: " head)))
+          (const
+            cashbookLines
+            (body.map
+             (fn (l)
+               (const fields (l.split "  "))
+               (if (notEquals (get fields 0) "")
+                 (throw (text "Invalid match result: consecutive header lines: " (JSON.stringify l))))
+               (if (notEquals fields.length 4)
+                 (throw (text "Invalid match result body line: " (JSON.stringify l))))
+               { date: (Temporal.PlainDate.from (get fields 1))
+                 name: (get fields 2)
+                 amount: (parseNumber (get fields 3))})))
+          { cardStatementWithLineNumber matchedLines: cashbookLines})))))
+
+(export
+  (const
+    matchCardStatementWithCashbookLines
+    (fn (cardStatementItems cashbookLines)
+      (cardStatementItems.map
+        (fn (cardItem)
+          (const matchedLines
+           (cashbookLines.filter
+            (fn (datedLine)
+              (and
+                (equals datedLine.amount cardItem.price)
+                (isGreaterThanOrEquals
+                  ((datedLine.date.until cardItem.date).total "days")
+                  0)))))
+          { cardStatementItem: cardItem matchedLines})))))
+
+(export
+  (const
+    validateMatchResults
+    (fn (matchResults consume)
+      (forEach
+        { cardStatementWithLineNumber: {date name price line}
+          matchedLines}
+        matchResults
+        (if (isLessThan matchedLines.length 1)
+          (consume { line problem: "No matched lines."})
+          (continue))
+        (if (isGreaterThan matchedLines.length 1)
+          (consume { line problem: "Multiple matched lines."})
+          (continue))
+        (const [matchedLine] matchedLines)
+        (if (notEquals matchedLine.amount price)
+         (consume { line problem: "Inconsistent price."})
+         (continue))
+        (if
+          (isGreaterThan
+            ((matchedLine.date.since date).total "days")
+            0) 
+         (consume
+           {line
+            problem: "Overdue: the matched date is after the card statement date."})
+         (continue))))))

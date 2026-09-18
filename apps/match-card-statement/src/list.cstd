@@ -1,0 +1,36 @@
+(import lib)
+(import common)
+(const [cardCsv ...cashBookFilesToMatch] (process.argv.slice 2))
+
+(async.await
+  ((async.fn ()
+     (if (isNone cardCsv)
+       (console.error "No card CSV file specified.")
+       (return))
+     (if (equals cashBookFilesToMatch.length 0)
+       (console.error "No cash book files specified.")
+       (return))
+     (const
+       cardCsvLines
+       (async.await (common.readUtf8Lines (fsC.createReadStream cardCsv))))
+     (const
+       cardStatementItems
+       (lib.parseCardStatementFile cardCsv cardCsvLines))
+     (const
+       cashbookLiness
+       (async.await
+         (Promise.all
+           (cashBookFilesToMatch.map
+             (async.fn (f)
+               (const
+                 lines
+                 (async.await
+                   (common.readUtf8Lines (fsC.createReadStream f))))
+               (lib.parseDatedCashbookExpenditures lines))))))
+     (const
+       matchResults
+       (lib.matchCardStatementWithCashbookLines
+         cardStatementItems
+         (cashbookLiness.flat)))
+     (const serializedResults (matchResults.map lib.serializeMatchResult))
+     (console.log (serializedResults.join "")))))

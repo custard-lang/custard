@@ -1,0 +1,26 @@
+(import lib)
+(import common)
+(const matchResultFiles (process.argv.slice 2))
+
+(async.await
+  ((async.fn ()
+     (if (equals matchResultFiles.length 0)
+       (console.error "No match result files specified.")
+       (return))
+     (const
+       matchResultss
+       (async.await
+         (Promise.all
+           (matchResultFiles.map
+             (async.fn (f)
+               (const
+                 contents
+                 (async.await
+                   (common.readUtf8String (fsC.createReadStream f))))
+               (lib.parseMatchResults contents))))))
+     (note "It should exit with an error if any of the match results are invalid, but due to the current restriction of Custard, which makes the transpiler exit with the error, I gave up on implementing that.")
+     (lib.validateMatchResults
+       (matchResultss.flat)
+       (fn ({line problem})
+         (console.error (text line ": " problem))))
+     (console.log "DONE"))))

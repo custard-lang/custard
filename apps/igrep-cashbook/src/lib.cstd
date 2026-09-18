@@ -1,9 +1,22 @@
+(import js)
+(import common)
+
 (export
   (const
     isDateLine
     (fn (l)
       (const dateRegExp (createRegExp "^\\d\\d/\\d\\d/\\d\\d\\s*$"))
       (dateRegExp.test l))))
+
+(export
+  (const
+    dateSToPlainDate
+    (fn (dateS)
+      (const [yy mm dd] ((dateS.split "/").map (fn (s) (Number s))))
+      (note
+        (console.error "Debug: dateSToPlainDate called with dateS:" dateS "parsed as yy:" yy "mm:" mm "dd:" dd))
+      (const year (andOr (isLessThan yy 100) (plusF 2000 yy) yy))
+      (js.new Temporal.PlainDate year mm dd))))
 
 (annotate
   "Parse each line into fields. The format parsed here is rather relaxed than the exact syntax of igrep-cashbook."
@@ -74,12 +87,7 @@
 (export
   (const
     readUtf8Lines
-    (async.fn (reader)
-      (reader.setEncoding "utf8")
-      (let data "")
-      (async.forEach chunk reader
-        (assign data (text data chunk)))
-      (data.split "\n"))))
+    common.readUtf8Lines))
 
 (export
   (meta.defineMacro

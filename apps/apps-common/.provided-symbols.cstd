@@ -2,13 +2,9 @@
 (modulePaths.set "base" (text standardModuleRoot "base.js"))
 (modulePaths.set "async" (text standardModuleRoot "async.js"))
 (modulePaths.set "meta" (text standardModuleRoot "meta.js"))
-(modulePaths.set "js" (text standardModuleRoot "js.js"))
 (modulePaths.set "fsC" "node:fs")
-(modulePaths.set "common" "npm:custard-my-apps-common")
-
-(modulePaths.set "lib" "./src/lib.mjs")
 
 {
   modulePaths
   implicitStatements: "(importAnyOf base)(import async)(import fsC)(import meta)"
-  jsTopLevels: ["console" "Number" "process" "Array" "JSON" "Math" "Temporal"]}
+  jsTopLevels: ["console" "Number" "process" "Array" "JSON" "Math"]}

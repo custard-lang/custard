@@ -1,0 +1,31 @@
+(const
+  dropLastIfEmpty
+  (fn (lines)
+    (andOr (and (isGreaterThan lines.length 0) (equals (last lines) ""))
+      (lines.slice 0 -1)
+      lines)))
+
+(export
+  (const
+    readUtf8String
+    (async.fn (reader)
+     (reader.setEncoding "utf8")
+     (let data "")
+     (async.forEach chunk reader
+       (assign data (text data chunk)))
+     data)))
+
+(export
+  (const
+    readUtf8Lines
+    (async.fn (reader)
+      (const data (async.await (readUtf8String reader)))
+      (dropLastIfEmpty (data.split "\n")))))
+
+(export
+  (const
+    dropBom
+    (fn (s)
+      (andOr (s.startsWith "\uFEFF")
+        (s.slice 1)
+        s))))
