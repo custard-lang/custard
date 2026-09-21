@@ -1,6 +1,7 @@
 import type { Empty } from "../../util/types.js";
 import type { CuString } from "./cu-string.js";
 import type { CuSymbol } from "./cu-symbol.js";
+import type { ReservedSymbol } from "./reserved-symbol.js";
 import type { Unquote } from "./unquote.js";
 
 export class KeyValue<V, C = unknown, U = unknown, X extends Empty = Empty> {
@@ -22,6 +23,7 @@ export interface ComputedKey<T> extends ComputedKeyBase<T>, ComputedKeyBrand {}
 export type KeyValueKey<C = unknown, U = unknown, X extends Empty = Empty> =
   | CuSymbol<X>
   | CuString<X>
+  | ReservedSymbol<X>
   | ComputedKey<C>
   | Unquote<U, X>;
 

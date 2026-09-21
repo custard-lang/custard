@@ -977,6 +977,17 @@ describe("(const|let|assign id expression)", () => {
   });
 
   testForm({
+    src: '(const { "x y": a "y z": b } { "y z": 3 "x y": 2 }) [a b]',
+    expected: [2, 3],
+    setUpConfig,
+  });
+  testForm({
+    src: "(const { true: a false: b } { false: 3 true: 2 }) [a b]",
+    expected: [2, 3],
+    setUpConfig,
+  });
+
+  testForm({
     src: "(const { y ...rest } { y: 3 x: 2 }) [y rest]",
     expected: [3, { x: 2 }],
     setUpConfig,

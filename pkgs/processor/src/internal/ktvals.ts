@@ -95,14 +95,18 @@ export function transpileKtvalsForEval(
                   continue;
                 }
                 const [key, value] = keyValue;
-                const keySrc =
-                  typeof key === "string"
-                    ? key
-                    : transpileKtvalsForEval(key, context);
+                let keySrc: string, keyAccessSrc: string;
+                if (typeof key === "string") {
+                  keySrc = key;
+                  keyAccessSrc = `.${key}`;
+                } else {
+                  keySrc = transpileKtvalsForEval(key, context);
+                  keyAccessSrc = `[${keySrc}]`;
+                }
                 // FIXME: ^ Recursive calls to `transpileKtvalsForEval` can generate multiple statements, which is invalid as an object key.
                 assignedKeys.push(keySrc);
                 const valueJson = JSON.stringify(value);
-                setsSrc += `void _cu$c.transpileState.topLevelValues.set(${valueJson},${tmpId}.${keySrc});\n`;
+                setsSrc += `void _cu$c.transpileState.topLevelValues.set(${valueJson},${tmpId}${keyAccessSrc});\n`;
               }
               if (ktval.assigneeSplice === null) {
                 return `${transpileKtvalsForEval(statement, context)}${setsSrc}`;

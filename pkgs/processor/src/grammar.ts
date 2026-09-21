@@ -33,6 +33,7 @@ import {
   computedKey,
   type Splice,
   isSplice,
+  isReservedSymbol,
 } from "./types.js";
 
 export const tokens: TokenAndRE[] = [
@@ -369,8 +370,7 @@ function keyValueOrSymbolOrStringOrUnquote<R>(
 
       if (colonOrOther.t === "colon") {
         return (function keyValueOrSymbolOrStringOrUnquoteAgain():
-          | R
-          | ParseError<R> {
+          R | ParseError<R> {
           // eslint-disable-next-line eslint-plugin-no-ignore-returned-union/no-ignore-returned-union
           s.next(); // drop colon
 
@@ -405,7 +405,12 @@ function keyValueOrSymbolOrStringOrUnquote<R>(
               return k(s, keyValue(computedKey(computedKeyForm), value));
             }
 
-            if (isCuSymbol(key) || isCuString(key) || isUnquote(key)) {
+            if (
+              isCuSymbol(key) ||
+              isCuString(key) ||
+              isReservedSymbol(key) ||
+              isUnquote(key)
+            ) {
               return k(s, keyValue(key, value));
             }
 
