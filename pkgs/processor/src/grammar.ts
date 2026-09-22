@@ -370,7 +370,8 @@ function keyValueOrSymbolOrStringOrUnquote<R>(
 
       if (colonOrOther.t === "colon") {
         return (function keyValueOrSymbolOrStringOrUnquoteAgain():
-          R | ParseError<R> {
+          | R
+          | ParseError<R> {
           // eslint-disable-next-line eslint-plugin-no-ignore-returned-union/no-ignore-returned-union
           s.next(); // drop colon
 
