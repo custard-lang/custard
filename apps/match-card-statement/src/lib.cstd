@@ -96,7 +96,6 @@
   (const
     parseDatedCashbookExpenditures
     (fn (lines)
-      (let date none)
       (const datedCashbookLines [])
       (forEach [i line] (lines.entries)
        (const n (plusF i 1))
@@ -104,15 +103,16 @@
        (igrepCashbook.continueIfNone parseResult)
        (igrepCashbook.continueAndWarnIfError parseResult)
        (if (equals parseResult.type "date")
-         (assign date (igrepCashbook.dateSToPlainDate parseResult.value))
+         (datedCashbookLines.push
+           {date: (igrepCashbook.dateSToPlainDate parseResult.value) items: []})
          (continue))
        (if (and (equals parseResult.type "item") (not parseResult.isIncome))
-         (if (isNone date)
+         (if (equals datedCashbookLines.length 0)
            (throw (text "At line " n ": No date specified for item: " parseResult.name)))
-         (datedCashbookLines.push
-           { date
-             name: parseResult.name
-             amount: parseResult.amount})))
+         ((last datedCashbookLines).items.push
+            { name: parseResult.name
+              amount: parseResult.amount
+              category: parseResult.category})))
      datedCashbookLines)))
 
 (export
@@ -121,12 +121,23 @@
     (fn ({cardStatementItem matchedLines})
       (const {date name price} cardStatementItem)
       (const dateS (text date.year "/" date.month "/" date.day))
-      (const header (text dateS "  " name "  " price "\n"))
+      (const header (text "# " dateS "  " name "  " price "\n"))
       (const
         lines
-        (matchedLines.map
-          (fn ({ date name amount})
-            (text "  " date "  " name "  " amount "\n"))))
+        (matchedLines.flatMap
+          (fn ({ date items})
+            (const { year month day} date)
+            (const yearS ((text (minusF year 2000)).padStart 2 "0"))
+            (const monthS ((text month).padStart 2 "0"))
+            (const dayS ((text day).padStart 2 "0"))
+            (const matchedLinesHeader (text yearS "/" monthS "/" dayS "\n"))
+            (const
+              matchedLinesBody
+              (items.map
+                (fn ({name amount category})
+                  (text " " name "  " amount "  " category "\n"))))
+
+            [matchedLinesHeader ...matchedLinesBody])))
       (const body (lines.join ""))
       (text header body "\n"))))
 
@@ -139,7 +150,10 @@
         (fn (block i)
           (const lines (block.split "\n"))
           (const [head ...body] lines)
-          (const cardEntry (head.split "  "))
+          (const
+            trimmedHead
+            (head.replace (createRegExp "^#\\s*") ""))
+          (const cardEntry (trimmedHead.split "  "))
           (if (notEquals cardEntry.length 3)
             (throw (text "Invalid match result header: " (JSON.stringify head))))
           (const cardStatementWithLineNumber
@@ -156,34 +170,32 @@
                 (plusF 1 lines.length))))
           (if (Number.isNaN cardStatementWithLineNumber.price)
             (throw (text "Invalid price in match result header: " head)))
-          (const
-            cashbookLines
-            (body.map
-             (fn (l)
-               (const fields (l.split "  "))
-               (if (notEquals (get fields 0) "")
-                 (throw (text "Invalid match result: consecutive header lines: " (JSON.stringify l))))
-               (if (notEquals fields.length 4)
-                 (throw (text "Invalid match result body line: " (JSON.stringify l))))
-               { date: (Temporal.PlainDate.from (get fields 1))
-                 name: (get fields 2)
-                 amount: (parseNumber (get fields 3))})))
+          (const cashbookLines (parseDatedCashbookExpenditures body))
           { cardStatementWithLineNumber matchedLines: cashbookLines})))))
 
 (export
   (const
     matchCardStatementWithCashbookLines
-    (fn (cardStatementItems cashbookLines)
+    (fn (cardStatementItems datedCashbookLines)
       (cardStatementItems.map
         (fn (cardItem)
-          (const matchedLines
-           (cashbookLines.filter
-            (fn (datedLine)
-              (and
-                (equals datedLine.amount cardItem.price)
-                (isGreaterThanOrEquals
-                  ((datedLine.date.until cardItem.date).total "days")
-                  0)))))
+          (const
+            matchedLines
+            (datedCashbookLines.flatMap
+             (fn (datedLines)
+               (if
+                (isLessThan
+                  ((datedLines.date.until cardItem.date).total "days")
+                  0)
+                (return []))
+               (const
+                 matchedItems
+                 (datedLines.items.filter
+                  (fn (item)
+                    (equals item.amount cardItem.price))))
+               (if (isLessThan matchedItems.length 1)
+                 (return []))
+               (return [{date: datedLines.date items: matchedItems}]))))
           { cardStatementItem: cardItem matchedLines})))))
 
 (export
@@ -194,21 +206,33 @@
         { cardStatementWithLineNumber: {date name price line}
           matchedLines}
         matchResults
-        (if (isLessThan matchedLines.length 1)
-          (consume { line problem: "No matched lines."})
+        (const
+          { true: overdue false: notOverdue}
+          (Object.groupBy
+            matchedLines
+            (fn (matchedLine)
+              (isGreaterThan ((matchedLine.date.since date).total "days") 0))))
+
+        (if (and (not (isNone overdue)) (isGreaterThan overdue.length 0))
+          (consume
+            { line
+              problem:
+              "Overdue: one or more matched dates are after the card statement date."})
           (continue))
-        (if (isGreaterThan matchedLines.length 1)
-          (consume { line problem: "Multiple matched lines."})
+
+        (if (or (isNone notOverdue) (isLessThan notOverdue.length 1))
+          (consume { line problem: "No matched lines"})
           (continue))
-        (const [matchedLine] matchedLines)
-        (if (notEquals matchedLine.amount price)
-         (consume { line problem: "Inconsistent price."})
-         (continue))
-        (if
-          (isGreaterThan
-            ((matchedLine.date.since date).total "days")
-            0) 
-         (consume
-           {line
-            problem: "Overdue: the matched date is after the card statement date."})
-         (continue))))))
+        (const
+          totalPrice
+          (notOverdue.reduce
+            (fn (sum {items})
+              (plusF
+                sum
+                (items.reduce
+                  (fn (s {amount}) (plusF s amount)) 0))) 0))
+        (if (notEquals totalPrice price)
+          (consume
+            { line
+              problem: "Inconsistent total price"})
+          (continue))))))

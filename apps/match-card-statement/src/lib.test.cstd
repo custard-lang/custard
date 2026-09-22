@@ -40,14 +40,12 @@
       actual
       [
         { date: (Temporal.PlainDate.from "2026-05-31")
-          name: "サ－ビス料金"
-          amount: 23}
-        { date: (Temporal.PlainDate.from "2026-05-31")
-          name: "サービス手数料"
-          amount: 11}
+          items:
+          [ { name: "サ－ビス料金" amount: 23 category: "A"}
+            { name: "サービス手数料" amount: 11 category: "B"}]}
         { date: (Temporal.PlainDate.from "2026-06-01")
-          name: "サービス利用料"
-          amount: 45}])))
+          items:
+          [ { name: "サービス利用料" amount: 45 category: "B"}]}])))
 
 (test
   "MatchResults"
@@ -67,7 +65,7 @@
          name: "S23 2026-05-30"
          price: 23}
        { date: (Temporal.PlainDate.from "2026-05-30")
-         name: "S11 2026-05-29"
+         name: "S11 2026-05-30"
          price: 11}
 
        { date: (Temporal.PlainDate.from "2026-05-31")
@@ -84,25 +82,17 @@
       cashbookLines
       [
        { date: (Temporal.PlainDate.from "2026-05-29")
-         name: "B11 2026-05-29"
-         amount: 11}
-       { date: (Temporal.PlainDate.from "2026-05-29")
-         name: "B11 2026-05-29 2"
-         amount: 11}
-
+         items:
+         [ { name: "B11 2026-05-29" amount: 11 category: "B"}
+           { name: "B11 2026-05-29 2" amount: 11 category: "B"}]}
        { date: (Temporal.PlainDate.from "2026-05-30")
-         name: "B23 2026-05-30"
-         amount: 23}
-       { date: (Temporal.PlainDate.from "2026-05-30")
-         name: "B11 2026-05-29"
-         amount: 11}
-
+         items:
+         [ { name: "B23 2026-05-30" amount: 23 category: "B"}
+           { name: "B11 2026-05-30" amount: 11 category: "B"}]}
        { date: (Temporal.PlainDate.from "2026-05-31")
-         name: "B11 2026-05-31"
-         amount: 11}
-       { date: (Temporal.PlainDate.from "2026-05-31")
-         name: "B23 2026-05-31"
-         amount: 23}])
+         items:
+         [ { name: "B11 2026-05-31" amount: 11 category: "B"}
+           { name: "B23 2026-05-31" amount: 23 category: "B"}]}])
 
     (const
       matchResult
@@ -122,15 +112,45 @@
           [ { cardStatementItem: (get cardStatementItems 0)
               matchedLines: []}
             { cardStatementItem: (get cardStatementItems 1)
-              matchedLines: [(get cashbookLines 0) (get cashbookLines 1)]}
+              matchedLines:
+              [ { date: (Temporal.PlainDate.from "2026-05-29")
+                  items:
+                  [ { name: "B11 2026-05-29" amount: 11 category: "B"}
+                    { name: "B11 2026-05-29 2" amount: 11 category: "B"}]}]}
             { cardStatementItem: (get cardStatementItems 2)
-              matchedLines: [(get cashbookLines 2)]}
+              matchedLines:
+              [ { date: (Temporal.PlainDate.from "2026-05-30")
+                  items:
+                  [ { name: "B23 2026-05-30" amount: 23 category: "B"}]}]}
             { cardStatementItem: (get cardStatementItems 3)
-              matchedLines: [(get cashbookLines 0) (get cashbookLines 1) (get cashbookLines 3)]}
+              matchedLines:
+              [ { date: (Temporal.PlainDate.from "2026-05-29")
+                  items:
+                  [ { name: "B11 2026-05-29" amount: 11 category: "B"}
+                    { name: "B11 2026-05-29 2" amount: 11 category: "B"}]}
+                { date: (Temporal.PlainDate.from "2026-05-30")
+                  items:
+                  [ { name: "B11 2026-05-30" amount: 11 category: "B"}]}]}
             { cardStatementItem: (get cardStatementItems 4)
-              matchedLines: [(get cashbookLines 0) (get cashbookLines 1) (get cashbookLines 3) (get cashbookLines 4)]}
+              matchedLines:
+              [ { date: (Temporal.PlainDate.from "2026-05-29")
+                  items:
+                  [ { name: "B11 2026-05-29" amount: 11 category: "B"}
+                    { name: "B11 2026-05-29 2" amount: 11 category: "B"}]}
+                { date: (Temporal.PlainDate.from "2026-05-30")
+                  items:
+                  [ { name: "B11 2026-05-30" amount: 11 category: "B"}]}
+                { date: (Temporal.PlainDate.from "2026-05-31")
+                  items:
+                  [ { name: "B11 2026-05-31" amount: 11 category: "B"}]}]}
             { cardStatementItem: (get cardStatementItems 5)
-              matchedLines: [(get cashbookLines 2) (get cashbookLines 5)]}
+              matchedLines:
+              [ { date: (Temporal.PlainDate.from "2026-05-30")
+                  items:
+                  [ { name: "B23 2026-05-30" amount: 23 category: "B"}]}
+                { date: (Temporal.PlainDate.from "2026-05-31")
+                  items:
+                  [ { name: "B23 2026-05-31" amount: 23 category: "B"}]}]}
             { cardStatementItem: (get cardStatementItems 6)
               matchedLines: []}])))
 
@@ -140,31 +160,40 @@
         (const
           expectedSerializedResults
           [
-           "2026/5/28  S11 2026-05-28  11\n"
+           "# 2026/5/28  S11 2026-05-28  11\n"
            "\n"
-           "2026/5/29  S11 2026-05-29  11\n"
-           "  2026-05-29  B11 2026-05-29  11\n"
-           "  2026-05-29  B11 2026-05-29 2  11\n"
+           "# 2026/5/29  S11 2026-05-29  11\n"
+           "26/05/29\n"
+           " B11 2026-05-29  11  B\n"
+           " B11 2026-05-29 2  11  B\n"
            "\n"
-           "2026/5/30  S23 2026-05-30  23\n"
-           "  2026-05-30  B23 2026-05-30  23\n"
+           "# 2026/5/30  S23 2026-05-30  23\n"
+           "26/05/30\n"
+           " B23 2026-05-30  23  B\n"
            "\n"
-           "2026/5/30  S11 2026-05-29  11\n"
-           "  2026-05-29  B11 2026-05-29  11\n"
-           "  2026-05-29  B11 2026-05-29 2  11\n"
-           "  2026-05-30  B11 2026-05-29  11\n"
+           "# 2026/5/30  S11 2026-05-30  11\n"
+           "26/05/29\n"
+           " B11 2026-05-29  11  B\n"
+           " B11 2026-05-29 2  11  B\n"
+           "26/05/30\n"
+           " B11 2026-05-30  11  B\n"
            "\n"
-           "2026/5/31  S11 2026-05-31  11\n"
-           "  2026-05-29  B11 2026-05-29  11\n"
-           "  2026-05-29  B11 2026-05-29 2  11\n"
-           "  2026-05-30  B11 2026-05-29  11\n"
-           "  2026-05-31  B11 2026-05-31  11\n"
+           "# 2026/5/31  S11 2026-05-31  11\n"
+           "26/05/29\n"
+           " B11 2026-05-29  11  B\n"
+           " B11 2026-05-29 2  11  B\n"
+           "26/05/30\n"
+           " B11 2026-05-30  11  B\n"
+           "26/05/31\n"
+           " B11 2026-05-31  11  B\n"
            "\n"
-           "2026/5/31  S23 2026-05-31  23\n"
-           "  2026-05-30  B23 2026-05-30  23\n"
-           "  2026-05-31  B23 2026-05-31  23\n"
+           "# 2026/5/31  S23 2026-05-31  23\n"
+           "26/05/30\n"
+           " B23 2026-05-30  23  B\n"
+           "26/05/31\n"
+           " B23 2026-05-31  23  B\n"
            "\n"
-           "2026/6/1  S9 2026-06-01  9\n"
+           "# 2026/6/1  S9 2026-06-01  9\n"
            "\n"])
           
         (assert.deepEqual
@@ -195,46 +224,42 @@
         (const
           input
           [
-           "2026/6/30  Overdue  2922\n"
-           "  2026-07-01  only one line  2922\n"
+           "# 2026/6/30  Overdue  2922\n"
+           "26/07/01\n"
+           " only one line  2922  B\n"
            "\n"
-
-           "2026/6/30  No problem 1  2900\n"
-           "  2026-06-29  only one line  2900\n"
+           "# 2026/6/30  No problem 1  2900\n"
+           "26/06/29\n"
+           " only one line  2900  B\n"
            "\n"
-
-           "2026/6/30  No lines  1000\n"
+           "# 2026/6/30  No lines  1000\n"
            "\n"
-
-           "2026/6/30  No problem 2  100\n"
-           "  2026-06-30  only one line  100\n"
+           "# 2026/6/30  No problem 2  100\n"
+           "26/06/29\n"
+           " Divided 1  40  B\n"
+           "26/06/30\n"
+           " Divided 2  60  B\n"
            "\n"
-
-           "2026/6/30  Inconsistent price 1  2901\n"
-           "  2026-06-29  only one line  2900\n"
+           "# 2026/6/30  Inconsistent price 1  2901\n"
+           "26/06/29\n"
+           " line  2901  B\n"
+           " another line  1  B\n"
            "\n"
-
-           "2026/6/30  Multiple entries  2922\n"
-           "  2026-06-19  one line  2922\n"
-           "  2026-06-20  another line  2922\n"
-           "\n"
-
-           "2026/6/30  Inconsistent price 2  2900\n"
-           "  2026-06-29  only one line  2899\n"
+           "# 2026/6/30  Inconsistent price 2  2900\n"
+           "26/06/29\n"
+           " only one line  2899  B\n"
            "\n"])
         (const
           expectedOutput
           [
            { line: 1
-             problem: "Overdue: the matched date is after the card statement date."}
-           { line: 7
-             problem: "No matched lines."}
-           { line: 12
-             problem: "Inconsistent price."}
-           { line: 15
-             problem: "Multiple matched lines."}
-           { line: 19
-             problem: "Inconsistent price."}])
+             problem: "Overdue: one or more matched dates are after the card statement date."}
+           { line: 9
+             problem: "No matched lines"}
+           { line: 17
+             problem: "Inconsistent total price"}
+           { line: 22
+             problem: "Inconsistent total price"}])
         (const actualOutput [])
         (validateMatchResults
           (parseMatchResults (input.join ""))

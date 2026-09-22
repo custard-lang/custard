@@ -16,4 +16,4 @@
 {
   modulePaths
   implicitStatements: "(importAnyOf base)(import async)(import path)(import fsC)(import meta)(import igrepCashbook)"
-  jsTopLevels: ["console" "Number" "Promise" "process" "Array" "JSON" "Math" "Temporal"]}
+  jsTopLevels: ["console" "Number" "Promise" "process" "Array" "Object" "JSON" "Math" "Temporal"]}
