@@ -29,10 +29,10 @@ import { transpileExpressionU } from "../../internal/transpile.js";
 
 export const _cu$let = transpilingForVariableDeclaration(
   "let ",
-  (assignee: JsSrc, exp?: Ktvals<JsSrc>): Ktvals<JsSrc> =>
+  (assignee: Ktvals<JsSrc>, exp?: Ktvals<JsSrc>): Ktvals<JsSrc> =>
     exp === undefined
-      ? [ktvalOther(`let ${assignee}`)]
-      : [ktvalOther(`let ${assignee}`), ktvalOther("="), ...exp],
+      ? [ktvalOther("let "), ...assignee]
+      : [ktvalOther("let "), ...assignee, ktvalOther("="), ...exp],
   aVar,
 );
 export const assign = transpilingForAssignment(

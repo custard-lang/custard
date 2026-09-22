@@ -179,7 +179,7 @@ export function transpilingForAssignment(
 export function transpilingForVariableDeclaration(
   decl: KtvalAssignDecl,
   buildStatement: (
-    assignee: JsSrc,
+    assignee: Ktvals<JsSrc>,
     exp?: Ktvals<JsSrc>,
   ) => Ktvals<JsSrc> | TranspileError,
   newWriter: () => Writer,
@@ -203,7 +203,12 @@ export function transpilingForVariableDeclaration(
         );
       }
 
-      const assignee = transpileLocalAssignee(formId, context, sym, newWriter);
+      const assignee = await transpileLocalAssignee(
+        formId,
+        context,
+        sym,
+        newWriter,
+      );
       if (TranspileError.is(assignee)) {
         return assignee;
       }
@@ -367,21 +372,21 @@ function transpileTopLevelArrayAssignee(
   return [assignDestructuringArray];
 }
 
-function transpileLocalAssignee(
+async function transpileLocalAssignee(
   formId: Id,
   context: Context,
   sym: unknown,
   newWriter: () => Writer,
-): JsSrc | TranspileError {
+): Promise<Ktvals<JsSrc> | TranspileError> {
   if (isCuSymbol(sym)) {
     const r = tryToSet(sym, context, newWriter);
     if (TranspileError.is(r)) {
       return r;
     }
-    return sym.value;
+    return [ktvalOther(sym.value)];
   }
   if (isCuObject(sym)) {
-    let assignee = "{";
+    const assignee: Ktvals<JsSrc> = [ktvalOther("{")];
     let hasAssignedSplice = false;
     for (const kvOrSymOrSplice of sym) {
       if (hasAssignedSplice) {
@@ -392,19 +397,32 @@ function transpileLocalAssignee(
 
       if (isKeyValue(kvOrSymOrSplice)) {
         const { key, value } = kvOrSymOrSplice;
-        if (!isCuSymbol(key)) {
-          const kFormatted = formatForError(key);
-          return new TranspileError(
-            `${formId}'s assignee must be a symbol, but ${kFormatted} is not!`,
-          );
-        }
-
-        const r = transpileLocalAssignee(formId, context, value, newWriter);
+        const r = await transpileLocalAssignee(
+          formId,
+          context,
+          value,
+          newWriter,
+        );
         if (TranspileError.is(r)) {
           return r;
         }
 
-        assignee = `${assignee}${key.value}:${r},`;
+        if (isCuSymbol(key)) {
+          assignee.push(ktvalOther(`${key.value}:`), ...r, ktvalOther(","));
+          continue;
+        }
+
+        const keySrc = await transpileComputedKeyOrExpression(key, context);
+        if (TranspileError.is(keySrc)) {
+          return keySrc;
+        }
+        assignee.push(
+          ktvalOther("["),
+          ...keySrc,
+          ktvalOther("]:"),
+          ...r,
+          ktvalOther(","),
+        );
         continue;
       }
 
@@ -413,7 +431,7 @@ function transpileLocalAssignee(
         if (TranspileError.is(r0)) {
           return r0;
         }
-        assignee = `${assignee}${kvOrSymOrSplice.value},`;
+        assignee.push(ktvalOther(`${kvOrSymOrSplice.value},`));
         continue;
       }
 
@@ -430,7 +448,7 @@ function transpileLocalAssignee(
         if (TranspileError.is(r)) {
           return r;
         }
-        assignee = `${assignee}...${sym.value}`;
+        assignee.push(ktvalOther(`...${sym.value}`));
         continue;
       }
 
@@ -440,7 +458,8 @@ function transpileLocalAssignee(
 
       throw ExpectNever(kvOrSymOrSplice);
     }
-    return `${assignee}}`;
+    assignee.push(ktvalOther("}"));
+    return assignee;
   }
   if (isCuArray(sym)) {
     return transpileLocalArrayAssignee(formId, context, sym, newWriter);
@@ -457,12 +476,12 @@ class TranspileLocalAssigneeSpliceAware {
     this.#hasEncounteredSplice = false;
   }
 
-  execute(
+  async execute(
     formId: Id,
     context: Context,
     sym: unknown,
     newWriter: () => Writer,
-  ): JsSrc | TranspileError {
+  ): Promise<Ktvals<JsSrc> | TranspileError> {
     if (this.#hasEncounteredSplice) {
       return new TranspileError(
         `Rest element must be last element in assignee of \`${formId}\`!`,
@@ -485,7 +504,7 @@ class TranspileLocalAssigneeSpliceAware {
         if (TranspileError.is(r)) {
           return r;
         }
-        return `...${symValue.value}`;
+        return [ktvalOther(`...${symValue.value}`)];
       }
       const symFormatted = formatForError(symValue);
       return new TranspileError(
@@ -493,30 +512,31 @@ class TranspileLocalAssigneeSpliceAware {
       );
     }
 
-    const r = transpileLocalAssignee(formId, context, sym, newWriter);
+    const r = await transpileLocalAssignee(formId, context, sym, newWriter);
     if (TranspileError.is(r)) {
       return r;
     }
-    return `${r},`;
+    return [...r, ktvalOther(",")];
   }
 }
 
-function transpileLocalArrayAssignee(
+async function transpileLocalArrayAssignee(
   formId: Id,
   context: Context,
   array: CuArray<unknown>,
   newWriter: () => Writer,
-): JsSrc | TranspileError {
-  let assignee = "[";
+): Promise<Ktvals<JsSrc> | TranspileError> {
+  const assignee: Ktvals<JsSrc> = [ktvalOther("[")];
   const transpileElement = new TranspileLocalAssigneeSpliceAware();
   for (const form of array) {
-    const r = transpileElement.execute(formId, context, form, newWriter);
+    const r = await transpileElement.execute(formId, context, form, newWriter);
     if (TranspileError.is(r)) {
       return r;
     }
-    assignee = `${assignee}${r}`;
+    assignee.push(...r);
   }
-  return `${assignee}]`;
+  assignee.push(ktvalOther("]"));
+  return assignee;
 }
 
 export function tryToSet(
@@ -585,14 +605,14 @@ interface PreludeResult {
   readonly firstBlock: unknown[];
 }
 
-function functionPrelude(
+async function functionPrelude(
   formId: Id,
   context: Context,
   nameOrArgs: unknown,
   argsOrFirstForm: unknown,
   scopeOptions: ScopeOptions,
   beforeArguments: JsSrc,
-): PreludeResult | TranspileError {
+): Promise<PreludeResult | TranspileError> {
   if (nameOrArgs === undefined) {
     return new TranspileError(
       `No name or argument list is given to a \`${formId}\`!`,
@@ -634,11 +654,11 @@ function functionPrelude(
 
   ContextF.push(context, scopeOptions);
 
-  let argPatterns: JsSrc = "";
+  const argPatterns: Ktvals<JsSrc> = [];
   const transpileLocalAssigneeSpliceAware =
     new TranspileLocalAssigneeSpliceAware();
   for (const arg of argsOrFirstForm) {
-    const argSrc = transpileLocalAssigneeSpliceAware.execute(
+    const argSrc = await transpileLocalAssigneeSpliceAware.execute(
       formId,
       context,
       arg,
@@ -647,11 +667,15 @@ function functionPrelude(
     if (TranspileError.is(argSrc)) {
       return argSrc;
     }
-    argPatterns = `${argPatterns}${argSrc}`;
+    argPatterns.push(...argSrc);
   }
 
   return {
-    src: [ktvalOther(`${beforeArguments}${funNameInSrc}(${argPatterns}){\n`)],
+    src: [
+      ktvalOther(`${beforeArguments}${funNameInSrc}(`),
+      ...argPatterns,
+      ktvalOther(`){\n`),
+    ],
     funName,
     firstBlock,
   };
@@ -684,7 +708,7 @@ export async function buildFn(
   scopeOptions: ScopeOptions,
   beforeArguments: JsSrc,
 ): Promise<Ktvals<JsSrc> | TranspileError> {
-  const preludeResult = functionPrelude(
+  const preludeResult = await functionPrelude(
     formId,
     context,
     nameOrArgs,
@@ -742,7 +766,7 @@ export async function buildProcedure(
   scopeOptions: ScopeOptions,
   beforeArguments: JsSrc,
 ): Promise<Ktvals<JsSrc> | TranspileError> {
-  const preludeResult = functionPrelude(
+  const preludeResult = await functionPrelude(
     formId,
     context,
     nameOrArgs,
@@ -794,7 +818,7 @@ export function buildScope(
 
 export function buildForEach(
   build: (
-    assignee: JsSrc,
+    assignee: Ktvals<JsSrc>,
     iterableSrc: Ktvals<JsSrc>,
     statementsSrc: Ktvals<JsSrc>,
   ) => Ktvals<JsSrc>,
@@ -813,7 +837,12 @@ export function buildForEach(
       );
     }
 
-    const assignee = transpileLocalAssignee("forEach", context, id, aConst);
+    const assignee = await transpileLocalAssignee(
+      "forEach",
+      context,
+      id,
+      aConst,
+    );
     if (TranspileError.is(assignee)) {
       return assignee;
     }

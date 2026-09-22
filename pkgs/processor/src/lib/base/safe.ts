@@ -71,10 +71,13 @@ export const annotateArray = markAsMacro(function annotateArrayBody(
 
 export const _cu$const = transpilingForVariableDeclaration(
   "const ",
-  (assignee: JsSrc, exp?: Ktvals<JsSrc>): Ktvals<JsSrc> | TranspileError =>
+  (
+    assignee: Ktvals<JsSrc>,
+    exp?: Ktvals<JsSrc>,
+  ): Ktvals<JsSrc> | TranspileError =>
     exp === undefined
       ? new TranspileError("No variable name given to a `const`!")
-      : [ktvalOther(`const ${assignee}`), ktvalOther("="), ...exp],
+      : [ktvalOther("const "), ...assignee, ktvalOther("="), ...exp],
   aConst,
 );
 

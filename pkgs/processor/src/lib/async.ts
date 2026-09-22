@@ -127,11 +127,13 @@ export const forEach = markAsDirectWriter(
     }
     return await buildForEach(
       (
-        assignee: JsSrc,
+        assignee: Ktvals<JsSrc>,
         iterableSrc: Ktvals<JsSrc>,
         statementsSrc: Ktvals<JsSrc>,
       ): Ktvals<JsSrc> => [
-        ktvalOther(`for await (const ${assignee} of `),
+        ktvalOther("for await (const "),
+        ...assignee,
+        ktvalOther(" of "),
         ...iterableSrc,
         ktvalOther("){"),
         ...statementsSrc,

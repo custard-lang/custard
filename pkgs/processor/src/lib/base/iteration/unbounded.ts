@@ -157,11 +157,13 @@ export const _cu$for = markAsDirectWriter(
 export const forEach = markAsDirectWriter(
   buildForEach(
     (
-      assignee: JsSrc,
+      assignee: Ktvals<JsSrc>,
       iterableSrc: Ktvals<JsSrc>,
       statementsSrc: Ktvals<JsSrc>,
     ): Ktvals<JsSrc> => [
-      ktvalOther(`for (const ${assignee} of `),
+      ktvalOther("for (const "),
+      ...assignee,
+      ktvalOther(" of "),
       ...iterableSrc,
       ktvalOther("){"),
       ...statementsSrc,
