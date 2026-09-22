@@ -124,33 +124,35 @@
                   [ { name: "B23 2026-05-30" amount: 23 category: "B"}]}]}
             { cardStatementItem: (get cardStatementItems 3)
               matchedLines:
-              [ { date: (Temporal.PlainDate.from "2026-05-29")
+              [ { date: (Temporal.PlainDate.from "2026-05-30")
+                  items:
+                  [ { name: "B11 2026-05-30" amount: 11 category: "B"}]}
+                { date: (Temporal.PlainDate.from "2026-05-29")
                   items:
                   [ { name: "B11 2026-05-29" amount: 11 category: "B"}
-                    { name: "B11 2026-05-29 2" amount: 11 category: "B"}]}
-                { date: (Temporal.PlainDate.from "2026-05-30")
-                  items:
-                  [ { name: "B11 2026-05-30" amount: 11 category: "B"}]}]}
+                    { name: "B11 2026-05-29 2" amount: 11 category: "B"}]}]}
             { cardStatementItem: (get cardStatementItems 4)
               matchedLines:
-              [ { date: (Temporal.PlainDate.from "2026-05-29")
+              [
+                { date: (Temporal.PlainDate.from "2026-05-31")
                   items:
-                  [ { name: "B11 2026-05-29" amount: 11 category: "B"}
-                    { name: "B11 2026-05-29 2" amount: 11 category: "B"}]}
+                  [ { name: "B11 2026-05-31" amount: 11 category: "B"}]}
                 { date: (Temporal.PlainDate.from "2026-05-30")
                   items:
                   [ { name: "B11 2026-05-30" amount: 11 category: "B"}]}
-                { date: (Temporal.PlainDate.from "2026-05-31")
+                { date: (Temporal.PlainDate.from "2026-05-29")
                   items:
-                  [ { name: "B11 2026-05-31" amount: 11 category: "B"}]}]}
+                  [ { name: "B11 2026-05-29" amount: 11 category: "B"}
+                    { name: "B11 2026-05-29 2" amount: 11 category: "B"}]}]}
             { cardStatementItem: (get cardStatementItems 5)
               matchedLines:
-              [ { date: (Temporal.PlainDate.from "2026-05-30")
+              [ { date: (Temporal.PlainDate.from "2026-05-31")
                   items:
-                  [ { name: "B23 2026-05-30" amount: 23 category: "B"}]}
-                { date: (Temporal.PlainDate.from "2026-05-31")
+                  [ { name: "B23 2026-05-31" amount: 23 category: "B"}]}
+                { date: (Temporal.PlainDate.from "2026-05-30")
                   items:
-                  [ { name: "B23 2026-05-31" amount: 23 category: "B"}]}]}
+                  [ { name: "B23 2026-05-30" amount: 23 category: "B"}]}]}
+
             { cardStatementItem: (get cardStatementItems 6)
               matchedLines: []}])))
 
@@ -172,26 +174,26 @@
            " B23 2026-05-30  23  B\n"
            "\n"
            "# 2026/5/30  S11 2026-05-30  11\n"
+           "26/05/30\n"
+           " B11 2026-05-30  11  B\n"
            "26/05/29\n"
            " B11 2026-05-29  11  B\n"
            " B11 2026-05-29 2  11  B\n"
-           "26/05/30\n"
-           " B11 2026-05-30  11  B\n"
            "\n"
            "# 2026/5/31  S11 2026-05-31  11\n"
+           "26/05/31\n"
+           " B11 2026-05-31  11  B\n"
+           "26/05/30\n"
+           " B11 2026-05-30  11  B\n"
            "26/05/29\n"
            " B11 2026-05-29  11  B\n"
            " B11 2026-05-29 2  11  B\n"
-           "26/05/30\n"
-           " B11 2026-05-30  11  B\n"
-           "26/05/31\n"
-           " B11 2026-05-31  11  B\n"
            "\n"
            "# 2026/5/31  S23 2026-05-31  23\n"
-           "26/05/30\n"
-           " B23 2026-05-30  23  B\n"
            "26/05/31\n"
            " B23 2026-05-31  23  B\n"
+           "26/05/30\n"
+           " B23 2026-05-30  23  B\n"
            "\n"
            "# 2026/6/1  S9 2026-06-01  9\n"
            "\n"])

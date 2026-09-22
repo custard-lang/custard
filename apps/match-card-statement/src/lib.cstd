@@ -196,6 +196,9 @@
                (if (isLessThan matchedItems.length 1)
                  (return []))
                (return [{date: datedLines.date items: matchedItems}]))))
+          (matchedLines.sort
+            (fn ({date: d1} {date: d2})
+              (Temporal.PlainDate.compare d2 d1)))
           { cardStatementItem: cardItem matchedLines})))))
 
 (export
