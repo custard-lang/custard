@@ -95,11 +95,7 @@ export function functionIdOfCall<X extends Empty = Empty>(
 
 // The `Cu` prefix is only to avoid conflicts with TypeScript's builtin types.
 export type AtomLike<X extends Empty = Empty> =
-  | Integer32<X>
-  | Float64<X>
-  | CuString<X>
-  | ReservedSymbol<X>
-  | CuSymbol<X>;
+  Integer32<X> | Float64<X> | CuString<X> | ReservedSymbol<X> | CuSymbol<X>;
 
 export function locatedInteger32(v: number, l: Location): Integer32<Location> {
   const i = integer32(v);
@@ -655,8 +651,7 @@ export interface PropertyAccessResolutionResultDynamic extends PropertyAccessRes
 }
 
 export type PropertyAccessResolutionResult =
-  | PropertyAccessResolutionResultOnlyId
-  | PropertyAccessResolutionResultDynamic;
+  PropertyAccessResolutionResultOnlyId | PropertyAccessResolutionResultDynamic;
 
 export interface References {
   readonly referenceById: Map<Id, Ref[]>;
