@@ -1014,6 +1014,22 @@ describe("(const|let|assign id expression)", () => {
   });
 
   testForm({
+    src: "(scope (const { y ...rest } { y: 3 x: 2 }) [y rest])",
+    expected: [3, { x: 2 }],
+    setUpConfig,
+  });
+  testForm({
+    src: "(scope (let { x ...rest } { y: 3 x: 2 }) [x rest])",
+    expected: [2, { y: 3 }],
+    setUpConfig,
+  });
+  testForm({
+    src: "(scope (let { x y: rest } { y: 3 x: 2 }) (assign { a: x ...rest } { a: 9 b: 10 }) [x rest])",
+    expected: [9, { b: 10 }],
+    setUpConfig,
+  });
+
+  testForm({
     src: "(let { x y: ...(rest) } { y: 3 x: 2 })",
     expected: new TranspileError(
       "The assignee in `let` must be a Symbol, but `...( rest )` is not!",
@@ -1076,6 +1092,11 @@ describe("(const|let|assign id expression)", () => {
     expected: [[2, 1], 3],
     setUpConfig,
   });
+  testForm({
+    src: "(scope (const [x ...xs] [3 2 1]) [xs x])",
+    expected: [[2, 1], 3],
+    setUpConfig,
+  });
 
   testForm({
     src: "(const [x ...xs ...ys] [3 2 1 0])",
@@ -1087,6 +1108,11 @@ describe("(const|let|assign id expression)", () => {
 
   testForm({
     src: "(const [...xs] [3 2 1]) xs",
+    expected: [3, 2, 1],
+    setUpConfig,
+  });
+  testForm({
+    src: "(scope (const [...xs] [3 2 1]) xs)",
     expected: [3, 2, 1],
     setUpConfig,
   });

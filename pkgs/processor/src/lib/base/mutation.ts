@@ -163,7 +163,7 @@ export const assign = transpilingForAssignment(
               ktvalOther(`[_cu$key]=_cu$value;\n`),
             ];
           } else {
-            initAssignee = [ktvalOther(`${sym.value}=`), ktvalOther("{}")];
+            initAssignee = [ktvalOther(`${sym.value}=`), ktvalOther("{};")];
             assignBody = [ktvalOther(`${sym.value}[_cu$key]=_cu$value;\n`)];
           }
 
