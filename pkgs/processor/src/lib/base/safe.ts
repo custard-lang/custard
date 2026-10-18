@@ -132,6 +132,10 @@ export const dividedByF = transpiling2(
   "dividedByF",
   (a: Ktvals<JsSrc>, b: Ktvals<JsSrc>) => [...a, ktvalOther("/"), ...b],
 );
+export const modF = transpiling2(
+  "modF",
+  (a: Ktvals<JsSrc>, b: Ktvals<JsSrc>) => [...a, ktvalOther("%"), ...b],
+);
 
 // TODO: If one of the argument is null, use == or !=
 export const equals = transpiling2(

@@ -1510,6 +1510,33 @@ describe("(decrementF id)", () => {
   });
 });
 
+describe("(modF a b)", () => {
+  testForm({
+    src: "(modF 5 2)",
+    expected: 1,
+    setUpConfig,
+  });
+  testForm({
+    src: "(modF 5.5 2.1)",
+    expected: 5.5 % 2.1,
+    setUpConfig,
+  });
+  testForm({
+    src: "(modF 5)",
+    expected: new TranspileError(
+      "`modF` must receive exactly two expressions!",
+    ),
+    setUpConfig,
+  });
+  testForm({
+    src: "(modF 5 2 1)",
+    expected: new TranspileError(
+      "`modF` must receive exactly two expressions!",
+    ),
+    setUpConfig,
+  });
+});
+
 describe("(forEach id iterable s t a t e m e n t s)", () => {
   testForm({
     src: "(let x 0)(forEach v [1 2 3] (assign x (plusF x v))) x",
