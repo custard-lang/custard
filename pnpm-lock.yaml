@@ -248,6 +248,22 @@ importers:
         specifier: file:../../pkgs/command
         version: file:pkgs/command
 
+  apps/merge-transactions:
+    dependencies:
+      '@custard-lang/processor':
+        specifier: file:../../pkgs/processor
+        version: link:../../pkgs/processor
+      custard-my-apps-common:
+        specifier: file:../apps-common
+        version: link:../apps-common
+      igrep-cashbook:
+        specifier: file:../igrep-cashbook
+        version: link:../igrep-cashbook
+    devDependencies:
+      '@custard-lang/command':
+        specifier: file:../../pkgs/command
+        version: file:pkgs/command
+
   apps/save-posts:
     dependencies:
       '@atproto/api':

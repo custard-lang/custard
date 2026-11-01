@@ -33,7 +33,7 @@
           (or
             (l.startsWith "#")
             (isLessThan l.length 1))
-          (return none))
+          (return { value: l type: "commentLine"}))
 
         (if (not (l.startsWith " "))
           (return (text "At line " n ": Invalid line. Missing a leading space.")))
@@ -120,3 +120,76 @@
      (meta.quasiQuote
        (if (notEquals $parseResult.type "item")
          (continue)))]))
+
+(export
+  (const
+    parseDatedCashbookLines
+    (fn (lines)
+      (const datedCashbookLines [])
+      (forEach [i line] (lines.entries)
+       (const n (plusF i 1))
+       (const parseResult (parseLine n line[1]))
+       (continueIfNone parseResult)
+       (continueAndWarnIfError parseResult)
+       (if (equals parseResult.type "date")
+         (datedCashbookLines.push
+           {date: (dateSToPlainDate parseResult.value) items: []})
+         (continue))
+       (if
+         (or
+           (equals parseResult.type "item")
+           (equals parseResult.type "commentLine"))
+         (if (equals datedCashbookLines.length 0)
+           (throw (text "At line " n ": No date specified for item: " parseResult.name)))
+         ((last datedCashbookLines).items.push parseResult)))
+     datedCashbookLines)))
+
+(export
+  (const
+    groupDatedCashbookLinesByDate
+    (fn (datedCashbookLines)
+      (const groupedByDate (createMap))
+      (forEach datedCashbookLine datedCashbookLines
+        (const dateKey (datedCashbookLine.date.toString))
+        (if (not (groupedByDate.has dateKey))
+          (groupedByDate.set dateKey {date: datedCashbookLine.date items: []}))
+        ((groupedByDate.get dateKey).items.push ...datedCashbookLine.items))
+      (return groupedByDate))))
+
+(export
+  (const
+    unparseDatedCashbookLines
+    (fn (datedCashbookLines)
+      (datedCashbookLines.flatMap
+        (fn ({date items})
+          (const yearS ((text (minusF date.year 2000)).padStart 2 "0"))
+          (const monthS ((text date.month).padStart 2 "0"))
+          (const dayS ((text date.day).padStart 2 "0"))
+          (const dateLine (text yearS "/" monthS "/" dayS))
+          (const itemLines
+            (items.map
+              (fn (item)
+                (if (equals item.type "commentLine")
+                  (return item.value))
+                (if (notEquals item.type "item")
+                  (throw (text "Unexpected item type: " item.type)))
+                (const {name amount category comment isIncome} item)
+                (const amountS
+                  (text
+                    (andOr isIncome "+" "")
+                    (amount.toString)))
+                (const afterCategory
+                  (andOr comment (text "  #" comment) ""))
+                (text " " name "  " amountS "  " category afterCategory))))
+          [dateLine ...itemLines])))))
+
+(export
+  (const
+    listDatedCashbookLines
+    (fn (groupedByDate)
+      (const datedLines [...(groupedByDate.values)])
+      (note
+        "これは想定通りにsortしないので注意。`b`が返ってきてしまう。custardの構文の紛らわしいところ"
+        (xs.sort (fn (a b) Temporal.PlainDate.compare a b)))
+      (datedLines.sort (fn (a b) (Temporal.PlainDate.compare a.date b.date)))
+      (unparseDatedCashbookLines datedLines))))

@@ -26,7 +26,7 @@
                  lines
                  (async.await
                    (common.readUtf8Lines (fsC.createReadStream f))))
-               (lib.parseDatedCashbookExpenditures lines))))))
+               (igrepCashbook.parseDatedCashbookLines lines))))))
      (const
        matchResults
        (lib.matchCardStatementWithCashbookLines

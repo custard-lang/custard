@@ -1,0 +1,147 @@
+(import js)
+(import common)
+
+(meta.defineMacro
+  getColumnIndex
+  (columns columnName)
+  (meta.quasiQuote
+    (scope
+      (const index ($columns.indexOf $columnName))
+      (if (equals index -1)
+        (throw (text "Column not found: " $columnName)))
+      index)))
+
+(const
+  getColumnValue
+  (fn (columns columnIndex)
+    (const value (get columns columnIndex))
+    (if (isNone value)
+      (throw (text "Column not found at " columnIndex)))
+    value))
+
+(const
+  parseNumber
+  (fn (s)
+    (const v (Number s))
+    (if (Number.isNaN v)
+      (throw (text "Invalid number:" s)))
+    v))
+
+(const
+  getColumnNumberValue
+  (fn (columns columnIndex)
+   (const valueS (getColumnValue columns columnIndex))
+   (const result (parseNumber valueS))
+   (andOr (Number.isNaN result) none result)))
+
+(const
+  transactionDateRegExp
+  (createRegExp "^(?<year>\\d{4})/(?<month>\\d{1,2})/(?<day>\\d{1,2})\\b"))
+
+(const
+  parseTransactionDate
+  (fn (dateS)
+    (const md (dateS.match transactionDateRegExp))
+    (if (isNone md)
+      (throw (text "Invalid date: " dateS)))
+    (const {year month day} md.groups)
+    (js.new Temporal.PlainDate year month day)))
+
+(const
+  getColumnDateValue
+  (fn (columns columnIndex)
+    (const valueS (getColumnValue columns columnIndex))
+    (parseTransactionDate valueS)))
+
+(const
+  parseTransactionsRawLine
+  (fn (fileName lineNumber line)
+    (line.split ",")))
+
+(const
+  parseTransactionsHeader
+  (fn (fileName line)
+    (const columns (parseTransactionsRawLine fileName 1 line))
+    (const dateIndex (getColumnIndex columns "日時"))
+    (const nameIndex (getColumnIndex columns "ファンド"))
+    (const kindIndex (getColumnIndex columns "取引内容"))
+    (const deposited (getColumnIndex columns "入金"))
+    (const paid (getColumnIndex columns "出金"))
+    { dateIndex kindIndex nameIndex deposited paid}))
+
+(const
+  parseTransactionForCashbook
+  (fn (fileName lineNumber line header)
+    (const columns (parseTransactionsRawLine fileName lineNumber line))
+    (const date (getColumnDateValue columns header.dateIndex))
+    (const name ((getColumnValue columns header.nameIndex).trim))
+    (const kind (getColumnValue columns header.kindIndex))
+    (if (or (equals kind "投資家入金") (equals kind "出金"))
+      (return none))
+    (if (or (equals kind "投資承認") (equals kind "源泉徴収税"))
+      (const value (getColumnNumberValue columns header.paid))
+      (return { date kind name value isIncome: false}))
+    (if (or (equals kind "利息受取") (equals kind "元本受取"))
+      (const value (getColumnNumberValue columns header.deposited))
+      (return { date kind name value isIncome: true}))
+    (throw (text "Unknown kind: " kind))))
+
+(export
+  (const
+    parseTransactionsFile
+    (fn (fileName lines)
+      (const [head ...restLines] lines)
+      (const
+        headerIndices
+        (parseTransactionsHeader fileName (common.dropBom head)))
+      (restLines.map
+        (fn (l i)
+          (const
+            n
+            (plusF
+              i
+              (annotate "Add header line and adjust to 1-based index" 2)))
+          (parseTransactionForCashbook fileName n l headerIndices))))))
+
+(const
+ toDatedCashbookLine
+ (fn (prefix {date name value kind isIncome})
+   { date
+     items:
+     [ { name: (text prefix " " kind " " name)
+         amount: value
+         isIncome
+         category: "投資"
+         type: "item"}]}))
+
+(const
+  appendTransactionUnlessExists
+  (fn (cashbookLinesByDate datedCashbookLine)
+   (const dateS (text datedCashbookLine.date))
+   (const existingGroup (cashbookLinesByDate.get dateS))
+   (if (isNone existingGroup)
+     (cashbookLinesByDate.set dateS datedCashbookLine)
+     (return))
+   (if
+     (not
+       (existingGroup.items.some
+         (fn (existingLine)
+           (datedCashbookLine.items.some
+             (fn (item)
+               (equals existingLine.name item.name))))))
+     (existingGroup.items.push ...datedCashbookLine.items))))
+
+(export
+  (const
+    mergeTransactionsIntoCashbook
+    (fn (prefix transactions datedCashbookLines)
+      (const
+        cashbookLinesByDate
+        (igrepCashbook.groupDatedCashbookLinesByDate datedCashbookLines))
+      (forEach transaction transactions
+        (if (isNone transaction)
+          (continue))
+        (appendTransactionUnlessExists
+          cashbookLinesByDate
+          (toDatedCashbookLine prefix transaction)))
+      (igrepCashbook.listDatedCashbookLines cashbookLinesByDate))))

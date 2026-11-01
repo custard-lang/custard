@@ -1,0 +1,30 @@
+{
+  "name": "merge-transactions",
+  "type": "module",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Merge transactions into igrep-cashbook lines.",
+  "scripts": {
+    "custard-transpile": "node ../../pkgs/command/dist/custard.js transpile -vp .provided-symbols.cstd src/lib.cstd src/index.cstd",
+    "custard-run": "node ../../pkgs/command/dist/custard.js run -p .provided-symbols.cstd",
+    "test": "pnpm custard-transpile && node ../../pkgs/command/dist/custard.js run -vp .provided-symbols.cstd src/lib.test.cstd"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/igrep/custard.git"
+  },
+  "author": "YAMAMOTO Yuji",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/igrep/custard/issues"
+  },
+  "homepage": "https://github.com/igrep/custard#readme",
+  "dependencies": {
+    "@custard-lang/processor": "file:../../pkgs/processor",
+    "igrep-cashbook": "file:../igrep-cashbook",
+    "custard-my-apps-common": "file:../apps-common"
+  },
+  "devDependencies": {
+    "@custard-lang/command": "file:../../pkgs/command"
+  }
+}

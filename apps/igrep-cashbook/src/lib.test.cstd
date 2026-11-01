@@ -1,0 +1,53 @@
+(import test { test})
+(import assert)
+(importAnyOf lib)
+
+(test
+  "parseDatedCashbookLines"
+  (fn ()
+    (const
+      lines
+      [
+       "26/05/31"
+       " サ－ビス料金  23  A"
+       " サービス手数料  11  B  # comment"
+       " income  +23  A"
+       "# This is a comment line"
+       "26/06/01"
+       " サービス利用料  45  B"])
+    (const
+      actual
+      (parseDatedCashbookLines lines))
+    (assert.deepEqual
+      actual
+      [
+        { date: (Temporal.PlainDate.from "2026-05-31")
+          items:
+          [ { name: "サ－ビス料金"
+              amount: 23
+              category: "A"
+              comment: none
+              isIncome: false
+              type: "item"}
+            { name: "サービス手数料"
+              amount: 11
+              category: "B"
+              comment: " comment"
+              isIncome: false
+              type: "item"}
+            { name: "income"
+              amount: 23
+              category: "A"
+              comment: none
+              isIncome: true
+              type: "item"}
+            { value: "# This is a comment line"
+              type: "commentLine"}]}
+        { date: (Temporal.PlainDate.from "2026-06-01")
+          items:
+          [ { name: "サービス利用料"
+              amount: 45
+              category: "B"
+              comment: none
+              isIncome: false
+              type: "item"}]}])))

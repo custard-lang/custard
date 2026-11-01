@@ -9,7 +9,7 @@
     "clean": "rimraf -g \"pkgs/**/dist\" \"pkgs/**/*.tsbuildinfo\" \"*.tsbuildinfo\"",
     "test": "pnpm run -r test",
     "test:detailed": "pnpm run test -- --reporter verbose",
-    "test:once": "pnpm run test -- run",
+    "test:once": "pnpm run test run",
     "test:coverage": "pnpm run test -- run --coverage",
     "lint": "eslint pkgs",
     "fix:lint": "eslint --fix .",

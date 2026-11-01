@@ -1,0 +1,30 @@
+(import lib)
+(import common)
+(const prefix (get process.argv 2))
+(const transactionCsv (get process.argv 3))
+(const cashbookFileToMatch (get process.argv 4))
+
+(async.await
+  ((async.fn ()
+     (if (isNone transactionCsv)
+       (console.error "No card CSV file specified.")
+       (return))
+     (const
+       transactionCsvLines
+       (async.await
+         (common.readUtf8Lines (fsC.createReadStream transactionCsv))))
+     (const
+       transactionLines
+       (lib.parseTransactionsFile transactionCsv transactionCsvLines))
+     (const
+       datedCashbookLines
+       (igrepCashbook.parseDatedCashbookLines
+         (async.await
+           (common.readUtf8Lines (fsC.createReadStream cashbookFileToMatch)))))
+     (const
+       matchResults
+       (lib.mergeTransactionsIntoCashbook
+         prefix
+         transactionLines
+         datedCashbookLines))
+     (console.log (matchResults.join "\n")))))

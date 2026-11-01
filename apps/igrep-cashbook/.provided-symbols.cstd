@@ -8,6 +8,9 @@
 
 (modulePaths.set "lib" "./src/lib.mjs")
 
+(modulePaths.set "test" "node:test")
+(modulePaths.set "assert" "node:assert/strict")
+
 {
   modulePaths
   implicitStatements: "(importAnyOf base)(import async)(import fsC)(import meta)"

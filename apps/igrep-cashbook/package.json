@@ -6,7 +6,8 @@
   "description": "Manipulates cashbook files formatted by my original format.",
   "scripts": {
     "custard-transpile": "node ../../pkgs/command/dist/custard.js transpile -vp .provided-symbols.cstd src/lib.cstd src/index.cstd src/select-by-date.cstd src/sum-expenditure.cstd src/name-and-amount.cstd src/compose-ntfy-request-body.cstd",
-    "custard-run": "node ../../pkgs/command/dist/custard.js run -p .provided-symbols.cstd"
+    "custard-run": "node ../../pkgs/command/dist/custard.js run -p .provided-symbols.cstd",
+    "test": "pnpm custard-transpile && node ../../pkgs/command/dist/custard.js run -vp .provided-symbols.cstd src/lib.test.cstd"
   },
   "repository": {
     "type": "git",

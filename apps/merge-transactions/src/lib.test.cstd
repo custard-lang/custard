@@ -1,0 +1,99 @@
+(import test { test})
+(import assert)
+(importAnyOf lib)
+
+(const
+  transactionLines
+   ["日時,取引内容,ファンド,入金,出金,デポジット残高"
+    "2025/03/11 19:17,出金,,\"\",200000,0"
+    (annotate
+      "The fund name is surrounded by spaces, as I found in the actual CSV file."
+      "2026/09/15 12:30,投資承認, 南プロジェクト（ファンド167号） ,\"\",100000,5687")
+    "2026/06/02 10:00,投資家入金,,110000,\"\",115858"
+    "2026/05/31 10:05,源泉徴収税,二丁目プロジェクト（148号）,\"\",206,9729"
+    "2026/02/09 10:01,利息受取,三丁目プロジェクト（143号）,2013,\"\",9333"
+    "2026/01/20 09:47,元本受取,四丁目プロジェクト（144号）,10000,\"\",16708"])
+
+(test
+ "parseTransactionsFile"
+  (fn ()
+    (const
+      actual
+     (parseTransactionsFile "test.csv" transactionLines))
+    (assert.deepEqual
+      actual
+      [
+       none
+        { date: (Temporal.PlainDate.from "2026-09-15")
+          kind: "投資承認"
+          name: "南プロジェクト（ファンド167号）"
+          isIncome: false
+          value: 100000}
+        none
+        { date: (Temporal.PlainDate.from "2026-05-31")
+          kind: "源泉徴収税"
+          name: "二丁目プロジェクト（148号）"
+          isIncome: false
+          value: 206}
+        { date: (Temporal.PlainDate.from "2026-02-09")
+          kind: "利息受取"
+          isIncome: true
+          name: "三丁目プロジェクト（143号）"
+          value: 2013}
+        { date: (Temporal.PlainDate.from "2026-01-20")
+          kind: "元本受取"
+          isIncome: true
+          name: "四丁目プロジェクト（144号）"
+          value: 10000}])))
+
+(const
+  cashbookLines
+   ["26/05/31"
+    " サ－ビス料金  23  A"
+    " サービス手数料  11  B  # comment"
+    " income  +23  A"
+    "# This is a comment line"
+    "26/06/01"
+    " サービス利用料  45  B"
+    "# '投資家入金' lines should not be merged. '投資承認' should be counted instead."])
+
+(const
+  mergedCashbookLines
+  ["26/01/20"
+   " prefix 元本受取 四丁目プロジェクト（144号）  +10000  投資"
+   "26/02/09"
+   " prefix 利息受取 三丁目プロジェクト（143号）  +2013  投資"
+   "26/05/31"
+   " サ－ビス料金  23  A"
+   " サービス手数料  11  B  # comment"
+   " income  +23  A"
+   "# This is a comment line"
+   " prefix 源泉徴収税 二丁目プロジェクト（148号）  206  投資"
+   "26/06/01"
+   " サービス利用料  45  B"
+   "# '投資家入金' lines should not be merged. '投資承認' should be counted instead."
+   "26/09/15"
+   " prefix 投資承認 南プロジェクト（ファンド167号）  100000  投資"])
+
+(test
+ "mergeTransactionsIntoCashbook"
+ (fn (t)
+   (t.test "when no matching transaction lines"
+     (fn ()
+       (const
+         actual
+         (mergeTransactionsIntoCashbook
+           "prefix"
+           (parseTransactionsFile "test.csv" transactionLines)
+           (igrepCashbook.parseDatedCashbookLines cashbookLines)))
+       (assert.deepEqual actual mergedCashbookLines)))
+
+   (t.test "when matching transaction lines are already in cashbook lines"
+     (fn ()
+       (const
+         actual
+         (mergeTransactionsIntoCashbook
+           "prefix"
+           (parseTransactionsFile "test.csv" transactionLines)
+           (igrepCashbook.parseDatedCashbookLines mergedCashbookLines)))
+       (assert.deepEqual actual mergedCashbookLines)))))

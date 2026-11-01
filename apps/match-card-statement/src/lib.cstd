@@ -94,29 +94,6 @@
 
 (export
   (const
-    parseDatedCashbookExpenditures
-    (fn (lines)
-      (const datedCashbookLines [])
-      (forEach [i line] (lines.entries)
-       (const n (plusF i 1))
-       (const parseResult (igrepCashbook.parseLine n line[1]))
-       (igrepCashbook.continueIfNone parseResult)
-       (igrepCashbook.continueAndWarnIfError parseResult)
-       (if (equals parseResult.type "date")
-         (datedCashbookLines.push
-           {date: (igrepCashbook.dateSToPlainDate parseResult.value) items: []})
-         (continue))
-       (if (and (equals parseResult.type "item") (not parseResult.isIncome))
-         (if (equals datedCashbookLines.length 0)
-           (throw (text "At line " n ": No date specified for item: " parseResult.name)))
-         ((last datedCashbookLines).items.push
-            { name: parseResult.name
-              amount: parseResult.amount
-              category: parseResult.category})))
-     datedCashbookLines)))
-
-(export
-  (const
     serializeMatchResult
     (fn ({cardStatementItem matchedLines})
       (const {date name price} cardStatementItem)
@@ -170,7 +147,15 @@
                 (plusF 1 lines.length))))
           (if (Number.isNaN cardStatementWithLineNumber.price)
             (throw (text "Invalid price in match result header: " head)))
-          (const cashbookLines (parseDatedCashbookExpenditures body))
+          (const
+            cashbookLines
+            ((igrepCashbook.parseDatedCashbookLines body).map
+             (fn ({date items})
+               { date
+                 items:
+                 (items.map
+                   (fn ({name amount category})
+                     { name amount category}))})))
           { cardStatementWithLineNumber matchedLines: cashbookLines})))))
 
 (export
